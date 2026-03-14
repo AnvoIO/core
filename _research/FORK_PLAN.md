@@ -56,28 +56,75 @@ testnet T2 (Month 2-3) depends on them.
 #### 1A. Fork, License & Rebrand (~2-3 weeks)
 **Goal:** Fork under BSL, remove all legacy branding, establish new project identity.
 
-**License: Business Source License 1.1**
+**Status: COMPLETE** (branch `rebrand/core_net`, `make all` passes 100%)
+
+**License: Business Source License 1.1** ✓ DONE
 - Source-available from day one. Converts to Apache 2.0 after 3 years per version.
 - Permitted: running nodes, building dApps, migrating EOSIO chains, private chains,
   research, education — everything except launching a competing public L1.
-- Protects our engineering work (Block-STM, gas model, AArch64 port, indexer, identity)
-  while allowing full ecosystem use.
-- Contributors sign off via DCO (Developer Certificate of Origin).
 - Legal basis: Spring is MIT-licensed (Nov 2025), MIT permits sublicensing under BSL.
 - **Detailed plan:** [18_licensing.md](18_licensing.md)
 
-**Rebrand:** Remove all references to eosio, EOSIO, EOS, antelope, AntelopeIO, spring,
-Spring, leap, Leap, and block.one from the codebase. Replace with new project identity.
+**Naming convention (finalized):**
 
-**Scale:** ~11,000+ occurrences across ~500+ files, 35 directories to rename.
+| Layer | Name |
+|-------|------|
+| C++ namespace | `core_net::` |
+| C++ identifier prefix | `core_net_` |
+| Macro prefix | `CORE_NET_` |
+| Include paths | `#include <core_net/chain/...>` |
+| Node daemon | `core_netd` |
+| CLI | `core-cli` |
+| Wallet | `core-wallet` |
+| Utility | `core-util` |
+| CMake project | `anvo-core` |
+| CMake targets | `core_net_chain`, `core_net_testing` |
+| System accounts (new chains) | `core`, `core.token`, `core.bios`, etc. |
+| System accounts (migrating) | `eosio`, `eosio.token`, etc. (genesis-configurable) |
+| WASM intrinsics | `core_net_assert`, `core_net_exit` |
+| WASM injection | `core_net_injection.*` |
 
-**Strategy:** Absorb key submodules first (eliminates cross-boundary issues),
-then rebrand in one scripted pass. See naming table and submodule strategy above.
+**Why `core_net::` instead of `core::`:** `core::` collides with `boost::core::`.
 
-**Also required:**
+**Rebrand:** ✓ DONE — ~11,000+ occurrences across ~870 files renamed.
+
+**Submodule strategy:**
+
+| Submodule | Origin | Action | Status |
+|-----------|--------|--------|--------|
+| `libraries/eos-vm` | AntelopeIO/eos-vm | **Absorbed** into repo, renamed `core_net::vm::` | ✓ DONE |
+| `libraries/appbase` | AntelopeIO/appbase | **Absorbed** into repo | ✓ DONE |
+| `libraries/softfloat` | AntelopeIO/berkeley-softfloat-3 | **Absorbed** into repo | ✓ DONE |
+| `libraries/cli11/cli11` | AntelopeIO/CLI11 | **Fork to Anvo-Network**, rebase onto upstream v2.6.2 | TODO |
+| `libraries/libfc/libraries/bls12-381` | AntelopeIO/bls12-381 | **Fork to Anvo-Network** | TODO |
+| `libraries/libfc/libraries/bn256` | AntelopeIO/bn256 | **Fork to Anvo-Network** | TODO |
+| `libraries/boost` | boostorg/boost | Keep as-is (upstream, 643MB) | ✓ No action |
+| `libraries/libfc/libraries/boringssl/bssl` | boringssl.googlesource.com | Keep as-is (upstream) | ✓ No action |
+| `libraries/prometheus/prometheus-cpp` | jupp0r/prometheus-cpp | Keep as-is (upstream) | ✓ No action |
+| `libraries/rapidjson` | Tencent/rapidjson | Keep as-is (upstream) | ✓ No action |
+| `libraries/libfc/secp256k1/secp256k1` | bitcoin-core/secp256k1 | Keep as-is (upstream) | ✓ No action |
+
+**What was done (rebrand branch `rebrand/core_net`):**
+1. ✓ Absorbed submodules: eos-vm, appbase, softfloat
+2. ✓ Directory renames: 28 include/eosio/ → include/core_net/, program dirs, test files
+3. ✓ Namespace: eosio:: → core_net:: across 870+ files
+4. ✓ Include paths: eosio/ → core_net/
+5. ✓ Macros: EOSIO_ → CORE_NET_, EOS_VM_ → CORE_NET_VM_
+6. ✓ CMake: project, targets, executable names, runtime list names
+7. ✓ C++ identifiers: eosio_* → core_net_*, keosd_ → core_wallet_*
+8. ✓ WASM intrinsics: eosio_assert → core_net_assert, 61 injection functions
+9. ✓ eos-vm internals: eosio::vm → core_net::vm, all macros/identifiers
+10. ✓ Python tests, shell scripts, plugin strings, config paths
+11. ✓ Full build passes: core_netd, core-cli, core-wallet, core-util, unit_test, plugin_test
+
+**Rebrand script:** `_research/tools/rebrand.sh` — captures all fixes, repeatable from clean main.
+
+**What remains:**
+- Fork CLI11/bls12-381/bn256 to Anvo-Network org, update .gitmodules
+- Genesis-configurable system accounts ([08_system_account_compatibility.md](08_system_account_compatibility.md))
+- Documentation (docs/, README.md)
+- CI/CD workflows
 - New genesis configuration
-- Establish CI/CD pipeline
-- New project repository and organization
 
 #### 1B. System Contracts
 **Goal:** Fork and modify the bundled system contracts for the new chain.
