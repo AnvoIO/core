@@ -1,12 +1,12 @@
 #pragma once
-#include <eosio/chain/block_header.hpp>
-#include <eosio/chain/incremental_merkle_legacy.hpp>
-#include <eosio/chain/protocol_feature_manager.hpp>
-#include <eosio/chain/chain_snapshot.hpp>
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/block_state.hpp>
+#include <core_net/chain/block_header.hpp>
+#include <core_net/chain/incremental_merkle_legacy.hpp>
+#include <core_net/chain/protocol_feature_manager.hpp>
+#include <core_net/chain/chain_snapshot.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/block_state.hpp>
 
-namespace eosio::chain::snapshot_detail {
+namespace core_net::chain::snapshot_detail {
 
    /**
     * a fc::raw::unpack compatible version of the old block_state structure stored in
@@ -158,14 +158,14 @@ namespace eosio::chain::snapshot_detail {
 
 }
 
-FC_REFLECT( eosio::chain::snapshot_detail::snapshot_block_header_state_legacy_v2::schedule_info,
+FC_REFLECT( core_net::chain::snapshot_detail::snapshot_block_header_state_legacy_v2::schedule_info,
           ( schedule_lib_num )
           ( schedule_hash )
           ( schedule )
 )
 
 
-FC_REFLECT( eosio::chain::snapshot_detail::snapshot_block_header_state_legacy_v2,
+FC_REFLECT( core_net::chain::snapshot_detail::snapshot_block_header_state_legacy_v2,
           ( block_num )
           ( dpos_proposed_irreversible_blocknum )
           ( dpos_irreversible_blocknum )
@@ -181,7 +181,7 @@ FC_REFLECT( eosio::chain::snapshot_detail::snapshot_block_header_state_legacy_v2
           ( activated_protocol_features )
 )
 
-FC_REFLECT( eosio::chain::snapshot_detail::snapshot_block_header_state_legacy_v3,
+FC_REFLECT( core_net::chain::snapshot_detail::snapshot_block_header_state_legacy_v3,
           ( block_num )
           ( dpos_proposed_irreversible_blocknum )
           ( dpos_irreversible_blocknum )
@@ -198,7 +198,7 @@ FC_REFLECT( eosio::chain::snapshot_detail::snapshot_block_header_state_legacy_v3
           ( additional_signatures )
 )
 
-FC_REFLECT( eosio::chain::snapshot_detail::snapshot_block_state_v8,
+FC_REFLECT( core_net::chain::snapshot_detail::snapshot_block_state_v8,
             (block_id)
             (header)
             (activated_protocol_features)
@@ -216,7 +216,7 @@ FC_REFLECT( eosio::chain::snapshot_detail::snapshot_block_state_v8,
             (valid)
    )
 
-FC_REFLECT( eosio::chain::snapshot_detail::snapshot_block_state_data_v8,
+FC_REFLECT( core_net::chain::snapshot_detail::snapshot_block_state_data_v8,
             (bs_l)
             (bs)
    )

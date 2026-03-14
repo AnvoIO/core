@@ -1,7 +1,7 @@
 #pragma once
 #include <cstdint>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    enum constants {
       magic   = 0x6D736100,
       version = 0x1,
@@ -22,4 +22,4 @@ namespace eosio { namespace vm {
       page_size             = 64ull * 1024, //64kb
       max_pages             = (max_useable_memory/page_size)
    };
-}} // namespace eosio::vm
+}} // namespace core_net::vm

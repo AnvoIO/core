@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/binary_extension.hpp>
-#include <eosio/eosio.hpp>
-#include <eosio/ignore.hpp>
-#include <eosio/transaction.hpp>
+#include <core_net/binary_extension.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/ignore.hpp>
+#include <core_net/transaction.hpp>
 
-namespace eosio {
+namespace core_net {
 /**
  * The `eosio.msig` system contract allows for creation of proposed transactions which require authorization from a list of accounts, approval of the proposed transactions by those accounts required to approve it, and finally, it also allows the execution of the approved transactions on the blockchain.
  *
@@ -15,7 +15,7 @@ namespace eosio {
  * - the proposal then gets stored on the blockchain by the `eosio.msig` contract, and is accessible for review and approval to those accounts required to approve it,
  * - after each of the appointed accounts required to approve the proposed transactions reviews and approves it, you can execute the proposed transaction. The `eosio.msig` contract will execute it automatically, but not before validating that the transaction has not expired, it is not cancelled, and it has been signed by all the permissions in the initial proposal's required permission list.
  */
-class [[eosio::contract("eosio.msig")]] multisig : public contract {
+class [[core_net::contract("eosio.msig")]] multisig : public contract {
 public:
    using contract::contract;
 
@@ -35,7 +35,7 @@ public:
     * @param requested - Permission levels expected to approve the proposal
     * @param trx - Proposed transaction
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void propose(name proposer, name proposal_name,
                 std::vector<permission_level> requested, ignore<transaction> trx);
    /**
@@ -50,9 +50,9 @@ public:
     * @param level - Permission level approving the transaction
     * @param proposal_hash - Transaction's checksum
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void approve( name proposer, name proposal_name, permission_level level,
-                 const eosio::binary_extension<eosio::checksum256>& proposal_hash );
+                 const core_net::binary_extension<core_net::checksum256>& proposal_hash );
    /**
     * Unapprove action revokes an existing proposal. This action is the reverse of the `approve` action: if all validations pass
     * the `level` permission is erased from internal `provided_approvals` and added to the internal
@@ -62,7 +62,7 @@ public:
     * @param proposal_name - The name of the proposal (should be an existing proposal)
     * @param level - Permission level revoking approval for proposal
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void unapprove( name proposer, name proposal_name, permission_level level );
    /**
     * Cancel action cancels an existing proposal.
@@ -75,7 +75,7 @@ public:
     * only after time has expired on the proposed transaction. It removes corresponding entries from
     * internal proptable and from approval (or old approvals) tables as well.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void cancel( name proposer, name proposal_name, name canceler );
    /**
     * Exec action allows an `executer` account to execute a proposal.
@@ -94,7 +94,7 @@ public:
     * @param proposal_name - The name of the proposal (should be an existing proposal)
     * @param executer - The account executing the transaction
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void exec( name proposer, name proposal_name, name executer );
    /**
     * Invalidate action allows an `account` to invalidate itself, that is, its name is added to
@@ -102,38 +102,38 @@ public:
     *
     * @param account - The account invalidating the transaction
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void invalidate( name account );
 
-   using propose_action = eosio::action_wrapper<"propose"_n, &multisig::propose>;
-   using approve_action = eosio::action_wrapper<"approve"_n, &multisig::approve>;
-   using unapprove_action = eosio::action_wrapper<"unapprove"_n, &multisig::unapprove>;
-   using cancel_action = eosio::action_wrapper<"cancel"_n, &multisig::cancel>;
-   using exec_action = eosio::action_wrapper<"exec"_n, &multisig::exec>;
-   using invalidate_action = eosio::action_wrapper<"invalidate"_n, &multisig::invalidate>;
+   using propose_action = core_net::action_wrapper<"propose"_n, &multisig::propose>;
+   using approve_action = core_net::action_wrapper<"approve"_n, &multisig::approve>;
+   using unapprove_action = core_net::action_wrapper<"unapprove"_n, &multisig::unapprove>;
+   using cancel_action = core_net::action_wrapper<"cancel"_n, &multisig::cancel>;
+   using exec_action = core_net::action_wrapper<"exec"_n, &multisig::exec>;
+   using invalidate_action = core_net::action_wrapper<"invalidate"_n, &multisig::invalidate>;
 
-   struct [[eosio::table, eosio::contract("eosio.msig")]] proposal {
+   struct [[core_net::table, core_net::contract("eosio.msig")]] proposal {
       name                                                            proposal_name;
       std::vector<char>                                               packed_transaction;
-      eosio::binary_extension< std::optional<time_point> >            earliest_exec_time;
+      core_net::binary_extension< std::optional<time_point> >            earliest_exec_time;
 
       uint64_t primary_key()const { return proposal_name.value; }
    };
-   typedef eosio::multi_index< "proposal"_n, proposal > proposals;
+   typedef core_net::multi_index< "proposal"_n, proposal > proposals;
 
-   struct [[eosio::table, eosio::contract("eosio.msig")]] old_approvals_info {
+   struct [[core_net::table, core_net::contract("eosio.msig")]] old_approvals_info {
       name                            proposal_name;
       std::vector<permission_level>   requested_approvals;
       std::vector<permission_level>   provided_approvals;
       uint64_t primary_key()const { return proposal_name.value; }
    };
-   typedef eosio::multi_index< "approvals"_n, old_approvals_info > old_approvals;
+   typedef core_net::multi_index< "approvals"_n, old_approvals_info > old_approvals;
    struct approval {
       permission_level level;
       time_point       time;
    };
 
-   struct [[eosio::table, eosio::contract("eosio.msig")]] approvals_info {
+   struct [[core_net::table, core_net::contract("eosio.msig")]] approvals_info {
       uint8_t                 version = 1;
       name                    proposal_name;
       //requested approval doesn't need to contain time, but we want requested approval
@@ -143,15 +143,15 @@ public:
       std::vector<approval>   provided_approvals;
       uint64_t primary_key()const { return proposal_name.value; }
    };
-   typedef eosio::multi_index< "approvals2"_n, approvals_info > approvals;
+   typedef core_net::multi_index< "approvals2"_n, approvals_info > approvals;
 
-   struct [[eosio::table, eosio::contract("eosio.msig")]] invalidation {
+   struct [[core_net::table, core_net::contract("eosio.msig")]] invalidation {
       name         account;
       time_point   last_invalidation_time;
 
       uint64_t primary_key() const { return account.value; }
    };
 
-   typedef eosio::multi_index< "invals"_n, invalidation > invalidations;
+   typedef core_net::multi_index< "invals"_n, invalidation > invalidations;
 };
-} /// namespace eosio
+} /// namespace core_net

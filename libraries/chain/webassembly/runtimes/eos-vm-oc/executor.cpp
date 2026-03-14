@@ -1,15 +1,15 @@
-#include <eosio/chain/webassembly/eos-vm-oc/executor.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/code_cache.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/memory.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/intrinsic_mapping.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/intrinsic.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/eos-vm-oc.h>
-#include <eosio/chain/wasm_eosio_constraints.hpp>
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/global_property_object.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/executor.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/code_cache.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/memory.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/intrinsic_mapping.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/intrinsic.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/eos-vm-oc.h>
+#include <core_net/chain/wasm_constraints.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/global_property_object.hpp>
 
 #include <fc/scoped_exit.hpp>
 
@@ -30,7 +30,7 @@
 
 extern "C" int arch_prctl(int code, unsigned long* addr);
 
-namespace eosio::chain::eosvmoc {
+namespace core_net::chain::eosvmoc {
 
 static constexpr auto signal_sentinel = 0x4D56534F45534559ul;
 
@@ -170,8 +170,8 @@ void executor::execute(const code_descriptor& code, memory& mem, apply_context& 
       mapping_is_executable = true;
    }
 
-   uint64_t max_call_depth = eosio::chain::wasm_constraints::maximum_call_depth+1;
-   uint64_t max_pages = eosio::chain::wasm_constraints::maximum_linear_memory/eosio::chain::wasm_constraints::wasm_page_size;
+   uint64_t max_call_depth = core_net::chain::wasm_constraints::maximum_call_depth+1;
+   uint64_t max_pages = core_net::chain::wasm_constraints::maximum_linear_memory/core_net::chain::wasm_constraints::wasm_page_size;
    if(context.control.is_builtin_activated(builtin_protocol_feature_t::configurable_wasm_limits)) {
       const wasm_config& config = context.control.get_global_properties().wasm_configuration;
       max_call_depth = config.max_call_depth;
@@ -184,8 +184,8 @@ void executor::execute(const code_descriptor& code, memory& mem, apply_context& 
    if(code.starting_memory_pages > 0 ) {
       uint64_t initial_page_offset = std::min(static_cast<std::size_t>(code.starting_memory_pages), mem.size_of_memory_slice_mapping()/memory::stride - 1);
       if(initial_page_offset < static_cast<uint64_t>(code.starting_memory_pages)) {
-         mprotect(mem.full_page_memory_base() + initial_page_offset * eosio::chain::wasm_constraints::wasm_page_size,
-                  (code.starting_memory_pages - initial_page_offset) * eosio::chain::wasm_constraints::wasm_page_size, PROT_READ | PROT_WRITE);
+         mprotect(mem.full_page_memory_base() + initial_page_offset * core_net::chain::wasm_constraints::wasm_page_size,
+                  (code.starting_memory_pages - initial_page_offset) * core_net::chain::wasm_constraints::wasm_page_size, PROT_READ | PROT_WRITE);
       }
       eos_vm_oc_setgs((uint64_t)mem.zero_page_memory_base()+initial_page_offset*memory::stride);
       memset(mem.full_page_memory_base(), 0, 64u*1024u*code.starting_memory_pages);
@@ -239,8 +239,8 @@ void executor::execute(const code_descriptor& code, memory& mem, apply_context& 
 
       int64_t base_pages = mem.size_of_memory_slice_mapping()/memory::stride - 1;
       if(cb->current_linear_memory_pages > base_pages) {
-         mprotect(mem.full_page_memory_base() + base_pages * eosio::chain::wasm_constraints::wasm_page_size,
-                  (cb->current_linear_memory_pages - base_pages) * eosio::chain::wasm_constraints::wasm_page_size, PROT_NONE);
+         mprotect(mem.full_page_memory_base() + base_pages * core_net::chain::wasm_constraints::wasm_page_size,
+                  (cb->current_linear_memory_pages - base_pages) * core_net::chain::wasm_constraints::wasm_page_size, PROT_NONE);
       }
    });
 

@@ -1,5 +1,5 @@
 #include "eosio.system.hpp"
-#include <eosio/system.hpp>
+#include <core_net/system.hpp>
 
 namespace eosiosystem {
 
@@ -15,7 +15,7 @@ void system_contract::deposit( const name& owner, const asset& amount )
 
    check( amount.symbol == core_symbol(), "must deposit core token" );
    check( 0 < amount.amount, "must deposit a positive amount" );
-   INLINE_ACTION_SENDER(eosio::token, transfer)( token_account, { owner, active_permission },
+   INLINE_ACTION_SENDER(core_net::token, transfer)( token_account, { owner, active_permission },
                                                  { owner, rex_account, amount, std::string("deposit to REX fund") } );
    transfer_to_fund( owner, amount );
    update_rex_account( owner, asset( 0, core_symbol() ), asset( 0, core_symbol() ) );
@@ -34,7 +34,7 @@ void system_contract::withdraw( const name& owner, const asset& amount )
    check( 0 < amount.amount, "must withdraw a positive amount" );
    update_rex_account( owner, asset( 0, core_symbol() ), asset( 0, core_symbol() ) );
    transfer_from_fund( owner, amount );
-   INLINE_ACTION_SENDER(eosio::token, transfer)( token_account, { rex_account, active_permission },
+   INLINE_ACTION_SENDER(core_net::token, transfer)( token_account, { rex_account, active_permission },
                                                  { rex_account, owner, amount, std::string("withdraw from REX fund") } );
 }
 
@@ -93,7 +93,7 @@ void system_contract::unstaketorex( const name& owner, const name& receiver, con
    update_resource_limits( name(0), receiver, -from_net.amount, -from_cpu.amount );
 
    const asset payment = from_net + from_cpu;
-   INLINE_ACTION_SENDER(eosio::token, transfer)( token_account, { stake_account, active_permission },
+   INLINE_ACTION_SENDER(core_net::token, transfer)( token_account, { stake_account, active_permission },
                                                  { stake_account, rex_account, payment, std::string("buy REX with staked tokens") } );
    const asset rex_received = add_to_rex_pool( payment );
    add_to_rex_balance( owner, payment, rex_received );
@@ -476,7 +476,7 @@ void system_contract::runrex( uint16_t max )
          idx.modify ( itr, same_payer, [&]( auto& loan ) {
             delta_stake              = rented_tokens - loan.total_staked.amount;
             loan.total_staked.amount = rented_tokens;
-            loan.expiration         += eosio::days(30);
+            loan.expiration         += core_net::days(30);
             loan.balance.amount     -= loan.payment.amount;
          });
       } else {
@@ -587,7 +587,7 @@ int64_t system_contract::rent_rex( T& table, const name& from, const name& recei
       c.payment      = payment;
       c.balance      = fund;
       c.total_staked = asset( rented_tokens, core_symbol() );
-      c.expiration   = current_time_point() + eosio::days(30);
+      c.expiration   = current_time_point() + core_net::days(30);
       c.loan_num     = itr->loan_num;
    });
 
@@ -760,7 +760,7 @@ void system_contract::channel_to_rex( const name& from, const asset& amount )
             rp.total_lendable.amount += amount.amount;
          });
 
-         INLINE_ACTION_SENDER(eosio::token, transfer)( token_account, { from, active_permission },
+         INLINE_ACTION_SENDER(core_net::token, transfer)( token_account, { from, active_permission },
             { from, rex_account, amount, std::string("transfer from ") + name{from}.to_string() + " to eosio.rex"} );
       }
 #endif

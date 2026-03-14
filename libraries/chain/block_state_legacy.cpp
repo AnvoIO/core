@@ -1,10 +1,10 @@
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/block_header_state_utils.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/snapshot_detail.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/block_header_state_utils.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/snapshot_detail.hpp>
 
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    namespace {
       constexpr auto additional_sigs_eid = additional_block_signatures_extension::extension_id();
@@ -100,4 +100,4 @@ namespace eosio::chain {
       return false;
    }
 
-} /// eosio::chain
+} /// core_net::chain

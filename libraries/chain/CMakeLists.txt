@@ -1,9 +1,9 @@
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/eosio/chain/core_symbol.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/eosio/chain/core_symbol.hpp)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/core_net/chain/core_symbol.hpp.in ${CMAKE_CURRENT_BINARY_DIR}/include/core_net/chain/core_symbol.hpp)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/genesis_state_root_key.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/genesis_state_root_key.cpp)
 
-file(GLOB HEADERS "include/eosio/chain/*.hpp"
-                  "include/eosio/chain/webassembly/*.hpp"
-                  "${CMAKE_CURRENT_BINARY_DIR}/include/eosio/chain/core_symbol.hpp" )
+file(GLOB HEADERS "include/core_net/chain/*.hpp"
+                  "include/core_net/chain/webassembly/*.hpp"
+                  "${CMAKE_CURRENT_BINARY_DIR}/include/core_net/chain/core_symbol.hpp" )
 
 if((APPLE AND UNIX) OR (${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD"))
    set(PLATFORM_TIMER_IMPL platform_timer_kqueue.cpp)
@@ -17,7 +17,7 @@ else()
    endif()
 endif()
 
-if("eos-vm-oc" IN_LIST EOSIO_WASM_RUNTIMES)
+if("eos-vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
    enable_language(ASM)
    set(CHAIN_EOSVMOC_SOURCES webassembly/runtimes/eos-vm-oc/code_cache.cpp
                              webassembly/runtimes/eos-vm-oc/executor.cpp
@@ -43,7 +43,7 @@ if("eos-vm-oc" IN_LIST EOSIO_WASM_RUNTIMES)
    add_definitions(${LLVM_DEFINITIONS})
 endif()
 
-if("eos-vm" IN_LIST EOSIO_WASM_RUNTIMES OR "eos-vm-jit" IN_LIST EOSIO_WASM_RUNTIMES)
+if("eos-vm" IN_LIST CORE_NET_WASM_RUNTIMES OR "eos-vm-jit" IN_LIST CORE_NET_WASM_RUNTIMES)
    set(CHAIN_EOSVM_SOURCES "webassembly/runtimes/eos-vm.cpp")
    set(CHAIN_EOSVM_LIBRARIES eos-vm)
 endif()
@@ -71,7 +71,7 @@ add_library(eosio_rapidjson INTERFACE)
 target_include_directories(eosio_rapidjson INTERFACE ../rapidjson/include)
 
 ## SORT .cpp by most likely to change / break compile
-add_library( eosio_chain
+add_library( core_net_chain
              name.cpp
              transaction.cpp
              block.cpp
@@ -140,37 +140,37 @@ add_library( eosio_chain
 add_library(boost_numeric_ublas INTERFACE)
 add_library(Boost::numeric_ublas ALIAS boost_numeric_ublas)
 
-target_link_libraries( eosio_chain PUBLIC bn256 fc chainbase eosio_rapidjson Logging IR WAST WASM
+target_link_libraries( core_net_chain PUBLIC bn256 fc chainbase eosio_rapidjson Logging IR WAST WASM
                        softfloat builtins ${CHAIN_EOSVM_LIBRARIES} ${LLVM_LIBS} ${CHAIN_RT_LINKAGE}
                        Boost::signals2 Boost::hana Boost::property_tree Boost::multi_index Boost::asio Boost::lockfree
                        Boost::assign Boost::accumulators Boost::rational
                      )
-target_include_directories( eosio_chain
+target_include_directories( core_net_chain
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include"
                                    "${CMAKE_CURRENT_SOURCE_DIR}/../wasm-jit/Include"
                             )
 
-add_library(eosio_chain_wrap INTERFACE )
-target_link_libraries(eosio_chain_wrap INTERFACE eosio_chain)
+add_library(core_net_chain_wrap INTERFACE )
+target_link_libraries(core_net_chain_wrap INTERFACE core_net_chain)
 
-if("eos-vm-oc" IN_LIST EOSIO_WASM_RUNTIMES)
-   target_link_libraries(eosio_chain_wrap INTERFACE "-Wl,-wrap=main")
+if("eos-vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
+   target_link_libraries(core_net_chain_wrap INTERFACE "-Wl,-wrap=main")
 endif()
 
-foreach(RUNTIME ${EOSIO_WASM_RUNTIMES})
+foreach(RUNTIME ${CORE_NET_WASM_RUNTIMES})
    string(TOUPPER "${RUNTIME}" RUNTIMEUC)
    string(REPLACE "-" "_" RUNTIMEUC ${RUNTIMEUC})
-   target_compile_definitions(eosio_chain PUBLIC "EOSIO_${RUNTIMEUC}_RUNTIME_ENABLED")
+   target_compile_definitions(core_net_chain PUBLIC "CORE_NET_${RUNTIMEUC}_RUNTIME_ENABLED")
 endforeach()
 
-install( TARGETS eosio_chain
+install( TARGETS core_net_chain
    RUNTIME DESTINATION ${CMAKE_INSTALL_FULL_BINDIR} COMPONENT dev EXCLUDE_FROM_ALL
    LIBRARY DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR} COMPONENT dev EXCLUDE_FROM_ALL
    ARCHIVE DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR} COMPONENT dev EXCLUDE_FROM_ALL
 )
-install( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/eosio/chain/
-      DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR}/eosio/chain
+install( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/core_net/chain/
+      DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR}/core_net/chain
       COMPONENT dev EXCLUDE_FROM_ALL
       FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h" EXCLUDE
 )
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/eosio/chain/core_symbol.hpp DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR}/eosio/chain COMPONENT dev EXCLUDE_FROM_ALL)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/include/core_net/chain/core_symbol.hpp DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR}/core_net/chain COMPONENT dev EXCLUDE_FROM_ALL)

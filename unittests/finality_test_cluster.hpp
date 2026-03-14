@@ -1,6 +1,6 @@
 #pragma once
 
-#include <eosio/chain/finalizer_authority.hpp>
+#include <core_net/chain/finalizer_authority.hpp>
 #include <fc/crypto/bls_private_key.hpp>
 
 #pragma GCC diagnostic push
@@ -8,13 +8,13 @@
    #include <boost/test/unit_test.hpp>
 #pragma GCC diagnostic pop
 
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 
 
 // ----------------------------------------------------------------------------
-struct finality_node_t : public eosio::testing::tester {
-   using vote_message_ptr = eosio::chain::vote_message_ptr;
-   using vote_result_t    = eosio::chain::vote_result_t;
+struct finality_node_t : public core_net::testing::tester {
+   using vote_message_ptr = core_net::chain::vote_message_ptr;
+   using vote_result_t    = core_net::chain::vote_result_t;
 
    enum class vote_mode {
       strong,
@@ -23,11 +23,11 @@ struct finality_node_t : public eosio::testing::tester {
 
    uint32_t                                prev_lib_num{0};
    std::vector<vote_message_ptr>           votes;
-   eosio::chain::vote_message_ptr          orig_vote;
-   eosio::testing::finalizer_keys<tester>  finkeys;
+   core_net::chain::vote_message_ptr          orig_vote;
+   core_net::testing::finalizer_keys<tester>  finkeys;
    size_t                                  cur_key{0}; // index of key used in current policy
 
-   finality_node_t() : eosio::testing::tester(eosio::testing::setup_policy::full_except_do_not_transition_to_savanna),  finkeys(*this) {}
+   finality_node_t() : core_net::testing::tester(core_net::testing::setup_policy::full_except_do_not_transition_to_savanna),  finkeys(*this) {}
 
    size_t last_vote_index() const {
       assert(!votes.empty());
@@ -101,10 +101,10 @@ struct finality_cluster_config_t {
 template<size_t NUM_NODES> requires (NUM_NODES > 3)
 class finality_test_cluster {
 public:
-   using vote_message_ptr = eosio::chain::vote_message_ptr;
-   using vote_result_t    = eosio::chain::vote_result_t;
-   using signed_block_ptr = eosio::chain::signed_block_ptr;
-   using tester           = eosio::testing::tester;
+   using vote_message_ptr = core_net::chain::vote_message_ptr;
+   using vote_result_t    = core_net::chain::vote_result_t;
+   using signed_block_ptr = core_net::chain::signed_block_ptr;
+   using tester           = core_net::testing::tester;
    using vote_mode        = finality_node_t::vote_mode;
    using bls_public_key   = fc::crypto::blslib::bls_public_key;
 
@@ -119,7 +119,7 @@ public:
 
    // Construct a test network and activate IF.
    finality_test_cluster(finality_cluster_config_t config = {.transition_to_savanna = true}) {
-      using namespace eosio::testing;
+      using namespace core_net::testing;
       size_t num_finalizers = nodes.size();
 
       // -----------------------------------------------------------------------------------
@@ -144,7 +144,7 @@ public:
       // check that node0 aggregates votes correctly, and that after receiving a vote from another
       // node, that vote is aggregated into a QC (which we check in wait_on_aggregate_vote).
       // -----------------------------------------------------------------------------------------
-      node0.control->aggregated_vote().connect( [&]( const eosio::chain::vote_signal_params& v ) {
+      node0.control->aggregated_vote().connect( [&]( const core_net::chain::vote_signal_params& v ) {
          last_vote_status = std::get<1>(v);
          last_connection_vote = std::get<0>(v);
       });
@@ -194,7 +194,7 @@ public:
       return b;
    }
 
-   eosio::testing::produce_block_result_t produce_and_push_block_ex() {
+   core_net::testing::produce_block_result_t produce_and_push_block_ex() {
       auto b = node0.produce_block_ex();
       for (size_t i=1; i<nodes.size(); ++i)
          nodes[i].push_block(b.block);
@@ -209,7 +209,7 @@ public:
       clear_votes_and_reset_lib();
 
       produce_and_push_block();
-      for (size_t i = 0; i < eosio::testing::num_chains_to_final; ++i) {
+      for (size_t i = 0; i < core_net::testing::num_chains_to_final; ++i) {
          process_votes(1, num_needed_for_quorum);
          produce_and_push_block();
          if (num_lib_advancing() < num_nodes)
@@ -264,7 +264,7 @@ public:
    std::array<finality_node_t, num_nodes>                 nodes;
 
    // Used for transition to Savanna
-   std::optional<eosio::chain::finalizer_policy> fin_policy_0;         // policy used to transition to Savanna
+   std::optional<core_net::chain::finalizer_policy> fin_policy_0;         // policy used to transition to Savanna
    std::array<size_t, num_nodes>                 fin_policy_indices_0; // set of key indices used for transition
    std::vector<bls_public_key>                   fin_policy_pubkeys_0; // set of public keys used for transition
 
@@ -273,13 +273,13 @@ public:
 
 private:
    // sets up "node_index" node
-   void setup_node(finality_node_t& node, eosio::chain::account_name local_finalizer);
+   void setup_node(finality_node_t& node, core_net::chain::account_name local_finalizer);
 
    // send the vote message to node0 which is the producer (and Savanna leader), and wait till processed
    vote_result_t process_vote(vote_message_ptr& vote, bool duplicate) {
       static uint32_t connection_id = 0;
       node0.control->process_vote_message( ++connection_id, vote );
-      if (eosio::chain::block_header::num_from_id(vote->block_id) > node0.lib_num())
+      if (core_net::chain::block_header::num_from_id(vote->block_id) > node0.lib_num())
          return wait_on_aggregate_vote(connection_id, duplicate);
       return vote_result_t::unknown_block;
    }

@@ -1,8 +1,8 @@
 #include "blocklog.hpp"
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/fork_database.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/fork_database.hpp>
 #include <memory>
 
 #include <fc/bitutil.hpp>
@@ -23,7 +23,7 @@
 #define FOPEN(p, m) _wfopen(p, PREL(m))
 #endif
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 namespace bpo = boost::program_options;
 using bpo::options_description;
 using bpo::variables_map;
@@ -35,7 +35,7 @@ struct report_time {
 
    void report() {
       const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - _start).count() / 1000;
-      ilog("spring-util - ${desc} took ${t} msec", ("desc", _desc)("t", duration));
+      ilog("core-util - ${desc} took ${t} msec", ("desc", _desc)("t", duration));
    }
 
    const std::chrono::high_resolution_clock::time_point _start;
@@ -252,7 +252,7 @@ int blocklog_actions::do_vacuum() {
       return -1;
    }
 
-   if(!std::holds_alternative<eosio::chain::prune_blocklog_config>(opt->blog_conf)) {
+   if(!std::holds_alternative<core_net::chain::prune_blocklog_config>(opt->blog_conf)) {
       std::cerr << "blocks.log is not a pruned log; nothing to vacuum" << std::endl;
       return -1;
    }

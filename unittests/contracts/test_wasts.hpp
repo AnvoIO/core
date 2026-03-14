@@ -1,5 +1,5 @@
 #pragma once
-#include <eosio/chain/webassembly/common.hpp>
+#include <core_net/chain/webassembly/common.hpp>
 
 static const char huge_tables_wast[] = R"=====(
 (module
@@ -728,7 +728,7 @@ static const char apply_wrong_signature_wast[] = R"=====(
 static const char import_injected_wast[] =                                            \
 "(module"                                                                             \
 " (export \"apply\" (func $apply))"                                                   \
-" (import \"" EOSIO_INJECTED_MODULE_NAME "\" \"checktime\" (func $inj (param i32)))"  \
+" (import \"" CORE_NET_INJECTED_MODULE_NAME "\" \"checktime\" (func $inj (param i32)))"  \
 " (func $apply (param $0 i64) (param $1 i64) (param $2 i64))"                         \
 ")";
 

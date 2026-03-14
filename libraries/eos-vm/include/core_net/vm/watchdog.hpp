@@ -6,7 +6,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    /// \brief Triggers a callback after a given time elapses.
    ///
@@ -86,4 +86,4 @@ namespace eosio { namespace vm {
       ~null_watchdog() {} // avoid unused variable warnings
    };
 
-}} // namespace eosio::vm
+}} // namespace core_net::vm

@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 #include "do_http_post.hpp"
-namespace eosio { namespace client { namespace http {
+namespace core_net { namespace client { namespace http {
    using std::string;
 
    struct config_t {

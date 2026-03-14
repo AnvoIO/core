@@ -1,14 +1,14 @@
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/cfile.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/deep_mind.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include <deep-mind.hpp>
 
 
-using namespace eosio::testing;
+using namespace core_net::testing;
 
 extern void setup_test_logging();
 

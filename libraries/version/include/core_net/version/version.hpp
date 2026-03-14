@@ -2,7 +2,7 @@
 
 #include <string> // std::string
 
-namespace eosio { namespace version {
+namespace core_net { namespace version {
 
    ///< Grab the basic version information of the client; example: `v1.8.0-rc1`
    const std::string& version_client();

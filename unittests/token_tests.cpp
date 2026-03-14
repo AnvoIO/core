@@ -1,5 +1,5 @@
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/variant_object.hpp>
 
@@ -8,27 +8,27 @@
 #include <contracts.hpp>
 #include <test_contracts.hpp>
 
-using namespace eosio::testing;
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace fc;
 using namespace std;
 
 using mvo = fc::mutable_variant_object;
 
 template<typename T>
-class eosio_token_tester : public T {
+class core_net_token_tester : public T {
 public:
 
-   eosio_token_tester() {
+   core_net_token_tester() {
       T::produce_block();
 
       T::create_accounts( { "alice"_n, "bob"_n, "carol"_n, "eosio.token"_n } );
       T::produce_block();
 
-      T::set_code( "eosio.token"_n, test_contracts::eosio_token_wasm() );
-      T::set_abi( "eosio.token"_n, test_contracts::eosio_token_abi() );
+      T::set_code( "eosio.token"_n, test_contracts::core_net_token_wasm() );
+      T::set_abi( "eosio.token"_n, test_contracts::core_net_token_abi() );
 
       T::produce_block();
 
@@ -51,7 +51,7 @@ public:
 
    fc::variant get_stats( const string& symbolname )
    {
-      auto symb = eosio::chain::symbol::from_string(symbolname);
+      auto symb = core_net::chain::symbol::from_string(symbolname);
       auto symbol_code = symb.to_symbol_code().value;
       vector<char> data = T::get_row_by_account( "eosio.token"_n, name(symbol_code), "stat"_n, name(symbol_code) );
       return data.empty() ? fc::variant() : abi_ser.binary_to_variant( "currency_stats", data, abi_serializer::create_yield_function( T::abi_serializer_max_time ) );
@@ -59,7 +59,7 @@ public:
 
    fc::variant get_account( account_name acc, const string& symbolname)
    {
-      auto symb = eosio::chain::symbol::from_string(symbolname);
+      auto symb = core_net::chain::symbol::from_string(symbolname);
       auto symbol_code = symb.to_symbol_code().value;
       vector<char> data = T::get_row_by_account( "eosio.token"_n, acc, "accounts"_n, name(symbol_code) );
       return data.empty() ? fc::variant() : abi_ser.binary_to_variant( "account", data, abi_serializer::create_yield_function( T::abi_serializer_max_time ) );
@@ -97,12 +97,12 @@ public:
    abi_serializer abi_ser;
 };
 
-using eosio_token_testers = boost::mpl::list<eosio_token_tester<legacy_tester>,
-                                             eosio_token_tester<savanna_tester>>;
+using core_net_token_testers = boost::mpl::list<core_net_token_tester<legacy_tester>,
+                                             core_net_token_tester<savanna_tester>>;
 
-BOOST_AUTO_TEST_SUITE(eosio_token_tests)
+BOOST_AUTO_TEST_SUITE(core_net_token_tests)
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( create_tests, T, eosio_token_testers ) try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( create_tests, T, core_net_token_testers ) try {
    T chain;
 
    auto token = chain.create( "alice"_n, asset::from_string("1000.000 TKN"));
@@ -116,7 +116,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( create_tests, T, eosio_token_testers ) try {
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( create_negative_max_supply, T, eosio_token_testers ) try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( create_negative_max_supply, T, core_net_token_testers ) try {
    T chain;
 
    BOOST_REQUIRE_EQUAL( chain.wasm_assert_msg( "max-supply must be positive" ),
@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( create_negative_max_supply, T, eosio_token_tester
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( symbol_already_exists, T, eosio_token_testers ) try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( symbol_already_exists, T, core_net_token_testers ) try {
    T chain;
 
    auto token = chain.create( "alice"_n, asset::from_string("100 TKN"));
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( symbol_already_exists, T, eosio_token_testers ) t
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( create_max_supply, T, eosio_token_testers ) try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( create_max_supply, T, core_net_token_testers ) try {
    T chain;
 
    auto token = chain.create( "alice"_n, asset::from_string("4611686018427387903 TKN"));
@@ -169,7 +169,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( create_max_supply, T, eosio_token_testers ) try {
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( create_max_decimals, T, eosio_token_testers ) try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( create_max_decimals, T, core_net_token_testers ) try {
    T chain;
 
    auto token = chain.create( "alice"_n, asset::from_string("1.000000000000000000 TKN"));
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( create_max_decimals, T, eosio_token_testers ) try
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( issue_tests, T, eosio_token_testers ) try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( issue_tests, T, core_net_token_testers ) try {
    T chain;
 
    auto token = chain.create( "alice"_n, asset::from_string("1000.000 TKN"));
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( issue_tests, T, eosio_token_testers ) try {
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( transfer_tests, T, eosio_token_testers ) try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( transfer_tests, T, core_net_token_testers ) try {
    T chain;
 
    auto token = chain.create( "alice"_n, asset::from_string("1000 CERO"));

@@ -18,7 +18,7 @@ if not os.path.exists(config_dir):
 
 try:
     start_nodeos_cmd = f"{Utils.EosServerPath} -e -p eosio --data-dir={data_dir} --config-dir={config_dir} --blocks-log-stride 10" \
-                        " --plugin=eosio::http_plugin --plugin=eosio::chain_api_plugin --http-server-address=localhost:8888"
+                        " --plugin=core_net::http_plugin --plugin=core_net::chain_api_plugin --http-server-address=localhost:8888"
 
     nodeos.launchCmd(start_nodeos_cmd, node_id)
     time.sleep(2)

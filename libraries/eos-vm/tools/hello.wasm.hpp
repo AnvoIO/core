@@ -1,12 +1,12 @@
 // Code used to generate this wasm
-// compile with eosio-cpp -o hello.wasm hello.cpp
-//#include <eosio/eosio.hpp>
-//#include <eosio/print.hpp>
+// compile with core_net-cpp -o hello.wasm hello.cpp
+//#include <core_net/core_net.hpp>
+//#include <core_net/print.hpp>
 //
 // extern "C" {
-//[[eosio::wasm_import]] void print_name(const char*);
-//[[eosio::wasm_import]] void print_num(uint64_t);
-//[[eosio::wasm_import]] void print_span(const char*, std::size_t);
+//[[core_net::wasm_import]] void print_name(const char*);
+//[[core_net::wasm_import]] void print_num(uint64_t);
+//[[core_net::wasm_import]] void print_span(const char*, std::size_t);
 //
 // void apply(uint64_t a, uint64_t b, uint64_t c)
 //{
@@ -14,7 +14,7 @@
 //    print_num(a);
 //    print_num(b);
 //    print_num(c);
-//    eosio::check(b == c, "Failure B != C");
+//    core_net::check(b == c, "Failure B != C");
 //    for (uint64_t i = 0; i < a; i++)
 //        print_name("eos-vm");
 //    print_span(test_str, 5);

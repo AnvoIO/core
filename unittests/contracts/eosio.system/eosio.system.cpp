@@ -1,6 +1,6 @@
 #include "eosio.system.hpp"
-#include <eosio/dispatcher.hpp>
-#include <eosio/crypto.hpp>
+#include <core_net/dispatcher.hpp>
+#include <core_net/crypto.hpp>
 
 #include "producer_pay.cpp"
 #include "delegate_bandwidth.cpp"
@@ -99,9 +99,9 @@ void system_contract::setramrate( uint16_t bytes_per_block ) {
    _gstate2.new_ram_per_block = bytes_per_block;
 }
 
-void system_contract::setparams( const eosio::blockchain_parameters& params ) {
+void system_contract::setparams( const core_net::blockchain_parameters& params ) {
    require_auth( _self );
-   (eosio::blockchain_parameters&)(_gstate) = params;
+   (core_net::blockchain_parameters&)(_gstate) = params;
    check( 3 <= _gstate.max_authority_depth, "max_authority_depth should be at least 3" );
    set_blockchain_parameters( params );
 }
@@ -148,7 +148,7 @@ void system_contract::bidname( name bidder, name newname, asset bid ) {
    check( bid.symbol == core_symbol(), "asset must be system token" );
    check( bid.amount > 0, "insufficient bid" );
 
-   INLINE_ACTION_SENDER(eosio::token, transfer)(
+   INLINE_ACTION_SENDER(core_net::token, transfer)(
          token_account, { {bidder, active_permission} },
          { bidder, names_account, bid, std::string("bid name ")+ newname.to_string() }
    );
@@ -204,7 +204,7 @@ void system_contract::bidrefund( name bidder, name newname ) {
    bid_refund_table refunds_table(_self, newname.value);
    auto it = refunds_table.find( bidder.value );
    check( it != refunds_table.end(), "refund not found" );
-   INLINE_ACTION_SENDER(eosio::token, transfer)(
+   INLINE_ACTION_SENDER(core_net::token, transfer)(
          token_account, { {names_account, active_permission}, {bidder, active_permission} },
          { names_account, bidder, asset(it->amount), std::string("refund bid on name ")+(name{newname}).to_string() }
    );
@@ -260,16 +260,16 @@ void native::newaccount( name              creator,
 }
 
 void native::setabi( name acnt, const std::vector<char>& abi ) {
-   eosio::multi_index< "abihash"_n, abi_hash >  table(_self, _self.value);
+   core_net::multi_index< "abihash"_n, abi_hash >  table(_self, _self.value);
    auto itr = table.find( acnt.value );
    if( itr == table.end() ) {
       table.emplace( acnt, [&]( auto& row ) {
          row.owner= acnt;
-         row.hash = eosio::sha256( const_cast<char*>(abi.data()), abi.size());
+         row.hash = core_net::sha256( const_cast<char*>(abi.data()), abi.size());
       });
    } else {
       table.modify( itr, same_payer, [&]( auto& row ) {
-         row.hash = eosio::sha256( const_cast<char*>(abi.data()), abi.size() );
+         row.hash = core_net::sha256( const_cast<char*>(abi.data()), abi.size() );
       });
    }
 }
@@ -281,7 +281,7 @@ void system_contract::init( unsigned_int version, symbol core ) {
    auto itr = _rammarket.find(ramcore_symbol.raw());
    check( itr == _rammarket.end(), "system contract has already been initialized" );
 
-   auto system_token_supply   = eosio::token::get_supply(token_account, core.code() );
+   auto system_token_supply   = core_net::token::get_supply(token_account, core.code() );
    check( system_token_supply.symbol == core, "specified core symbol does not exist (precision mismatch)" );
 
    check( system_token_supply.amount > 0, "system token supply must be greater than 0" );
@@ -294,7 +294,7 @@ void system_contract::init( unsigned_int version, symbol core ) {
       m.quote.balance.symbol = core;
    });
 
-   INLINE_ACTION_SENDER(eosio::token, open)( token_account, { _self, active_permission },
+   INLINE_ACTION_SENDER(core_net::token, open)( token_account, { _self, active_permission },
                                              { rex_account, core, _self } );
 }
 

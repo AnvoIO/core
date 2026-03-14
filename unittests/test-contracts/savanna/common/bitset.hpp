@@ -1,4 +1,4 @@
-using namespace eosio;
+using namespace core_net;
 
 namespace savanna {
 

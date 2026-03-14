@@ -4,9 +4,9 @@
 #include <variant>
 #include <optional>
 #include <stdint.h>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 
-namespace eosio::state_history {
+namespace core_net::state_history {
 
 struct prune_config {
    uint32_t                prune_blocks;                  //when pruning, the number of most recent blocks to remain available in the log

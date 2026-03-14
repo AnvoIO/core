@@ -1,50 +1,50 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
-#include <eosio/singleton.hpp>
-#include <eosio/asset.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/singleton.hpp>
+#include <core_net/asset.hpp>
 
 // Extacted from eosio.token contract:
-namespace eosio {
-   class [[eosio::contract("eosio.token")]] token : public eosio::contract {
+namespace core_net {
+   class [[core_net::contract("eosio.token")]] token : public core_net::contract {
    public:
-      using eosio::contract::contract;
+      using core_net::contract::contract;
 
-      [[eosio::action]]
-      void transfer( eosio::name        from,
-                     eosio::name        to,
-                     eosio::asset       quantity,
+      [[core_net::action]]
+      void transfer( core_net::name        from,
+                     core_net::name        to,
+                     core_net::asset       quantity,
                      const std::string& memo );
-      using transfer_action = eosio::action_wrapper<"transfer"_n, &token::transfer>;
+      using transfer_action = core_net::action_wrapper<"transfer"_n, &token::transfer>;
    };
 }
 
 // This contract:
-class [[eosio::contract]] proxy : public eosio::contract {
+class [[core_net::contract]] proxy : public core_net::contract {
 public:
-   proxy( eosio::name self, eosio::name first_receiver, eosio::datastream<const char*> ds );
+   proxy( core_net::name self, core_net::name first_receiver, core_net::datastream<const char*> ds );
 
-   [[eosio::action]]
-   void setowner( eosio::name owner, uint32_t delay );
+   [[core_net::action]]
+   void setowner( core_net::name owner, uint32_t delay );
 
-   [[eosio::on_notify("eosio.token::transfer")]]
-   void on_transfer( eosio::name        from,
-                     eosio::name        to,
-                     eosio::asset       quantity,
+   [[core_net::on_notify("eosio.token::transfer")]]
+   void on_transfer( core_net::name        from,
+                     core_net::name        to,
+                     core_net::asset       quantity,
                      const std::string& memo );
 
-   [[eosio::on_notify("eosio::onerror")]]
-   void on_error( uint128_t sender_id, eosio::ignore<std::vector<char>> sent_trx );
+   [[core_net::on_notify("core_net::onerror")]]
+   void on_error( uint128_t sender_id, core_net::ignore<std::vector<char>> sent_trx );
 
-   struct [[eosio::table]] config {
-      eosio::name owner;
+   struct [[core_net::table]] config {
+      core_net::name owner;
       uint32_t    delay   = 0;
       uint32_t    next_id = 0;
 
       EOSLIB_SERIALIZE( config, (owner)(delay)(next_id) )
    };
 
-   using config_singleton = eosio::singleton< "config"_n,  config >;
+   using config_singleton = core_net::singleton< "config"_n,  config >;
 
 protected:
    config_singleton _config;

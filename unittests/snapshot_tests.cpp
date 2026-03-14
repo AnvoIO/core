@@ -1,9 +1,9 @@
 #include <sstream>
 
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/snapshot.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/snapshot.hpp>
+#include <core_net/testing/tester.hpp>
 #include "snapshot_suites.hpp"
 #include <snapshots.hpp>
 #include <snapshot_tester.hpp>
@@ -13,7 +13,7 @@
 #include <test_contracts.hpp>
 #include "test_wasts.hpp"
 
-using namespace eosio;
+using namespace core_net;
 using namespace testing;
 using namespace chain;
 
@@ -382,7 +382,7 @@ void compatible_versions_test()
    }
    fc::temp_directory temp_dir;
    auto config = tester::default_config(temp_dir, legacy_default_max_inline_action_size).first;
-   auto genesis = eosio::chain::block_log::extract_genesis_state(source_log_dir);
+   auto genesis = core_net::chain::block_log::extract_genesis_state(source_log_dir);
    std::filesystem::create_directories(config.blocks_dir);
    std::filesystem::copy(source_log_dir / "blocks.log", config.blocks_dir / "blocks.log");
    std::filesystem::copy(source_log_dir / "blocks.index", config.blocks_dir / "blocks.index");
@@ -470,7 +470,7 @@ void pending_schedule_snapshot_test()
    const uint32_t legacy_default_max_inline_action_size = 4 * 1024;
    fc::temp_directory temp_dir;
    auto config = tester::default_config(temp_dir, legacy_default_max_inline_action_size).first;
-   auto genesis = eosio::chain::block_log::extract_genesis_state(source_log_dir);
+   auto genesis = core_net::chain::block_log::extract_genesis_state(source_log_dir);
    std::filesystem::create_directories(config.blocks_dir);
    std::filesystem::copy(source_log_dir / "blocks.log", config.blocks_dir / "blocks.log");
    std::filesystem::copy(source_log_dir / "blocks.index", config.blocks_dir / "blocks.index");
@@ -566,7 +566,7 @@ void restart_with_existing_state_and_truncated_block_log_test()
       // create a new child at this snapshot
       int ordinal = 2;
       auto chain_cfg = chain.get_config();
-      chain_cfg.blog = eosio::chain::empty_blocklog_config{}; // use empty block log
+      chain_cfg.blog = core_net::chain::empty_blocklog_config{}; // use empty block log
       snapshotted_tester snap_chain(chain_cfg, SNAPSHOT_SUITE::get_reader(snapshot), ordinal++);
       verify_integrity_hash<SNAPSHOT_SUITE>(*chain.control, *snap_chain.control);
       auto block = chain.produce_block();

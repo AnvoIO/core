@@ -1,15 +1,15 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
-class [[eosio::contract]] integration_test : public eosio::contract {
+class [[core_net::contract]] integration_test : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action]]
-   void store( eosio::name from, eosio::name to, uint64_t num );
+   [[core_net::action]]
+   void store( core_net::name from, core_net::name to, uint64_t num );
 
-   struct [[eosio::table("payloads")]] payload {
+   struct [[core_net::table("payloads")]] payload {
       uint64_t              key;
       std::vector<uint64_t> data;
 
@@ -18,6 +18,6 @@ public:
       EOSLIB_SERIALIZE( payload, (key)(data) )
    };
 
-   using payloads_table = eosio::multi_index< "payloads"_n,  payload >;
+   using payloads_table = core_net::multi_index< "payloads"_n,  payload >;
 
 };

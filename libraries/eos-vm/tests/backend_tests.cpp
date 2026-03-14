@@ -1,8 +1,8 @@
-#include <eosio/vm/backend.hpp>
+#include <core_net/vm/backend.hpp>
 #include <catch2/catch.hpp>
 #include "utils.hpp"
 
-using namespace eosio::vm;
+using namespace core_net::vm;
 
 extern wasm_allocator wa;
 

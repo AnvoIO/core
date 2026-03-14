@@ -35,7 +35,7 @@ cluster.setWalletMgr(walletMgr)
 testSuccessful = False
 try:
     TestHelper.printSystemInfo("BEGIN")
-    cluster.launch(extraNodeosArgs=" --plugin eosio::producer_api_plugin  --http-max-response-time-ms 990000 ",
+    cluster.launch(extraNodeosArgs=" --plugin core_net::producer_api_plugin  --http-max-response-time-ms 990000 ",
                    dontBootstrap=True,
                    pfSetupPolicy=PFSetupPolicy.NONE)
     biosNode = cluster.biosNode

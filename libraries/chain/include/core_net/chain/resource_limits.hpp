@@ -1,14 +1,14 @@
 #pragma once
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/snapshot.hpp>
-#include <eosio/chain/block_timestamp.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/snapshot.hpp>
+#include <core_net/chain/block_timestamp.hpp>
 #include <chainbase/chainbase.hpp>
 #include <set>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    class deep_mind_handler;
 
@@ -117,8 +117,8 @@ namespace eosio { namespace chain {
          chainbase::database&         _db;
          std::function<deep_mind_handler*(bool is_trx_transient)> _get_deep_mind_logger;
    };
-} } } /// eosio::chain
+} } } /// core_net::chain
 
-FC_REFLECT( eosio::chain::resource_limits::account_resource_limit, (used)(available)(max)(last_usage_update_time)(current_used) )
-FC_REFLECT( eosio::chain::resource_limits::ratio, (numerator)(denominator))
-FC_REFLECT( eosio::chain::resource_limits::elastic_limit_parameters, (target)(max)(periods)(max_multiplier)(contract_rate)(expand_rate))
+FC_REFLECT( core_net::chain::resource_limits::account_resource_limit, (used)(available)(max)(last_usage_update_time)(current_used) )
+FC_REFLECT( core_net::chain::resource_limits::ratio, (numerator)(denominator))
+FC_REFLECT( core_net::chain::resource_limits::elastic_limit_parameters, (target)(max)(periods)(max_multiplier)(contract_rate)(expand_rate))

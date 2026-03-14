@@ -1,13 +1,13 @@
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include "fork_test_utilities.hpp"
 
-using namespace eosio::testing;
-using namespace eosio::chain;
+using namespace core_net::testing;
+using namespace core_net::chain;
 using mvo = fc::mutable_variant_object;
 
 BOOST_AUTO_TEST_SUITE(producer_schedule_tests)

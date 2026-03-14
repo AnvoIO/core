@@ -1,10 +1,10 @@
 #pragma once
-#include <eosio/state_history/log.hpp>
-#include <eosio/state_history/serialization.hpp>
-#include <eosio/state_history/types.hpp>
+#include <core_net/state_history/log.hpp>
+#include <core_net/state_history/serialization.hpp>
+#include <core_net/state_history/types.hpp>
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/controller.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/controller.hpp>
 
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/buffer.hpp>
@@ -15,7 +15,7 @@
 
 extern const char* const state_history_plugin_abi;
 
-namespace eosio::state_history {
+namespace core_net::state_history {
 
 class session_base {
 public:
@@ -343,4 +343,4 @@ private:
    const std::string                 remote_endpoint_string;
 };
 
-} // namespace eosio
+} // namespace core_net

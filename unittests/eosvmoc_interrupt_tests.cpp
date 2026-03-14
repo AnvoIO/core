@@ -1,18 +1,18 @@
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 #include <test_contracts.hpp>
 #include <test_utils.hpp>
 #include <boost/test/unit_test.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace test_utils;
 using mvo = fc::mutable_variant_object;
 
 BOOST_AUTO_TEST_SUITE(eosvmoc_interrupt_tests)
 
 BOOST_AUTO_TEST_CASE( wasm_interrupt_test ) { try {
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
    fc::temp_directory tempdir;
    constexpr bool use_genesis = true;
    savanna_validating_tester t(
@@ -27,7 +27,7 @@ BOOST_AUTO_TEST_CASE( wasm_interrupt_test ) { try {
    if( t.get_config().wasm_runtime == wasm_interface::vm_type::eos_vm_oc ) {
       // eos_vm_oc wasm_runtime does not tier-up and completes compile before continuing execution.
       // A completely different test with different constraints would be needed to test with eos_vm_oc.
-      // Since non-tier-up is not a normal valid nodeos runtime, just skip this test for eos_vm_oc.
+      // Since non-tier-up is not a normal valid core_netd runtime, just skip this test for eos_vm_oc.
       return;
    }
    t.execute_setup_policy( setup_policy::full );

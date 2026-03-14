@@ -36,7 +36,7 @@ try:
         '--p2p-listen-endpoint',
         '',
         '--plugin',
-        'eosio::chain_api_plugin',
+        'core_net::chain_api_plugin',
         '--config-dir',
         Utils.ConfigDir,
         '--data-dir',

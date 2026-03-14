@@ -2,11 +2,11 @@
 
 #include <boost/asio.hpp>
 
-#include <eosio/chain/application.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/thread_utils.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/thread_utils.hpp>
 
-namespace eosio::resource_monitor {
+namespace core_net::resource_monitor {
    template<typename SpaceProvider>
    class file_space_handler {
    public:
@@ -105,7 +105,7 @@ namespace eosio::resource_monitor {
                wlog("Space usage warning: ${path}'s file system approaching threshold. available: ${available} GiB, warning_available: ${warning_available} GiB",
                     ("path", fs.path_name.string())("available", to_gib(info.available))("warning_available", to_gib(fs.warning_available)));
                if ( shutdown_on_exceeded) {
-                  wlog("nodeos will shutdown when space usage exceeds threshold ${threshold_desc}", ("threshold_desc", threshold_desc()));
+                  wlog("core_netd will shutdown when space usage exceeds threshold ${threshold_desc}", ("threshold_desc", threshold_desc()));
                }
             }
          }
@@ -188,7 +188,7 @@ namespace eosio::resource_monitor {
       SpaceProvider space_provider;
 
       static constexpr size_t thread_pool_size = 1;
-      eosio::chain::named_thread_pool<struct resmon> thread_pool;
+      core_net::chain::named_thread_pool<struct resmon> thread_pool;
 
       boost::asio::deadline_timer timer {thread_pool.get_executor()};
 

@@ -1,31 +1,31 @@
 #pragma once
 
-#include <eosio/chain/webassembly/common.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/webassembly/runtime_interface.hpp>
-#include <eosio/chain/apply_context.hpp>
+#include <core_net/chain/webassembly/common.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/webassembly/runtime_interface.hpp>
+#include <core_net/chain/apply_context.hpp>
 #include <softfloat.hpp>
 #include "IR/Types.h"
 
-#include <eosio/chain/webassembly/eos-vm-oc/eos-vm-oc.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/memory.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/executor.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/code_cache.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/config.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/intrinsic.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/eos-vm-oc.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/memory.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/executor.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/code_cache.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/config.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/intrinsic.hpp>
 
 #include <boost/hana/string.hpp>
 
-namespace eosio { namespace chain { namespace webassembly { namespace eosvmoc {
+namespace core_net { namespace chain { namespace webassembly { namespace eosvmoc {
 
 using namespace IR;
 using namespace fc;
 
-using namespace eosio::chain::eosvmoc;
+using namespace core_net::chain::eosvmoc;
 
 class eosvmoc_instantiated_module;
 
-class eosvmoc_runtime : public eosio::chain::wasm_runtime_interface {
+class eosvmoc_runtime : public core_net::chain::wasm_runtime_interface {
    public:
       eosvmoc_runtime(const std::filesystem::path data_dir, const eosvmoc::config& eosvmoc_config, const chainbase::database& db);
       ~eosvmoc_runtime();
@@ -204,11 +204,11 @@ struct wasm_function_type_provider<Ret(Args...)> {
 
 struct eos_vm_oc_execution_interface {
    inline const auto& operand_from_back(std::size_t index) const { return *(os - index - 1); }
-   eosio::vm::native_value* os;
+   core_net::vm::native_value* os;
 };
 
-struct eos_vm_oc_type_converter : public eosio::vm::type_converter<webassembly::interface, eos_vm_oc_execution_interface> {
-   using base_type = eosio::vm::type_converter<webassembly::interface, eos_vm_oc_execution_interface>;
+struct eos_vm_oc_type_converter : public core_net::vm::type_converter<webassembly::interface, eos_vm_oc_execution_interface> {
+   using base_type = core_net::vm::type_converter<webassembly::interface, eos_vm_oc_execution_interface>;
    using base_type::type_converter;
    using base_type::to_wasm;
    using base_type::as_result;
@@ -356,7 +356,7 @@ auto fn(A... a) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-value"
       // If a is unpopulated, this reports "statement has no effect [-Werror=unused-value]"
-      eosio::vm::native_value stack[] = { a... };
+      core_net::vm::native_value stack[] = { a... };
 #pragma GCC diagnostic pop
 
       constexpr int cb_ctx_ptr_offset = OFFSET_OF_CONTROL_BLOCK_MEMBER(ctx);
@@ -367,7 +367,7 @@ auto fn(A... a) {
           );
       Interface host(*ctx);
       eos_vm_oc_type_converter tc{&host, eos_vm_oc_execution_interface{stack + sizeof...(A)}};
-      return result_resolver{tc}, eosio::vm::invoke_with_host<F, Preconditions, native_args>(tc, &host, std::make_index_sequence<sizeof...(A)>());
+      return result_resolver{tc}, core_net::vm::invoke_with_host<F, Preconditions, native_args>(tc, &host, std::make_index_sequence<sizeof...(A)>());
    }
    catch(...) {
       *reinterpret_cast<std::exception_ptr*>(eos_vm_oc_get_exception_ptr()) = std::current_exception();
@@ -402,4 +402,4 @@ void register_eosvm_oc(Name n) {
    );
 }
 
-} } } }// eosio::chain::webassembly::eosvmoc
+} } } }// core_net::chain::webassembly::eosvmoc

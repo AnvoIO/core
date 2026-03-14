@@ -1,9 +1,9 @@
 #pragma once
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 
 #include "multi_index_includes.hpp"
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
       /**
        *  @brief tracks the version of the application data stored in the database
        *  @ingroup object
@@ -53,6 +53,6 @@ namespace eosio { namespace chain {
 
    } }
 
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::database_header_object, eosio::chain::database_header_multi_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::database_header_object, core_net::chain::database_header_multi_index)
 
-FC_REFLECT( eosio::chain::database_header_object, (version) )
+FC_REFLECT( core_net::chain::database_header_object, (version) )

@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/vm/exceptions.hpp>
-#include <eosio/vm/utils.hpp>
+#include <core_net/vm/exceptions.hpp>
+#include <core_net/vm/utils.hpp>
 
 #include <cstddef>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    template <typename T>
    struct guarded_ptr {
       T* raw_ptr;
@@ -14,13 +14,13 @@ namespace eosio { namespace vm {
       guarded_ptr( T* rp, size_t bnds ) : raw_ptr(rp), orig_ptr(rp), bnds(rp + bnds) {}
 
       inline guarded_ptr& operator+=(size_t i) {
-         EOS_VM_ASSERT(i <= static_cast<std::size_t>(bnds - raw_ptr), guarded_ptr_exception, "overbounding pointer");
+         CORE_NET_VM_ASSERT(i <= static_cast<std::size_t>(bnds - raw_ptr), guarded_ptr_exception, "overbounding pointer");
          raw_ptr += i;
          return *this;
       }
 
       inline guarded_ptr& operator++() {
-         EOS_VM_ASSERT(raw_ptr < bnds, guarded_ptr_exception, "overbounding pointer");
+         CORE_NET_VM_ASSERT(raw_ptr < bnds, guarded_ptr_exception, "overbounding pointer");
          raw_ptr += 1;
          return *this;
       }
@@ -43,12 +43,12 @@ namespace eosio { namespace vm {
       }
 
       inline T& operator* () const {
-         EOS_VM_ASSERT(raw_ptr < bnds, guarded_ptr_exception, "accessing out of bounds");
+         CORE_NET_VM_ASSERT(raw_ptr < bnds, guarded_ptr_exception, "accessing out of bounds");
          return *raw_ptr;
       }
       
       inline T* operator-> () const {
-         EOS_VM_ASSERT(raw_ptr < bnds, guarded_ptr_exception, "accessing out of bounds");
+         CORE_NET_VM_ASSERT(raw_ptr < bnds, guarded_ptr_exception, "accessing out of bounds");
          return raw_ptr;
       }
 
@@ -64,7 +64,7 @@ namespace eosio { namespace vm {
 
       // reduces the bounds for the lifetime of the returned object
       auto scoped_shrink_bounds(std::size_t n) {
-         EOS_VM_ASSERT(n <= static_cast<std::size_t>(bnds - raw_ptr), guarded_ptr_exception, "guarded ptr out of bounds");
+         CORE_NET_VM_ASSERT(n <= static_cast<std::size_t>(bnds - raw_ptr), guarded_ptr_exception, "guarded ptr out of bounds");
          T* old_bnds = bnds;
          bnds = raw_ptr + n;
          return scope_guard{ [this, old_bnds](){ bnds = old_bnds; } };
@@ -72,14 +72,14 @@ namespace eosio { namespace vm {
       // verifies that the pointer is advanced by exactly n before
       // the returned object is destroyed.
       auto scoped_consume_items(std::size_t n) {
-         EOS_VM_ASSERT(n <= static_cast<std::size_t>(bnds - raw_ptr), guarded_ptr_exception, "guarded ptr out of bounds");
+         CORE_NET_VM_ASSERT(n <= static_cast<std::size_t>(bnds - raw_ptr), guarded_ptr_exception, "guarded ptr out of bounds");
          int exceptions = std::uncaught_exceptions();
          T* old_bnds = bnds;
          bnds = raw_ptr + n;
          struct throwing_destructor { ~throwing_destructor() noexcept(false) {} };
          throwing_destructor x;
          return scope_guard{ [this, old_bnds, exceptions, x](){
-            EOS_VM_ASSERT(exceptions != std::uncaught_exceptions() || raw_ptr == bnds, guarded_ptr_exception, "guarded_ptr not advanced");
+            CORE_NET_VM_ASSERT(exceptions != std::uncaught_exceptions() || raw_ptr == bnds, guarded_ptr_exception, "guarded_ptr not advanced");
             bnds = old_bnds;
          } };
       }
@@ -89,12 +89,12 @@ namespace eosio { namespace vm {
       }
 
       inline T at(size_t index) const {
-         EOS_VM_ASSERT(index < static_cast<std::size_t>(bnds - raw_ptr), guarded_ptr_exception, "accessing out of bounds");
+         CORE_NET_VM_ASSERT(index < static_cast<std::size_t>(bnds - raw_ptr), guarded_ptr_exception, "accessing out of bounds");
          return raw_ptr[index];
       }
       
       inline T at() const {
-         EOS_VM_ASSERT(raw_ptr < bnds, guarded_ptr_exception, "accessing out of bounds");
+         CORE_NET_VM_ASSERT(raw_ptr < bnds, guarded_ptr_exception, "accessing out of bounds");
          return *raw_ptr;
       }
 
@@ -102,4 +102,4 @@ namespace eosio { namespace vm {
          return at(index);
       }
    };
-}} // ns eosio::vm
+}} // ns core_net::vm

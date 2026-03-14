@@ -1,9 +1,9 @@
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 
-#include <eosio/http_plugin/http_plugin.hpp>
-#include <eosio/wallet_plugin/wallet_plugin.hpp>
-#include <eosio/wallet_api_plugin/wallet_api_plugin.hpp>
-#include <eosio/version/version.hpp>
+#include <core_net/http_plugin/http_plugin.hpp>
+#include <core_net/wallet_plugin/wallet_plugin.hpp>
+#include <core_net/wallet_api_plugin/wallet_api_plugin.hpp>
+#include <core_net/version/version.hpp>
 
 #include <fc/log/logger_config.hpp>
 #include <fc/exception/exception.hpp>
@@ -14,7 +14,7 @@
 #include "config.hpp"
 
 using namespace appbase;
-using namespace eosio;
+using namespace core_net;
 
 void configure_logging(const std::filesystem::path& config_path) {
    try {
@@ -87,8 +87,8 @@ int main(int argc, char** argv)
    try {
       appbase::scoped_app app;
 
-      app->set_version_string(eosio::version::version_client());
-      app->set_full_version_string(eosio::version::version_full());
+      app->set_version_string(core_net::version::version_client());
+      app->set_full_version_string(core_net::version::version_full());
       std::filesystem::path home = determine_home_directory();
       app->set_default_data_dir(home / "eosio-wallet");
       app->set_default_config_dir(home / "eosio-wallet");

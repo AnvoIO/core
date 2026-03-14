@@ -1,24 +1,24 @@
-#include <eosio/chain/webassembly/eos-vm.hpp>
-#include <eosio/chain/webassembly/interface.hpp>
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/wasm_eosio_constraints.hpp>
+#include <core_net/chain/webassembly/eos-vm.hpp>
+#include <core_net/chain/webassembly/interface.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/wasm_constraints.hpp>
 //eos-vm includes
-#include <eosio/vm/backend.hpp>
-#include <eosio/chain/webassembly/preconditions.hpp>
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
-#include <eosio/chain/webassembly/eos-vm-oc.hpp>
+#include <core_net/vm/backend.hpp>
+#include <core_net/chain/webassembly/preconditions.hpp>
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#include <core_net/chain/webassembly/eos-vm-oc.hpp>
 #endif
 #include <boost/hana/string.hpp>
 #include <boost/hana/equal.hpp>
 
-namespace eosio { namespace chain { namespace webassembly { namespace eos_vm_runtime {
+namespace core_net { namespace chain { namespace webassembly { namespace eos_vm_runtime {
 
-using namespace eosio::vm;
+using namespace core_net::vm;
 
-namespace wasm_constraints = eosio::chain::wasm_constraints;
+namespace wasm_constraints = core_net::chain::wasm_constraints;
 
 namespace {
 
@@ -149,7 +149,7 @@ class eos_vm_instantiated_module : public wasm_instantiated_module_interface {
             opts = {config.max_pages, config.max_call_depth};
          }
          auto fn = [&]() {
-            eosio::chain::webassembly::interface iface(context);
+            core_net::chain::webassembly::interface iface(context);
             _runtime->_bkend.initialize(&iface, opts);
             _runtime->_bkend.call(
                 iface, "env", "apply",
@@ -160,11 +160,11 @@ class eos_vm_instantiated_module : public wasm_instantiated_module_interface {
          try {
             checktime_watchdog wd(context.trx_context.transaction_timer);
             _runtime->_bkend.timed_run(std::move(wd), std::move(fn));
-         } catch(eosio::vm::timeout_exception&) {
+         } catch(core_net::vm::timeout_exception&) {
             context.trx_context.checktime();
-         } catch(eosio::vm::wasm_memory_exception& e) {
+         } catch(core_net::vm::wasm_memory_exception& e) {
             FC_THROW_EXCEPTION(wasm_execution_error, "access violation: ${d}", ("d", e.detail()));
-         } catch(eosio::vm::exception& e) {
+         } catch(core_net::vm::exception& e) {
             FC_THROW_EXCEPTION(wasm_execution_error, "eos-vm system failure: ${d}", ("d", e.detail()));
          }
       }
@@ -176,7 +176,7 @@ class eos_vm_instantiated_module : public wasm_instantiated_module_interface {
 
 #ifdef __x86_64__
 class eos_vm_profiling_module : public wasm_instantiated_module_interface {
-      using backend_t = eosio::vm::backend<eos_vm_host_functions_t, eosio::vm::jit_profile, webassembly::eos_vm_runtime::apply_options, vm::profile_instr_map>;
+      using backend_t = core_net::vm::backend<eos_vm_host_functions_t, core_net::vm::jit_profile, webassembly::eos_vm_runtime::apply_options, vm::profile_instr_map>;
    public:
       eos_vm_profiling_module(std::unique_ptr<backend_t> mod, const char * code, std::size_t code_size) :
          _instantiated_module(std::move(mod)),
@@ -191,7 +191,7 @@ class eos_vm_profiling_module : public wasm_instantiated_module_interface {
             opts = {config.max_pages, config.max_call_depth};
          }
          auto fn = [&]() {
-            eosio::chain::webassembly::interface iface(context);
+            core_net::chain::webassembly::interface iface(context);
             _instantiated_module->initialize(&iface, opts);
             _instantiated_module->call(
                 iface, "env", "apply",
@@ -204,11 +204,11 @@ class eos_vm_profiling_module : public wasm_instantiated_module_interface {
             scoped_profile profile_runner(prof);
             checktime_watchdog wd(context.trx_context.transaction_timer);
             _instantiated_module->timed_run(std::move(wd), std::move(fn));
-         } catch(eosio::vm::timeout_exception&) {
+         } catch(core_net::vm::timeout_exception&) {
             context.trx_context.checktime();
-         } catch(eosio::vm::wasm_memory_exception& e) {
+         } catch(core_net::vm::wasm_memory_exception& e) {
             FC_THROW_EXCEPTION(wasm_execution_error, "access violation");
-         } catch(eosio::vm::exception& e) {
+         } catch(core_net::vm::exception& e) {
             FC_THROW_EXCEPTION(wasm_execution_error, "eos-vm system failure");
          }
       }
@@ -251,29 +251,29 @@ std::unique_ptr<wasm_instantiated_module_interface> eos_vm_runtime<Impl>::instan
       apply_options options = { .max_pages = 65536,
                                 .max_call_depth = 0 };
       std::unique_ptr<backend_t> bkend = nullptr;
-#ifdef EOSIO_EOS_VM_JIT_RUNTIME_ENABLED
-      if constexpr (std::is_same_v<Impl, eosio::vm::jit>)
+#ifdef CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED
+      if constexpr (std::is_same_v<Impl, core_net::vm::jit>)
          bkend = std::make_unique<backend_t>(code, code_size, nullptr, options, true, false); // true, false <--> single parsing, backend does not own execution context (execution context is reused per thread)
       else
 #endif
          bkend = std::make_unique<backend_t>(code, code_size, nullptr, options, false, false); // false, false <--> 2-passes parsing, backend does not own execution context (execution context is reused per thread)
       eos_vm_host_functions_t::resolve(bkend->get_module());
       return std::make_unique<eos_vm_instantiated_module<Impl>>(this, std::move(bkend));
-   } catch(eosio::vm::exception& e) {
+   } catch(core_net::vm::exception& e) {
       FC_THROW_EXCEPTION(wasm_execution_error, "Error building eos-vm interp: ${e}", ("e", e.what()));
    }
 }
 
-template class eos_vm_runtime<eosio::vm::interpreter>;
+template class eos_vm_runtime<core_net::vm::interpreter>;
 #ifdef __x86_64__
-template class eos_vm_runtime<eosio::vm::jit>;
+template class eos_vm_runtime<core_net::vm::jit>;
 
 eos_vm_profile_runtime::eos_vm_profile_runtime() {}
 
 std::unique_ptr<wasm_instantiated_module_interface> eos_vm_profile_runtime::instantiate_module(const char* code_bytes, size_t code_size,
                                                                                                const digest_type&, const uint8_t&, const uint8_t&) {
 
-   using backend_t = eosio::vm::backend<eos_vm_host_functions_t, eosio::vm::jit_profile, webassembly::eos_vm_runtime::apply_options, vm::profile_instr_map>;
+   using backend_t = core_net::vm::backend<eos_vm_host_functions_t, core_net::vm::jit_profile, webassembly::eos_vm_runtime::apply_options, vm::profile_instr_map>;
    try {
       wasm_code_ptr code((uint8_t*)code_bytes, code_size);
       apply_options options = { .max_pages = 65536,
@@ -281,7 +281,7 @@ std::unique_ptr<wasm_instantiated_module_interface> eos_vm_profile_runtime::inst
       std::unique_ptr<backend_t> bkend = std::make_unique<backend_t>(code, code_size, nullptr, options, true, false); // true, false <--> single parsing, backend does not own execution context (execution context is reused per thread)
       eos_vm_host_functions_t::resolve(bkend->get_module());
       return std::make_unique<eos_vm_profiling_module>(std::move(bkend), code_bytes, code_size);
-   } catch(eosio::vm::exception& e) {
+   } catch(core_net::vm::exception& e) {
       FC_THROW_EXCEPTION(wasm_execution_error, "Error building eos-vm interp: ${e}", ("e", e.what()));
    }
 }
@@ -299,8 +299,8 @@ struct host_function_registrator {
    constexpr host_function_registrator(Mod mod_name, Name fn_name) {
       using rhf_t = eos_vm_host_functions_t;
       rhf_t::add<HostFunction, Preconditions...>(mod_name.c_str(), fn_name.c_str());
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
-      constexpr bool is_injected = (Mod() == BOOST_HANA_STRING(EOSIO_INJECTED_MODULE_NAME));
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+      constexpr bool is_injected = (Mod() == BOOST_HANA_STRING(CORE_NET_INJECTED_MODULE_NAME));
       eosvmoc::register_eosvm_oc<HostFunction, is_injected, std::tuple<Preconditions...>>(
           mod_name + BOOST_HANA_STRING(".") + fn_name);
 #endif
@@ -309,7 +309,7 @@ struct host_function_registrator {
 
 #define REGISTER_INJECTED_HOST_FUNCTION(NAME, ...)                                                                     \
    static host_function_registrator<&interface::NAME, ##__VA_ARGS__> NAME##_registrator_impl() {                       \
-      return {BOOST_HANA_STRING(EOSIO_INJECTED_MODULE_NAME), BOOST_HANA_STRING(#NAME)};                                \
+      return {BOOST_HANA_STRING(CORE_NET_INJECTED_MODULE_NAME), BOOST_HANA_STRING(#NAME)};                                \
    }                                                                                                                   \
    inline static auto NAME##_registrator = NAME##_registrator_impl();
 
@@ -465,10 +465,10 @@ REGISTER_HOST_FUNCTION(get_sender);
 
 // context-free system api
 REGISTER_CF_HOST_FUNCTION(abort)
-REGISTER_LEGACY_CF_HOST_FUNCTION(eosio_assert)
-REGISTER_LEGACY_CF_HOST_FUNCTION(eosio_assert_message)
-REGISTER_CF_HOST_FUNCTION(eosio_assert_code)
-REGISTER_CF_HOST_FUNCTION(eosio_exit)
+REGISTER_LEGACY_CF_HOST_FUNCTION(core_net_assert)
+REGISTER_LEGACY_CF_HOST_FUNCTION(core_net_assert_message)
+REGISTER_CF_HOST_FUNCTION(core_net_assert_code)
+REGISTER_CF_HOST_FUNCTION(core_net_exit)
 
 // action api
 REGISTER_LEGACY_CF_HOST_FUNCTION(read_action_data);
@@ -653,4 +653,4 @@ REGISTER_CF_HOST_FUNCTION( bls_fp_exp );
 
 } // namespace webassembly
 } // namespace chain
-} // namespace eosio
+} // namespace core_net

@@ -1,14 +1,14 @@
 #pragma once
 
-#include <eosio/chain/pending_snapshot.hpp>
+#include <core_net/chain/pending_snapshot.hpp>
 
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/resource_limits_private.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/resource_limits_private.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/types.hpp>
 
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>
@@ -22,7 +22,7 @@
 
 #include <limits>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 namespace bmi = boost::multi_index;
 namespace fs = std::filesystem;
@@ -69,7 +69,7 @@ public:
    };
 
    template<typename T>
-   using next_function = eosio::chain::next_function<T>;
+   using next_function = core_net::chain::next_function<T>;
 
    struct by_height;
 
@@ -212,12 +212,12 @@ public:
 };
 
 
-}// namespace eosio::chain
+}// namespace core_net::chain
 
-FC_REFLECT(eosio::chain::snapshot_scheduler::snapshot_information, (head_block_id) (head_block_num) (head_block_time) (version) (snapshot_name))
-FC_REFLECT(eosio::chain::snapshot_scheduler::snapshot_request_information, (block_spacing) (start_block_num) (end_block_num) (snapshot_description))
-FC_REFLECT(eosio::chain::snapshot_scheduler::snapshot_request_params, (block_spacing) (start_block_num) (end_block_num) (snapshot_description))
-FC_REFLECT(eosio::chain::snapshot_scheduler::snapshot_request_id_information, (snapshot_request_id))
-FC_REFLECT(eosio::chain::snapshot_scheduler::get_snapshot_requests_result, (snapshot_requests))
-FC_REFLECT_DERIVED(eosio::chain::snapshot_scheduler::snapshot_schedule_information, (eosio::chain::snapshot_scheduler::snapshot_request_id_information)(eosio::chain::snapshot_scheduler::snapshot_request_information), (pending_snapshots))
-FC_REFLECT_DERIVED(eosio::chain::snapshot_scheduler::snapshot_schedule_result, (eosio::chain::snapshot_scheduler::snapshot_request_id_information)(eosio::chain::snapshot_scheduler::snapshot_request_information), )
+FC_REFLECT(core_net::chain::snapshot_scheduler::snapshot_information, (head_block_id) (head_block_num) (head_block_time) (version) (snapshot_name))
+FC_REFLECT(core_net::chain::snapshot_scheduler::snapshot_request_information, (block_spacing) (start_block_num) (end_block_num) (snapshot_description))
+FC_REFLECT(core_net::chain::snapshot_scheduler::snapshot_request_params, (block_spacing) (start_block_num) (end_block_num) (snapshot_description))
+FC_REFLECT(core_net::chain::snapshot_scheduler::snapshot_request_id_information, (snapshot_request_id))
+FC_REFLECT(core_net::chain::snapshot_scheduler::get_snapshot_requests_result, (snapshot_requests))
+FC_REFLECT_DERIVED(core_net::chain::snapshot_scheduler::snapshot_schedule_information, (core_net::chain::snapshot_scheduler::snapshot_request_id_information)(core_net::chain::snapshot_scheduler::snapshot_request_information), (pending_snapshots))
+FC_REFLECT_DERIVED(core_net::chain::snapshot_scheduler::snapshot_schedule_result, (core_net::chain::snapshot_scheduler::snapshot_request_id_information)(core_net::chain::snapshot_scheduler::snapshot_request_information), )

@@ -2,10 +2,10 @@
 
 #include "do_http_post.hpp"
 #include <curl/curl.h>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <map>
 
-namespace eosio { namespace client { namespace http {
+namespace core_net { namespace client { namespace http {
 
    static size_t write_callback(void* data, size_t size, size_t nmemb, void* userp) {
       size_t       realsize = size * nmemb;
@@ -135,4 +135,4 @@ namespace eosio { namespace client { namespace http {
       curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
       return { http_code, response };
    }
-}}} // namespace eosio::client::http
+}}} // namespace core_net::client::http

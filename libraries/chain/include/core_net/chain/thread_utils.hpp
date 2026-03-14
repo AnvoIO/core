@@ -1,6 +1,6 @@
 #pragma once
 
-#include <eosio/chain/name.hpp>
+#include <core_net/chain/name.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/scoped_exit.hpp>
@@ -13,7 +13,7 @@
 #include <optional>
 #include <thread>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    // Avoid GCC warning:
    // libraries/chain/include/eosio/chain/thread_utils.hpp:28:15: warning: use of ‘std::hardware_destructive_interference_size’ [-Winterference-size]
@@ -341,11 +341,11 @@ namespace eosio { namespace chain {
       return boost::asio::post( std::forward<E>(ioc), boost::asio::use_future(std::forward<F>(f)) );
    }
 
-} } // eosio::chain
+} } // core_net::chain
 
 namespace fc {
 
-template<typename T> struct get_typename<eosio::chain::copyable_atomic<T>> {
+template<typename T> struct get_typename<core_net::chain::copyable_atomic<T>> {
    static const char* name()  {
       static std::string n = std::string("copyable_atomic<") + get_typename<T>::name() + ">";
       return n.c_str();
@@ -353,7 +353,7 @@ template<typename T> struct get_typename<eosio::chain::copyable_atomic<T>> {
 };
 
 template<typename T>
-void to_variant(const eosio::chain::copyable_atomic<T>& e, fc::variant& v) {
+void to_variant(const core_net::chain::copyable_atomic<T>& e, fc::variant& v) {
    T t = e.load();
    if constexpr (std::is_same_v<T, bool>) {
       v = t;
@@ -363,7 +363,7 @@ void to_variant(const eosio::chain::copyable_atomic<T>& e, fc::variant& v) {
 }
 
 template<typename T>
-void from_variant(const fc::variant& v, eosio::chain::copyable_atomic<T>& e) {
+void from_variant(const fc::variant& v, core_net::chain::copyable_atomic<T>& e) {
    T t;
    from_variant( v, t );
    e.store(t);

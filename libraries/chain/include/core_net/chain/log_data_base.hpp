@@ -1,7 +1,7 @@
 #pragma once
 #include <fc/io/cfile.hpp>
 
-namespace eosio {
+namespace core_net {
 namespace chain {
 
 template <typename T>
@@ -46,4 +46,4 @@ class log_data_base {
    }
 };
 } // namespace chain
-} // namespace eosio
+} // namespace core_net

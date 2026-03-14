@@ -1,5 +1,5 @@
-#include <eosio/chain/platform_timer.hpp>
-#include <eosio/chain/platform_timer_accuracy.hpp>
+#include <core_net/chain/platform_timer.hpp>
+#include <core_net/chain/platform_timer_accuracy.hpp>
 
 #include <fc/time.hpp>
 #include <fc/fwd_impl.hpp>
@@ -14,7 +14,7 @@
 #include <time.h>
 #include <sys/types.h>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 static_assert(std::atomic_bool::is_always_lock_free, "Only lock-free atomics AS-safe.");
 

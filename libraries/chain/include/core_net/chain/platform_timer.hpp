@@ -3,11 +3,11 @@
 #include <fc/fwd.hpp>
 #include <fc/scoped_exit.hpp>
 
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #include <atomic>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 struct platform_timer {
    platform_timer();

@@ -1,8 +1,8 @@
 #include "subcommand.hpp"
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/config.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/config.hpp>
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 enum class print_from_t { both, block_log, fork_db };
 

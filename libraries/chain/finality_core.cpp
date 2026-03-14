@@ -1,8 +1,8 @@
-#include <eosio/chain/finality_core.hpp>
-#include <eosio/chain/block_header.hpp>
-#include <eosio/chain/merkle.hpp>
+#include <core_net/chain/finality_core.hpp>
+#include <core_net/chain/block_header.hpp>
+#include <core_net/chain/merkle.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 /**
  *  @pre block_id is not null
@@ -381,4 +381,4 @@ finality_core finality_core::next(const block_ref& current_block, const qc_claim
    // (And so, the remaining invariants for next_core are also automatically satisfied.)
 }
 
-} /// eosio::chain
+} /// core_net::chain

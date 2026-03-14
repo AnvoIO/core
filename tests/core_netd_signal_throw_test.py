@@ -61,7 +61,7 @@ try:
     Print(f'producing nodes: {pnodes}, delay between nodes launch: {delay} second{"s" if delay != 1 else ""}')
 
     Print("Stand up cluster")
-    extraNodeosArgs="--plugin eosio::test_control_api_plugin"
+    extraNodeosArgs="--plugin core_net::test_control_api_plugin"
     specificExtraNodeosArgs= {"0": "--enable-stale-production"}
     if cluster.launch(pnodes=pnodes, totalNodes=total_nodes, totalProducers=pnodes, delay=delay,
                       activateIF=True, extraNodeosArgs=extraNodeosArgs, specificExtraNodeosArgs=specificExtraNodeosArgs) is False:

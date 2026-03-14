@@ -1,14 +1,14 @@
 #pragma once
 
-#include <eosio/chain/database_utils.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/database_utils.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <fc/variant_object.hpp>
 #include <fc/io/random_access_file.hpp>
 #include <boost/core/demangle.hpp>
 #include <ostream>
 #include <memory>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
    /**
     * History:
     * Version 1: initial version with string identified sections and rows

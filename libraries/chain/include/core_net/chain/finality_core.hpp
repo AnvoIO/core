@@ -1,9 +1,9 @@
 #pragma once
 
-#include <eosio/chain/block_timestamp.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/block_timestamp.hpp>
+#include <core_net/chain/types.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 using block_num_type  = uint32_t;
 using block_time_type = chain::block_timestamp_type;
@@ -211,37 +211,37 @@ struct finality_core
    }
 };
 
-} /// eosio::chain
+} /// core_net::chain
 
 // -----------------------------------------------------------------------------
 namespace std {
    // define std ostream output so we can use BOOST_CHECK_EQUAL in tests
-   inline std::ostream& operator<<(std::ostream& os, const eosio::chain::block_ref& br) {
+   inline std::ostream& operator<<(std::ostream& os, const core_net::chain::block_ref& br) {
       os << "block_ref(" << br.block_id << ", " << br.timestamp << ", " << br.finality_digest << ", "
          << br.active_policy_generation << ", " << br.pending_policy_generation << ")";
       return os;
    }
 
-   inline std::ostream& operator<<(std::ostream& os, const eosio::chain::qc_link& l) {
+   inline std::ostream& operator<<(std::ostream& os, const core_net::chain::qc_link& l) {
       os << "qc_link(" << l.source_block_num << ", " << l.target_block_num << ", " << l.is_link_strong << ")";
       return os;
    }
 
-   inline std::ostream& operator<<(std::ostream& os, const eosio::chain::qc_claim_t& c) {
+   inline std::ostream& operator<<(std::ostream& os, const core_net::chain::qc_claim_t& c) {
       os << "qc_claim_t(" << c.block_num << ", " << c.is_strong_qc << ")";
       return os;
    }
 
-   inline std::ostream& operator<<(std::ostream& os, const eosio::chain::core_metadata& cm) {
+   inline std::ostream& operator<<(std::ostream& os, const core_net::chain::core_metadata& cm) {
       os << "core_metadata(" << cm.last_final_block_num << ", " <<
          ", " << cm.latest_qc_claim_block_num << ")";
       return os;
    }
 }
 
-FC_REFLECT( eosio::chain::block_ref, (block_id)(timestamp)(finality_digest)(active_policy_generation)(pending_policy_generation) )
-FC_REFLECT( eosio::chain::block_ref_digest_data, (block_num)(timestamp)(finality_digest)(parent_timestamp) )
-FC_REFLECT( eosio::chain::qc_link, (source_block_num)(target_block_num)(is_link_strong) )
-FC_REFLECT( eosio::chain::qc_claim_t, (block_num)(is_strong_qc) )
-FC_REFLECT( eosio::chain::core_metadata, (last_final_block_num)(latest_qc_claim_block_num))
-FC_REFLECT( eosio::chain::finality_core, (links)(refs)(genesis_timestamp))
+FC_REFLECT( core_net::chain::block_ref, (block_id)(timestamp)(finality_digest)(active_policy_generation)(pending_policy_generation) )
+FC_REFLECT( core_net::chain::block_ref_digest_data, (block_num)(timestamp)(finality_digest)(parent_timestamp) )
+FC_REFLECT( core_net::chain::qc_link, (source_block_num)(target_block_num)(is_link_strong) )
+FC_REFLECT( core_net::chain::qc_claim_t, (block_num)(is_strong_qc) )
+FC_REFLECT( core_net::chain::core_metadata, (last_final_block_num)(latest_qc_claim_block_num))
+FC_REFLECT( core_net::chain::finality_core, (links)(refs)(genesis_timestamp))

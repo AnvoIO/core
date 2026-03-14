@@ -60,12 +60,12 @@ class Utils:
 
     testBinPath = Path(__file__).resolve().parents[2] / 'bin'
 
-    EosClientPath=str(testBinPath / "cleos")
+    EosClientPath=str(testBinPath / "core-cli")
     MiscEosClientArgs="--no-auto-keosd"
 
     SpringClientPath=str(testBinPath / "spring-util")
 
-    EosWalletName="keosd"
+    EosWalletName="core-wallet"
     EosWalletPath=str(testBinPath / EosWalletName)
 
     EosServerName="nodeos"

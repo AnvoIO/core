@@ -519,7 +519,7 @@ Test Helper Arguments:
   Test Helper configuration items used to configure and spin up the regression test framework and blockchain environment.
 
   -d D                  delay between nodes startup
-  --dump-error-details  Upon error print etc/eosio/node_*/config.ini and <test_name><pid>/node_*/stderr.log to stdout
+  --dump-error-details  Upon error print etc/core_net/node_*/config.ini and <test_name><pid>/node_*/stderr.log to stdout
   -v                    verbose logging
   --leave-running       Leave cluster running after test finishes
   --unshared            Run test in isolated network namespace
@@ -680,7 +680,7 @@ Test Helper Arguments:
   Test Helper configuration items used to configure and spin up the regression test framework and blockchain environment.
 
   -d D                  delay between nodes startup (default: 1)
-  --dump-error-details  Upon error print etc/eosio/node_*/config.ini and <test_name><pid>/node_*/stderr.log to stdout (default: False)
+  --dump-error-details  Upon error print etc/core_net/node_*/config.ini and <test_name><pid>/node_*/stderr.log to stdout (default: False)
   -v                    verbose logging (default: False)
   --leave-running       Leave cluster running after test finishes (default: False)
   --unshared            Run test in isolated network namespace (default: False)

@@ -1,10 +1,10 @@
 #pragma once
 #include <fc/filesystem.hpp>
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/genesis_state.hpp>
-#include <eosio/chain/block_log_config.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/genesis_state.hpp>
+#include <core_net/chain/block_log_config.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    namespace detail { struct block_log_impl; }
 

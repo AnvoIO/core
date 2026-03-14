@@ -1,12 +1,12 @@
 #include <boost/test/unit_test.hpp>
 #include <list>
 
-#include <eosio/trace_api/compressed_file.hpp>
-#include <eosio/trace_api/test_common.hpp>
+#include <core_net/trace_api/compressed_file.hpp>
+#include <core_net/trace_api/test_common.hpp>
 #include <fc/io/cfile.hpp>
 
-using namespace eosio;
-using namespace eosio::trace_api;
+using namespace core_net;
+using namespace core_net::trace_api;
 
 
 struct temp_file_fixture {

@@ -1,11 +1,11 @@
 #pragma once
-#include <eosio/chain/application.hpp>
-#include <eosio/http_client_plugin/http_client_plugin.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/http_client_plugin/http_client_plugin.hpp>
+#include <core_net/chain/types.hpp>
 #include <fc/crypto/bls_private_key.hpp>
 #include <fc/crypto/bls_public_key.hpp>
 
-namespace eosio {
+namespace core_net {
 
 using namespace appbase;
 

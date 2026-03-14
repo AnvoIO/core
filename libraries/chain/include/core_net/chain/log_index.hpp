@@ -2,7 +2,7 @@
 
 #include <fc/io/cfile.hpp>
 
-namespace eosio {
+namespace core_net {
 namespace chain {
 /// copy up to n bytes from the current position of src to dest
 void copy_file_content(fc::cfile& src, fc::cfile& dest, uint64_t n = UINT64_MAX);
@@ -47,4 +47,4 @@ class log_index {
 };
 
 } // namespace chain
-} // namespace eosio
+} // namespace core_net

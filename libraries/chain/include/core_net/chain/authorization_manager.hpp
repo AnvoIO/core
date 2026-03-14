@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/chain/snapshot.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/chain/snapshot.hpp>
 
 #include <utility>
 #include <functional>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    class controller;
    struct updateauth;
@@ -134,4 +134,4 @@ namespace eosio { namespace chain {
                                                                 )const;
    };
 
-} } /// namespace eosio::chain
+} } /// namespace core_net::chain

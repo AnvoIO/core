@@ -6,7 +6,7 @@
 #ifndef CONFIG_HPP_IN
 #define CONFIG_HPP_IN
 
-namespace eosio { namespace nodeos { namespace config {
+namespace core_net { namespace core_netd { namespace config {
   const string node_executable_name = "${NODE_EXECUTABLE_NAME}";
 }}}
 

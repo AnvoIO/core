@@ -1,5 +1,5 @@
-#include <eosio/chain/fork_database.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/fork_database.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/hashed_index.hpp>
@@ -11,7 +11,7 @@
 #include <fstream>
 #include <mutex>
 
-namespace eosio::chain {
+namespace core_net::chain {
    using boost::multi_index_container;
    using namespace boost::multi_index;
 
@@ -417,7 +417,7 @@ namespace eosio::chain {
    }
 
    template <class BSP>
-   eosio::chain::fork_database_t<BSP>::branch_t
+   core_net::chain::fork_database_t<BSP>::branch_t
    fork_database_t<BSP>::fetch_branch(const block_id_type& h, uint32_t trim_after_block_num) const {
       std::lock_guard g(my->mtx);
       return my->fetch_branch_impl(h, trim_after_block_num);
@@ -879,4 +879,4 @@ namespace eosio::chain {
    template struct fork_database_impl<block_state_legacy_ptr>;
    template struct fork_database_impl<block_state_ptr>;
 
-} /// eosio::chain
+} /// core_net::chain

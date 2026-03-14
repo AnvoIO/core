@@ -1,6 +1,6 @@
-#include <eosio/chain/qc.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/block_header.hpp>
+#include <core_net/chain/qc.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/block_header.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/bls_private_key.hpp>
@@ -12,7 +12,7 @@
 //            Allow boost to print `aggregating_qc_sig_t::state_t`
 // -----------------------------------------------------------------------------
 namespace std {
-   using state_t = eosio::chain::aggregating_qc_sig_t::state_t;
+   using state_t = core_net::chain::aggregating_qc_sig_t::state_t;
    std::ostream& operator<<(std::ostream& os, state_t s)
    {
       switch(s) {
@@ -29,7 +29,7 @@ namespace std {
 BOOST_AUTO_TEST_SUITE(finality_misc_tests)
 
 BOOST_AUTO_TEST_CASE(qc_state_transitions) try {
-   using namespace eosio::chain;
+   using namespace core_net::chain;
    using namespace fc::crypto::blslib;
    using state_t = aggregating_qc_sig_t::state_t;
 

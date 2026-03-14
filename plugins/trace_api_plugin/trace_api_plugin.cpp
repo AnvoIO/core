@@ -1,18 +1,18 @@
-#include <eosio/trace_api/trace_api_plugin.hpp>
+#include <core_net/trace_api/trace_api_plugin.hpp>
 
-#include <eosio/trace_api/abi_data_handler.hpp>
-#include <eosio/trace_api/request_handler.hpp>
-#include <eosio/trace_api/chain_extraction.hpp>
-#include <eosio/trace_api/store_provider.hpp>
+#include <core_net/trace_api/abi_data_handler.hpp>
+#include <core_net/trace_api/request_handler.hpp>
+#include <core_net/trace_api/chain_extraction.hpp>
+#include <core_net/trace_api/store_provider.hpp>
 
-#include <eosio/trace_api/configuration_utils.hpp>
+#include <core_net/trace_api/configuration_utils.hpp>
 
-#include <eosio/resource_monitor_plugin/resource_monitor_plugin.hpp>
+#include <core_net/resource_monitor_plugin/resource_monitor_plugin.hpp>
 
 #include <boost/signals2/connection.hpp>
 
-using namespace eosio::trace_api;
-using namespace eosio::trace_api::configuration_utils;
+using namespace core_net::trace_api;
+using namespace core_net::trace_api::configuration_utils;
 using boost::signals2::scoped_connection;
 
 namespace {
@@ -95,7 +95,7 @@ namespace {
    };
 }
 
-namespace eosio {
+namespace core_net {
 
 /**
  * A common source for information shared between the extraction process and the RPC process

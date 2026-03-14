@@ -6,7 +6,7 @@ SET(CMAKE_INSTALL_RPATH "${HOME}/lib;${HOME}/lib64")
 set(CMAKE_CXX_COMPILER @CMAKE_CXX_COMPILER@)
 set(CMAKE_C_COMPILER   @CMAKE_C_COMPILER@)
 
-set(EOSIO_VERSION "@VERSION_FULL@")
+set(CORE_NET_VERSION "@VERSION_FULL@")
 
 enable_testing()
 
@@ -44,8 +44,8 @@ set( BOOST_EXCLUDE_LIBRARIES "mysql" )
 
 add_subdirectory( @CMAKE_INSTALL_FULL_DATAROOTDIR@/spring_boost ${PROJECT_BINARY_DIR}/libraries/boost EXCLUDE_FROM_ALL)
 
-find_library(libtester eosio_testing @CMAKE_INSTALL_FULL_LIBDIR@ NO_DEFAULT_PATH)
-find_library(libchain eosio_chain @CMAKE_INSTALL_FULL_LIBDIR@ NO_DEFAULT_PATH)
+find_library(libtester core_net_testing @CMAKE_INSTALL_FULL_LIBDIR@ NO_DEFAULT_PATH)
+find_library(libchain core_net_chain @CMAKE_INSTALL_FULL_LIBDIR@ NO_DEFAULT_PATH)
 find_library(libfc fc @CMAKE_INSTALL_FULL_LIBDIR@ NO_DEFAULT_PATH)
 find_library(libsecp256k1 secp256k1 @CMAKE_INSTALL_FULL_LIBDIR@ NO_DEFAULT_PATH)
 find_library(libbn256 bn256 @CMAKE_INSTALL_FULL_LIBDIR@ NO_DEFAULT_PATH)
@@ -66,8 +66,8 @@ if(UNIX AND NOT APPLE)
   find_library(LIBRT rt)
 endif()
 
-set(EOSIO_WASM_RUNTIMES @EOSIO_WASM_RUNTIMES@)
-if("eos-vm-oc" IN_LIST EOSIO_WASM_RUNTIMES)
+set(CORE_NET_WASM_RUNTIMES @CORE_NET_WASM_RUNTIMES@)
+if("eos-vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
    set(WRAP_MAIN "-Wl,-wrap=main")
 endif()
 

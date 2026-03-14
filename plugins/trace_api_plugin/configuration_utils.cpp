@@ -1,11 +1,11 @@
-#include <eosio/trace_api/configuration_utils.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/trace_api/configuration_utils.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <regex>
 #include <fc/io/json.hpp>
 
 
-namespace eosio::trace_api::configuration_utils {
-   using namespace eosio;
+namespace core_net::trace_api::configuration_utils {
+   using namespace core_net;
 
    chain::abi_def abi_def_from_file(const std::string& file_name, const std::filesystem::path& data_dir )
    {

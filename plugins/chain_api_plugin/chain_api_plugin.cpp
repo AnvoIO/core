@@ -1,14 +1,14 @@
-#include <eosio/chain_api_plugin/chain_api_plugin.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/http_plugin/macros.hpp>
+#include <core_net/chain_api_plugin/chain_api_plugin.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/http_plugin/macros.hpp>
 #include <fc/time.hpp>
 #include <fc/io/json.hpp>
 
-namespace eosio {
+namespace core_net {
 
    static auto _chain_api_plugin = application::register_plugin<chain_api_plugin>();
 
-using namespace eosio;
+using namespace core_net;
 
 class chain_api_plugin_impl {
 public:

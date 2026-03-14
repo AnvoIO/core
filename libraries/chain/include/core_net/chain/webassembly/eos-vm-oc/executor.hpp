@@ -1,6 +1,6 @@
 #pragma once
 
-#include <eosio/chain/webassembly/eos-vm-oc/stack.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/stack.hpp>
 
 #include <stdint.h>
 #include <stddef.h>
@@ -11,7 +11,7 @@
 #include <vector>
 #include <cstddef>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 class apply_context;
 

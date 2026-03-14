@@ -8,9 +8,9 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/http_plugin/http_plugin.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/http_plugin/http_plugin.hpp>
 #include <fc/io/json.hpp>
 #include <fc/variant.hpp>
 #include <iostream>
@@ -19,9 +19,9 @@
 #include "httpc.hpp"
 #include "do_http_post.hpp"
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
-namespace eosio { namespace client { namespace http {
+namespace core_net { namespace client { namespace http {
 
 fc::variant do_http_call(const config_t& config, const std::string& base_uri, const std::string& path,
                             const fc::variant& postdata) {
@@ -72,7 +72,7 @@ fc::variant do_http_call(const config_t& config, const std::string& base_uri, co
             throw chain::missing_net_api_plugin_exception(FC_LOG_MESSAGE(error, "Net API plugin is not enabled on endpoint: ${e}", ("e", base_uri)));
          }
       } else {
-         auto &&error_info = response_result.as<eosio::error_results>().error;
+         auto &&error_info = response_result.as<core_net::error_results>().error;
          // Construct fc exception from error
          const auto &error_details = error_info.details;
 

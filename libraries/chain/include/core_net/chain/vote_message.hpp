@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 #include <fc/crypto/bls_public_key.hpp>
 #include <fc/crypto/bls_signature.hpp>
 
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    inline fc::logger vote_logger{"vote"};
 
@@ -24,6 +24,6 @@ namespace eosio::chain {
 
    using vote_message_ptr = std::shared_ptr<vote_message>;
 
-} // namespace eosio::chain
+} // namespace core_net::chain
 
-FC_REFLECT(eosio::chain::vote_message, (block_id)(strong)(finalizer_key)(sig));
+FC_REFLECT(core_net::chain::vote_message, (block_id)(strong)(finalizer_key)(sig));

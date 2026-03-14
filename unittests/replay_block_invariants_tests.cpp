@@ -1,4 +1,4 @@
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 #include <boost/test/unit_test.hpp>
 
 // Test scenarios
@@ -12,12 +12,12 @@
 
 BOOST_AUTO_TEST_SUITE(replay_block_invariants_tests)
 
-using namespace eosio::testing;
-using namespace eosio::chain;
+using namespace core_net::testing;
+using namespace core_net::chain;
 using namespace fc::crypto;
 
 struct test_fixture {
-   eosio::testing::tester chain;
+   core_net::testing::tester chain;
 
    // Creates blocks log
    test_fixture() {
@@ -156,7 +156,7 @@ BOOST_FIXTURE_TEST_CASE(invalid_qc, test_fixture) try {
    remove_existing_states(config.state_dir);
 
    try {
-      eosio::testing::tester replay_chain(config, *genesis); // start replay
+      core_net::testing::tester replay_chain(config, *genesis); // start replay
       // An exception should have thrown
       BOOST_FAIL("replay should have failed with invalid_qc_claim exception");
    } catch (invalid_qc_claim& e) {
@@ -188,7 +188,7 @@ BOOST_FIXTURE_TEST_CASE(irrelevant_qc, test_fixture) try {
    remove_existing_states(config.state_dir);
 
    try {
-      eosio::testing::tester replay_chain(config, *genesis); // start replay
+      core_net::testing::tester replay_chain(config, *genesis); // start replay
       // An exception should have thrown
       BOOST_FAIL("replay should have failed with block_validate_exception exception");
    } catch (invalid_qc_claim& e) {
@@ -213,7 +213,7 @@ BOOST_FIXTURE_TEST_CASE(bad_qc_no_force_all_checks, test_fixture) try {
    BOOST_REQUIRE(genesis);
 
    try {
-      eosio::testing::tester replay_chain(config, *genesis); // start replay
+      core_net::testing::tester replay_chain(config, *genesis); // start replay
    } catch (...) {
       BOOST_FAIL("replay should not fail without --force-all-checks");
    }
@@ -236,7 +236,7 @@ BOOST_FIXTURE_TEST_CASE(bad_qc_force_all_checks, test_fixture) try {
    config.force_all_checks = true;
 
    try {
-      eosio::testing::tester replay_chain(config, *genesis); // start replay
+      core_net::testing::tester replay_chain(config, *genesis); // start replay
       // An exception should have thrown
       BOOST_FAIL("replay should have failed with --force-all-checks");
    } catch (block_validate_exception& e) {

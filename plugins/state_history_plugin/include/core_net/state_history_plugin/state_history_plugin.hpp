@@ -1,11 +1,11 @@
 #pragma once
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/state_history/types.hpp>
-#include <eosio/state_history/log.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/state_history/types.hpp>
+#include <core_net/state_history/log.hpp>
 
-namespace eosio {
+namespace core_net {
 
 class state_history_plugin : public plugin<state_history_plugin> {
  public:
@@ -26,4 +26,4 @@ class state_history_plugin : public plugin<state_history_plugin> {
    unique_ptr<struct state_history_plugin_impl> my;
 };
 
-} // namespace eosio
+} // namespace core_net

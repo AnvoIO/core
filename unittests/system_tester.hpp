@@ -1,30 +1,30 @@
 #pragma once
 
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/variant_object.hpp>
 
 #include <contracts.hpp>
 #include <test_contracts.hpp>
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace fc;
 
 using mvo = fc::mutable_variant_object;
 
-namespace eosio_system {
+namespace core_net_system {
 
 template<typename T>
-class eosio_system_tester : public T {
+class core_net_system_tester : public T {
 public:
 
-   eosio_system_tester()
-   : eosio_system_tester([](validating_tester& ) {}){}
+   core_net_system_tester()
+   : core_net_system_tester([](validating_tester& ) {}){}
 
    template<typename Lambda>
-   eosio_system_tester(Lambda setup) {
+   core_net_system_tester(Lambda setup) {
       setup(*this);
 
       T::produce_block();
@@ -34,8 +34,8 @@ public:
 
       T::produce_block();
 
-      T::set_code( "eosio.token"_n, test_contracts::eosio_token_wasm() );
-      T::set_abi( "eosio.token"_n, test_contracts::eosio_token_abi() );
+      T::set_code( "eosio.token"_n, test_contracts::core_net_token_wasm() );
+      T::set_abi( "eosio.token"_n, test_contracts::core_net_token_abi() );
 
       {
          const auto& accnt = T::control->db().template get<account_object,by_name>( "eosio.token"_n );
@@ -48,8 +48,8 @@ public:
       issue(config::system_account_name,      core_from_string("1000000000.0000"));
       BOOST_REQUIRE_EQUAL( core_from_string("1000000000.0000"), get_balance( name("eosio") ) );
 
-      T::set_code( config::system_account_name, test_contracts::eosio_system_wasm() );
-      T::set_abi( config::system_account_name, test_contracts::eosio_system_abi() );
+      T::set_code( config::system_account_name, test_contracts::core_net_system_wasm() );
+      T::set_abi( config::system_account_name, test_contracts::core_net_system_abi() );
 
       base_tester::push_action(config::system_account_name, "init"_n,
                             config::system_account_name,  mutable_variant_object()
@@ -458,7 +458,7 @@ public:
    }
 
    fc::variant get_stats( const string& symbolname ) {
-      auto symb = eosio::chain::symbol::from_string(symbolname);
+      auto symb = core_net::chain::symbol::from_string(symbolname);
       auto symbol_code = symb.to_symbol_code().value;
       vector<char> data = T::get_row_by_account( "eosio.token"_n, name(symbol_code), "stat"_n, name(symbol_code) );
       return data.empty() ? fc::variant() : token_abi_ser.binary_to_variant( "currency_stats", data, abi_serializer::create_yield_function( T::abi_serializer_max_time ) );
@@ -506,8 +506,8 @@ public:
                                                ("is_priv", 1)
          );
 
-         T::set_code( "eosio.msig"_n, test_contracts::eosio_msig_wasm() );
-         T::set_abi( "eosio.msig"_n, test_contracts::eosio_msig_abi() );
+         T::set_code( "eosio.msig"_n, test_contracts::core_net_msig_wasm() );
+         T::set_abi( "eosio.msig"_n, test_contracts::core_net_msig_abi() );
 
          T::produce_block();
          const auto& accnt = T::control->db().template get<account_object,by_name>( "eosio.msig"_n );
@@ -647,7 +647,7 @@ inline uint64_t M( const string& eos_str ) {
    return core_from_string( eos_str ).get_amount();
 }
 
-using eosio_system_testers = boost::mpl::list<eosio_system_tester<legacy_validating_tester>,
-                                              eosio_system_tester<savanna_validating_tester>>;
+using core_net_system_testers = boost::mpl::list<core_net_system_tester<legacy_validating_tester>,
+                                              core_net_system_tester<savanna_validating_tester>>;
 
 }

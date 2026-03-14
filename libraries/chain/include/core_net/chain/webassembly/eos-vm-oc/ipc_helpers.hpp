@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/chain/webassembly/eos-vm-oc/ipc_protocol.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/memfd_helpers.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/ipc_protocol.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/memfd_helpers.hpp>
 
 #include <boost/asio/local/datagram_protocol.hpp>
 
 #include <vector>
 
-namespace eosio { namespace chain { namespace eosvmoc {
+namespace core_net { namespace chain { namespace eosvmoc {
 
 class wrapped_fd {
    public:

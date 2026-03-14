@@ -92,7 +92,7 @@ class TestHelper(object):
             thGrp.add_argument("--defproducerb_prvt_key", type=str, help=argparse.SUPPRESS if suppressHelp else "defproducerb private key.")
         if "--dump-error-details" in includeArgs:
             thGrp.add_argument("--dump-error-details",
-                                     help=argparse.SUPPRESS if suppressHelp else "Upon error print etc/eosio/node_*/config.ini and <test_name><pid>/node_*/stderr.log to stdout",
+                                     help=argparse.SUPPRESS if suppressHelp else "Upon error print etc/core_net/node_*/config.ini and <test_name><pid>/node_*/stderr.log to stdout",
                                      action='store_true')
         if "--dont-launch" in includeArgs:
             thGrp.add_argument("--dont-launch", help=argparse.SUPPRESS if suppressHelp else "Don't launch own node. Assume node is already running.",

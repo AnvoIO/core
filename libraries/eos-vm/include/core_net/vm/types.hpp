@@ -4,10 +4,10 @@
  * definitions from https://github.com/WebAssembly/design/blob/master/BinaryEncoding.md
  */
 
-#include <eosio/vm/allocator.hpp>
-#include <eosio/vm/guarded_ptr.hpp>
-#include <eosio/vm/opcodes.hpp>
-#include <eosio/vm/vector.hpp>
+#include <core_net/vm/allocator.hpp>
+#include <core_net/vm/guarded_ptr.hpp>
+#include <core_net/vm/opcodes.hpp>
+#include <core_net/vm/vector.hpp>
 
 #include <algorithm>
 #include <cstdint>
@@ -16,7 +16,7 @@
 #include <string_view>
 #include <vector>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    enum types { i32 = 0x7f, i64 = 0x7e, f32 = 0x7d, f64 = 0x7c, anyfunc = 0x70, func = 0x60, pseudo = 0x40, ret_void };
 
    enum external_kind { Function = 0, Table = 1, Memory = 2, Global = 3 };
@@ -339,7 +339,7 @@ namespace eosio { namespace vm {
          uint32_t number_of_imports = 0;
          const auto sz = imports.size();
          // we don't want to use `imports[i]` or `imports.at(i)` since these do an unnecessary check
-         // `EOS_VM_ASSERT(i < _size)`. The check is unnecessary since we iterate from `0` to `_size`.
+         // `CORE_NET_VM_ASSERT(i < _size)`. The check is unnecessary since we iterate from `0` to `_size`.
          // So get the pointer to the first element and dereference it directly.
          // ------------------------------------------------------------------------------------------------
          const auto data = imports.data();
@@ -352,7 +352,7 @@ namespace eosio { namespace vm {
       inline uint32_t get_functions_size() const { return functions.size(); }
       inline uint32_t get_functions_total() const { return get_imported_functions_size() + get_functions_size(); }
       inline opcode* get_function_pc( uint32_t fidx ) const {
-         EOS_VM_ASSERT( fidx >= get_imported_functions_size(), wasm_interpreter_exception, "trying to get the PC of an imported function" );
+         CORE_NET_VM_ASSERT( fidx >= get_imported_functions_size(), wasm_interpreter_exception, "trying to get the PC of an imported function" );
          return code[fidx-get_imported_functions_size()].code;
       }
 
@@ -361,7 +361,7 @@ namespace eosio { namespace vm {
       }
 
       inline uint32_t get_function_locals_size(uint32_t index) const {
-         EOS_VM_ASSERT(index >= get_imported_functions_size(), wasm_interpreter_exception, "imported functions do not have locals");
+         CORE_NET_VM_ASSERT(index >= get_imported_functions_size(), wasm_interpreter_exception, "imported functions do not have locals");
          return code[index - get_imported_functions_size()].locals.size();
       }
 
@@ -413,4 +413,4 @@ namespace eosio { namespace vm {
          }
       }
    };
-}} // namespace eosio::vm
+}} // namespace core_net::vm

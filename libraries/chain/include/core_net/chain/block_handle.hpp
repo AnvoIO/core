@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/block_state.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/block_state.hpp>
 #include <fc/reflect/reflect.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 // Created via controller::accept_block(const block_id_type& id, const signed_block_ptr& b)
 // Valid to request id and signed_block_ptr it was created from.
@@ -40,6 +40,6 @@ public:
    bool read(const std::filesystem::path& state_file);
 };
 
-} // namespace eosio::chain
+} // namespace core_net::chain
 
-FC_REFLECT(eosio::chain::block_handle, (_bsp))
+FC_REFLECT(core_net::chain::block_handle, (_bsp))

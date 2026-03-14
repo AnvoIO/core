@@ -1,8 +1,8 @@
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/variant_object.hpp>
 
@@ -13,8 +13,8 @@
 
 #include "fork_test_utilities.hpp"
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace std::literals;
 
 BOOST_AUTO_TEST_SUITE(protocol_feature_tests)
@@ -26,13 +26,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(activate_preactivate_feature, T, testers) try {
    c.produce_block();
 
    // Cannot set latest bios contract since it requires intrinsics that have not yet been whitelisted.
-   BOOST_CHECK_EXCEPTION( c.set_code( config::system_account_name, contracts::eosio_bios_wasm() ),
+   BOOST_CHECK_EXCEPTION( c.set_code( config::system_account_name, contracts::core_net_bios_wasm() ),
                           wasm_exception, fc_exception_message_contains("unresolveable")
    );
 
    // But the old bios contract can still be set.
-   c.set_code( config::system_account_name, contracts::before_preactivate_eosio_bios_wasm() );
-   c.set_abi( config::system_account_name, contracts::before_preactivate_eosio_bios_abi() );
+   c.set_code( config::system_account_name, contracts::before_preactivate_core_net_bios_wasm() );
+   c.set_abi( config::system_account_name, contracts::before_preactivate_core_net_bios_abi() );
 
    auto t = c.control->pending_block_time();
    c.control->abort_block();
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(activate_preactivate_feature, T, testers) try {
 
    BOOST_CHECK_EXCEPTION( c.push_action( config::system_account_name, "reqactivated"_n, config::system_account_name,
                                           mutable_variant_object()("feature_digest",  digest_type()) ),
-                           eosio_assert_message_exception,
+                           core_net_assert_message_exception,
                            eosio_assert_message_is( "protocol feature is not activated" )
    );
 
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(replace_deferred_test, T, testers) try {
    transaction_trace_ptr trace;
    auto h = c.control->applied_transaction().connect( [&](std::tuple<const transaction_trace_ptr&, const packed_transaction_ptr&> x) {
       auto& t = std::get<0>(x);
-      if( t && !eosio::chain::is_onblock(*t)) {
+      if( t && !core_net::chain::is_onblock(*t)) {
          trace = t;
       }
    } );
@@ -611,7 +611,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(no_duplicate_deferred_id_test, T, testers) try {
 
    trace1 = nullptr;
 
-   // Retire the delayed eosio::reqauth transaction.
+   // Retire the delayed core_net::reqauth transaction.
    c.produce_blocks(4, true);
    c.produce_block();
    BOOST_REQUIRE( trace1 );
@@ -720,7 +720,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(fix_linkauth_restriction, T, testers) { try {
                ("type", type)
                ("requirement", "first")),
          action_validate_exception,
-         fc_exception_message_is(std::string("Cannot link eosio::") + std::string(type) + std::string(" to a minimum permission"))
+         fc_exception_message_is(std::string("Cannot link core_net::") + std::string(type) + std::string(" to a minimum permission"))
       );
    };
 
@@ -967,8 +967,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward_setcode_test, T, testers) { try {
    c.create_accounts( {tester1_account, tester2_account} );
 
    // Deploy contract that rejects all actions dispatched to it with the following exceptions:
-   //   * eosio::setcode to set code on the eosio is allowed (unless the rejectall account exists)
-   //   * eosio::newaccount is allowed only if it creates the rejectall account.
+   //   * core_net::setcode to set code on the eosio is allowed (unless the rejectall account exists)
+   //   * core_net::newaccount is allowed only if it creates the rejectall account.
    c.set_code( config::system_account_name, test_contracts::reject_all_wasm() );
    c.produce_block();
 
@@ -988,7 +988,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward_setcode_test, T, testers) { try {
    // After activation, deploying a contract causes setcode to be dispatched to the WASM on eosio,
    // and in this case the contract is configured to reject the setcode action.
    BOOST_REQUIRE_EXCEPTION( c.set_code( tester2_account, test_contracts::noop_wasm() ),
-                            eosio_assert_message_exception,
+                            core_net_assert_message_exception,
                             eosio_assert_message_is( "rejecting all actions" ) );
 
 
@@ -1003,7 +1003,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward_setcode_test, T, testers) { try {
    // It will now not be possible to deploy the reject_all contract to the eosio account,
    // because after it is set by the native function, it is called immediately after which will reject the transaction.
    BOOST_REQUIRE_EXCEPTION( c.set_code( config::system_account_name, test_contracts::reject_all_wasm() ),
-                            eosio_assert_message_exception,
+                            core_net_assert_message_exception,
                             eosio_assert_message_is( "rejecting all actions" ) );
 
 
@@ -1047,7 +1047,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(get_sender_test, T, testers) { try {
    BOOST_CHECK_EXCEPTION(  c.push_action( tester1_account, "sendinline"_n, tester1_account, mutable_variant_object()
                                              ("to", tester2_account.to_string())
                                              ("expected_sender", account_name{}) ),
-                           eosio_assert_message_exception,
+                           core_net_assert_message_exception,
                            eosio_assert_message_is( "sender did not match" ) );
 
    c.push_action( tester1_account, "sendinline"_n, tester1_account, mutable_variant_object()
@@ -1352,7 +1352,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_producer, T, testers) { try {
 
    BOOST_CHECK_THROW(
       c.push_action(config::system_account_name, "setprods"_n, config::system_account_name, fc::mutable_variant_object()("schedule", waprodsched)),
-      eosio::chain::unactivated_key_type
+      core_net::chain::unactivated_key_type
    );
 
    c.preactivate_protocol_features( {*d} );
@@ -1382,7 +1382,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_create_account, T, testers) { try {
 
    c.set_transaction_headers(trx);
    trx.sign(get_private_key(config::system_account_name, "active"), c.get_chain_id());
-   BOOST_CHECK_THROW(c.push_transaction(trx), eosio::chain::unactivated_key_type);
+   BOOST_CHECK_THROW(c.push_transaction(trx), core_net::chain::unactivated_key_type);
 
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
@@ -1401,7 +1401,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_update_account_auth, T, testers) { try {
 
    BOOST_CHECK_THROW(c.set_authority("billy"_n, config::active_name,
                         authority(public_key_type("PUB_WA_WdCPfafVNxVMiW5ybdNs83oWjenQXvSt1F49fg9mv7qrCiRwHj5b38U3ponCFWxQTkDsMC"s))),
-                     eosio::chain::unactivated_key_type);
+                     core_net::chain::unactivated_key_type);
 
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
@@ -1460,7 +1460,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_recover_key, T, testers) { try {
 
    c.set_transaction_headers(trx);
    trx.sign(c.get_private_key( "bob"_n, "active" ), c.get_chain_id());
-   BOOST_CHECK_THROW(c.push_transaction(trx), eosio::chain::unactivated_signature_type);
+   BOOST_CHECK_THROW(c.push_transaction(trx), core_net::chain::unactivated_signature_type);
 
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
@@ -1508,7 +1508,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_assert_recover_key, T, testers) { try {
 
    c.set_transaction_headers(trx);
    trx.sign(c.get_private_key( "bob"_n, "active" ), c.get_chain_id());
-   BOOST_CHECK_THROW(c.push_transaction(trx), eosio::chain::unactivated_signature_type);
+   BOOST_CHECK_THROW(c.push_transaction(trx), core_net::chain::unactivated_signature_type);
 
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
@@ -2007,7 +2007,7 @@ BOOST_AUTO_TEST_CASE( disable_deferred_trxs_stage_1_no_op_test ) { try {
    BOOST_REQUIRE_EXCEPTION(
       c.push_action( "test"_n, "cancelcall"_n, "alice"_n, fc::mutable_variant_object()
          ("sender_id", 1)),
-      eosio_assert_message_exception,
+      core_net_assert_message_exception,
       eosio_assert_message_is( "cancel_deferred failed" ) );
    gen_size = c.control->db().template get_index<generated_transaction_multi_index,by_trx_id>().size();
    BOOST_REQUIRE_EQUAL(2u, gen_size);

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eosio/chain/application.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/http_plugin/api_category.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/http_plugin/api_category.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/io/json.hpp>
-namespace eosio {
+namespace core_net {
    using namespace appbase;
 
    /**
@@ -279,7 +279,7 @@ namespace eosio {
    }
 }
 
-FC_REFLECT(eosio::error_results::error_info::error_detail, (message)(file)(line_number)(method))
-FC_REFLECT(eosio::error_results::error_info, (code)(name)(what)(details))
-FC_REFLECT(eosio::error_results, (code)(message)(error))
-FC_REFLECT(eosio::http_plugin::get_supported_apis_result, (apis))
+FC_REFLECT(core_net::error_results::error_info::error_detail, (message)(file)(line_number)(method))
+FC_REFLECT(core_net::error_results::error_info, (code)(name)(what)(details))
+FC_REFLECT(core_net::error_results, (code)(message)(error))
+FC_REFLECT(core_net::http_plugin::get_supported_apis_result, (apis))

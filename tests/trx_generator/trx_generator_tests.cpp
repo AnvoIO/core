@@ -6,8 +6,8 @@
 #define BOOST_TEST_MODULE trx_generator_tests
 #include <boost/test/included/unit_test.hpp>
 
-using namespace eosio;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::testing;
 using namespace std::literals::string_literals;
 
 static const char* api_name = "/v1/chain/test";
@@ -37,7 +37,7 @@ struct echo_server_impl : rest::simple_server<echo_server_impl> {
       return res;
    }
 
-   eosio::chain::named_thread_pool<struct trxgen> _trx_gen_server_thread_pool;
+   core_net::chain::named_thread_pool<struct trxgen> _trx_gen_server_thread_pool;
    boost::asio::io_context::strand                _trx_gen_server_strand;
 
    echo_server_impl()

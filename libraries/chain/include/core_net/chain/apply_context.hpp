@@ -1,10 +1,10 @@
 #pragma once
 #include <boost/unordered/unordered_flat_map.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
+#include <core_net/chain/deep_mind.hpp>
 #include <fc/utility.hpp>
 #include <sstream>
 #include <algorithm>
@@ -12,7 +12,7 @@
 
 namespace chainbase { class database; }
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 class controller;
 class account_metadata_object;
@@ -643,6 +643,6 @@ class apply_context {
 
 using apply_handler = std::function<void(apply_context&)>;
 
-} } // namespace eosio::chain
+} } // namespace core_net::chain
 
-//FC_REFLECT(eosio::chain::apply_context::apply_results, (applied_actions)(deferred_transaction_requests)(deferred_transactions_count))
+//FC_REFLECT(core_net::chain::apply_context::apply_results, (applied_actions)(deferred_transaction_requests)(deferred_transactions_count))

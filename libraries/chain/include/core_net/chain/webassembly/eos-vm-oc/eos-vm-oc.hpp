@@ -1,7 +1,7 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/eos-vm-oc.h>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/eos-vm-oc.h>
 
 #include <exception>
 
@@ -12,7 +12,7 @@
 #include <vector>
 #include <list>
 
-namespace eosio::chain::eosvmoc {
+namespace core_net::chain::eosvmoc {
 
 struct no_offset{};
 struct code_offset {
@@ -48,9 +48,9 @@ static constexpr uint8_t current_codegen_version = 2;
 
 }
 
-FC_REFLECT(eosio::chain::eosvmoc::no_offset, );
-FC_REFLECT(eosio::chain::eosvmoc::code_offset, (offset));
-FC_REFLECT(eosio::chain::eosvmoc::intrinsic_ordinal, (ordinal));
-FC_REFLECT(eosio::chain::eosvmoc::code_descriptor, (code_hash)(vm_version)(codegen_version)(code_begin)(start)(apply_offset)(starting_memory_pages)(initdata_begin)(initdata_size)(initdata_prologue_size));
+FC_REFLECT(core_net::chain::eosvmoc::no_offset, );
+FC_REFLECT(core_net::chain::eosvmoc::code_offset, (offset));
+FC_REFLECT(core_net::chain::eosvmoc::intrinsic_ordinal, (ordinal));
+FC_REFLECT(core_net::chain::eosvmoc::code_descriptor, (code_hash)(vm_version)(codegen_version)(code_begin)(start)(apply_offset)(starting_memory_pages)(initdata_begin)(initdata_size)(initdata_prologue_size));
 
 #define EOSVMOC_INTRINSIC_INIT_PRIORITY __attribute__((init_priority(198)))

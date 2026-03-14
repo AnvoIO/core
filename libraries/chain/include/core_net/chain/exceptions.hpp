@@ -15,7 +15,7 @@
 
 /**
  * Macro inspired from FC_RETHROW_EXCEPTIONS
- * The main difference here is that if the exception caught isn't of type "eosio::chain::chain_exception"
+ * The main difference here is that if the exception caught isn't of type "core_net::chain::chain_exception"
  * This macro will rethrow the exception as the specified "exception_type"
  */
 #define EOS_RETHROW_EXCEPTIONS(exception_type, FORMAT, ... ) \
@@ -23,7 +23,7 @@
       throw;\
    } catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
-   } catch (eosio::chain::chain_exception& e) { \
+   } catch (core_net::chain::chain_exception& e) { \
       FC_RETHROW_EXCEPTION( e, warn, FORMAT, __VA_ARGS__ ); \
    } catch (fc::exception& e) { \
       exception_type new_exception(FC_LOG_MESSAGE( warn, FORMAT, __VA_ARGS__ )); \
@@ -42,7 +42,7 @@
 
 /**
  * Macro inspired from FC_CAPTURE_AND_RETHROW
- * The main difference here is that if the exception caught isn't of type "eosio::chain::chain_exception"
+ * The main difference here is that if the exception caught isn't of type "core_net::chain::chain_exception"
  * This macro will rethrow the exception as the specified "exception_type"
  */
 #define EOS_CAPTURE_AND_RETHROW( exception_type, ... ) \
@@ -50,7 +50,7 @@
       throw;\
    } catch( const boost::interprocess::bad_alloc& ) {\
       throw;\
-   } catch (eosio::chain::chain_exception& e) { \
+   } catch (core_net::chain::chain_exception& e) { \
       FC_RETHROW_EXCEPTION( e, warn, "", FC_FORMAT_ARG_PARAMS(__VA_ARGS__) ); \
    } catch (fc::exception& e) { \
       exception_type new_exception(e.get_log()); \
@@ -144,7 +144,7 @@
        std::optional<uint64_t> error_code; \
    };
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    enum class system_error_code : uint64_t {
       generic_system_error = 10000000000000000000ULL,
@@ -306,9 +306,9 @@ namespace eosio { namespace chain {
                                     3050001, "Account name already exists" )
       FC_DECLARE_DERIVED_EXCEPTION( invalid_action_args_exception, action_validate_exception,
                                     3050002, "Invalid Action Arguments" )
-      FC_DECLARE_DERIVED_EXCEPTION( eosio_assert_message_exception, action_validate_exception,
+      FC_DECLARE_DERIVED_EXCEPTION( core_net_assert_message_exception, action_validate_exception,
                                     3050003, "eosio_assert_message assertion failure" )
-      FC_DECLARE_DERIVED_EXCEPTION( eosio_assert_code_exception, action_validate_exception,
+      FC_DECLARE_DERIVED_EXCEPTION( core_net_assert_code_exception, action_validate_exception,
                                     3050004, "eosio_assert_code assertion failure" )
       FC_DECLARE_DERIVED_EXCEPTION( action_not_found_exception, action_validate_exception,
                                     3050005, "Action can not be found" )
@@ -679,4 +679,4 @@ namespace eosio { namespace chain {
                                  3260000, "Finalizer exception" )
       FC_DECLARE_DERIVED_EXCEPTION( finalizer_safety_exception, finalizer_exception,
                                     3260001, "Finalizer safety file exception" )
-} } // eosio::chain
+} } // core_net::chain

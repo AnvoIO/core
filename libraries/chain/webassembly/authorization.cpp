@@ -1,9 +1,9 @@
-#include <eosio/chain/webassembly/interface.hpp>
-#include <eosio/chain/apply_context.hpp>
+#include <core_net/chain/webassembly/interface.hpp>
+#include <core_net/chain/apply_context.hpp>
 
 #include <fc/io/datastream.hpp>
 
-namespace eosio { namespace chain { namespace webassembly {
+namespace core_net { namespace chain { namespace webassembly {
    void interface::require_auth( account_name account ) const {
       context.require_authorization( account );
    }
@@ -49,6 +49,6 @@ namespace eosio { namespace chain { namespace webassembly {
       }
       return s;
    }
-}}} // ns eosio::chain::webassembly
+}}} // ns core_net::chain::webassembly
 
-FC_REFLECT(eosio::chain::webassembly::get_code_hash_result, (struct_version)(code_sequence)(code_hash)(vm_type)(vm_version))
+FC_REFLECT(core_net::chain::webassembly::get_code_hash_result, (struct_version)(code_sequence)(code_hash)(vm_type)(vm_version))

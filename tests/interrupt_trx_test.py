@@ -38,7 +38,7 @@ try:
         totalNodes=3,
         loadSystemContract=False,
         activateIF=True,
-        extraNodeosArgs="--plugin eosio::test_control_api_plugin")
+        extraNodeosArgs="--plugin core_net::test_control_api_plugin")
 
     prodNode = cluster.getNode(0)
     prodNode2 = cluster.getNode(1)

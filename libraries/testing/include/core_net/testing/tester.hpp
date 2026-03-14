@@ -1,16 +1,16 @@
 #pragma once
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/asset.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/unapplied_transaction_queue.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/asset.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/unapplied_transaction_queue.hpp>
 #include <fc/io/json.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/tuple/tuple_io.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
 
-#include <eosio/testing/bls_utils.hpp>
+#include <core_net/testing/bls_utils.hpp>
 
 #include <iosfwd>
 #include <optional>
@@ -21,7 +21,7 @@
 
 #define REQUIRE_MATCHING_OBJECT(left, right) { auto a = fc::variant( left ); auto b = fc::variant( right ); BOOST_REQUIRE_EQUAL( true, a.is_object() ); \
    BOOST_REQUIRE_EQUAL( true, b.is_object() ); \
-   auto filtered = ::eosio::testing::filter_fields( a.get_object(), b.get_object() ); \
+   auto filtered = ::core_net::testing::filter_fields( a.get_object(), b.get_object() ); \
    BOOST_REQUIRE_EQUAL_COLLECTIONS( a.get_object().begin(), a.get_object().end(), filtered.begin(), filtered.end() ); }
 
 std::ostream& operator<<( std::ostream& osm, const fc::variant& v );
@@ -30,7 +30,7 @@ std::ostream& operator<<( std::ostream& osm, const fc::variant_object& v );
 
 std::ostream& operator<<( std::ostream& osm, const fc::variant_object::entry& e );
 
-eosio::chain::asset core_from_string(const std::string& s);
+core_net::chain::asset core_from_string(const std::string& s);
 
 namespace boost { namespace test_tools { namespace tt_detail {
 
@@ -60,7 +60,7 @@ namespace boost { namespace test_tools { namespace tt_detail {
 
 } } }
 
-namespace eosio::testing {
+namespace core_net::testing {
    enum class setup_policy {
       none,
       old_bios_only,
@@ -91,7 +91,7 @@ namespace eosio::testing {
    std::string          read_binary_snapshot( const char* fn );
    fc::variant          read_json_snapshot( const char* fn );
 
-   using namespace eosio::chain;
+   using namespace core_net::chain;
 
    fc::variant_object filter_fields(const fc::variant_object& filter, const fc::variant_object& value);
 
@@ -1085,7 +1085,7 @@ namespace eosio::testing {
         expected.append( msg );
      }
 
-     bool operator()( const eosio_assert_message_exception& ex );
+     bool operator()( const core_net_assert_message_exception& ex );
 
      string expected;
   };
@@ -1099,7 +1099,7 @@ namespace eosio::testing {
         expected.append( msg );
      }
 
-     bool operator()( const eosio_assert_message_exception& ex );
+     bool operator()( const core_net_assert_message_exception& ex );
 
      string expected;
   };
@@ -1113,9 +1113,9 @@ namespace eosio::testing {
         expected.append( std::to_string(error_code) );
      }
 
-     bool operator()( const eosio_assert_code_exception& ex );
+     bool operator()( const core_net_assert_code_exception& ex );
 
      string expected;
   };
 
-} /// eosio::testing
+} /// core_net::testing

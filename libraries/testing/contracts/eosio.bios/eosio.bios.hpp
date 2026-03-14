@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/action.hpp>
-#include <eosio/crypto.hpp>
-#include <eosio/eosio.hpp>
-#include <eosio/fixed_bytes.hpp>
-#include <eosio/privileged.hpp>
-#include <eosio/producer_schedule.hpp>
+#include <core_net/action.hpp>
+#include <core_net/crypto.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/fixed_bytes.hpp>
+#include <core_net/privileged.hpp>
+#include <core_net/producer_schedule.hpp>
 
 /**
  * EOSIO Contracts
@@ -28,13 +28,13 @@
 
 namespace eosiobios {
 
-   using eosio::action_wrapper;
-   using eosio::check;
-   using eosio::checksum256;
-   using eosio::ignore;
-   using eosio::name;
-   using eosio::permission_level;
-   using eosio::public_key;
+   using core_net::action_wrapper;
+   using core_net::check;
+   using core_net::checksum256;
+   using core_net::ignore;
+   using core_net::name;
+   using core_net::permission_level;
+   using core_net::public_key;
 
    /**
     * A weighted permission.
@@ -58,7 +58,7 @@ namespace eosiobios {
     * @details A weighted key is defined by a public key and an associated weight.
     */
    struct key_weight {
-      eosio::public_key  key;
+      core_net::public_key  key;
       uint16_t           weight;
 
       // explicit serialization macro is not necessary, used here only to improve compilation time
@@ -118,7 +118,7 @@ namespace eosiobios {
       checksum256                               transaction_mroot;
       checksum256                               action_mroot;
       uint32_t                                  schedule_version = 0;
-      std::optional<eosio::producer_schedule>   new_producers;
+      std::optional<core_net::producer_schedule>   new_producers;
 
       // explicit serialization macro is not necessary, used here only to improve compilation time
       EOSLIB_SERIALIZE(block_header, (timestamp)(producer)(confirmed)(previous)(transaction_mroot)(action_mroot)
@@ -160,7 +160,7 @@ namespace eosiobios {
     *
     * @{
     */
-   class [[eosio::contract("eosio.bios")]] bios : public eosio::contract {
+   class [[core_net::contract("eosio.bios")]] bios : public core_net::contract {
       public:
          using contract::contract;
          /**
@@ -185,7 +185,7 @@ namespace eosiobios {
           * therefore, this method will execute an inline buyram from receiver for newacnt in
           * an amount equal to the current new account creation fee.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void newaccount( name             creator,
                           name             name,
                           ignore<authority> owner,
@@ -200,7 +200,7 @@ namespace eosiobios {
           * @param parem - the parent of the permission which is updated,
           * @param aut - the json describing the permission authorization.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void updateauth(  ignore<name>  account,
                            ignore<name>  permission,
                            ignore<name>  parent,
@@ -214,7 +214,7 @@ namespace eosiobios {
           * @param account - the account for which the permission authorization is deleted,
           * @param permission - the permission name been deleted.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void deleteauth( ignore<name>  account,
                           ignore<name>  permission ) {}
 
@@ -235,7 +235,7 @@ namespace eosiobios {
           * @param type - the action to be linked,
           * @param requirement - the permission to be linked.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void linkauth(  ignore<name>    account,
                          ignore<name>    code,
                          ignore<name>    type,
@@ -250,7 +250,7 @@ namespace eosiobios {
           * @param code - the owner of the action to be unlinked,
           * @param type - the action to be unlinked.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void unlinkauth( ignore<name>  account,
                           ignore<name>  code,
                           ignore<name>  type ) {}
@@ -263,7 +263,7 @@ namespace eosiobios {
           * @param canceling_auth - the permission that authorizes this action,
           * @param trx_id - the deferred transaction id to be cancelled.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void canceldelay( ignore<permission_level> canceling_auth, ignore<checksum256> trx_id ) {}
 
          /**
@@ -276,7 +276,7 @@ namespace eosiobios {
           * @param vmversion - reserved, set it to zero.
           * @param code - the code content to be set, in the form of a blob binary..
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void setcode( name account, uint8_t vmtype, uint8_t vmversion, const std::vector<char>& code ) {}
 
          /** @}*/
@@ -291,7 +291,7 @@ namespace eosiobios {
           * @param account - the name of the account to set the abi for
           * @param abi     - the abi hash represented as a vector of characters
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void setabi( name account, const std::vector<char>& abi );
 
          /**
@@ -304,7 +304,7 @@ namespace eosiobios {
           * @param sender_id - the id for the deferred transaction chosen by the sender,
           * @param sent_trx - the deferred transaction that failed.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void onerror( ignore<uint128_t> sender_id, ignore<std::vector<char>> sent_trx );
 
          /**
@@ -314,7 +314,7 @@ namespace eosiobios {
           * @param account - the account to set the privileged status for.
           * @param is_priv - 0 for false, > 0 for true.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void setpriv( name account, uint8_t is_priv );
 
          /**
@@ -327,7 +327,7 @@ namespace eosiobios {
           * @param net_weight - fractionally proportionate net limit of available resources based on (weight / total_weight_of_all_accounts)
           * @param cpu_weight - fractionally proportionate cpu limit of available resources based on (weight / total_weight_of_all_accounts)
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void setalimits( name account, int64_t ram_bytes, int64_t net_weight, int64_t cpu_weight );
 
          /**
@@ -340,8 +340,8 @@ namespace eosiobios {
           *
           * @param schedule - New list of active producers to set
           */
-         [[eosio::action]]
-         void setprods( const std::vector<eosio::producer_authority>& schedule );
+         [[core_net::action]]
+         void setprods( const std::vector<core_net::producer_authority>& schedule );
 
          /**
           * Propose new finalizer policy that, unless superseded by a later
@@ -349,7 +349,7 @@ namespace eosiobios {
           *
           * @param finalizer_policy - proposed finalizer policy
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void setfinalizer( const finalizer_policy& finalizer_policy );
 
          /**
@@ -359,8 +359,8 @@ namespace eosiobios {
           *
           * @param params - New blockchain parameters to set
           */
-         [[eosio::action]]
-         void setparams( const eosio::blockchain_parameters& params );
+         [[core_net::action]]
+         void setparams( const core_net::blockchain_parameters& params );
 
          /**
           * Check if an account has authorization to access current action.
@@ -370,7 +370,7 @@ namespace eosiobios {
           *
           * @param from - the account name to authorize
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void reqauth( name from );
 
          /**
@@ -380,8 +380,8 @@ namespace eosiobios {
           *
           * @param feature_digest - hash of the protocol feature to activate.
           */
-         [[eosio::action]]
-         void activate( const eosio::checksum256& feature_digest );
+         [[core_net::action]]
+         void activate( const core_net::checksum256& feature_digest );
 
          /**
           * Asserts that a protocol feature has been activated.
@@ -390,15 +390,15 @@ namespace eosiobios {
           *
           * @param feature_digest - hash of the protocol feature to check for activation.
           */
-         [[eosio::action]]
-         void reqactivated( const eosio::checksum256& feature_digest );
+         [[core_net::action]]
+         void reqactivated( const core_net::checksum256& feature_digest );
 
          /**
           * Abi hash structure
           *
           * @details Abi hash structure is defined by contract owner and the contract hash.
           */
-         struct [[eosio::table]] abi_hash {
+         struct [[core_net::table]] abi_hash {
             name              owner;
             checksum256       hash;
             uint64_t primary_key()const { return owner.value; }
@@ -409,7 +409,7 @@ namespace eosiobios {
          /**
           * Multi index table that stores the contracts' abi index by their owners/accounts.
           */
-         typedef eosio::multi_index< "abihash"_n, abi_hash > abi_hash_table;
+         typedef core_net::multi_index< "abihash"_n, abi_hash > abi_hash_table;
 
          using newaccount_action = action_wrapper<"newaccount"_n, &bios::newaccount>;
          using updateauth_action = action_wrapper<"updateauth"_n, &bios::updateauth>;

@@ -1,2 +1,2 @@
 #pragma once
-#include <eosio/chain/block.hpp>
+#include <core_net/chain/block.hpp>

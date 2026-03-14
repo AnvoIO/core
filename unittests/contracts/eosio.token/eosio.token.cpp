@@ -1,6 +1,6 @@
 #include "eosio.token.hpp"
 
-namespace eosio {
+namespace core_net {
 
 void token::create( name   issuer,
                     asset  maximum_supply )
@@ -160,6 +160,6 @@ void token::close( name owner, const symbol& symbol )
    acnts.erase( it );
 }
 
-} /// namespace eosio
+} /// namespace core_net
 
-EOSIO_DISPATCH( eosio::token, (create)(issue)(transfer)(open)(close)(retire) )
+CORE_NET_DISPATCH( core_net::token, (create)(issue)(transfer)(open)(close)(retire) )

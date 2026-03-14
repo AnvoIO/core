@@ -41,10 +41,10 @@ EOF
 
 read -d '' configbios << EOF
 p2p-server-address = localhost:9876
-plugin = eosio::producer_plugin
-plugin = eosio::chain_api_plugin
-plugin = eosio::net_plugin
-plugin = eosio::trace_api_plugin
+plugin = core_net::producer_plugin
+plugin = core_net::chain_api_plugin
+plugin = core_net::net_plugin
+plugin = core_net::trace_api_plugin
 trace-no-abis = true
 http-server-address = 127.0.0.1:8888
 blocks-dir = blocks
@@ -67,7 +67,7 @@ p2p-listen-endpoint = 0.0.0.0:9877
 p2p-server-address = localhost:9877
 allowed-connection = any
 p2p-peer-address = localhost:9876
-plugin = eosio::chain_api_plugin
+plugin = core_net::chain_api_plugin
 EOF
 
 read -d '' config01 << EOF
@@ -79,7 +79,7 @@ p2p-listen-endpoint = 0.0.0.0:9878
 p2p-server-address = localhost:9877
 allowed-connection = any
 p2p-peer-address = localhost:9876
-plugin = eosio::chain_api_plugin
+plugin = core_net::chain_api_plugin
 EOF
 
 read -d '' loggingbios << EOF
@@ -245,25 +245,25 @@ read -d '' logging01 << EOF
 EOF
 
 rm -rf staging
-rm -rf etc/eosio/node_*
+rm -rf etc/core_net/node_*
 rm -rf var/lib
 cName=config.ini
 lName=logging.json
 gName=genesis.json
 
-path=staging/etc/eosio/node_bios
+path=staging/etc/core_net/node_bios
 mkdir -p $path
 echo "$configbios" > $path/$cName
 echo "$loggingbios" > $path/$lName
 echo "$genesis" > $path/$gName
 
-path=staging/etc/eosio/node_00
+path=staging/etc/core_net/node_00
 mkdir -p $path
 echo "$config00" > $path/$cName
 echo "$logging00" > $path/$lName
 echo "$genesis" > $path/$gName
 
-path=staging/etc/eosio/node_01
+path=staging/etc/core_net/node_01
 mkdir -p $path
 echo "$config01" > $path/$cName
 echo "$logging01" > $path/$lName
@@ -302,5 +302,5 @@ fi
 programs/eosio-launcher/eosio-launcher -k 15
 rm -rf staging
 rm -rf var/lib/node_*
-rm -rf etc/eosio/node_*
+rm -rf etc/core_net/node_*
 exit $ret

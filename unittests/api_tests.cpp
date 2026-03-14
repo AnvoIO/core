@@ -6,17 +6,17 @@
 #include <boost/iostreams/stream_buffer.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
-#include <eosio/chain/block_summary_object.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/chain/wasm_interface.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/finalizer_authority.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/intrinsic.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
+#include <core_net/chain/block_summary_object.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/chain/wasm_interface.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/finalizer_authority.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/intrinsic.hpp>
 
 #include <fc/crypto/sha256.hpp>
 #include <fc/exception/exception.hpp>
@@ -40,10 +40,10 @@
 #define DUMMY_ACTION_DEFAULT_B 0xab11cd1244556677
 #define DUMMY_ACTION_DEFAULT_C 0x7451ae12
 
-using namespace eosio;
-using namespace eosio::chain::literals;
-using namespace eosio::test_utils;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain::literals;
+using namespace core_net::test_utils;
+using namespace core_net::testing;
 using namespace fc;
 
 namespace bio = boost::iostreams;
@@ -229,10 +229,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_receipt_tests, T, validating_testers) { try
       BOOST_CHECK_EQUAL( m.begin()->second, base_test_auth_seq_num + 4 );
    } );
 
-   chain.set_code( config::system_account_name, contracts::eosio_bios_wasm() );
+   chain.set_code( config::system_account_name, contracts::core_net_bios_wasm() );
 
-   chain.set_code( "test"_n, contracts::eosio_bios_wasm() );
-   chain.set_abi( "test"_n, contracts::eosio_bios_abi() );
+   chain.set_code( "test"_n, contracts::core_net_bios_wasm() );
+   chain.set_abi( "test"_n, contracts::core_net_bios_abi() );
 	chain.set_code( "test"_n, test_contracts::payloadless_wasm() );
 
    call_doit_and_check( "test"_n, "test"_n, [&]( const transaction_trace_ptr& res ) {
@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_tests, T, validating_testers) { try {
 
    //test assert_false
    BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION( chain, "test_action", "assert_false", {} ),
-                          eosio_assert_message_exception, eosio_assert_message_is("test_action::assert_false") );
+                          core_net_assert_message_exception, eosio_assert_message_is("test_action::assert_false") );
 
    // test read_action_normal
    dummy_action dummy13{DUMMY_ACTION_DEFAULT_A, DUMMY_ACTION_DEFAULT_B, DUMMY_ACTION_DEFAULT_C};
@@ -282,8 +282,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_tests, T, validating_testers) { try {
 
    // test read_action_to_0
    raw_bytes.resize((1<<16)+1);
-   BOOST_CHECK_EXCEPTION(CALL_TEST_FUNCTION( chain, "test_action", "read_action_to_0", raw_bytes), eosio::chain::wasm_execution_error,
-         [](const eosio::chain::wasm_execution_error& e) {
+   BOOST_CHECK_EXCEPTION(CALL_TEST_FUNCTION( chain, "test_action", "read_action_to_0", raw_bytes), core_net::chain::wasm_execution_error,
+         [](const core_net::chain::wasm_execution_error& e) {
             return expect_assert_message(e, "access violation");
          }
       );
@@ -294,8 +294,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_tests, T, validating_testers) { try {
 
    // test read_action_to_64k
    raw_bytes.resize(3);
-	BOOST_CHECK_EXCEPTION(CALL_TEST_FUNCTION( chain, "test_action", "read_action_to_64k", raw_bytes ), eosio::chain::wasm_execution_error,
-         [](const eosio::chain::wasm_execution_error& e) {
+	BOOST_CHECK_EXCEPTION(CALL_TEST_FUNCTION( chain, "test_action", "read_action_to_64k", raw_bytes ), core_net::chain::wasm_execution_error,
+         [](const core_net::chain::wasm_execution_error& e) {
             return expect_assert_message(e, "access violation");
          }
       );
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_tests, T, validating_testers) { try {
    // test current_time
    chain.produce_block();
    BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION( chain, "test_action", "test_current_time", fc::raw::pack(now) ),
-                          eosio_assert_message_exception, eosio_assert_message_is("tmp == current_time()")     );
+                          core_net_assert_message_exception, eosio_assert_message_is("tmp == current_time()")     );
 
    // test test_current_receiver
    CALL_TEST_FUNCTION( chain, "test_action", "test_current_receiver", fc::raw::pack("testapi"_n));
@@ -566,7 +566,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cf_action_tests, T, validating_testers) { try {
       BOOST_CHECK_EQUAL(ttrace->action_traces[1].act.authorization.size(), 0);
 
       BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION( chain, "test_transaction", "send_cf_action_fail", {} ),
-                             eosio_assert_message_exception,
+                             core_net_assert_message_exception,
                              eosio_assert_message_is("context free actions cannot have authorizations") );
 
       BOOST_REQUIRE_EQUAL( chain.validate(), true );
@@ -894,7 +894,7 @@ void transaction_tests(T& chain) {
 
    // test send_action_inline_fail
    BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION(chain, "test_transaction", "send_action_inline_fail", {}),
-                          eosio_assert_message_exception,
+                          core_net_assert_message_exception,
                           eosio_assert_message_is("test_action::assert_false")                          );
 
    //   test send_transaction
@@ -967,8 +967,8 @@ void transaction_tests(T& chain) {
    CALL_TEST_FUNCTION(chain, "test_transaction", "test_tapos_block_prefix", fc::raw::pack(chain.head().id()._hash[1]) );
 
    // test send_action_recurse
-   BOOST_CHECK_EXCEPTION(CALL_TEST_FUNCTION(chain, "test_transaction", "send_action_recurse", {}), eosio::chain::transaction_exception,
-         [](const eosio::chain::transaction_exception& e) {
+   BOOST_CHECK_EXCEPTION(CALL_TEST_FUNCTION(chain, "test_transaction", "send_action_recurse", {}), core_net::chain::transaction_exception,
+         [](const core_net::chain::transaction_exception& e) {
             return expect_assert_message(e, "max inline action depth per transaction reached");
          }
       );
@@ -1389,7 +1389,7 @@ BOOST_AUTO_TEST_CASE(more_deferred_transaction_tests) { try {
    trx.sign( chain.get_private_key( test_account, "active" ), chain.get_chain_id() );
    BOOST_REQUIRE_EXCEPTION(
       chain.push_transaction( trx ),
-      eosio_assert_message_exception,
+      core_net_assert_message_exception,
       eosio_assert_message_is("fail")
    );
 
@@ -1481,7 +1481,7 @@ BOOST_AUTO_TEST_CASE(more_deferred_transaction_tests) { try {
    trx2.sign( chain.get_private_key( test_account, "active" ), chain.get_chain_id() );
    BOOST_REQUIRE_EXCEPTION(
       chain.push_transaction( trx2 ),
-      eosio_assert_message_exception,
+      core_net_assert_message_exception,
       eosio_assert_message_is("fail")
    );
 
@@ -1726,7 +1726,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(multi_index_tests, T, validating_testers) { try {
 
    auto check_failure = [&chain]( action_name a, const char* expected_error_msg ) {
       BOOST_CHECK_EXCEPTION(  chain.push_action( "testapi"_n, a, "testapi"_n, {} ),
-                              eosio_assert_message_exception,
+                              core_net_assert_message_exception,
                               eosio_assert_message_is( expected_error_msg )
       );
    };
@@ -2470,7 +2470,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(permission_usage_tests, T, validating_testers) { t
                                        "testapi"_n, config::active_name,
                                        chain.head().block_time() + fc::milliseconds(config::block_interval_ms)
                                      })
-   ), eosio_assert_message_exception );
+   ), core_net_assert_message_exception );
 
    chain.produce_block();
 
@@ -2512,7 +2512,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(permission_usage_tests, T, validating_testers) { t
                                                             "bob"_n, "perm1"_n,
                                                             permission_creation_time
                                           })
-   ), eosio_assert_message_exception );
+   ), core_net_assert_message_exception );
 
    CALL_TEST_FUNCTION( chain, "test_permission", "test_permission_last_used",
                        fc::raw::pack(test_permission_last_used_action{
@@ -2605,7 +2605,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(eosio_assert_code_tests, T, validating_testers) { 
 
    const char* abi_string = R"=====(
 {
-   "version": "eosio::abi/1.0",
+   "version": "core_net::abi/1.0",
    "types": [],
    "structs": [],
    "actions": [],
@@ -2627,7 +2627,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(eosio_assert_code_tests, T, validating_testers) { 
    chain.produce_block();
 
    BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION( chain, "test_action", "test_assert_code", fc::raw::pack((uint64_t)42) ),
-                          eosio_assert_code_exception, eosio_assert_code_is(42)                                        );
+                          core_net_assert_code_exception, eosio_assert_code_is(42)                                        );
 
 
    auto trace = CALL_TEST_FUNCTION_NO_THROW( chain, "test_action", "test_assert_code", fc::raw::pack((uint64_t)42) );
@@ -3422,13 +3422,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( small_const_memcpy_oob_tests, T, validating_teste
    };
 
    t.set_code("smallmemcpy"_n, small_memcpy_overlapenddst_wast);
-   BOOST_REQUIRE_EXCEPTION(sendit(), eosio::chain::wasm_execution_error, [](const eosio::chain::wasm_execution_error& e) {return expect_assert_message(e, "access violation");});
+   BOOST_REQUIRE_EXCEPTION(sendit(), core_net::chain::wasm_execution_error, [](const core_net::chain::wasm_execution_error& e) {return expect_assert_message(e, "access violation");});
 
    t.set_code("smallmemcpy"_n, small_memcpy_overlapendsrc_wast);
-   BOOST_REQUIRE_EXCEPTION(sendit(), eosio::chain::wasm_execution_error, [](const eosio::chain::wasm_execution_error& e) {return expect_assert_message(e, "access violation");});
+   BOOST_REQUIRE_EXCEPTION(sendit(), core_net::chain::wasm_execution_error, [](const core_net::chain::wasm_execution_error& e) {return expect_assert_message(e, "access violation");});
 
    t.set_code("smallmemcpy"_n, small_memcpy_high_wast);
-   BOOST_REQUIRE_EXCEPTION(sendit(), eosio::chain::wasm_execution_error, [](const eosio::chain::wasm_execution_error& e) {return expect_assert_message(e, "access violation");});
+   BOOST_REQUIRE_EXCEPTION(sendit(), core_net::chain::wasm_execution_error, [](const core_net::chain::wasm_execution_error& e) {return expect_assert_message(e, "access violation");});
 
 } FC_LOG_AND_RETHROW() }
 
@@ -3437,8 +3437,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( find_seconary_key, T, validating_testers ) {
    try {
       T t;
       t.create_account("secfind"_n);
-      t.set_code("secfind"_n, eosio::testing::test_contracts::db_find_secondary_test_wasm());
-      t.set_abi("secfind"_n, eosio::testing::test_contracts::db_find_secondary_test_abi());
+      t.set_code("secfind"_n, core_net::testing::test_contracts::db_find_secondary_test_wasm());
+      t.set_abi("secfind"_n, core_net::testing::test_contracts::db_find_secondary_test_abi());
       t.push_action("secfind"_n, "doit"_n, "secfind"_n, variant_object());
    } FC_LOG_AND_RETHROW()
 }

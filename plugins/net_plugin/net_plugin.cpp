@@ -1,19 +1,19 @@
-#include <eosio/net_plugin/net_plugin.hpp>
-#include <eosio/net_plugin/buffer_factory.hpp>
-#include <eosio/net_plugin/gossip_bps_index.hpp>
-#include <eosio/net_plugin/protocol.hpp>
-#include <eosio/net_plugin/net_logger.hpp>
-#include <eosio/net_plugin/net_utils.hpp>
-#include <eosio/net_plugin/auto_bp_peering.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/plugin_interface.hpp>
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/producer_plugin/producer_plugin.hpp>
-#include <eosio/chain/fork_database.hpp>
+#include <core_net/net_plugin/net_plugin.hpp>
+#include <core_net/net_plugin/buffer_factory.hpp>
+#include <core_net/net_plugin/gossip_bps_index.hpp>
+#include <core_net/net_plugin/protocol.hpp>
+#include <core_net/net_plugin/net_logger.hpp>
+#include <core_net/net_plugin/net_utils.hpp>
+#include <core_net/net_plugin/auto_bp_peering.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/plugin_interface.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
+#include <core_net/chain/fork_database.hpp>
 
 #include <fc/bitutil.hpp>
 #include <fc/network/message_buffer.hpp>
@@ -42,7 +42,7 @@
 #include <memory>
 #include <new>
 
-using namespace eosio::chain::plugin_interface;
+using namespace core_net::chain::plugin_interface;
 
 using namespace std::chrono_literals;
 
@@ -61,7 +61,7 @@ namespace boost
    }
 }
 
-namespace eosio {
+namespace core_net {
    static auto _net_plugin = application::register_plugin<net_plugin>();
 
    using std::vector;
@@ -74,7 +74,7 @@ namespace eosio {
 
    using fc::time_point;
    using fc::time_point_sec;
-   using eosio::chain::transaction_id_type;
+   using core_net::chain::transaction_id_type;
 
    class connection;
 
@@ -117,13 +117,13 @@ namespace eosio {
    struct by_connection_id;
 
    typedef multi_index_container<
-      eosio::peer_block_state,
+      core_net::peer_block_state,
       indexed_by<
          ordered_unique< tag<by_connection_id>,
                composite_key< peer_block_state,
-                     const_mem_fun<peer_block_state, block_num_type, &eosio::peer_block_state::block_num>,
-                     member<peer_block_state, block_id_type, &eosio::peer_block_state::id>,
-                     member<peer_block_state, connection_id_t, &eosio::peer_block_state::connection_id>
+                     const_mem_fun<peer_block_state, block_num_type, &core_net::peer_block_state::block_num>,
+                     member<peer_block_state, block_id_type, &core_net::peer_block_state::id>,
+                     member<peer_block_state, connection_id_t, &core_net::peer_block_state::connection_id>
                >,
                          composite_key_compare< std::less<>, std::less<block_id_type>, std::less<> >
          >
@@ -396,7 +396,7 @@ namespace eosio {
                            public auto_bp_peering::bp_connection_manager<net_plugin_impl, connection> {
     public:
       uint16_t                                    thread_pool_size = 4;
-      eosio::chain::named_thread_pool<struct net> thread_pool;
+      core_net::chain::named_thread_pool<struct net> thread_pool;
 
       std::atomic<connection_id_t>     current_connection_id{0};
 
@@ -5254,6 +5254,6 @@ namespace eosio {
       update_p2p_connection_metrics({num_peers+num_bp_peers, num_clients, std::move(per_connection)});
       start_conn_timer( connector_period, {}, timer_type::stats );
    }
-} // namespace eosio
+} // namespace core_net
 
-FC_REFLECT_ENUM( eosio::peer_sync_state::sync_t, (peer_sync)(peer_catchup)(block_nack) )
+FC_REFLECT_ENUM( core_net::peer_sync_state::sync_t, (peer_sync)(peer_catchup)(block_nack) )

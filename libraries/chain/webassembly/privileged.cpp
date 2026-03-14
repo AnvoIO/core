@@ -1,19 +1,19 @@
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/webassembly/interface.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/protocol_state_object.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/finalizer_policy.hpp>
-#include <eosio/chain/finalizer_authority.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/webassembly/interface.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/protocol_state_object.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/finalizer_policy.hpp>
+#include <core_net/chain/finalizer_authority.hpp>
 
 #include <fc/io/datastream.hpp>
 
 #include <vector>
 #include <set>
 
-namespace eosio { namespace chain { namespace webassembly {
+namespace core_net { namespace chain { namespace webassembly {
 
    int interface::is_feature_active( int64_t feature_name ) const { return false; }
 
@@ -281,7 +281,7 @@ namespace eosio { namespace chain { namespace webassembly {
          ma.set_privileged( is_priv );
       });
    }
-}}} // ns eosio::chain::webassembly
+}}} // ns core_net::chain::webassembly
 
-FC_REFLECT(eosio::chain::webassembly::finalizer_authority, (description)(weight)(public_key));
-FC_REFLECT(eosio::chain::webassembly::finalizer_policy, (threshold)(finalizers));
+FC_REFLECT(core_net::chain::webassembly::finalizer_authority, (description)(weight)(public_key));
+FC_REFLECT(core_net::chain::webassembly::finalizer_policy, (threshold)(finalizers));

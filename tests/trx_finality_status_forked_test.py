@@ -47,7 +47,7 @@ try:
     Print("Stand up cluster")
     specificExtraNodeosArgs={}
     # producer nodes will be mapped to 0 through totalProducerNodes-1, so the number totalProducerNodes will be the non-producing node
-    specificExtraNodeosArgs[totalProducerNodes]="--plugin eosio::test_control_api_plugin"
+    specificExtraNodeosArgs[totalProducerNodes]="--plugin core_net::test_control_api_plugin"
 
     # ensure that transactions don't get cleaned up too early
     successDuration = 360

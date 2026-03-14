@@ -2,11 +2,11 @@
 
 #include "fork_test_utilities.hpp"
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 // ---------------------------- access some finality_core data ---------------------------------
-namespace eosio::chain {
+namespace core_net::chain {
    struct core_info_t {
       uint32_t             last_final_block_num {0};
       uint32_t             last_qc_block_num {0};

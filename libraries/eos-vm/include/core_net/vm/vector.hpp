@@ -1,14 +1,14 @@
 #pragma once
 
-#include <eosio/vm/exceptions.hpp>
-#include <eosio/vm/allocator.hpp>
+#include <core_net/vm/exceptions.hpp>
+#include <core_net/vm/allocator.hpp>
 
 #include <algorithm>
 #include <utility>
 #include <string>
 #include <vector>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    namespace detail {
       template <typename T, typename Allocator> 
       class vector {
@@ -50,17 +50,17 @@ namespace eosio { namespace vm {
             }
 
             constexpr inline void pop_back() {
-               EOS_VM_ASSERT( _index >= 0, wasm_vector_oob_exception, "vector pop out of bounds" );
+               CORE_NET_VM_ASSERT( _index >= 0, wasm_vector_oob_exception, "vector pop out of bounds" );
                _index--;
             }
 
             constexpr inline T& at( size_t i ) {
-               EOS_VM_ASSERT( i < _size, wasm_vector_oob_exception, "vector read out of bounds" );
+               CORE_NET_VM_ASSERT( i < _size, wasm_vector_oob_exception, "vector read out of bounds" );
                return _data[i];
             }
 
             constexpr inline T& at( size_t i )const {
-               EOS_VM_ASSERT( i < _size, wasm_vector_oob_exception, "vector read out of bounds" );
+               CORE_NET_VM_ASSERT( i < _size, wasm_vector_oob_exception, "vector read out of bounds" );
                return _data[i];
             }
 
@@ -116,4 +116,4 @@ namespace eosio { namespace vm {
        str[i] = vec[i];
      return str;
    }
-}} // namespace eosio::vm
+}} // namespace core_net::vm

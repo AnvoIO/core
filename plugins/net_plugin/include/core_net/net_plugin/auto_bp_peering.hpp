@@ -1,18 +1,18 @@
 #pragma once
 
-#include <eosio/net_plugin/net_plugin.hpp>
-#include <eosio/net_plugin/net_logger.hpp>
-#include <eosio/net_plugin/gossip_bps_index.hpp>
-#include <eosio/net_plugin/net_utils.hpp>
-#include <eosio/net_plugin/buffer_factory.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/producer_schedule.hpp>
+#include <core_net/net_plugin/net_plugin.hpp>
+#include <core_net/net_plugin/net_logger.hpp>
+#include <core_net/net_plugin/gossip_bps_index.hpp>
+#include <core_net/net_plugin/net_utils.hpp>
+#include <core_net/net_plugin/buffer_factory.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/producer_schedule.hpp>
 
 #include <boost/unordered/unordered_flat_set.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 
-namespace eosio::auto_bp_peering {
+namespace core_net::auto_bp_peering {
 
 ///
 /// This file implements the functionality for block producers automatically establishing p2p connections to other bps.
@@ -267,7 +267,7 @@ public:
       /// so that the connection won't be subject to the limit of max_client_count.
       net_utils::endpoint e;
       std::string type;
-      std::tie(e.host, e.port, type) = eosio::net_utils::split_host_port_type(conn->log_p2p_address);
+      std::tie(e.host, e.port, type) = core_net::net_utils::split_host_port_type(conn->log_p2p_address);
 
       if (config.auto_bp_accounts.contains(e)) {
          conn->bp_connection = Connection::bp_connection_type::bp_config;
@@ -620,4 +620,4 @@ public:
       return peers;
    }
 };
-} // namespace eosio::auto_bp_peering
+} // namespace core_net::auto_bp_peering

@@ -1,10 +1,10 @@
 #pragma once
-#include "eosio/chain/protocol_feature_manager.hpp"
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/block_header.hpp>
+#include "core_net/chain/protocol_feature_manager.hpp"
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/block_header.hpp>
 
 
-namespace eosio::chain::detail {
+namespace core_net::chain::detail {
 
    inline bool is_builtin_activated(const protocol_feature_activation_set_ptr& pfa,
                                     const protocol_feature_set& pfs,
@@ -76,4 +76,4 @@ namespace eosio::chain::detail {
       return no_activations;
    }
 
-} /// namespace eosio::chain
+} /// namespace core_net::chain

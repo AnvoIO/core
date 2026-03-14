@@ -1,9 +1,9 @@
-#include <eosio/vm/allocator.hpp>
+#include <core_net/vm/allocator.hpp>
 
 #include <catch2/catch.hpp>
 
-using namespace eosio;
-using namespace eosio::vm;
+using namespace core_net;
+using namespace core_net::vm;
 
 template<typename T>
 bool check_alignment(T* ptr) {

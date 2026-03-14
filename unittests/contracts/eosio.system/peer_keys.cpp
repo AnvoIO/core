@@ -2,15 +2,15 @@
 #include "eosio.system.hpp"
 #include "peer_keys.hpp"
 
-#include <eosio/eosio.hpp>
-#include <eosio/print.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/print.hpp>
 
 namespace eosiosystem {
 
 void peer_keys::regpeerkey(const name& proposer_finalizer_name, const public_key& key) {
    require_auth(proposer_finalizer_name);
    peer_keys_table peer_keys_table(get_self(), get_self().value);
-   check(!std::holds_alternative<eosio::webauthn_public_key>(key), "webauthn keys not allowed in regpeerkey action");
+   check(!std::holds_alternative<core_net::webauthn_public_key>(key), "webauthn keys not allowed in regpeerkey action");
 
    auto peers_itr = peer_keys_table.find(proposer_finalizer_name.value);
    if (peers_itr == peer_keys_table.end()) {
@@ -21,7 +21,7 @@ void peer_keys::regpeerkey(const name& proposer_finalizer_name, const public_key
    } else {
       const auto& prev_key = peers_itr->get_public_key();
       check(!prev_key || *prev_key != key, "Provided key is the same as currently stored one");
-      peer_keys_table.modify(peers_itr, eosio::same_payer, [&](auto& row) {
+      peer_keys_table.modify(peers_itr, core_net::same_payer, [&](auto& row) {
          row.update_row();
          row.set_public_key(key);
       });

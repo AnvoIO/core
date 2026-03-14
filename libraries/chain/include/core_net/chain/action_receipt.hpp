@@ -1,9 +1,9 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/action.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/action.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    /**
     *  For each action dispatched this receipt is generated
@@ -18,6 +18,6 @@ namespace eosio::chain {
       fc::unsigned_int                abi_sequence  = 0; ///< total number of setabis
    };
 
-}  /// namespace eosio::chain
+}  /// namespace core_net::chain
 
-FC_REFLECT( eosio::chain::action_receipt, (receiver)(act_digest)(global_sequence)(recv_sequence)(auth_sequence)(code_sequence)(abi_sequence) )
+FC_REFLECT( core_net::chain::action_receipt, (receiver)(act_digest)(global_sequence)(recv_sequence)(auth_sequence)(code_sequence)(abi_sequence) )

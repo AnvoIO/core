@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 #include <fc/log/logger.hpp>
 #include <string>
 
-namespace eosio {
+namespace core_net {
 
    inline static const std::string p2p_log_parent_name("net_plugin_impl");
    inline static fc::logger p2p_log_parent;
@@ -61,4 +61,4 @@ namespace eosio {
    } \
   FC_MULTILINE_MACRO_END
 
-} // namespace eosio
+} // namespace core_net

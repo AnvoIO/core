@@ -18,7 +18,7 @@ const set<string> blacklist_memory_clearing = { "address.0",      "address.2",  
 
 const set<string> whitelist_force_check_throw = { "memory.6", "memory.7" };
 
-const string include_eosio = "#include <eosio/eosio.hpp>\n\n";
+const string include_eosio = "#include <core_net/eosio.hpp>\n\n";
 const string extern_c      = "extern \"C\" {\n";
 const string apply_func    = "   void apply(uint64_t, uint64_t, uint64_t test_to_run) {\n";
 const string mem_clear     = "      volatile uint64_t* r = (uint64_t*)0;\n      *r = 0;\n";
@@ -246,7 +246,7 @@ string write_test_function_call(string function_name, picojson::object test, int
    if (return_val != "" && return_val != "null") {
       out << "   "
           << "   "
-          << "eosio::check(";
+          << "core_net::check(";
       if (needs_local_return) {
          out << return_cast << "x" << var_index;
       } else {

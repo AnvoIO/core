@@ -1,9 +1,9 @@
-#include <eosio/producer_plugin/producer_plugin.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
+#include <core_net/testing/tester.hpp>
 #include <boost/test/unit_test.hpp>
 
-namespace eosio::test::detail {
-using namespace eosio::chain::literals;
+namespace core_net::test::detail {
+using namespace core_net::chain::literals;
 struct testit {
    uint64_t id;
 
@@ -18,13 +18,13 @@ struct testit {
    }
 };
 }
-FC_REFLECT( eosio::test::detail::testit, (id) )
+FC_REFLECT( core_net::test::detail::testit, (id) )
 
 namespace {
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::test::detail;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::test::detail;
 
 auto make_delayed_trx( const chain_id_type& chain_id ) {
    account_name creator = config::system_account_name;
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(delayed_trx) {
             }
          ),
          fc::exception,
-         eosio::testing::fc_exception_message_starts_with("transaction cannot be delayed")
+         core_net::testing::fc_exception_message_starts_with("transaction cannot be delayed")
       );
    });
 

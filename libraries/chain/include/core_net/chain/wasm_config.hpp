@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/wasm_eosio_constraints.hpp>
+#include <core_net/chain/wasm_constraints.hpp>
 #include <cstdint>
 #include <fc/reflect/reflect.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 struct wasm_config {
    std::uint32_t max_mutable_global_bytes;
@@ -40,7 +40,7 @@ inline constexpr bool operator!=(const wasm_config& lhs, const wasm_config& rhs)
 
 }}
 
-FC_REFLECT(eosio::chain::wasm_config,
+FC_REFLECT(core_net::chain::wasm_config,
            (max_mutable_global_bytes)
            (max_table_elements)
            (max_section_elements)

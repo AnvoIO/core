@@ -3,18 +3,18 @@
 #include <boost/test/unit_test.hpp>
 #pragma GCC diagnostic pop
 
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/variant_object.hpp>
 
 #include <contracts.hpp>
 
-#include "eosio_system_tester.hpp"
+#include "system_tester.hpp"
 
-using namespace eosio_system;
+using namespace core_net_system;
 
 /*
  * register test suite `ram_tests`
@@ -24,7 +24,7 @@ BOOST_AUTO_TEST_SUITE(ram_tests)
 /*************************************************************************************
  * ram_tests test case
  *************************************************************************************/
-BOOST_AUTO_TEST_CASE_TEMPLATE( ram_tests, T, eosio_system_testers ) { try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( ram_tests, T, core_net_system_testers ) { try {
    T chain;
    auto init_request_bytes = 80000 + 7110; // `7110' is for table token row
    const auto increment_contract_bytes = 10000;

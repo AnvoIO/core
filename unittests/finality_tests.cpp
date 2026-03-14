@@ -1,7 +1,7 @@
 #include "finality_test_cluster.hpp"
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 /*
  * register test suite `finality_tests`
@@ -123,7 +123,7 @@ BOOST_AUTO_TEST_CASE(threshold_equal_to_half_weight_sum_test) { try {
    };
 
    // threshold must be greater than half of the sum of the weights
-   BOOST_REQUIRE_THROW( test_finality_transition(account_names, policy_input, false), eosio_assert_message_exception );
+   BOOST_REQUIRE_THROW( test_finality_transition(account_names, policy_input, false), core_net_assert_message_exception );
 
 } FC_LOG_AND_RETHROW() }
 
@@ -624,7 +624,7 @@ BOOST_FIXTURE_TEST_CASE(unknown_finalizer_key_votes, finality_test_cluster<4>) {
 
    // process the corrupted vote. LIB should not advance
    process_vote(1, 0);
-   BOOST_REQUIRE(process_vote(1, 0) == eosio::chain::vote_result_t::unknown_public_key);
+   BOOST_REQUIRE(process_vote(1, 0) == core_net::chain::vote_result_t::unknown_public_key);
 
    // restore to original vote
    node1.restore_to_original_vote(0u);

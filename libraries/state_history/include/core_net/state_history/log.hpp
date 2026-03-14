@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/block_header.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/state_history/log_config.hpp>
-#include <eosio/state_history/counter.hpp>
+#include <core_net/chain/block_header.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/state_history/log_config.hpp>
+#include <core_net/state_history/counter.hpp>
 
 #include <fc/io/random_access_file.hpp>
 #include <fc/log/logger.hpp>
@@ -20,7 +20,7 @@
 
 #include <cstdint>
 
-namespace eosio::state_history {
+namespace core_net::state_history {
 namespace bio = boost::iostreams;
 
 /*
@@ -47,11 +47,11 @@ namespace bio = boost::iostreams;
  */
 
 inline uint64_t       ship_magic(uint16_t version, uint16_t features = 0) {
-   using namespace eosio::chain::literals;
+   using namespace core_net::chain::literals;
    return "ship"_n.to_uint64_t() | version | features<<16;
 }
 inline bool is_ship(uint64_t magic) {
-   using namespace eosio::chain::literals;
+   using namespace core_net::chain::literals;
    return (magic & 0xffff'ffff'0000'0000) == "ship"_n.to_uint64_t();
 }
 inline uint16_t       get_ship_version(uint64_t magic) { return magic; }
@@ -527,5 +527,5 @@ private:
 
 }
 
-FC_REFLECT(eosio::state_history::log_header, (magic)(block_id)(payload_size))
-FC_REFLECT_DERIVED(eosio::state_history::log_header_with_sizes, (eosio::state_history::log_header), (compressed_size)(uncompressed_size));
+FC_REFLECT(core_net::state_history::log_header, (magic)(block_id)(payload_size))
+FC_REFLECT_DERIVED(core_net::state_history::log_header_with_sizes, (core_net::state_history::log_header), (compressed_size)(uncompressed_size));

@@ -1,7 +1,7 @@
-#include <eosio/chain/wasm_config.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/wasm_config.hpp>
+#include <core_net/chain/exceptions.hpp>
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 void wasm_config::validate() const {
    EOS_ASSERT(max_section_elements >= 4, action_validate_exception, "max_section_elements cannot be less than 4");

@@ -1,20 +1,20 @@
 #pragma once
 
-#include <eosio/vm/config.hpp>
-#include <eosio/vm/base_visitor.hpp>
-#include <eosio/vm/exceptions.hpp>
-#include <eosio/vm/opcodes.hpp>
-#include <eosio/vm/softfloat.hpp>
-#include <eosio/vm/stack_elem.hpp>
-#include <eosio/vm/utils.hpp>
-#include <eosio/vm/wasm_stack.hpp>
+#include <core_net/vm/config.hpp>
+#include <core_net/vm/base_visitor.hpp>
+#include <core_net/vm/exceptions.hpp>
+#include <core_net/vm/opcodes.hpp>
+#include <core_net/vm/softfloat.hpp>
+#include <core_net/vm/stack_elem.hpp>
+#include <core_net/vm/utils.hpp>
+#include <core_net/vm/wasm_stack.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <limits>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    template <typename ExecutionContext>
    struct interpret_visitor : base_visitor {
@@ -88,7 +88,7 @@ namespace eosio { namespace vm {
          uint32_t fn = context.table_elem(index);
          const auto& expected_type = context.get_module().types.at(op.index);
          const auto& actual_type = context.get_module().get_function_type(fn);
-         EOS_VM_ASSERT(actual_type == expected_type, wasm_interpreter_exception, "bad call_indirect type");
+         CORE_NET_VM_ASSERT(actual_type == expected_type, wasm_interpreter_exception, "bad call_indirect type");
          context.call(fn);
       }
       [[gnu::always_inline]] inline void operator()(const drop_t& op) {
@@ -416,7 +416,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f32();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f32_eq(lhs.to_f32(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f32_eq(lhs.to_f32(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f32() == rhs) };
       }
@@ -425,7 +425,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f32();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f32_ne(lhs.to_f32(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f32_ne(lhs.to_f32(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f32() != rhs) };
       }
@@ -434,7 +434,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f32();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f32_lt(lhs.to_f32(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f32_lt(lhs.to_f32(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f32() < rhs) };
       }
@@ -443,7 +443,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f32();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f32_gt(lhs.to_f32(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f32_gt(lhs.to_f32(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f32() > rhs) };
       }
@@ -452,7 +452,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f32();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f32_le(lhs.to_f32(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f32_le(lhs.to_f32(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f32() <= rhs) };
       }
@@ -461,7 +461,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f32();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f32_ge(lhs.to_f32(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f32_ge(lhs.to_f32(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f32() >= rhs) };
       }
@@ -470,7 +470,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f64();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f64_eq(lhs.to_f64(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f64_eq(lhs.to_f64(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f64() == rhs) };
       }
@@ -479,7 +479,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f64();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f64_ne(lhs.to_f64(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f64_ne(lhs.to_f64(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f64() != rhs) };
       }
@@ -488,7 +488,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f64();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f64_lt(lhs.to_f64(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f64_lt(lhs.to_f64(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f64() < rhs) };
       }
@@ -497,7 +497,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f64();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f64_gt(lhs.to_f64(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f64_gt(lhs.to_f64(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f64() > rhs) };
       }
@@ -506,7 +506,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f64();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f64_le(lhs.to_f64(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f64_le(lhs.to_f64(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f64() <= rhs) };
       }
@@ -515,7 +515,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand().to_f64();
          auto&       lhs = context.peek_operand();
          if constexpr (use_softfloat)
-            lhs = i32_const_t{ (uint32_t)_eosio_f64_ge(lhs.to_f64(), rhs) };
+            lhs = i32_const_t{ (uint32_t)_core_net_f64_ge(lhs.to_f64(), rhs) };
          else
             lhs = i32_const_t{ (uint32_t)(lhs.to_f64() >= rhs) };
       }
@@ -559,8 +559,8 @@ namespace eosio { namespace vm {
          context.inc_pc();
          const auto& rhs = context.pop_operand().to_i32();
          auto&       lhs = context.peek_operand().to_i32();
-         EOS_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i32.div_s divide by zero");
-         EOS_VM_ASSERT(!(lhs == std::numeric_limits<int32_t>::min() && rhs == -1), wasm_interpreter_exception,
+         CORE_NET_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i32.div_s divide by zero");
+         CORE_NET_VM_ASSERT(!(lhs == std::numeric_limits<int32_t>::min() && rhs == -1), wasm_interpreter_exception,
                        "i32.div_s traps when I32_MAX/-1");
          lhs /= rhs;
       }
@@ -568,14 +568,14 @@ namespace eosio { namespace vm {
          context.inc_pc();
          const auto& rhs = context.pop_operand().to_ui32();
          auto&       lhs = context.peek_operand().to_ui32();
-         EOS_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i32.div_u divide by zero");
+         CORE_NET_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i32.div_u divide by zero");
          lhs /= rhs;
       }
       [[gnu::always_inline]] inline void operator()(const i32_rem_s_t& op) {
          context.inc_pc();
          const auto& rhs = context.pop_operand().to_i32();
          auto&       lhs = context.peek_operand().to_i32();
-         EOS_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i32.rem_s divide by zero");
+         CORE_NET_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i32.rem_s divide by zero");
          if (UNLIKELY(lhs == std::numeric_limits<int32_t>::min() && rhs == -1))
             lhs = 0;
          else
@@ -585,7 +585,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          const auto& rhs = context.pop_operand().to_ui32();
          auto&       lhs = context.peek_operand().to_ui32();
-         EOS_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i32.rem_u divide by zero");
+         CORE_NET_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i32.rem_u divide by zero");
          lhs %= rhs;
       }
       [[gnu::always_inline]] inline void operator()(const i32_and_t& op) {
@@ -685,8 +685,8 @@ namespace eosio { namespace vm {
          context.inc_pc();
          const auto& rhs = context.pop_operand().to_i64();
          auto&       lhs = context.peek_operand().to_i64();
-         EOS_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i64.div_s divide by zero");
-         EOS_VM_ASSERT(!(lhs == std::numeric_limits<int64_t>::min() && rhs == -1), wasm_interpreter_exception,
+         CORE_NET_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i64.div_s divide by zero");
+         CORE_NET_VM_ASSERT(!(lhs == std::numeric_limits<int64_t>::min() && rhs == -1), wasm_interpreter_exception,
                        "i64.div_s traps when I64_MAX/-1");
          lhs /= rhs;
       }
@@ -694,14 +694,14 @@ namespace eosio { namespace vm {
          context.inc_pc();
          const auto& rhs = context.pop_operand().to_ui64();
          auto&       lhs = context.peek_operand().to_ui64();
-         EOS_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i64.div_u divide by zero");
+         CORE_NET_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i64.div_u divide by zero");
          lhs /= rhs;
       }
       [[gnu::always_inline]] inline void operator()(const i64_rem_s_t& op) {
          context.inc_pc();
          const auto& rhs = context.pop_operand().to_i64();
          auto&       lhs = context.peek_operand().to_i64();
-         EOS_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i64.rem_s divide by zero");
+         CORE_NET_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i64.rem_s divide by zero");
          if (UNLIKELY(lhs == std::numeric_limits<int64_t>::min() && rhs == -1))
             lhs = 0;
          else
@@ -711,7 +711,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          const auto& rhs = context.pop_operand().to_ui64();
          auto&       lhs = context.peek_operand().to_ui64();
-         EOS_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i64.rem_s divide by zero");
+         CORE_NET_VM_ASSERT(rhs != 0, wasm_interpreter_exception, "i64.rem_s divide by zero");
          lhs %= rhs;
       }
       [[gnu::always_inline]] inline void operator()(const i64_and_t& op) {
@@ -775,7 +775,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            oper = _eosio_f32_abs(oper);
+            oper = _core_net_f32_abs(oper);
          else
             oper = __builtin_fabsf(oper);
       }
@@ -783,7 +783,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            oper = _eosio_f32_neg(oper);
+            oper = _core_net_f32_neg(oper);
          else
             oper = -oper;
       }
@@ -791,7 +791,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            oper = _eosio_f32_ceil(oper);
+            oper = _core_net_f32_ceil(oper);
          else
             oper = __builtin_ceilf(oper);
       }
@@ -799,7 +799,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            oper = _eosio_f32_floor(oper);
+            oper = _core_net_f32_floor(oper);
          else
             oper = __builtin_floorf(oper);
       }
@@ -807,7 +807,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            oper = _eosio_f32_trunc(oper);
+            oper = _core_net_f32_trunc(oper);
          else
             oper = __builtin_trunc(oper);
       }
@@ -815,7 +815,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            oper = _eosio_f32_nearest(oper);
+            oper = _core_net_f32_nearest(oper);
          else
             oper = __builtin_nearbyintf(oper);
       }
@@ -823,7 +823,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            oper = _eosio_f32_sqrt(oper);
+            oper = _core_net_f32_sqrt(oper);
          else
             oper = __builtin_sqrtf(oper);
       }
@@ -832,7 +832,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            lhs = _eosio_f32_add(lhs, rhs.to_f32());
+            lhs = _core_net_f32_add(lhs, rhs.to_f32());
          else
             lhs += rhs.to_f32();
       }
@@ -841,7 +841,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            lhs = _eosio_f32_sub(lhs, rhs.to_f32());
+            lhs = _core_net_f32_sub(lhs, rhs.to_f32());
          else
             lhs -= rhs.to_f32();
       }
@@ -850,7 +850,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f32();
          if constexpr (use_softfloat) {
-            lhs = _eosio_f32_mul(lhs, rhs.to_f32());
+            lhs = _core_net_f32_mul(lhs, rhs.to_f32());
          } else
             lhs *= rhs.to_f32();
       }
@@ -859,7 +859,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            lhs = _eosio_f32_div(lhs, rhs.to_f32());
+            lhs = _core_net_f32_div(lhs, rhs.to_f32());
          else
             lhs /= rhs.to_f32();
       }
@@ -868,7 +868,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            lhs = _eosio_f32_min(lhs, rhs.to_f32());
+            lhs = _core_net_f32_min(lhs, rhs.to_f32());
          else
             lhs = __builtin_fminf(lhs, rhs.to_f32());
       }
@@ -877,7 +877,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            lhs = _eosio_f32_max(lhs, rhs.to_f32());
+            lhs = _core_net_f32_max(lhs, rhs.to_f32());
          else
             lhs = __builtin_fmaxf(lhs, rhs.to_f32());
       }
@@ -886,7 +886,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f32();
          if constexpr (use_softfloat)
-            lhs = _eosio_f32_copysign(lhs, rhs.to_f32());
+            lhs = _core_net_f32_copysign(lhs, rhs.to_f32());
          else
             lhs = __builtin_copysignf(lhs, rhs.to_f32());
       }
@@ -894,7 +894,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            oper = _eosio_f64_abs(oper);
+            oper = _core_net_f64_abs(oper);
          else
             oper = __builtin_fabs(oper);
       }
@@ -902,7 +902,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            oper = _eosio_f64_neg(oper);
+            oper = _core_net_f64_neg(oper);
          else
             oper = -oper;
       }
@@ -911,7 +911,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            oper = _eosio_f64_ceil(oper);
+            oper = _core_net_f64_ceil(oper);
          else
             oper = __builtin_ceil(oper);
       }
@@ -919,7 +919,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            oper = _eosio_f64_floor(oper);
+            oper = _core_net_f64_floor(oper);
          else
             oper = __builtin_floor(oper);
       }
@@ -927,7 +927,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            oper = _eosio_f64_trunc(oper);
+            oper = _core_net_f64_trunc(oper);
          else
             oper = __builtin_trunc(oper);
       }
@@ -935,7 +935,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            oper = _eosio_f64_nearest(oper);
+            oper = _core_net_f64_nearest(oper);
          else
             oper = __builtin_nearbyint(oper);
       }
@@ -943,7 +943,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            oper = _eosio_f64_sqrt(oper);
+            oper = _core_net_f64_sqrt(oper);
          else
             oper = __builtin_sqrt(oper);
       }
@@ -952,7 +952,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            lhs = _eosio_f64_add(lhs, rhs.to_f64());
+            lhs = _core_net_f64_add(lhs, rhs.to_f64());
          else
             lhs += rhs.to_f64();
       }
@@ -961,7 +961,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            lhs = _eosio_f64_sub(lhs, rhs.to_f64());
+            lhs = _core_net_f64_sub(lhs, rhs.to_f64());
          else
             lhs -= rhs.to_f64();
       }
@@ -970,7 +970,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            lhs = _eosio_f64_mul(lhs, rhs.to_f64());
+            lhs = _core_net_f64_mul(lhs, rhs.to_f64());
          else
             lhs *= rhs.to_f64();
       }
@@ -979,7 +979,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            lhs = _eosio_f64_div(lhs, rhs.to_f64());
+            lhs = _core_net_f64_div(lhs, rhs.to_f64());
          else
             lhs /= rhs.to_f64();
       }
@@ -988,7 +988,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            lhs = _eosio_f64_min(lhs, rhs.to_f64());
+            lhs = _core_net_f64_min(lhs, rhs.to_f64());
          else
             lhs = __builtin_fmin(lhs, rhs.to_f64());
       }
@@ -997,7 +997,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            lhs = _eosio_f64_max(lhs, rhs.to_f64());
+            lhs = _core_net_f64_max(lhs, rhs.to_f64());
          else
             lhs = __builtin_fmax(lhs, rhs.to_f64());
       }
@@ -1006,7 +1006,7 @@ namespace eosio { namespace vm {
          const auto& rhs = context.pop_operand();
          auto&       lhs = context.peek_operand().to_f64();
          if constexpr (use_softfloat)
-            lhs = _eosio_f64_copysign(lhs, rhs.to_f64());
+            lhs = _core_net_f64_copysign(lhs, rhs.to_f64());
          else
             lhs = __builtin_copysign(lhs, rhs.to_f64());
       }
@@ -1019,11 +1019,11 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = i32_const_t{ _eosio_f32_trunc_i32s(oper.to_f32()) };
+            oper = i32_const_t{ _core_net_f32_trunc_i32s(oper.to_f32()) };
          } else {
             float af = oper.to_f32();
-            EOS_VM_ASSERT(!((af >= 2147483648.0f) || (af < -2147483648.0f)), wasm_interpreter_exception, "Error, f32.trunc_s/i32 overflow" );
-            EOS_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f32.trunc_s/i32 unrepresentable");
+            CORE_NET_VM_ASSERT(!((af >= 2147483648.0f) || (af < -2147483648.0f)), wasm_interpreter_exception, "Error, f32.trunc_s/i32 overflow" );
+            CORE_NET_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f32.trunc_s/i32 unrepresentable");
             oper = i32_const_t{ static_cast<int32_t>(af) };
          }
       }
@@ -1031,11 +1031,11 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = i32_const_t{ _eosio_f32_trunc_i32u(oper.to_f32()) };
+            oper = i32_const_t{ _core_net_f32_trunc_i32u(oper.to_f32()) };
          } else {
             float af = oper.to_f32();
-            EOS_VM_ASSERT(!((af >= 4294967296.0f) || (af <= -1.0f)),wasm_interpreter_exception, "Error, f32.trunc_u/i32 overflow");
-            EOS_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f32.trunc_u/i32 unrepresentable");
+            CORE_NET_VM_ASSERT(!((af >= 4294967296.0f) || (af <= -1.0f)),wasm_interpreter_exception, "Error, f32.trunc_u/i32 overflow");
+            CORE_NET_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f32.trunc_u/i32 unrepresentable");
             oper = i32_const_t{ static_cast<uint32_t>(af) };
          }
       }
@@ -1043,11 +1043,11 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = i32_const_t{ _eosio_f64_trunc_i32s(oper.to_f64()) };
+            oper = i32_const_t{ _core_net_f64_trunc_i32s(oper.to_f64()) };
          } else {
             double af = oper.to_f64();
-            EOS_VM_ASSERT(!((af >= 2147483648.0) || (af < -2147483648.0)), wasm_interpreter_exception, "Error, f64.trunc_s/i32 overflow");
-            EOS_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f64.trunc_s/i32 unrepresentable");
+            CORE_NET_VM_ASSERT(!((af >= 2147483648.0) || (af < -2147483648.0)), wasm_interpreter_exception, "Error, f64.trunc_s/i32 overflow");
+            CORE_NET_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f64.trunc_s/i32 unrepresentable");
             oper = i32_const_t{ static_cast<int32_t>(af) };
          }
       }
@@ -1055,11 +1055,11 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = i32_const_t{ _eosio_f64_trunc_i32u(oper.to_f64()) };
+            oper = i32_const_t{ _core_net_f64_trunc_i32u(oper.to_f64()) };
          } else {
             double af = oper.to_f64();
-            EOS_VM_ASSERT(!((af >= 4294967296.0) || (af <= -1.0)), wasm_interpreter_exception, "Error, f64.trunc_u/i32 overflow");
-            EOS_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f64.trunc_u/i32 unrepresentable");
+            CORE_NET_VM_ASSERT(!((af >= 4294967296.0) || (af <= -1.0)), wasm_interpreter_exception, "Error, f64.trunc_u/i32 overflow");
+            CORE_NET_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f64.trunc_u/i32 unrepresentable");
             oper = i32_const_t{ static_cast<uint32_t>(af) };
          }
       }
@@ -1077,11 +1077,11 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = i64_const_t{ _eosio_f32_trunc_i64s(oper.to_f32()) };
+            oper = i64_const_t{ _core_net_f32_trunc_i64s(oper.to_f32()) };
          } else {
             float af = oper.to_f32();
-            EOS_VM_ASSERT(!((af >= 9223372036854775808.0f) || (af < -9223372036854775808.0f)), wasm_interpreter_exception, "Error, f32.trunc_s/i64 overflow");
-            EOS_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f32.trunc_s/i64 unrepresentable");
+            CORE_NET_VM_ASSERT(!((af >= 9223372036854775808.0f) || (af < -9223372036854775808.0f)), wasm_interpreter_exception, "Error, f32.trunc_s/i64 overflow");
+            CORE_NET_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f32.trunc_s/i64 unrepresentable");
             oper = i64_const_t{ static_cast<int64_t>(af) };
          }
       }
@@ -1089,11 +1089,11 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = i64_const_t{ _eosio_f32_trunc_i64u(oper.to_f32()) };
+            oper = i64_const_t{ _core_net_f32_trunc_i64u(oper.to_f32()) };
          } else {
             float af = oper.to_f32();
-            EOS_VM_ASSERT(!((af >= 18446744073709551616.0f) || (af <= -1.0f)), wasm_interpreter_exception, "Error, f32.trunc_u/i64 overflow");
-            EOS_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f32.trunc_u/i64 unrepresentable");
+            CORE_NET_VM_ASSERT(!((af >= 18446744073709551616.0f) || (af <= -1.0f)), wasm_interpreter_exception, "Error, f32.trunc_u/i64 overflow");
+            CORE_NET_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f32.trunc_u/i64 unrepresentable");
             oper = i64_const_t{ static_cast<uint64_t>(af) };
          }
       }
@@ -1101,11 +1101,11 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = i64_const_t{ _eosio_f64_trunc_i64s(oper.to_f64()) };
+            oper = i64_const_t{ _core_net_f64_trunc_i64s(oper.to_f64()) };
          } else {
             double af = oper.to_f64();
-            EOS_VM_ASSERT(!((af >= 9223372036854775808.0) || (af < -9223372036854775808.0)), wasm_interpreter_exception, "Error, f64.trunc_s/i64 overflow");
-            EOS_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f64.trunc_s/i64 unrepresentable");
+            CORE_NET_VM_ASSERT(!((af >= 9223372036854775808.0) || (af < -9223372036854775808.0)), wasm_interpreter_exception, "Error, f64.trunc_s/i64 overflow");
+            CORE_NET_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f64.trunc_s/i64 unrepresentable");
             oper = i64_const_t{ static_cast<int64_t>(af) };
          }
       }
@@ -1113,11 +1113,11 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = i64_const_t{ _eosio_f64_trunc_i64u(oper.to_f64()) };
+            oper = i64_const_t{ _core_net_f64_trunc_i64u(oper.to_f64()) };
          } else {
             double af = oper.to_f64();
-            EOS_VM_ASSERT(!((af >= 18446744073709551616.0) || (af <= -1.0)), wasm_interpreter_exception, "Error, f64.trunc_u/i64 overflow");
-            EOS_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f64.trunc_u/i64 unrepresentable");
+            CORE_NET_VM_ASSERT(!((af >= 18446744073709551616.0) || (af <= -1.0)), wasm_interpreter_exception, "Error, f64.trunc_u/i64 overflow");
+            CORE_NET_VM_ASSERT(!__builtin_isnan(af), wasm_interpreter_exception, "Error, f64.trunc_u/i64 unrepresentable");
             oper = i64_const_t{ static_cast<uint64_t>(af) };
          }
       }
@@ -1125,7 +1125,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f32_const_t{ _eosio_i32_to_f32(oper.to_i32()) };
+            oper = f32_const_t{ _core_net_i32_to_f32(oper.to_i32()) };
          } else {
             oper = f32_const_t{ static_cast<float>(oper.to_i32()) };
          }
@@ -1134,7 +1134,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f32_const_t{ _eosio_ui32_to_f32(oper.to_ui32()) };
+            oper = f32_const_t{ _core_net_ui32_to_f32(oper.to_ui32()) };
          } else {
             oper = f32_const_t{ static_cast<float>(oper.to_ui32()) };
          }
@@ -1143,7 +1143,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f32_const_t{ _eosio_i64_to_f32(oper.to_i64()) };
+            oper = f32_const_t{ _core_net_i64_to_f32(oper.to_i64()) };
          } else {
             oper = f32_const_t{ static_cast<float>(oper.to_i64()) };
          }
@@ -1152,7 +1152,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f32_const_t{ _eosio_ui64_to_f32(oper.to_ui64()) };
+            oper = f32_const_t{ _core_net_ui64_to_f32(oper.to_ui64()) };
          } else {
             oper = f32_const_t{ static_cast<float>(oper.to_ui64()) };
          }
@@ -1161,7 +1161,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f32_const_t{ _eosio_f64_demote(oper.to_f64()) };
+            oper = f32_const_t{ _core_net_f64_demote(oper.to_f64()) };
          } else {
             oper = f32_const_t{ static_cast<float>(oper.to_f64()) };
          }
@@ -1170,7 +1170,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f64_const_t{ _eosio_i32_to_f64(oper.to_i32()) };
+            oper = f64_const_t{ _core_net_i32_to_f64(oper.to_i32()) };
          } else {
             oper = f64_const_t{ static_cast<double>(oper.to_i32()) };
          }
@@ -1179,7 +1179,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f64_const_t{ _eosio_ui32_to_f64(oper.to_ui32()) };
+            oper = f64_const_t{ _core_net_ui32_to_f64(oper.to_ui32()) };
          } else {
             oper = f64_const_t{ static_cast<double>(oper.to_ui32()) };
          }
@@ -1188,7 +1188,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f64_const_t{ _eosio_i64_to_f64(oper.to_i64()) };
+            oper = f64_const_t{ _core_net_i64_to_f64(oper.to_i64()) };
          } else {
             oper = f64_const_t{ static_cast<double>(oper.to_i64()) };
          }
@@ -1197,7 +1197,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f64_const_t{ _eosio_ui64_to_f64(oper.to_ui64()) };
+            oper = f64_const_t{ _core_net_ui64_to_f64(oper.to_ui64()) };
          } else {
             oper = f64_const_t{ static_cast<double>(oper.to_ui64()) };
          }
@@ -1206,7 +1206,7 @@ namespace eosio { namespace vm {
          context.inc_pc();
          auto& oper = context.peek_operand();
          if constexpr (use_softfloat) {
-            oper = f64_const_t{ _eosio_f32_promote(oper.to_f32()) };
+            oper = f64_const_t{ _core_net_f32_promote(oper.to_f32()) };
          } else {
             oper = f64_const_t{ static_cast<double>(oper.to_f32()) };
          }
@@ -1233,4 +1233,4 @@ namespace eosio { namespace vm {
       }
    };
 
-}} // namespace eosio::vm
+}} // namespace core_net::vm

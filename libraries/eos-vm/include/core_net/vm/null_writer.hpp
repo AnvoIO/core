@@ -1,6 +1,6 @@
 #pragma once
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
 class null_writer {
  public:

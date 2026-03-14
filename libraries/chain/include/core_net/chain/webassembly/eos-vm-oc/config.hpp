@@ -11,11 +11,11 @@
 #define __has_feature(x) 0
 #endif
 
-namespace eosio { namespace chain { namespace eosvmoc {
+namespace core_net { namespace chain { namespace eosvmoc {
 
 struct subjective_compile_limits {
    // subjective limits for OC compilation.
-   // nodeos enforces the limits by the default values unless account is whitelisted.
+   // core_netd enforces the limits by the default values unless account is whitelisted.
    // libtester disables the limits in all tests, except enforces the limits
    // in the tests in unittests/eosvmoc_limits_tests.cpp.
    std::optional<rlim_t>   cpu_limit {20u};
@@ -36,7 +36,7 @@ struct config {
 
 //work around unexpected std::optional behavior
 template <typename DS>
-inline DS& operator>>(DS& ds, eosio::chain::eosvmoc::subjective_compile_limits& cl) {
+inline DS& operator>>(DS& ds, core_net::chain::eosvmoc::subjective_compile_limits& cl) {
    auto optional_unpack_with_reset = [&]<typename T>(std::optional<T>& t) {
       bool b; fc::raw::unpack( ds, b );
       if(b) { t = T(); fc::raw::unpack( ds, *t ); }
@@ -51,7 +51,7 @@ inline DS& operator>>(DS& ds, eosio::chain::eosvmoc::subjective_compile_limits& 
 }
 
 template <typename DS>
-inline DS& operator<<(DS& ds, const eosio::chain::eosvmoc::subjective_compile_limits& cl) {
+inline DS& operator<<(DS& ds, const core_net::chain::eosvmoc::subjective_compile_limits& cl) {
    fc::raw::pack(ds, cl.cpu_limit);
    fc::raw::pack(ds, cl.vm_limit);
    fc::raw::pack(ds, cl.stack_size_limit);
@@ -61,4 +61,4 @@ inline DS& operator<<(DS& ds, const eosio::chain::eosvmoc::subjective_compile_li
 
 }}}
 
-FC_REFLECT(eosio::chain::eosvmoc::config, (cache_size)(threads)(non_whitelisted_limits))
+FC_REFLECT(core_net::chain::eosvmoc::config, (cache_size)(threads)(non_whitelisted_limits))

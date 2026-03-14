@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/webassembly/common.hpp>
-#include <eosio/chain/webassembly/eos-vm.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/webassembly/common.hpp>
+#include <core_net/chain/webassembly/eos-vm.hpp>
 
-#include <eosio/vm/backend.hpp>
-#include <eosio/vm/host_function.hpp>
+#include <core_net/vm/backend.hpp>
+#include <core_net/vm/host_function.hpp>
 
-namespace eosio { namespace chain { namespace webassembly {
+namespace core_net { namespace chain { namespace webassembly {
    namespace detail {
       template <typename T, std::size_t A>
       constexpr std::integral_constant<bool, A != 0> is_legacy_ptr(legacy_ptr<T, A>);
@@ -130,13 +130,13 @@ namespace eosio { namespace chain { namespace webassembly {
 
    EOS_VM_PRECONDITION(core_precondition,
          EOS_VM_INVOKE_ON_ALL(([&](auto&& arg, auto&&... rest) {
-            using namespace eosio::vm;
+            using namespace core_net::vm;
             using arg_t = std::decay_t<decltype(arg)>;
             static_assert( is_whitelisted_type_v<arg_t>, "whitelisted type violation");
             if constexpr (is_span_type_v<arg_t> || vm::is_argument_proxy_type_v<arg_t>) {
-               eosio::vm::invoke_on<false, eosio::vm::invoke_on_all_t>([&arg](auto&& narg, auto&&... nrest) {
+               core_net::vm::invoke_on<false, core_net::vm::invoke_on_all_t>([&arg](auto&& narg, auto&&... nrest) {
                   using nested_arg_t = std::decay_t<decltype(narg)>;
-                  if constexpr (eosio::vm::is_span_type_v<nested_arg_t> || vm::is_argument_proxy_type_v<nested_arg_t>)
+                  if constexpr (core_net::vm::is_span_type_v<nested_arg_t> || vm::is_argument_proxy_type_v<nested_arg_t>)
                       EOS_ASSERT(!is_aliasing(detail::to_span(arg), detail::to_span(narg)), wasm_exception, "pointers not allowed to alias");
                }, rest...);
             }
@@ -167,4 +167,4 @@ namespace eosio { namespace chain { namespace webassembly {
             static_assert( are_whitelisted_legacy_types_v<std::decay_t<decltype(args)>...>, "legacy whitelisted type violation");
          }));
 
-}}} // ns eosio::chain::webassembly
+}}} // ns core_net::chain::webassembly

@@ -1,19 +1,19 @@
 #include <boost/test/unit_test.hpp>
 
-#include <eosio/producer_plugin/producer_plugin.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
 
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 
-#include <eosio/chain/genesis_state.hpp>
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/chain/transaction_metadata.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/name.hpp>
+#include <core_net/chain/genesis_state.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/chain/transaction_metadata.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/name.hpp>
 
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 
-namespace eosio::test::detail {
-using namespace eosio::chain::literals;
+namespace core_net::test::detail {
+using namespace core_net::chain::literals;
 struct testit {
    uint64_t      id;
 
@@ -29,13 +29,13 @@ struct testit {
    }
 };
 }
-FC_REFLECT( eosio::test::detail::testit, (id) )
+FC_REFLECT( core_net::test::detail::testit, (id) )
 
 namespace {
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::test::detail;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::test::detail;
 
 auto make_unique_trx( const chain_id_type& chain_id ) {
 

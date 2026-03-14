@@ -1,10 +1,10 @@
-#include <eosio/chain/webassembly/interface.hpp>
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/apply_context.hpp>
+#include <core_net/chain/webassembly/interface.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/apply_context.hpp>
 
-namespace eosio { namespace chain { namespace webassembly {
+namespace core_net { namespace chain { namespace webassembly {
    void unpack_provided_keys( flat_set<public_key_type>& keys, const char* pubkeys_data, uint32_t pubkeys_size ) {
       keys.clear();
       if( pubkeys_size == 0 ) return;
@@ -87,4 +87,4 @@ namespace eosio { namespace chain { namespace webassembly {
                   "account '${account}' does not exist", ("account", account) );
       return time_point(acct->creation_date).time_since_epoch().count();
    }
-}}} // ns eosio::chain::webassembly
+}}} // ns core_net::chain::webassembly

@@ -3,9 +3,9 @@
 #include <boost/test/unit_test.hpp>
 #pragma GCC diagnostic pop
 #include <boost/algorithm/string/predicate.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
 
 #include <fc/variant_object.hpp>
 #include <fc/io/json.hpp>
@@ -13,9 +13,9 @@
 #include <contracts.hpp>
 #include <test_contracts.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace fc;
 
 template<typename T>
@@ -65,10 +65,10 @@ class currency_tester : public T {
       }
 
       currency_tester(setup_policy p = setup_policy::full)
-         :T({}, nullptr, p), abi_ser(json::from_string(test_contracts::eosio_token_abi()).as<abi_def>(), abi_serializer::create_yield_function( T::abi_serializer_max_time ))
+         :T({}, nullptr, p), abi_ser(json::from_string(test_contracts::core_net_token_abi()).as<abi_def>(), abi_serializer::create_yield_function( T::abi_serializer_max_time ))
       {
          T::create_account( "eosio.token"_n);
-         T::set_code( "eosio.token"_n, test_contracts::eosio_token_wasm() );
+         T::set_code( "eosio.token"_n, test_contracts::core_net_token_wasm() );
 
          auto result = push_action("eosio.token"_n, "create"_n, mutable_variant_object()
                  ("issuer",       eosio_token)
@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( test_overspend, T, currency_testers ) try {
          ("memo", "overspend! Alice");
 
       BOOST_CHECK_EXCEPTION( chain.push_action("alice"_n, "transfer"_n, data),
-                             eosio_assert_message_exception, eosio_assert_message_is("overdrawn balance") );
+                             core_net_assert_message_exception, eosio_assert_message_is("overdrawn balance") );
       chain.produce_block();
 
       BOOST_REQUIRE_EQUAL(chain.get_balance("alice"_n), asset::from_string( "100.0000 CUR" ));
@@ -591,7 +591,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( test_input_quantity, T, currency_testers ) try {
 
    // transfer using different symbol name fails
    {
-      BOOST_REQUIRE_THROW(chain.transfer("alice"_n, "carl"_n, "20.50 USD"), eosio_assert_message_exception);
+      BOOST_REQUIRE_THROW(chain.transfer("alice"_n, "carl"_n, "20.50 USD"), core_net_assert_message_exception);
    }
 
    // issue to alice using right precision

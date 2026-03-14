@@ -6,7 +6,7 @@ namespace IR {
   struct Module;
 }
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 class apply_context;
 

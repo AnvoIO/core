@@ -1,15 +1,15 @@
 #pragma once
 
-#include <eosio/chain/database_utils.hpp>
-#include <eosio/chain/contract_types.hpp>
-#include <eosio/chain/multi_index_includes.hpp>
-#include <eosio/chain/snapshot.hpp>
-#include <eosio/chain/database_utils.hpp>
+#include <core_net/chain/database_utils.hpp>
+#include <core_net/chain/contract_types.hpp>
+#include <core_net/chain/multi_index_includes.hpp>
+#include <core_net/chain/snapshot.hpp>
+#include <core_net/chain/database_utils.hpp>
 
 #include <array>
 #include <type_traits>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    /**
     * @brief The table_id_object class tracks the mapping of (scope, code, table) to an opaque identifier
@@ -314,32 +314,32 @@ namespace detail {
 
    //the typenames for these can be different across stdlibs due to the template parameters
 #define SNAPSHOT_SECONDARY_SECTION_NAME(N) template<> struct snapshot_section_traits<N> { static std::string section_name() {return #N ;} };
-   SNAPSHOT_SECONDARY_SECTION_NAME(eosio::chain::index64_object)
-   SNAPSHOT_SECONDARY_SECTION_NAME(eosio::chain::index128_object)
-   SNAPSHOT_SECONDARY_SECTION_NAME(eosio::chain::index256_object)
-   SNAPSHOT_SECONDARY_SECTION_NAME(eosio::chain::index_double_object)
-   SNAPSHOT_SECONDARY_SECTION_NAME(eosio::chain::index_long_double_object)
+   SNAPSHOT_SECONDARY_SECTION_NAME(core_net::chain::index64_object)
+   SNAPSHOT_SECONDARY_SECTION_NAME(core_net::chain::index128_object)
+   SNAPSHOT_SECONDARY_SECTION_NAME(core_net::chain::index256_object)
+   SNAPSHOT_SECONDARY_SECTION_NAME(core_net::chain::index_double_object)
+   SNAPSHOT_SECONDARY_SECTION_NAME(core_net::chain::index_long_double_object)
 }
 
-} }  // namespace eosio::chain
+} }  // namespace core_net::chain
 
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::table_id_object, eosio::chain::table_id_multi_index)
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::key_value_object, eosio::chain::key_value_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::table_id_object, core_net::chain::table_id_multi_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::key_value_object, core_net::chain::key_value_index)
 
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::index64_object, eosio::chain::index64_index)
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::index128_object, eosio::chain::index128_index)
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::index256_object, eosio::chain::index256_index)
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::index_double_object, eosio::chain::index_double_index)
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::index_long_double_object, eosio::chain::index_long_double_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::index64_object, core_net::chain::index64_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::index128_object, core_net::chain::index128_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::index256_object, core_net::chain::index256_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::index_double_object, core_net::chain::index_double_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::index_long_double_object, core_net::chain::index_long_double_index)
 
-FC_REFLECT(eosio::chain::table_id_object, (code)(scope)(table)(payer)(count) )
-FC_REFLECT(eosio::chain::key_value_object, (primary_key)(payer)(value) )
+FC_REFLECT(core_net::chain::table_id_object, (code)(scope)(table)(payer)(count) )
+FC_REFLECT(core_net::chain::key_value_object, (primary_key)(payer)(value) )
 
 #define REFLECT_SECONDARY(type)\
   FC_REFLECT(type, (primary_key)(payer)(secondary_key) )
 
-REFLECT_SECONDARY(eosio::chain::index64_object)
-REFLECT_SECONDARY(eosio::chain::index128_object)
-REFLECT_SECONDARY(eosio::chain::index256_object)
-REFLECT_SECONDARY(eosio::chain::index_double_object)
-REFLECT_SECONDARY(eosio::chain::index_long_double_object)
+REFLECT_SECONDARY(core_net::chain::index64_object)
+REFLECT_SECONDARY(core_net::chain::index128_object)
+REFLECT_SECONDARY(core_net::chain::index256_object)
+REFLECT_SECONDARY(core_net::chain::index_double_object)
+REFLECT_SECONDARY(core_net::chain::index_long_double_object)

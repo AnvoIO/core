@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
-class [[eosio::contract]] noop : public eosio::contract {
+class [[core_net::contract]] noop : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action]]
-   void anyaction( eosio::name                       from,
-                   const eosio::ignore<std::string>& type,
-                   const eosio::ignore<std::string>& data );
+   [[core_net::action]]
+   void anyaction( core_net::name                       from,
+                   const core_net::ignore<std::string>& type,
+                   const core_net::ignore<std::string>& data );
 };

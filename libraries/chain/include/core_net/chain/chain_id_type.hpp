@@ -2,7 +2,7 @@
 
 #include <fc/crypto/sha256.hpp>
 
-namespace eosio {
+namespace core_net {
 
    class net_plugin_impl;
    struct handshake_message;
@@ -49,10 +49,10 @@ namespace chain {
          template<typename T>
          friend T fc::variant::as()const;
 
-         friend class eosio::chain_apis::get_info_db;
+         friend class core_net::chain_apis::get_info_db;
 
-         friend class eosio::net_plugin_impl;
-         friend struct eosio::handshake_message;
+         friend class core_net::net_plugin_impl;
+         friend struct core_net::handshake_message;
          friend class block_log;
          friend struct trim_data;
          friend class controller;
@@ -64,10 +64,10 @@ namespace chain {
          friend struct legacy::snapshot_global_property_object_v5;
    };
 
-} }  // namespace eosio::chain
+} }  // namespace core_net::chain
 
 namespace fc {
   class variant;
-  void to_variant(const eosio::chain::chain_id_type& cid, fc::variant& v);
-  void from_variant(const fc::variant& v, eosio::chain::chain_id_type& cid);
+  void to_variant(const core_net::chain::chain_id_type& cid, fc::variant& v);
+  void from_variant(const fc::variant& v, core_net::chain::chain_id_type& cid);
 } // fc

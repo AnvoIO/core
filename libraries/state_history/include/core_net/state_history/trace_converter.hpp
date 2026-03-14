@@ -1,9 +1,9 @@
 #pragma once
 
-#include <eosio/state_history/types.hpp>
+#include <core_net/state_history/types.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 
-namespace eosio {
+namespace core_net {
 namespace state_history {
 
 using chain::transaction_id_type;
@@ -17,4 +17,4 @@ struct trace_converter {
 };
 
 } // namespace state_history
-} // namespace eosio
+} // namespace core_net

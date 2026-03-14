@@ -1,17 +1,17 @@
 #pragma once
 
-#include <eosio/vm/allocator.hpp>
-#include <eosio/vm/bitcode_writer.hpp>
-#include <eosio/vm/config.hpp>
-#include <eosio/vm/debug_visitor.hpp>
-#include <eosio/vm/execution_context.hpp>
-#include <eosio/vm/interpret_visitor.hpp>
-#include <eosio/vm/null_writer.hpp>
-#include <eosio/vm/parser.hpp>
-#include <eosio/vm/types.hpp>
+#include <core_net/vm/allocator.hpp>
+#include <core_net/vm/bitcode_writer.hpp>
+#include <core_net/vm/config.hpp>
+#include <core_net/vm/debug_visitor.hpp>
+#include <core_net/vm/execution_context.hpp>
+#include <core_net/vm/interpret_visitor.hpp>
+#include <core_net/vm/null_writer.hpp>
+#include <core_net/vm/parser.hpp>
+#include <core_net/vm/types.hpp>
 
 #ifdef __x86_64__
-#include <eosio/vm/x86_64.hpp>
+#include <core_net/vm/x86_64.hpp>
 #endif
 
 #include <atomic>
@@ -22,7 +22,7 @@
 #include <system_error>
 #include <vector>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
 #ifdef __x86_64__
    struct jit {
@@ -375,4 +375,4 @@ namespace eosio { namespace vm {
       uint32_t        initial_max_call_depth = 0;
       uint32_t        initial_max_pages = 0;
    };
-}} // namespace eosio::vm
+}} // namespace core_net::vm

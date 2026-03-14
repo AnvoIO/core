@@ -1,9 +1,9 @@
 #pragma once
-#include <eosio/chain/application.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/http_plugin/http_plugin.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/http_plugin/http_plugin.hpp>
 
-namespace eosio {
+namespace core_net {
    /**
     * Plugin that runs both a data extraction  and the HTTP RPC in the same application
     */

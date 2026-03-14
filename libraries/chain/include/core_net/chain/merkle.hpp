@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/chain/types.hpp>
 #include <fc/io/raw.hpp>
 #include <bit>
 #include <array>
 #include <future>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 namespace detail {
 
@@ -114,4 +114,4 @@ inline digest_type calculate_merkle(const Cont& ids) {
 }
 
 
-} /// eosio::chain
+} /// core_net::chain

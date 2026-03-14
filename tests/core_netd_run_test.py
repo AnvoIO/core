@@ -46,7 +46,7 @@ testSuccessful=False
 dontBootstrap=sanityTest # intent is to limit the scope of the sanity test to just verifying that nodes can be started
 
 WalletdName=Utils.EosWalletName
-ClientName="cleos"
+ClientName="core-cli"
 timeout = .5 * 12 * 2 + 60 # time for finalization with 1 producer + 60 seconds padding
 Utils.setIrreversibleTimeout(timeout)
 
@@ -61,7 +61,7 @@ try:
 
         abs_path = os.path.abspath(os.getcwd() + '/unittests/contracts/eosio.token/eosio.token.abi')
         traceNodeosArgs=" --http-max-response-time-ms 990000 --trace-rpc-abi eosio.token=" + abs_path
-        extraNodeosArgs=traceNodeosArgs + " --plugin eosio::prometheus_plugin --database-map-mode mapped_private "
+        extraNodeosArgs=traceNodeosArgs + " --plugin core_net::prometheus_plugin --database-map-mode mapped_private "
         specificNodeosInstances={0: "bin/nodeos"}
         if cluster.launch(totalNodes=2, prodCount=prodCount, activateIF=activateIF, onlyBios=onlyBios, dontBootstrap=dontBootstrap, extraNodeosArgs=extraNodeosArgs, specificNodeosInstances=specificNodeosInstances) is False:
             cmdError("launcher")

@@ -52,7 +52,7 @@ walletMgr=WalletMgr(True, port=walletPort)
 testSuccessful=False
 
 WalletdName=Utils.EosWalletName
-ClientName="cleos"
+ClientName="core-cli"
 
 trxGenLauncher=None
 

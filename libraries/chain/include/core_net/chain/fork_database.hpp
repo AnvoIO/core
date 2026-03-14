@@ -1,10 +1,10 @@
 #pragma once
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/block_state.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/block_state.hpp>
 
 namespace fc { class cfile_datastream; } // forward decl
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    template<class BSP>
    struct fork_database_impl;
@@ -333,7 +333,7 @@ namespace eosio::chain {
       static constexpr uint32_t min_supported_version = 1;
       static constexpr uint32_t max_supported_version = 3;
    };
-} /// eosio::chain
+} /// core_net::chain
 
-FC_REFLECT_ENUM( eosio::chain::fork_db_add_t,
+FC_REFLECT_ENUM( core_net::chain::fork_db_add_t,
                  (failure)(duplicate)(added)(appended_to_head)(fork_switch) )

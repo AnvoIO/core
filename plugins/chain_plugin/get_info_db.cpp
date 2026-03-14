@@ -1,17 +1,17 @@
-#include <eosio/chain_plugin/get_info_db.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/application.hpp>
+#include <core_net/chain_plugin/get_info_db.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/application.hpp>
 
 //libstdc++ flags atomic_*<shared_ptr> as deprecated in c++20. while libstdc++ 12 adds atomic<shared_ptr>, it is
 // still missing in libc++ 19
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 
-using namespace eosio;
-using namespace eosio::chain;
+using namespace core_net;
+using namespace core_net::chain;
 using namespace appbase;
 
-namespace eosio::chain_apis {
+namespace core_net::chain_apis {
    /**
     * Implementation details of the get_info results
     */
@@ -168,6 +168,6 @@ namespace eosio::chain_apis {
    get_info_db::get_info_results get_info_db::get_info() const {
       return _impl->get_info();
    }
-} // namespace eosio::chain_apis
+} // namespace core_net::chain_apis
 
 #pragma GCC diagnostic pop

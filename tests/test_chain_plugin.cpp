@@ -1,24 +1,24 @@
 #include <boost/test/unit_test.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/chain/abi_serializer.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/chain/abi_serializer.hpp>
 #include <fc/variant_object.hpp>
 #include <contracts.hpp>
 #include <test_contracts.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/wast_to_wasm.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/wast_to_wasm.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <fc/log/logger.hpp>
 #include <cstdlib>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::chain_apis;
-using namespace eosio::testing;
-using namespace eosio::chain_apis;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::chain_apis;
+using namespace core_net::testing;
+using namespace core_net::chain_apis;
 using namespace fc;
 
 using mvo = fc::mutable_variant_object;
@@ -191,8 +191,8 @@ public:
        create_accounts({ "eosio.token"_n, "eosio.ram"_n, "eosio.ramfee"_n, "eosio.stake"_n,
                          "eosio.bpay"_n, "eosio.vpay"_n, "eosio.saving"_n, "eosio.names"_n, "eosio.rex"_n });
 
-       set_code( "eosio.token"_n, test_contracts::eosio_token_wasm() );
-       set_abi( "eosio.token"_n, test_contracts::eosio_token_abi() );
+       set_code( "eosio.token"_n, test_contracts::core_net_token_wasm() );
+       set_abi( "eosio.token"_n, test_contracts::core_net_token_abi() );
 
        {
            const auto& accnt = control->db().get<account_object,by_name>( "eosio.token"_n );
@@ -205,8 +205,8 @@ public:
        issue(config::system_account_name,      core_from_string("1000000000.0000"));
        BOOST_CHECK_EQUAL( core_from_string("1000000000.0000"), get_balance( name("eosio") ) );
 
-       set_code( config::system_account_name, test_contracts::eosio_system_wasm() );
-       set_abi( config::system_account_name, test_contracts::eosio_system_abi() );
+       set_code( config::system_account_name, test_contracts::core_net_system_wasm() );
+       set_abi( config::system_account_name, test_contracts::core_net_system_abi() );
 
        base_tester::push_action(config::system_account_name, "init"_n,
                                 config::system_account_name,  mutable_variant_object()
@@ -225,7 +225,7 @@ public:
     read_only::get_account_results get_account_info(const account_name acct){
        auto account_object = control->get_account(acct);
        read_only::get_account_params params = { account_object.name };
-       std::optional<eosio::chain_apis::tracked_votes> _tracked_votes;
+       std::optional<core_net::chain_apis::tracked_votes> _tracked_votes;
        chain_apis::read_only plugin(*(control.get()), {}, {}, _tracked_votes, fc::microseconds::maximum(), fc::microseconds::maximum(), {});
        auto res =   plugin.get_account(params, fc::time_point::maximum())();
        BOOST_REQUIRE(!std::holds_alternative<fc::exception_ptr>(res));

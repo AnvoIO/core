@@ -3,16 +3,16 @@
 #include <fc/reflect/reflect.hpp>
 #include <iosfwd>
 
-namespace eosio::chain {
+namespace core_net::chain {
   struct name;
 }
 namespace fc {
   class variant;
-  void to_variant(const eosio::chain::name& c, fc::variant& v);
-  void from_variant(const fc::variant& v, eosio::chain::name& check);
+  void to_variant(const core_net::chain::name& c, fc::variant& v);
+  void from_variant(const fc::variant& v, core_net::chain::name& check);
 } // fc
 
-namespace eosio::chain {
+namespace core_net::chain {
    inline constexpr uint64_t char_to_symbol( char c ) {
       if( c >= 'a' && c <= 'z' )
          return (c - 'a') + 6;
@@ -45,7 +45,7 @@ namespace eosio::chain {
       uint64_t value = 0;
 
       friend struct fc::reflector<name>;
-      friend void fc::from_variant(const fc::variant& v, eosio::chain::name& check);
+      friend void fc::from_variant(const fc::variant& v, core_net::chain::name& check);
 
       void set( std::string_view str );
 
@@ -174,11 +174,11 @@ namespace eosio::chain {
 #endif
    } // namespace literals
 
-} // eosio::chain
+} // core_net::chain
 
 namespace std {
-   template<> struct hash<eosio::chain::name> : private hash<uint64_t> {
-      typedef eosio::chain::name argument_type;
+   template<> struct hash<core_net::chain::name> : private hash<uint64_t> {
+      typedef core_net::chain::name argument_type;
 
       size_t operator()(const argument_type& name) const noexcept {
          static_assert(sizeof(size_t) == sizeof(uint64_t));
@@ -187,4 +187,4 @@ namespace std {
    };
 };
 
-FC_REFLECT( eosio::chain::name, (value) )
+FC_REFLECT( core_net::chain::name, (value) )

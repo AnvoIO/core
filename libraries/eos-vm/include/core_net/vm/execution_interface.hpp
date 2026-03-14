@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eosio/vm/wasm_stack.hpp>
-#include <eosio/vm/utils.hpp>
-#include <eosio/vm/exceptions.hpp>
+#include <core_net/vm/wasm_stack.hpp>
+#include <core_net/vm/utils.hpp>
+#include <core_net/vm/exceptions.hpp>
 #include <cstring>
 #include <limits>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    // interface used for the host function system to use
    // clients can create their own interface to overlay their own implementations
@@ -29,7 +29,7 @@ namespace eosio { namespace vm {
 
       template <typename T>
       inline void validate_pointer(const void* ptr, wasm_size_t len) const {
-         EOS_VM_ASSERT( len <= std::numeric_limits<wasm_size_t>::max() / (wasm_size_t)sizeof(T), wasm_interpreter_exception, "length will overflow" );
+         CORE_NET_VM_ASSERT( len <= std::numeric_limits<wasm_size_t>::max() / (wasm_size_t)sizeof(T), wasm_interpreter_exception, "length will overflow" );
          volatile auto check_addr = *(reinterpret_cast<const char*>(ptr) + (len * sizeof(T)) - 1);
          ignore_unused_variable_warning(check_addr);
       }
@@ -47,4 +47,4 @@ namespace eosio { namespace vm {
       char* memory;
       operand_stack* os;
    };
-}} // ns eosio::vm
+}} // ns core_net::vm

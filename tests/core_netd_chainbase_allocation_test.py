@@ -47,7 +47,7 @@ try:
         activateIF=activateIF,
         loadSystemContract=False,
         specificExtraNodeosArgs={
-            1:"--read-mode irreversible --plugin eosio::producer_api_plugin"})
+            1:"--read-mode irreversible --plugin core_net::producer_api_plugin"})
 
     producerNodeId = 0
     irrNodeId = 1

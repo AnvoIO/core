@@ -1,9 +1,9 @@
 #pragma once
 
-#include <eosio/vm/exceptions.hpp>
-#include <eosio/vm/opcodes.hpp>
+#include <core_net/vm/exceptions.hpp>
+#include <core_net/vm/opcodes.hpp>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    struct base_visitor {
       [[gnu::always_inline]] inline void operator()(const unreachable_t& ) {}
@@ -185,4 +185,4 @@ namespace eosio { namespace vm {
       }
    };
 
-}} // namespace eosio::vm
+}} // namespace core_net::vm

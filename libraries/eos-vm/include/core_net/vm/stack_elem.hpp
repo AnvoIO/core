@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/vm/opcodes.hpp>
-#include <eosio/vm/variant.hpp>
+#include <core_net/vm/opcodes.hpp>
+#include <core_net/vm/variant.hpp>
 
 #include <cstdint>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    class operand_stack_elem : public variant<i32_const_t, i64_const_t, f32_const_t, f64_const_t> {
       public:

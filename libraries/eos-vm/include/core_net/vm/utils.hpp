@@ -25,7 +25,7 @@
 #   endif
 #endif
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    // helper to read a wasm file into a vector of bytes
    inline std::vector<uint8_t> read_wasm(const std::string& fname) {
       std::ifstream wasm_file(fname, std::ios::binary);
@@ -253,4 +253,4 @@ namespace eosio { namespace vm {
 
    template <size_t N, typename Tuple>
    using tuple_trim_t = typename detail::tuple_trim<N, 0, Tuple>::type;
-}} // namespace eosio::vm
+}} // namespace core_net::vm

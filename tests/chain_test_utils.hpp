@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/chain/application.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/controller.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/controller.hpp>
 
 #include <fc/exception/exception.hpp>
 
@@ -16,10 +16,10 @@
 #include <stdexcept>
 #include <thread>
 
-namespace eosio::test_utils {
+namespace core_net::test_utils {
 
-using namespace eosio::chain;
-using namespace eosio::chain::literals;
+using namespace core_net::chain;
+using namespace core_net::chain::literals;
 
 struct testit {
    uint64_t id;
@@ -61,7 +61,7 @@ inline public_key_type  get_public_key( name keyname, string role ){
 }
 
 // Create a read-only trx that works with bios reqactivated action
-inline auto make_bios_ro_trx(eosio::chain::controller& control) {
+inline auto make_bios_ro_trx(core_net::chain::controller& control) {
    const auto& pfm = control.get_protocol_feature_manager();
    static auto feature_digest = pfm.get_builtin_digest(builtin_protocol_feature_t::replace_deferred);
 
@@ -74,7 +74,7 @@ inline auto make_bios_ro_trx(eosio::chain::controller& control) {
 
 // Push an input transaction to controller and return trx trace
 // If account is eosio then signs with the default private key
-inline auto push_input_trx(appbase::scoped_app& app, eosio::chain::controller& control, account_name account, signed_transaction& trx) {
+inline auto push_input_trx(appbase::scoped_app& app, core_net::chain::controller& control, account_name account, signed_transaction& trx) {
    trx.expiration = fc::time_point_sec{fc::time_point::now() + fc::seconds(30)};
    trx.set_reference_block( control.head().id() );
    trx.sign(get_private_key(account, "active"), control.get_chain_id());
@@ -114,7 +114,7 @@ inline auto push_input_trx(appbase::scoped_app& app, eosio::chain::controller& c
 }
 
 // Push setcode trx to controller and return trx trace
-inline auto set_code(appbase::scoped_app& app, eosio::chain::controller& control, account_name account, const vector<uint8_t>& wasm) {
+inline auto set_code(appbase::scoped_app& app, core_net::chain::controller& control, account_name account, const vector<uint8_t>& wasm) {
    signed_transaction trx;
    trx.actions.emplace_back(std::vector<permission_level>{{account, config::active_name}},
                             chain::setcode{
@@ -126,7 +126,7 @@ inline auto set_code(appbase::scoped_app& app, eosio::chain::controller& control
    return push_input_trx(app, control, account, trx);
 }
 
-inline transaction_trace_ptr create_account(appbase::scoped_app& app, eosio::chain::controller& control, account_name a, account_name creator) {
+inline transaction_trace_ptr create_account(appbase::scoped_app& app, core_net::chain::controller& control, account_name a, account_name creator) {
    signed_transaction trx;
 
    authority owner_auth{ get_public_key( a, "owner" ) };
@@ -199,11 +199,11 @@ inline void activate_protocol_features_set_bios_contract(appbase::scoped_app& ap
    // Wait for next block
    std::this_thread::sleep_for( std::chrono::milliseconds(config::block_interval_ms) );
 
-   auto r = set_code(app, chain_plug->chain(), config::system_account_name, testing::contracts::eosio_bios_wasm());
+   auto r = set_code(app, chain_plug->chain(), config::system_account_name, testing::contracts::core_net_bios_wasm());
    BOOST_CHECK(r->receipt && r->receipt->status == transaction_receipt_header::executed);
 }
 
-} // namespace eosio::test_utils
+} // namespace core_net::test_utils
 
-FC_REFLECT( eosio::test_utils::testit, (id) )
-FC_REFLECT( eosio::test_utils::reqactivated, (feature_digest) )
+FC_REFLECT( core_net::test_utils::testit, (id) )
+FC_REFLECT( core_net::test_utils::reqactivated, (feature_digest) )

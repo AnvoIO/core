@@ -1,15 +1,15 @@
 #pragma once
 
-#include <eosio/vm/allocator.hpp>
-#include <eosio/vm/opcodes.hpp>
-#include <eosio/vm/types.hpp>
-#include <eosio/vm/vector.hpp>
+#include <core_net/vm/allocator.hpp>
+#include <core_net/vm/opcodes.hpp>
+#include <core_net/vm/types.hpp>
+#include <core_net/vm/vector.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    class bitcode_writer {
 
@@ -79,7 +79,7 @@ namespace eosio { namespace vm {
          // Must be called after all cases
          uint32_t* emit_default(uint32_t depth_change) {
             auto result = emit_case(depth_change);
-            EOS_VM_ASSERT(_this->fb[_this->op_index].is_a<error_t>(), wasm_parse_exception, "overwrote br_table data");
+            CORE_NET_VM_ASSERT(_this->fb[_this->op_index].is_a<error_t>(), wasm_parse_exception, "overwrote br_table data");
             return result;
          }
          br_table_t::elem_t* _br_tab;

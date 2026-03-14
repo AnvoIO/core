@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
 using bytes = std::vector<char>;
 
-namespace eosio {
+namespace core_net {
    namespace internal_use_do_not_use {
     extern "C" {
       __attribute__((eosio_wasm_import)) 
@@ -47,31 +47,31 @@ namespace eosio {
    }
 }
 
-class [[eosio::contract]] crypto_primitives_test : public eosio::contract {
+class [[core_net::contract]] crypto_primitives_test : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testadd(const bytes& op1, const bytes& op2, int32_t expected_error, const bytes& expected_result);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testmul(const bytes& point, const bytes& scalar, int32_t expected_error, const bytes& expected_result);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testpair(const bytes& g1_g2_pairs, int32_t expected_error);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testmodexp(const bytes& base, const bytes& exp, const bytes& modulo, int32_t expected_error, const bytes& expected_result);
          
-   [[eosio::action]]
+   [[core_net::action]]
    void testblake2f(uint32_t rounds, const bytes& state, const bytes& message, const bytes& t0, const bytes& t1, bool final, int32_t expected_error, const bytes& expected_result);
    
-   [[eosio::action]]
+   [[core_net::action]]
    void testsha3(const bytes& input, const bytes& expected_result);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testkeccak(const bytes& input, const bytes& expected_result);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testecrec(const bytes& signature, const bytes& digest, int32_t expected_error, const bytes& expected_result);
 };

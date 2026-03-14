@@ -1,14 +1,14 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
-class [[eosio::contract]] asserter : public eosio::contract {
+class [[core_net::contract]] asserter : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action]]
+   [[core_net::action]]
    void procassert( int8_t condition, std::string message );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void provereset();
 };

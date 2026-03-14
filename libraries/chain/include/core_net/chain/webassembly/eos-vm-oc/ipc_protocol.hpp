@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/webassembly/eos-vm-oc/config.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/eos-vm-oc.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/config.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/eos-vm-oc.hpp>
+#include <core_net/chain/types.hpp>
 
-namespace eosio { namespace chain { namespace eosvmoc {
+namespace core_net { namespace chain { namespace eosvmoc {
 
 struct initialize_message {
    //Two sent fds: 1) communication socket for this instance  2) the cache file 
@@ -15,7 +15,7 @@ struct initalize_response_message {
 };
 
 struct code_tuple {
-   eosio::chain::digest_type code_id;
+   core_net::chain::digest_type code_id;
    uint8_t vm_version;
    bool operator==(const code_tuple& o) const {return o.code_id == code_id && o.vm_version == vm_version;}
 };
@@ -65,12 +65,12 @@ using eosvmoc_message = std::variant<initialize_message,
                                      wasm_compilation_result_message>;
 }}}
 
-FC_REFLECT(eosio::chain::eosvmoc::initialize_message, )
-FC_REFLECT(eosio::chain::eosvmoc::initalize_response_message, (error_message))
-FC_REFLECT(eosio::chain::eosvmoc::code_tuple, (code_id)(vm_version))
-FC_REFLECT(eosio::chain::eosvmoc::compile_wasm_message, (log_level)(receiver)(code)(queued_time)(limits))
-FC_REFLECT(eosio::chain::eosvmoc::evict_wasms_message, (codes))
-FC_REFLECT(eosio::chain::eosvmoc::code_compilation_result_message, (start)(apply_offset)(starting_memory_pages)(initdata_prologue_size)(queued_time))
-FC_REFLECT(eosio::chain::eosvmoc::compilation_result_unknownfailure, )
-FC_REFLECT(eosio::chain::eosvmoc::compilation_result_toofull, )
-FC_REFLECT(eosio::chain::eosvmoc::wasm_compilation_result_message, (code)(result)(cache_free_bytes)(queued_time))
+FC_REFLECT(core_net::chain::eosvmoc::initialize_message, )
+FC_REFLECT(core_net::chain::eosvmoc::initalize_response_message, (error_message))
+FC_REFLECT(core_net::chain::eosvmoc::code_tuple, (code_id)(vm_version))
+FC_REFLECT(core_net::chain::eosvmoc::compile_wasm_message, (log_level)(receiver)(code)(queued_time)(limits))
+FC_REFLECT(core_net::chain::eosvmoc::evict_wasms_message, (codes))
+FC_REFLECT(core_net::chain::eosvmoc::code_compilation_result_message, (start)(apply_offset)(starting_memory_pages)(initdata_prologue_size)(queued_time))
+FC_REFLECT(core_net::chain::eosvmoc::compilation_result_unknownfailure, )
+FC_REFLECT(core_net::chain::eosvmoc::compilation_result_toofull, )
+FC_REFLECT(core_net::chain::eosvmoc::wasm_compilation_result_message, (code)(result)(cache_free_bytes)(queued_time))

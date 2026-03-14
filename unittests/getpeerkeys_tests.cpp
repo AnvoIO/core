@@ -3,19 +3,19 @@
 #include <boost/test/unit_test.hpp>
 #pragma GCC diagnostic pop
 
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/variant_object.hpp>
 
 #include <contracts.hpp>
-#include "eosio_system_tester.hpp"
+#include "system_tester.hpp"
 
-using namespace eosio_system;
+using namespace core_net_system;
 
-class getpeerkeys_tester : public eosio_system_tester<validating_tester> {
+class getpeerkeys_tester : public core_net_system_tester<validating_tester> {
 public:
    action_result regpeerkey( const name& proposer, const fc::crypto::public_key& key  ) {
       return push_action(proposer, "regpeerkey"_n, mvo()("proposer_finalizer_name", proposer)("key", key));

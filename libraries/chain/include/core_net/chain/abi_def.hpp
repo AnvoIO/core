@@ -1,8 +1,8 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 using type_name      = string;
 using field_name     = string;
@@ -133,48 +133,48 @@ struct abi_def {
    may_not_exist<vector<action_result_def>>  action_results;
 };
 
-abi_def eosio_contract_abi(const abi_def& eosio_system_abi);
+abi_def core_net_contract_abi(const abi_def& core_net_system_abi);
 vector<type_def> common_type_defs();
 
 extern unsigned char eosio_abi_bin[2132];
 
-} } /// namespace eosio::chain
+} } /// namespace core_net::chain
 
 namespace fc {
 
 template<typename ST, typename T>
-datastream<ST>& operator << (datastream<ST>& s, const eosio::chain::may_not_exist<T>& v) {
+datastream<ST>& operator << (datastream<ST>& s, const core_net::chain::may_not_exist<T>& v) {
    raw::pack(s, v.value);
    return s;
 }
 
 template<typename ST, typename T>
-datastream<ST>& operator >> (datastream<ST>& s, eosio::chain::may_not_exist<T>& v) {
+datastream<ST>& operator >> (datastream<ST>& s, core_net::chain::may_not_exist<T>& v) {
    if (s.remaining())
       raw::unpack(s, v.value);
    return s;
 }
 
 template<typename T>
-void to_variant(const eosio::chain::may_not_exist<T>& e, fc::variant& v) {
+void to_variant(const core_net::chain::may_not_exist<T>& e, fc::variant& v) {
    to_variant( e.value, v);
 }
 
 template<typename T>
-void from_variant(const fc::variant& v, eosio::chain::may_not_exist<T>& e) {
+void from_variant(const fc::variant& v, core_net::chain::may_not_exist<T>& e) {
    from_variant( v, e.value );
 }
 
 } // namespace fc
 
-FC_REFLECT( eosio::chain::type_def                         , (new_type_name)(type) )
-FC_REFLECT( eosio::chain::field_def                        , (name)(type) )
-FC_REFLECT( eosio::chain::struct_def                       , (name)(base)(fields) )
-FC_REFLECT( eosio::chain::action_def                       , (name)(type)(ricardian_contract) )
-FC_REFLECT( eosio::chain::table_def                        , (name)(index_type)(key_names)(key_types)(type) )
-FC_REFLECT( eosio::chain::clause_pair                      , (id)(body) )
-FC_REFLECT( eosio::chain::error_message                    , (error_code)(error_msg) )
-FC_REFLECT( eosio::chain::variant_def                      , (name)(types) )
-FC_REFLECT( eosio::chain::action_result_def                , (name)(result_type) )
-FC_REFLECT( eosio::chain::abi_def                          , (version)(types)(structs)(actions)(tables)
+FC_REFLECT( core_net::chain::type_def                         , (new_type_name)(type) )
+FC_REFLECT( core_net::chain::field_def                        , (name)(type) )
+FC_REFLECT( core_net::chain::struct_def                       , (name)(base)(fields) )
+FC_REFLECT( core_net::chain::action_def                       , (name)(type)(ricardian_contract) )
+FC_REFLECT( core_net::chain::table_def                        , (name)(index_type)(key_names)(key_types)(type) )
+FC_REFLECT( core_net::chain::clause_pair                      , (id)(body) )
+FC_REFLECT( core_net::chain::error_message                    , (error_code)(error_msg) )
+FC_REFLECT( core_net::chain::variant_def                      , (name)(types) )
+FC_REFLECT( core_net::chain::action_result_def                , (name)(result_type) )
+FC_REFLECT( core_net::chain::abi_def                          , (version)(types)(structs)(actions)(tables)
                                                              (ricardian_clauses)(error_messages)(abi_extensions)(variants)(action_results) )

@@ -1,8 +1,8 @@
-#include <eosio/chain/block_handle.hpp>
+#include <core_net/chain/block_handle.hpp>
 #include <fc/io/cfile.hpp>
 #include <filesystem>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 // -------------------------------------------------------------------------------------------
 // prior to writing magic and version numbers, we simply serialized the class (*this) to
@@ -57,4 +57,4 @@ bool block_handle::read(const std::filesystem::path& state_file) {
    return true;
 }
 
-} /// namespace eosio::chain
+} /// namespace core_net::chain

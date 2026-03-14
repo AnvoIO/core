@@ -2,7 +2,7 @@
 
 #include <fc/variant.hpp>
 
-namespace eosio { namespace client { namespace localize {
+namespace core_net { namespace client { namespace localize {
    #if !defined(_)
    #define _(str) str
    #endif

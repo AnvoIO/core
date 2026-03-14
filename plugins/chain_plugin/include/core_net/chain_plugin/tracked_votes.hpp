@@ -1,9 +1,9 @@
 #pragma once
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/controller.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/controller.hpp>
 
-namespace eosio::chain_apis {
+namespace core_net::chain_apis {
    /**
     * This class manages the ephemeral data that is needed by `get_finalizers_info` RPC call.
     * There is no persistence and the cache is recreated when the class is instantiated
@@ -19,7 +19,7 @@ namespace eosio::chain_apis {
        * @param tracking_enabled true if get_last_vote_info() vote tracking enabled
        * @param chain - controller to read data from
        */
-      explicit tracked_votes(const class eosio::chain::controller& chain);
+      explicit tracked_votes(const class core_net::chain::controller& chain);
       ~tracked_votes();
 
       /**
@@ -51,4 +51,4 @@ namespace eosio::chain_apis {
 
 }
 
-FC_REFLECT( eosio::chain_apis::tracked_votes::vote_info, (description)(public_key)(is_vote_strong)(finalizer_policy_generation)(voted_for_block_id)(voted_for_block_num)(voted_for_block_timestamp))
+FC_REFLECT( core_net::chain_apis::tracked_votes::vote_info, (description)(public_key)(is_vote_strong)(finalizer_policy_generation)(voted_for_block_id)(voted_for_block_num)(voted_for_block_timestamp))

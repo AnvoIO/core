@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/chain/authority.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/authority.hpp>
+#include <core_net/chain/types.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
-using action_name    = eosio::chain::action_name;
+using action_name    = core_net::chain::action_name;
 
 struct newaccount {
    account_name                     creator;
@@ -152,14 +152,14 @@ struct onerror {
    }
 };
 
-} } /// namespace eosio::chain
+} } /// namespace core_net::chain
 
-FC_REFLECT( eosio::chain::newaccount                       , (creator)(name)(owner)(active) )
-FC_REFLECT( eosio::chain::setcode                          , (account)(vmtype)(vmversion)(code) )
-FC_REFLECT( eosio::chain::setabi                           , (account)(abi) )
-FC_REFLECT( eosio::chain::updateauth                       , (account)(permission)(parent)(auth) )
-FC_REFLECT( eosio::chain::deleteauth                       , (account)(permission) )
-FC_REFLECT( eosio::chain::linkauth                         , (account)(code)(type)(requirement) )
-FC_REFLECT( eosio::chain::unlinkauth                       , (account)(code)(type) )
-FC_REFLECT( eosio::chain::canceldelay                      , (canceling_auth)(trx_id) )
-FC_REFLECT( eosio::chain::onerror                          , (sender_id)(sent_trx) )
+FC_REFLECT( core_net::chain::newaccount                       , (creator)(name)(owner)(active) )
+FC_REFLECT( core_net::chain::setcode                          , (account)(vmtype)(vmversion)(code) )
+FC_REFLECT( core_net::chain::setabi                           , (account)(abi) )
+FC_REFLECT( core_net::chain::updateauth                       , (account)(permission)(parent)(auth) )
+FC_REFLECT( core_net::chain::deleteauth                       , (account)(permission) )
+FC_REFLECT( core_net::chain::linkauth                         , (account)(code)(type)(requirement) )
+FC_REFLECT( core_net::chain::unlinkauth                       , (account)(code)(type) )
+FC_REFLECT( core_net::chain::canceldelay                      , (canceling_auth)(trx_id) )
+FC_REFLECT( core_net::chain::onerror                          , (sender_id)(sent_trx) )

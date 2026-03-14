@@ -1,13 +1,13 @@
 #pragma once
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 
 struct dummy_action {
-   static eosio::chain::name get_name() {
-      using namespace eosio::chain::literals;
+   static core_net::chain::name get_name() {
+      using namespace core_net::chain::literals;
       return "dummyaction"_n;
    }
-   static eosio::chain::name get_account() {
-      using namespace eosio::chain::literals;
+   static core_net::chain::name get_account() {
+      using namespace core_net::chain::literals;
       return "testapi"_n;
    }
 
@@ -17,12 +17,12 @@ struct dummy_action {
 };
 
 struct cf_action {
-   static eosio::chain::name get_name() {
-      using namespace eosio::chain::literals;
+   static core_net::chain::name get_name() {
+      using namespace core_net::chain::literals;
       return "cfaction"_n;
    }
-   static eosio::chain::name get_account() {
-      using namespace eosio::chain::literals;
+   static core_net::chain::name get_account() {
+      using namespace core_net::chain::literals;
       return "testapi"_n;
    }
 
@@ -37,5 +37,5 @@ FC_REFLECT(cf_action, (payload)(cfd_idx))
 #define DUMMY_ACTION_DEFAULT_B 0xab11cd1244556677
 #define DUMMY_ACTION_DEFAULT_C 0x7451ae12
 
-std::vector<eosio::chain::signed_block_ptr> deploy_test_api(eosio::testing::tester& chain);
-eosio::chain::transaction_trace_ptr push_test_cfd_transaction(eosio::testing::tester& chain);
+std::vector<core_net::chain::signed_block_ptr> deploy_test_api(core_net::testing::tester& chain);
+core_net::chain::transaction_trace_ptr push_test_cfd_transaction(core_net::testing::tester& chain);

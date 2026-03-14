@@ -1,11 +1,11 @@
 #pragma once
-#include <eosio/chain/block_header.hpp>
-#include <eosio/chain/incremental_merkle_legacy.hpp>
-#include <eosio/chain/protocol_feature_manager.hpp>
-#include <eosio/chain/chain_snapshot.hpp>
+#include <core_net/chain/block_header.hpp>
+#include <core_net/chain/incremental_merkle_legacy.hpp>
+#include <core_net/chain/protocol_feature_manager.hpp>
+#include <core_net/chain/chain_snapshot.hpp>
 #include <future>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 namespace snapshot_detail {
    struct snapshot_block_header_state_legacy_v2;
@@ -158,9 +158,9 @@ struct block_header_state_legacy : public detail::block_header_state_legacy_comm
 
 using block_header_state_legacy_ptr = std::shared_ptr<block_header_state_legacy>;
 
-} /// namespace eosio::chain
+} /// namespace core_net::chain
 
-FC_REFLECT( eosio::chain::detail::block_header_state_legacy_common,
+FC_REFLECT( core_net::chain::detail::block_header_state_legacy_common,
             (block_num)
             (dpos_proposed_irreversible_blocknum)
             (dpos_irreversible_blocknum)
@@ -172,13 +172,13 @@ FC_REFLECT( eosio::chain::detail::block_header_state_legacy_common,
             (confirm_count)
 )
 
-FC_REFLECT( eosio::chain::detail::schedule_info,
+FC_REFLECT( core_net::chain::detail::schedule_info,
             (schedule_lib_num)
             (schedule_hash)
             (schedule)
 )
 
-FC_REFLECT_DERIVED(  eosio::chain::block_header_state_legacy, (eosio::chain::detail::block_header_state_legacy_common),
+FC_REFLECT_DERIVED(  core_net::chain::block_header_state_legacy, (core_net::chain::detail::block_header_state_legacy_common),
                      (id)
                      (header)
                      (pending_schedule)

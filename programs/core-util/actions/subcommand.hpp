@@ -3,14 +3,14 @@
 #include <CLI/CLI.hpp>
 #include <memory>
 
-class spring_util_exception_handler {
+class core_util_exception_handler {
 public:
-   spring_util_exception_handler() {}
-   ~spring_util_exception_handler() {}
+   core_util_exception_handler() {}
+   ~core_util_exception_handler() {}
    void print_exception() noexcept;
 };
 
-template<class subcommand_options, class exception_handler = spring_util_exception_handler>
+template<class subcommand_options, class exception_handler = core_util_exception_handler>
 class sub_command {
 protected:
    std::shared_ptr<subcommand_options> opt;

@@ -41,8 +41,8 @@ try:
 
     specificExtraNodeosArgs = {}
     # producer nodes will be mapped to 0 through totalProducerNodes-1, so the number totalProducerNodes will be the non-producing node
-    specificExtraNodeosArgs[totalProducerNodes] = "--plugin eosio::producer_plugin --plugin eosio::chain_api_plugin --plugin eosio::http_plugin "
-    "--plugin eosio::producer_api_plugin "
+    specificExtraNodeosArgs[totalProducerNodes] = "--plugin core_net::producer_plugin --plugin core_net::chain_api_plugin --plugin core_net::http_plugin "
+    "--plugin core_net::producer_api_plugin "
     extraNodeosArgs = " --http-max-response-time-ms 990000 "
 
     # ***   setup topogrophy   ***

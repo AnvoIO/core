@@ -1,14 +1,14 @@
 #include <boost/test/unit_test.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain_plugin/account_query_db.hpp>
-#include <eosio/chain/thread_utils.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain_plugin/account_query_db.hpp>
+#include <core_net/chain/thread_utils.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
-using namespace eosio::chain_apis;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
+using namespace core_net::chain_apis;
 
 using params  = account_query_db::get_accounts_by_authorizers_params;
 using results = account_query_db::get_accounts_by_authorizers_result;

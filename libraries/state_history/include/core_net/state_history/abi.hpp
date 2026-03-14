@@ -2,6 +2,6 @@
 
 #include <string>
 
-namespace eosio::state_history {
+namespace core_net::state_history {
 std::string ship_abi_without_tables();
 }

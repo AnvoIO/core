@@ -1,19 +1,19 @@
-#include <eosio/chain/fork_database.hpp>
-#include <eosio/chain/finalizer.hpp>
+#include <core_net/chain/fork_database.hpp>
+#include <core_net/chain/finalizer.hpp>
 
 #include <boost/test/unit_test.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/testing/bls_utils.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/testing/bls_utils.hpp>
 #include <fc/bitutil.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
-using bs            = eosio::chain::block_state;
-using bsp           = eosio::chain::block_state_ptr;
-using bhs           = eosio::chain::block_header_state;
-using bhsp          = eosio::chain::block_header_state_ptr;
+using bs            = core_net::chain::block_state;
+using bsp           = core_net::chain::block_state_ptr;
+using bhs           = core_net::chain::block_header_state;
+using bhsp          = core_net::chain::block_header_state_ptr;
 using vote_decision = finalizer::vote_decision;
 using vote_result   = finalizer::vote_result;
 using tstamp        = block_timestamp_type;
@@ -21,7 +21,7 @@ using fsi_t         = finalizer_safety_information;
 
 // ---------------------------------------------------------------------------------------
 // Used to access privates of block_state
-namespace eosio::chain {
+namespace core_net::chain {
    struct test_block_state_accessor {
       static void set_valid(block_state_ptr& bsp, bool v) {
          bsp->set_valid(v);
@@ -42,7 +42,7 @@ struct bls_keys_t {
 
    bls_keys_t(name n) {
       bls_signature pop;
-      std::tie(privkey, pubkey, pop)    = eosio::testing::get_bls_key(n);
+      std::tie(privkey, pubkey, pop)    = core_net::testing::get_bls_key(n);
       std::tie(privkey_str, pubkey_str) = std::pair{ privkey.to_string(), pubkey.to_string() };
    }
 };

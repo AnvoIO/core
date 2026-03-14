@@ -1,24 +1,24 @@
 #pragma once
 
-#include <eosio/chain_plugin/account_query_db.hpp>
-#include <eosio/chain_plugin/trx_retry_db.hpp>
-#include <eosio/chain_plugin/trx_finality_status_processing.hpp>
-#include <eosio/chain_plugin/tracked_votes.hpp>
-#include <eosio/chain_plugin/get_info_db.hpp>
+#include <core_net/chain_plugin/account_query_db.hpp>
+#include <core_net/chain_plugin/trx_retry_db.hpp>
+#include <core_net/chain_plugin/trx_finality_status_processing.hpp>
+#include <core_net/chain_plugin/tracked_votes.hpp>
+#include <core_net/chain_plugin/get_info_db.hpp>
 
-#include <eosio/chain/application.hpp>
-#include <eosio/chain/asset.hpp>
-#include <eosio/chain/authority.hpp>
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/plugin_interface.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/fixed_bytes.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/chain/asset.hpp>
+#include <core_net/chain/authority.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/plugin_interface.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/fixed_bytes.hpp>
 
 #include <boost/container/flat_set.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
@@ -27,7 +27,7 @@
 
 namespace fc { class variant; }
 
-namespace eosio {
+namespace core_net {
    namespace chain { class abi_resolver; }
 
    using chain::controller;
@@ -100,7 +100,7 @@ Type convert_to_type(const string& str, const string& desc) {
    } FC_RETHROW_EXCEPTIONS(warn, "Could not convert ${desc} string '${str}' to key type.", ("desc", desc)("str",str) )
 }
 
-uint64_t convert_to_type(const eosio::name &n, const string &desc);
+uint64_t convert_to_type(const core_net::name &n, const string &desc);
 
 template<>
 uint64_t convert_to_type(const string& str, const string& desc);
@@ -236,9 +236,9 @@ public:
       int64_t used = 0;
       int64_t available = 0;
       int64_t max = 0;
-      std::optional<chain::block_timestamp_type> last_usage_update_time;    // optional for backward nodeos support
-      std::optional<int64_t> current_used;  // optional for backward nodeos support
-      void set( const eosio::chain::resource_limits::account_resource_limit& arl)
+      std::optional<chain::block_timestamp_type> last_usage_update_time;    // optional for backward core_netd support
+      std::optional<int64_t> current_used;  // optional for backward core_netd support
+      void set( const core_net::chain::resource_limits::account_resource_limit& arl)
       {
          used = arl.used;
          available = arl.available;
@@ -275,7 +275,7 @@ public:
       fc::variant                voter_info;
       fc::variant                rex_info;
 
-      std::optional<eosio::chain::resource_limits::account_resource_limit> subjective_cpu_bill_limit;
+      std::optional<core_net::chain::resource_limits::account_resource_limit> subjective_cpu_bill_limit;
       std::vector<linked_action> eosio_any_linked_actions;
    };
 
@@ -533,7 +533,7 @@ public:
    get_scheduled_transactions_result get_scheduled_transactions( const get_scheduled_transactions_params& params, const fc::time_point& deadline ) const;
    struct compute_transaction_results {
        chain::transaction_id_type  transaction_id;
-       fc::variant                 processed; // "processed" is expected JSON for trxs in cleos
+       fc::variant                 processed; // "processed" is expected JSON for trxs in core-cli
     };
 
    struct compute_transaction_params {
@@ -612,10 +612,10 @@ public:
 
          const auto& secidx = d.get_index<IndexType, chain::by_secondary>();
          auto lower_bound_lookup_tuple = std::make_tuple( index_t_id->id._id,
-                                                          eosio::chain::secondary_key_traits<secondary_key_type>::true_lowest(),
+                                                          core_net::chain::secondary_key_traits<secondary_key_type>::true_lowest(),
                                                           std::numeric_limits<uint64_t>::lowest() );
          auto upper_bound_lookup_tuple = std::make_tuple( index_t_id->id._id,
-                                                          eosio::chain::secondary_key_traits<secondary_key_type>::true_highest(),
+                                                          core_net::chain::secondary_key_traits<secondary_key_type>::true_highest(),
                                                           std::numeric_limits<uint64_t>::max() );
 
          if( p.lower_bound.size() ) {
@@ -624,7 +624,7 @@ public:
                   SecKeyType lv = convert_to_type(name{p.lower_bound}, "lower_bound name");
                   std::get<1>(lower_bound_lookup_tuple) = conv(lv);
                } else {
-                  EOS_ASSERT(false, chain::contract_table_query_exception, "Invalid key type of eosio::name ${nm} for lower bound", ("nm", p.lower_bound));
+                  EOS_ASSERT(false, chain::contract_table_query_exception, "Invalid key type of core_net::name ${nm} for lower bound", ("nm", p.lower_bound));
                }
             } else {
                SecKeyType lv = convert_to_type<SecKeyType>( p.lower_bound, "lower_bound" );
@@ -638,7 +638,7 @@ public:
                   SecKeyType uv = convert_to_type(name{p.upper_bound}, "upper_bound name");
                   std::get<1>(upper_bound_lookup_tuple) = conv(uv);
                } else {
-                  EOS_ASSERT(false, chain::contract_table_query_exception, "Invalid key type of eosio::name ${nm} for upper bound", ("nm", p.upper_bound));
+                  EOS_ASSERT(false, chain::contract_table_query_exception, "Invalid key type of core_net::name ${nm} for upper bound", ("nm", p.upper_bound));
                }
             } else {
                SecKeyType uv = convert_to_type<SecKeyType>( p.upper_bound, "upper_bound" );
@@ -864,7 +864,7 @@ public:
    using push_transaction_params = fc::variant_object;
    struct push_transaction_results {
       chain::transaction_id_type  transaction_id;
-      fc::variant                 processed; // "processed" is expected JSON for trxs in cleos
+      fc::variant                 processed; // "processed" is expected JSON for trxs in core-cli
    };
    void push_transaction(const push_transaction_params& params, chain::plugin_interface::next_function<push_transaction_results> next);
 
@@ -1008,71 +1008,71 @@ private:
    unique_ptr<class chain_plugin_impl> my;
 };
 
-} // namespace eosio
+} // namespace core_net
 
-FC_REFLECT( eosio::chain_apis::linked_action, (account)(action) )
-FC_REFLECT( eosio::chain_apis::permission, (perm_name)(parent)(required_auth)(linked_actions) )
-FC_REFLECT(eosio::chain_apis::empty, )
-FC_REFLECT(eosio::chain_apis::read_only::get_transaction_status_params, (id) )
-FC_REFLECT(eosio::chain_apis::read_only::get_transaction_status_results, (state)(block_number)(block_id)(block_timestamp)(expiration)(head_number)(head_id)
+FC_REFLECT( core_net::chain_apis::linked_action, (account)(action) )
+FC_REFLECT( core_net::chain_apis::permission, (perm_name)(parent)(required_auth)(linked_actions) )
+FC_REFLECT(core_net::chain_apis::empty, )
+FC_REFLECT(core_net::chain_apis::read_only::get_transaction_status_params, (id) )
+FC_REFLECT(core_net::chain_apis::read_only::get_transaction_status_results, (state)(block_number)(block_id)(block_timestamp)(expiration)(head_number)(head_id)
            (head_timestamp)(irreversible_number)(irreversible_id)(irreversible_timestamp)(earliest_tracked_block_id)(earliest_tracked_block_number) )
-FC_REFLECT(eosio::chain_apis::read_only::get_activated_protocol_features_params, (lower_bound)(upper_bound)(limit)(search_by_block_num)(reverse)(time_limit_ms) )
-FC_REFLECT(eosio::chain_apis::read_only::get_activated_protocol_features_results, (activated_protocol_features)(more) )
-FC_REFLECT(eosio::chain_apis::read_only::get_raw_block_params, (block_num_or_id))
-FC_REFLECT(eosio::chain_apis::read_only::get_block_info_params, (block_num))
-FC_REFLECT(eosio::chain_apis::read_only::get_block_header_state_params, (block_num_or_id))
-FC_REFLECT(eosio::chain_apis::read_only::get_block_header_params, (block_num_or_id)(include_extensions))
-FC_REFLECT(eosio::chain_apis::read_only::get_block_header_result, (id)(signed_block_header)(block_extensions))
+FC_REFLECT(core_net::chain_apis::read_only::get_activated_protocol_features_params, (lower_bound)(upper_bound)(limit)(search_by_block_num)(reverse)(time_limit_ms) )
+FC_REFLECT(core_net::chain_apis::read_only::get_activated_protocol_features_results, (activated_protocol_features)(more) )
+FC_REFLECT(core_net::chain_apis::read_only::get_raw_block_params, (block_num_or_id))
+FC_REFLECT(core_net::chain_apis::read_only::get_block_info_params, (block_num))
+FC_REFLECT(core_net::chain_apis::read_only::get_block_header_state_params, (block_num_or_id))
+FC_REFLECT(core_net::chain_apis::read_only::get_block_header_params, (block_num_or_id)(include_extensions))
+FC_REFLECT(core_net::chain_apis::read_only::get_block_header_result, (id)(signed_block_header)(block_extensions))
 
-FC_REFLECT( eosio::chain_apis::read_write::push_transaction_results, (transaction_id)(processed) )
-FC_REFLECT( eosio::chain_apis::read_write::send_transaction2_params, (return_failure_trace)(retry_trx)(retry_trx_num_blocks)(transaction) )
+FC_REFLECT( core_net::chain_apis::read_write::push_transaction_results, (transaction_id)(processed) )
+FC_REFLECT( core_net::chain_apis::read_write::send_transaction2_params, (return_failure_trace)(retry_trx)(retry_trx_num_blocks)(transaction) )
 
-FC_REFLECT( eosio::chain_apis::read_only::get_table_rows_params, (json)(code)(scope)(table)(table_key)(lower_bound)(upper_bound)(limit)(key_type)(index_position)(encode_type)(reverse)(show_payer)(time_limit_ms) )
-FC_REFLECT( eosio::chain_apis::read_only::get_table_rows_result, (rows)(more)(next_key) );
+FC_REFLECT( core_net::chain_apis::read_only::get_table_rows_params, (json)(code)(scope)(table)(table_key)(lower_bound)(upper_bound)(limit)(key_type)(index_position)(encode_type)(reverse)(show_payer)(time_limit_ms) )
+FC_REFLECT( core_net::chain_apis::read_only::get_table_rows_result, (rows)(more)(next_key) );
 
-FC_REFLECT( eosio::chain_apis::read_only::get_table_by_scope_params, (code)(table)(lower_bound)(upper_bound)(limit)(reverse)(time_limit_ms) )
-FC_REFLECT( eosio::chain_apis::read_only::get_table_by_scope_result_row, (code)(scope)(table)(payer)(count));
-FC_REFLECT( eosio::chain_apis::read_only::get_table_by_scope_result, (rows)(more) );
+FC_REFLECT( core_net::chain_apis::read_only::get_table_by_scope_params, (code)(table)(lower_bound)(upper_bound)(limit)(reverse)(time_limit_ms) )
+FC_REFLECT( core_net::chain_apis::read_only::get_table_by_scope_result_row, (code)(scope)(table)(payer)(count));
+FC_REFLECT( core_net::chain_apis::read_only::get_table_by_scope_result, (rows)(more) );
 
-FC_REFLECT( eosio::chain_apis::read_only::get_currency_balance_params, (code)(account)(symbol));
-FC_REFLECT( eosio::chain_apis::read_only::get_currency_stats_params, (code)(symbol));
-FC_REFLECT( eosio::chain_apis::read_only::get_currency_stats_result, (supply)(max_supply)(issuer));
+FC_REFLECT( core_net::chain_apis::read_only::get_currency_balance_params, (code)(account)(symbol));
+FC_REFLECT( core_net::chain_apis::read_only::get_currency_stats_params, (code)(symbol));
+FC_REFLECT( core_net::chain_apis::read_only::get_currency_stats_result, (supply)(max_supply)(issuer));
 
-FC_REFLECT_EMPTY( eosio::chain_apis::read_only::get_finalizer_info_params )
-FC_REFLECT( eosio::chain_apis::read_only::get_finalizer_info_result, (active_finalizer_policy)(pending_finalizer_policy)(last_tracked_votes) );
+FC_REFLECT_EMPTY( core_net::chain_apis::read_only::get_finalizer_info_params )
+FC_REFLECT( core_net::chain_apis::read_only::get_finalizer_info_result, (active_finalizer_policy)(pending_finalizer_policy)(last_tracked_votes) );
 
-FC_REFLECT( eosio::chain_apis::read_only::get_producers_params, (json)(lower_bound)(limit)(time_limit_ms) )
-FC_REFLECT( eosio::chain_apis::read_only::get_producers_result, (rows)(total_producer_vote_weight)(more) );
+FC_REFLECT( core_net::chain_apis::read_only::get_producers_params, (json)(lower_bound)(limit)(time_limit_ms) )
+FC_REFLECT( core_net::chain_apis::read_only::get_producers_result, (rows)(total_producer_vote_weight)(more) );
 
-FC_REFLECT_EMPTY( eosio::chain_apis::read_only::get_producer_schedule_params )
-FC_REFLECT( eosio::chain_apis::read_only::get_producer_schedule_result, (active)(pending)(proposed) );
+FC_REFLECT_EMPTY( core_net::chain_apis::read_only::get_producer_schedule_params )
+FC_REFLECT( core_net::chain_apis::read_only::get_producer_schedule_result, (active)(pending)(proposed) );
 
-FC_REFLECT( eosio::chain_apis::read_only::get_scheduled_transactions_params, (json)(lower_bound)(limit)(time_limit_ms) )
-FC_REFLECT( eosio::chain_apis::read_only::get_scheduled_transactions_result, (transactions)(more) );
+FC_REFLECT( core_net::chain_apis::read_only::get_scheduled_transactions_params, (json)(lower_bound)(limit)(time_limit_ms) )
+FC_REFLECT( core_net::chain_apis::read_only::get_scheduled_transactions_result, (transactions)(more) );
 
-FC_REFLECT( eosio::chain_apis::read_only::account_resource_info, (used)(available)(max)(last_usage_update_time)(current_used) )
-FC_REFLECT( eosio::chain_apis::read_only::get_account_results,
+FC_REFLECT( core_net::chain_apis::read_only::account_resource_info, (used)(available)(max)(last_usage_update_time)(current_used) )
+FC_REFLECT( core_net::chain_apis::read_only::get_account_results,
             (account_name)(head_block_num)(head_block_time)(privileged)(last_code_update)(created)
             (core_liquid_balance)(ram_quota)(net_weight)(cpu_weight)(net_limit)(cpu_limit)(ram_usage)(permissions)
             (total_resources)(self_delegated_bandwidth)(refund_request)(voter_info)(rex_info)
             (subjective_cpu_bill_limit) (eosio_any_linked_actions) )
 // @swap code_hash
-FC_REFLECT( eosio::chain_apis::read_only::get_code_results, (account_name)(code_hash)(wast)(wasm)(abi) )
-FC_REFLECT( eosio::chain_apis::read_only::get_code_hash_results, (account_name)(code_hash) )
-FC_REFLECT( eosio::chain_apis::read_only::get_abi_results, (account_name)(abi) )
-FC_REFLECT( eosio::chain_apis::read_only::get_account_params, (account_name)(expected_core_symbol) )
-FC_REFLECT( eosio::chain_apis::read_only::get_code_params, (account_name)(code_as_wasm) )
-FC_REFLECT( eosio::chain_apis::read_only::get_code_hash_params, (account_name) )
-FC_REFLECT( eosio::chain_apis::read_only::get_abi_params, (account_name) )
-FC_REFLECT( eosio::chain_apis::read_only::get_raw_code_and_abi_params, (account_name) )
-FC_REFLECT( eosio::chain_apis::read_only::get_raw_code_and_abi_results, (account_name)(wasm)(abi) )
-FC_REFLECT( eosio::chain_apis::read_only::get_raw_abi_params, (account_name)(abi_hash) )
-FC_REFLECT( eosio::chain_apis::read_only::get_raw_abi_results, (account_name)(code_hash)(abi_hash)(abi) )
-FC_REFLECT( eosio::chain_apis::read_only::producer_info, (producer_name) )
-FC_REFLECT( eosio::chain_apis::read_only::get_required_keys_params, (transaction)(available_keys) )
-FC_REFLECT( eosio::chain_apis::read_only::get_required_keys_result, (required_keys) )
-FC_REFLECT( eosio::chain_apis::read_only::compute_transaction_params, (transaction))
-FC_REFLECT( eosio::chain_apis::read_only::compute_transaction_results, (transaction_id)(processed) )
-FC_REFLECT( eosio::chain_apis::read_only::send_read_only_transaction_params, (transaction))
-FC_REFLECT( eosio::chain_apis::read_only::send_read_only_transaction_results, (transaction_id)(processed) )
-FC_REFLECT( eosio::chain_apis::read_only::get_consensus_parameters_results, (chain_config)(wasm_config))
+FC_REFLECT( core_net::chain_apis::read_only::get_code_results, (account_name)(code_hash)(wast)(wasm)(abi) )
+FC_REFLECT( core_net::chain_apis::read_only::get_code_hash_results, (account_name)(code_hash) )
+FC_REFLECT( core_net::chain_apis::read_only::get_abi_results, (account_name)(abi) )
+FC_REFLECT( core_net::chain_apis::read_only::get_account_params, (account_name)(expected_core_symbol) )
+FC_REFLECT( core_net::chain_apis::read_only::get_code_params, (account_name)(code_as_wasm) )
+FC_REFLECT( core_net::chain_apis::read_only::get_code_hash_params, (account_name) )
+FC_REFLECT( core_net::chain_apis::read_only::get_abi_params, (account_name) )
+FC_REFLECT( core_net::chain_apis::read_only::get_raw_code_and_abi_params, (account_name) )
+FC_REFLECT( core_net::chain_apis::read_only::get_raw_code_and_abi_results, (account_name)(wasm)(abi) )
+FC_REFLECT( core_net::chain_apis::read_only::get_raw_abi_params, (account_name)(abi_hash) )
+FC_REFLECT( core_net::chain_apis::read_only::get_raw_abi_results, (account_name)(code_hash)(abi_hash)(abi) )
+FC_REFLECT( core_net::chain_apis::read_only::producer_info, (producer_name) )
+FC_REFLECT( core_net::chain_apis::read_only::get_required_keys_params, (transaction)(available_keys) )
+FC_REFLECT( core_net::chain_apis::read_only::get_required_keys_result, (required_keys) )
+FC_REFLECT( core_net::chain_apis::read_only::compute_transaction_params, (transaction))
+FC_REFLECT( core_net::chain_apis::read_only::compute_transaction_results, (transaction_id)(processed) )
+FC_REFLECT( core_net::chain_apis::read_only::send_read_only_transaction_params, (transaction))
+FC_REFLECT( core_net::chain_apis::read_only::send_read_only_transaction_results, (transaction_id)(processed) )
+FC_REFLECT( core_net::chain_apis::read_only::get_consensus_parameters_results, (chain_config)(wasm_config))

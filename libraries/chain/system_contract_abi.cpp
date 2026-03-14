@@ -1,7 +1,7 @@
-#include <eosio/chain/abi_def.hpp>
+#include <core_net/chain/abi_def.hpp>
 #include <fc/utility.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 vector<type_def> common_type_defs() {
    vector<type_def> types;
@@ -17,12 +17,12 @@ vector<type_def> common_type_defs() {
    return types;
 }
 
-abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
+abi_def core_net_contract_abi(const abi_def& core_net_system_abi)
 {
-   abi_def eos_abi(eosio_system_abi);
+   abi_def eos_abi(core_net_system_abi);
 
    if( eos_abi.version.size() == 0 ) {
-      eos_abi.version = "eosio::abi/1.0";
+      eos_abi.version = "core_net::abi/1.0";
    }
 
    fc::move_append(eos_abi.types, common_type_defs());
@@ -228,4 +228,4 @@ abi_def eosio_contract_abi(const abi_def& eosio_system_abi)
    return eos_abi;
 }
 
-} } /// eosio::chain
+} } /// core_net::chain

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/finalizer_authority.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/finalizer_authority.hpp>
 #include <fc/container/ordered_diff.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    using finalizers_differ = fc::ordered_diff<finalizer_authority, uint16_t>;
    // Verify finalizers_differ::size_type can represent all index values in the
@@ -78,9 +78,9 @@ namespace eosio::chain {
    using finalizer_policy_ptr = std::shared_ptr<finalizer_policy>;
    using finalizer_policy_diff_ptr = std::shared_ptr<finalizer_policy_diff>;
 
-} /// eosio::chain
+} /// core_net::chain
 
-FC_REFLECT( eosio::chain::finalizer_policy, (generation)(threshold)(finalizers) )
-FC_REFLECT( eosio::chain::finalizers_diff_t, (remove_indexes)(insert_indexes) )
-FC_REFLECT( eosio::chain::finalizer_policy_diff, (generation)(threshold)(finalizers_diff) )
-FC_REFLECT( eosio::chain::finalizer_policy_with_string_key, (generation)(threshold)(finalizers) )
+FC_REFLECT( core_net::chain::finalizer_policy, (generation)(threshold)(finalizers) )
+FC_REFLECT( core_net::chain::finalizers_diff_t, (remove_indexes)(insert_indexes) )
+FC_REFLECT( core_net::chain::finalizer_policy_diff, (generation)(threshold)(finalizers_diff) )
+FC_REFLECT( core_net::chain::finalizer_policy_with_string_key, (generation)(threshold)(finalizers) )

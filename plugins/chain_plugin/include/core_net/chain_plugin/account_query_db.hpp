@@ -1,8 +1,8 @@
 #pragma once
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/trace.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/trace.hpp>
 
-namespace eosio::chain_apis {
+namespace core_net::chain_apis {
    /**
     * This class manages the ephemeral indices and data that provide the `get_accounts_by_authorizers` RPC call
     * There is no persistence and the indices/caches are recreated when the class is instantiated based on the
@@ -17,7 +17,7 @@ namespace eosio::chain_apis {
        * for the life of the account query DB
        * @param chain - controller to read data from
        */
-      account_query_db( const class eosio::chain::controller& chain );
+      account_query_db( const class core_net::chain::controller& chain );
       ~account_query_db();
 
       /**
@@ -87,7 +87,7 @@ namespace eosio::chain_apis {
 }
 
 namespace fc {
-   using params = eosio::chain_apis::account_query_db::get_accounts_by_authorizers_params;
+   using params = core_net::chain_apis::account_query_db::get_accounts_by_authorizers_params;
    /**
     * Overloaded to_variant so that permission is only present if it is set
     * @param a
@@ -118,18 +118,18 @@ namespace fc {
          if(vo.contains("actor"))
             from_variant(vo["actor"], a.actor);
          else
-            EOS_THROW(eosio::chain::invalid_http_request, "Missing Actor field");
+            EOS_THROW(core_net::chain::invalid_http_request, "Missing Actor field");
 
          if(vo.contains("permission") && vo.size() == 2)
             from_variant(vo["permission"], a.permission);
          else if (vo.size() == 1)
             a.permission = {};
          else
-            EOS_THROW(eosio::chain::invalid_http_request, "Unrecognized fields in account");
+            EOS_THROW(core_net::chain::invalid_http_request, "Unrecognized fields in account");
       }
    }
 }
 
-FC_REFLECT( eosio::chain_apis::account_query_db::get_accounts_by_authorizers_params, (accounts)(keys))
-FC_REFLECT( eosio::chain_apis::account_query_db::get_accounts_by_authorizers_result::account_result, (account_name)(permission_name)(authorizing_account)(authorizing_key)(weight)(threshold))
-FC_REFLECT( eosio::chain_apis::account_query_db::get_accounts_by_authorizers_result, (accounts))
+FC_REFLECT( core_net::chain_apis::account_query_db::get_accounts_by_authorizers_params, (accounts)(keys))
+FC_REFLECT( core_net::chain_apis::account_query_db::get_accounts_by_authorizers_result::account_result, (account_name)(permission_name)(authorizing_account)(authorizing_key)(weight)(threshold))
+FC_REFLECT( core_net::chain_apis::account_query_db::get_accounts_by_authorizers_result, (accounts))

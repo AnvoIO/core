@@ -1,8 +1,8 @@
 #pragma once
 
-#include <eosio/trace_api/trace.hpp>
+#include <core_net/trace_api/trace.hpp>
 
-namespace eosio { namespace trace_api {
+namespace core_net { namespace trace_api {
 
 /// Used by to_transaction_trace  for creation of action_trace_v0 or action_trace_v1
 template<typename ActionTrace>

@@ -1,27 +1,27 @@
-#include <eosio/chain/eosio_contract.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
+#include <core_net/chain/system_contract.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
 
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/deep_mind.hpp>
 
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/code_object.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/chain/permission_link_object.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/contract_types.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/code_object.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/chain/permission_link_object.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/contract_types.hpp>
 
-#include <eosio/chain/wasm_interface.hpp>
-#include <eosio/chain/abi_serializer.hpp>
+#include <core_net/chain/wasm_interface.hpp>
+#include <core_net/chain/abi_serializer.hpp>
 
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/resource_limits.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/chain/resource_limits.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 
 
@@ -459,4 +459,4 @@ void apply_eosio_canceldelay(apply_context& context) {
    context.cancel_deferred_transaction(transaction_id_to_sender_id(trx_id), account_name());
 }
 
-} } // namespace eosio::chain
+} } // namespace core_net::chain

@@ -1,6 +1,6 @@
 #pragma once
-#include <eosio/chain/block_state.hpp>
-#include <eosio/chain/vote_message.hpp>
+#include <core_net/chain/block_state.hpp>
+#include <core_net/chain/vote_message.hpp>
 #include <fc/crypto/bls_utils.hpp>
 #include <fc/io/cfile.hpp>
 #include <fc/io/datastream_crc.hpp>
@@ -29,7 +29,7 @@
 //       every finalizer which has been active on this node (using the same `finalizer-dir`)
 // -------------------------------------------------------------------------------------------
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    // ----------------------------------------------------------------------------------------
    struct finalizer_safety_information {
@@ -204,14 +204,14 @@ namespace eosio::chain {
 }
 
 namespace std {
-   inline std::ostream& operator<<(std::ostream& os, const eosio::chain::finalizer_safety_information& fsi) {
+   inline std::ostream& operator<<(std::ostream& os, const core_net::chain::finalizer_safety_information& fsi) {
       os << "fsi(" << fsi.last_vote << ", " << fsi.lock << ", " << fsi.other_branch_latest_time << ")";
       return os;
    }
 
-   inline std::ostream& operator<<(std::ostream& os, const eosio::chain::finalizer::vote_result& vr) {
+   inline std::ostream& operator<<(std::ostream& os, const core_net::chain::finalizer::vote_result& vr) {
       os << "vote_result(\"";
-      using vote_decision = eosio::chain::finalizer::vote_decision;
+      using vote_decision = core_net::chain::finalizer::vote_decision;
       switch(vr.decision) {
       case vote_decision::strong_vote: os << "strong_vote"; break;
       case vote_decision::weak_vote:   os << "weak_vote";   break;
@@ -223,5 +223,5 @@ namespace std {
    }
 }
 
-FC_REFLECT(eosio::chain::finalizer_safety_information, (last_vote)(lock)(other_branch_latest_time))
-FC_REFLECT_ENUM(eosio::chain::finalizer::vote_decision, (strong_vote)(weak_vote)(no_vote))
+FC_REFLECT(core_net::chain::finalizer_safety_information, (last_vote)(lock)(other_branch_latest_time))
+FC_REFLECT_ENUM(core_net::chain::finalizer::vote_decision, (strong_vote)(weak_vote)(no_vote))

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
 using bytes = std::vector<char>;
 
-namespace eosio {
+namespace core_net {
    namespace internal_use_do_not_use {
       extern "C" {
          __attribute__((eosio_wasm_import))
@@ -13,10 +13,10 @@ namespace eosio {
    }
 }
 
-class [[eosio::contract]] get_block_num_test : public eosio::contract {
+class [[core_net::contract]] get_block_num_test : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testblock(uint32_t expected_result);
 };

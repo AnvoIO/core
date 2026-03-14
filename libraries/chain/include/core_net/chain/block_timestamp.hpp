@@ -1,5 +1,5 @@
 #pragma once
-#include <eosio/chain/config.hpp>
+#include <core_net/chain/config.hpp>
 
 #include <stdint.h>
 #include <fc/time.hpp>
@@ -7,7 +7,7 @@
 #include <fc/string.hpp>
 #include <fc/exception/exception.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    /**
    * This class is used in the block headers to represent the block time
@@ -76,10 +76,10 @@ namespace eosio { namespace chain {
 
    typedef block_timestamp<config::block_interval_ms,config::block_timestamp_epoch> block_timestamp_type; 
 
-} } /// eosio::chain
+} } /// core_net::chain
 
 namespace std {
-   inline std::ostream& operator<<(std::ostream& os, const eosio::chain::block_timestamp_type& t) {
+   inline std::ostream& operator<<(std::ostream& os, const core_net::chain::block_timestamp_type& t) {
       os << "tstamp(" << t.slot << ")";
       return os;
    }
@@ -87,16 +87,16 @@ namespace std {
 
 
 #include <fc/reflect/reflect.hpp>
-FC_REFLECT(eosio::chain::block_timestamp_type, (slot))
+FC_REFLECT(core_net::chain::block_timestamp_type, (slot))
 
 namespace fc {
   template<uint16_t IntervalMs, uint64_t EpochMs>
-  void to_variant(const eosio::chain::block_timestamp<IntervalMs,EpochMs>& t, fc::variant& v) {
+  void to_variant(const core_net::chain::block_timestamp<IntervalMs,EpochMs>& t, fc::variant& v) {
      to_variant( (fc::time_point)t, v);
   }
 
   template<uint16_t IntervalMs, uint64_t EpochMs>
-  void from_variant(const fc::variant& v, eosio::chain::block_timestamp<IntervalMs,EpochMs>& t) {
+  void from_variant(const fc::variant& v, core_net::chain::block_timestamp<IntervalMs,EpochMs>& t) {
      t = v.as<fc::time_point>();
   }
 }

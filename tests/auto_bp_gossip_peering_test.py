@@ -90,7 +90,7 @@ try:
 
     # restarting all producers can trigger production pause, so disable
     # net_api_plugin for /v1/net/connections
-    extraNodeosArgs = " --production-pause-vote-timeout-ms 0 --plugin eosio::net_api_plugin "
+    extraNodeosArgs = " --production-pause-vote-timeout-ms 0 --plugin core_net::net_api_plugin "
 
     TestHelper.printSystemInfo("BEGIN")
     cluster.launch(

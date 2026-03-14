@@ -1,14 +1,14 @@
 #pragma once
 
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/exception/exception.hpp>
 
 #include <exception>
 
-namespace eosio::test_utils {
+namespace core_net::test_utils {
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 inline bool is_access_violation(const fc::unhandled_exception& e) {
    try {
@@ -185,8 +185,8 @@ BOOST_CHECK_EXCEPTION( \
                      } \
 );
 
-} // namespace eosio::test_utils
+} // namespace core_net::test_utils
 
-FC_REFLECT_TEMPLATE((uint64_t T), eosio::test_utils::test_api_action<T>, BOOST_PP_SEQ_NIL)
-FC_REFLECT_TEMPLATE((uint64_t T), eosio::test_utils::test_pause_action<T>, BOOST_PP_SEQ_NIL)
-FC_REFLECT_TEMPLATE((uint64_t T), eosio::test_utils::test_chain_action<T>, BOOST_PP_SEQ_NIL)
+FC_REFLECT_TEMPLATE((uint64_t T), core_net::test_utils::test_api_action<T>, BOOST_PP_SEQ_NIL)
+FC_REFLECT_TEMPLATE((uint64_t T), core_net::test_utils::test_pause_action<T>, BOOST_PP_SEQ_NIL)
+FC_REFLECT_TEMPLATE((uint64_t T), core_net::test_utils::test_chain_action<T>, BOOST_PP_SEQ_NIL)

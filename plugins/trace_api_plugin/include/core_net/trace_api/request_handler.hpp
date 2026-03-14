@@ -1,11 +1,11 @@
 #pragma once
 
 #include <fc/variant.hpp>
-#include <eosio/trace_api/metadata_log.hpp>
-#include <eosio/trace_api/data_log.hpp>
-#include <eosio/trace_api/common.hpp>
+#include <core_net/trace_api/metadata_log.hpp>
+#include <core_net/trace_api/data_log.hpp>
+#include <core_net/trace_api/common.hpp>
 
-namespace eosio::trace_api {
+namespace core_net::trace_api {
    using data_handler_function = std::function<std::tuple<fc::variant, std::optional<fc::variant>>( const std::variant<action_trace_v0, action_trace_v1> & action_trace_t)>;
 
    namespace detail {

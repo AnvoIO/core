@@ -4,7 +4,7 @@
    continued to produce blocks and update state but the blocks log was
    "corrupted" in that it no longer contained all the irreversible blocks.
    It was also observed that when file system which "data/state"
-   belons to is running out of space, nodeos will crash with SIGBUS as
+   belons to is running out of space, core_netd will crash with SIGBUS as
    the state file is unable to acquire new pages.
 
    The solution is to have a dedicated plugin to monitor resource
@@ -15,11 +15,11 @@
    is over a predefined threshold, a graceful shutdown is initiated.
 **/
 
-#include <eosio/resource_monitor_plugin/resource_monitor_plugin.hpp>
-#include <eosio/resource_monitor_plugin/file_space_handler.hpp>
-#include <eosio/resource_monitor_plugin/system_file_space_provider.hpp>
+#include <core_net/resource_monitor_plugin/resource_monitor_plugin.hpp>
+#include <core_net/resource_monitor_plugin/file_space_handler.hpp>
+#include <core_net/resource_monitor_plugin/system_file_space_provider.hpp>
 
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/log/logger_config.hpp> // set_os_thread_name
@@ -28,10 +28,10 @@
 
 #include <sys/stat.h>
 
-using namespace eosio::resource_monitor;
+using namespace core_net::resource_monitor;
 
 
-namespace eosio {
+namespace core_net {
    static auto _resource_monitor_plugin = application::register_plugin<resource_monitor_plugin>();
 
 class resource_monitor_plugin_impl {
@@ -54,7 +54,7 @@ public:
            "If remaining space is less than value for any monitored directories then threshold is considered exceeded."
            "Overrides resource-monitor-space-threshold value.")
          ( "resource-monitor-not-shutdown-on-threshold-exceeded",
-           "Used to indicate nodeos will not shutdown when threshold is exceeded." )
+           "Used to indicate core_netd will not shutdown when threshold is exceeded." )
          ( "resource-monitor-warning-interval", bpo::value<uint32_t>()->default_value(def_monitor_warning_interval),
            "Number of resource monitor intervals between two consecutive warnings when the threshold is hit. Should be between 1 and 450" )
          ;

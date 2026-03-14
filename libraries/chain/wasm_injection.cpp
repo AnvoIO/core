@@ -1,12 +1,12 @@
-#include <eosio/chain/wasm_eosio_constraints.hpp>
-#include <eosio/chain/wasm_eosio_injection.hpp>
+#include <core_net/chain/wasm_constraints.hpp>
+#include <core_net/chain/wasm_injection.hpp>
 #include <fc/exception/exception.hpp>
 #include "IR/Module.h"
 #include "WASM/WASM.h"
 
-namespace eosio { namespace chain { namespace wasm_injections {
+namespace core_net { namespace chain { namespace wasm_injections {
 using namespace IR;
-using namespace eosio::chain::wasm_constraints;
+using namespace core_net::chain::wasm_constraints;
 
 std::map<std::vector<uint16_t>, uint32_t> injector_utils::type_slots;
 std::map<std::string, uint32_t>           injector_utils::registered_injected;
@@ -27,4 +27,4 @@ void data_segments_injection_visitor::inject( Module& m ) {
 void data_segments_injection_visitor::initializer() {
 }
 
-}}} // namespace eosio, chain, injectors
+}}} // namespace core_net, chain, injectors

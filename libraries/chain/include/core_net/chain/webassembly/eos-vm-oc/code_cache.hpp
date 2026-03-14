@@ -1,7 +1,7 @@
 #pragma once
 
-#include <eosio/chain/webassembly/eos-vm-oc/eos-vm-oc.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/ipc_helpers.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/eos-vm-oc.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/ipc_helpers.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
@@ -21,7 +21,7 @@
 #include <unordered_set>
 #include <filesystem>
 
-namespace eosio { namespace chain { namespace eosvmoc {
+namespace core_net { namespace chain { namespace eosvmoc {
 
 using namespace boost::multi_index;
 using namespace boost::asio;

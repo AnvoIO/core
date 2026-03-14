@@ -1,6 +1,6 @@
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/wast_to_wasm.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/wast_to_wasm.hpp>
 
 #include <fc/string.hpp>
 #include <fc/variant_object.hpp>
@@ -14,9 +14,9 @@
 #include <contracts.hpp>
 #include <test_contracts.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace fc;
 namespace data = boost::unit_test::data;
 
@@ -937,7 +937,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( max_pages, T, wasm_config_testers ) try {
 
          chain.set_transaction_headers(trx);
          trx.sign(chain.get_private_key( "accessmem"_n, "active" ), chain.get_chain_id());
-         BOOST_CHECK_THROW(chain.push_transaction(trx), eosio::chain::wasm_exception);
+         BOOST_CHECK_THROW(chain.push_transaction(trx), core_net::chain::wasm_exception);
       };
 
 
@@ -952,7 +952,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( max_pages, T, wasm_config_testers ) try {
 
          chain.set_transaction_headers(trx);
          trx.sign(chain.get_private_key( "intrinsicmem"_n, "active" ), chain.get_chain_id());
-         BOOST_CHECK_THROW(chain.push_transaction(trx), eosio::chain::wasm_exception);
+         BOOST_CHECK_THROW(chain.push_transaction(trx), core_net::chain::wasm_exception);
       };
 
       pushit(1);
@@ -977,13 +977,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( max_pages, T, wasm_config_testers ) try {
       --params.max_pages;
       chain.set_wasm_params(params);
       chain.produce_block();
-      BOOST_CHECK_THROW(pushit(0), eosio::chain::wasm_exception);
+      BOOST_CHECK_THROW(pushit(0), core_net::chain::wasm_exception);
 
       params.max_pages = max_pages;
       chain.set_wasm_params(params);
       string too_big_memory_wast_f = fc::format_string(too_big_memory_wast, fc::mutable_variant_object(
                                                        "MAX_WASM_PAGES_PLUS_ONE", params.max_pages+1));
-      BOOST_CHECK_THROW(chain.set_code("bigmem"_n, too_big_memory_wast_f.c_str()), eosio::chain::wasm_exception);
+      BOOST_CHECK_THROW(chain.set_code("bigmem"_n, too_big_memory_wast_f.c_str()), core_net::chain::wasm_exception);
 
       // Check that the max memory defined by the contract is respected
       string memory_over_max_wast = fc::format_string(max_memory_wast, fc::mutable_variant_object()
@@ -1142,7 +1142,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( reset_chain_tests, T, wasm_config_testers ) {
       };
       trx.actions.push_back({ { { "eosio"_n, config::active_name} }, make_setcode(wast_to_wasm(min_set_parameters_wast)) });
       trx.actions.push_back({ { { "eosio"_n, config::active_name} }, "eosio"_n, ""_n, fc::raw::pack(genesis_state::default_initial_wasm_configuration) });
-      trx.actions.push_back({ { { "eosio"_n, config::active_name} }, make_setcode(contracts::eosio_bios_wasm()) });
+      trx.actions.push_back({ { { "eosio"_n, config::active_name} }, make_setcode(contracts::core_net_bios_wasm()) });
       chain.set_transaction_headers(trx);
       trx.sign(chain.get_private_key("eosio"_n, "active"), chain.get_chain_id());
       chain.push_transaction(trx);

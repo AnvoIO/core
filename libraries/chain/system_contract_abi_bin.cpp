@@ -1,7 +1,7 @@
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 // Initial value for eosio ABI. This value affects consensus; if different
-// nodeos versions have different versions of the initial eosio ABI, then
+// core_netd versions have different versions of the initial eosio ABI, then
 // they could potentially fork. See https://github.com/EOSIO/eos/issues/7794
 //
 // This is a capture of the ABI produced by versions 1.7 and 1.8.
@@ -187,4 +187,4 @@ unsigned char eosio_abi_bin[2132] = {
    0x63, 0x6b, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-} } /// eosio::chain
+} } /// core_net::chain

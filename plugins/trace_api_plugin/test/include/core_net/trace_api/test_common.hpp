@@ -4,17 +4,17 @@
 #include <fc/io/json.hpp>
 #include <fc/io/raw.hpp>
 
-#include <eosio/chain/abi_def.hpp>
-#include <eosio/chain/asset.hpp>
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/name.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/abi_def.hpp>
+#include <core_net/chain/asset.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/name.hpp>
+#include <core_net/chain/types.hpp>
 
-#include <eosio/trace_api/data_log.hpp>
-#include <eosio/trace_api/metadata_log.hpp>
+#include <core_net/trace_api/data_log.hpp>
+#include <core_net/trace_api/metadata_log.hpp>
 
-namespace eosio::trace_api {
+namespace core_net::trace_api {
    /**
     * Utilities that make writing tests easier
     */
@@ -230,7 +230,7 @@ namespace fc {
 
 }
 
-namespace eosio::chain {
+namespace core_net::chain {
    inline bool operator==(const abi_def& lhs, const abi_def& rhs) {
       return fc::raw::pack(lhs) == fc::raw::pack(rhs);
    }

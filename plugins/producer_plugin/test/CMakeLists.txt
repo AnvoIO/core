@@ -6,5 +6,5 @@ add_executable( test_producer_plugin
         test_disallow_delayed_trx.cpp
         main.cpp
         )
-target_link_libraries( test_producer_plugin producer_plugin eosio_testing eosio_chain_wrap )
+target_link_libraries( test_producer_plugin producer_plugin core_net_testing core_net_chain_wrap )
 add_p_test(NAME test_producer_plugin COMMAND plugins/producer_plugin/test/test_producer_plugin)

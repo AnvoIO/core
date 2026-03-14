@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <algorithm>
 
-namespace eosio::vm {
+namespace core_net::vm {
 
 struct null_debug_info {
    using builder = null_debug_info;

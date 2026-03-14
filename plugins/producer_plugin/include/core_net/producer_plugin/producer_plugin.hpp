@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/chain/snapshot_scheduler.hpp>
-#include <eosio/signature_provider_plugin/signature_provider_plugin.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/chain/snapshot_scheduler.hpp>
+#include <core_net/signature_provider_plugin/signature_provider_plugin.hpp>
 
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 
-namespace eosio {
+namespace core_net {
 
 using boost::signals2::signal;
 
@@ -63,7 +63,7 @@ public:
    };
 
    template<typename T>
-   using next_function = eosio::chain::next_function<T>;
+   using next_function = core_net::chain::next_function<T>;
 
    producer_plugin();
    virtual ~producer_plugin();
@@ -124,7 +124,7 @@ public:
    struct unapplied_trx {
       transaction_id_type       trx_id;
       fc::time_point_sec        expiration;
-      string                    trx_type; // eosio::chain::trx_enum_type values or "read_only"
+      string                    trx_type; // core_net::chain::trx_enum_type values or "read_only"
       account_name              first_auth;
       account_name              first_receiver;
       action_name               first_action;
@@ -167,15 +167,15 @@ public:
 
 } //eosio
 
-FC_REFLECT(eosio::producer_plugin::runtime_options, (max_transaction_time)(max_irreversible_block_age)(produce_block_offset_ms)(subjective_cpu_leeway_us)(greylist_limit));
-FC_REFLECT(eosio::producer_plugin::greylist_params, (accounts));
-FC_REFLECT(eosio::producer_plugin::whitelist_blacklist, (actor_whitelist)(actor_blacklist)(contract_whitelist)(contract_blacklist)(action_blacklist)(key_blacklist) )
-FC_REFLECT(eosio::producer_plugin::integrity_hash_information, (head_block_id)(integrity_hash))
-FC_REFLECT(eosio::producer_plugin::scheduled_protocol_feature_activations, (protocol_features_to_activate))
-FC_REFLECT(eosio::producer_plugin::get_supported_protocol_features_params, (exclude_disabled)(exclude_unactivatable))
-FC_REFLECT(eosio::producer_plugin::get_account_ram_corrections_params, (lower_bound)(upper_bound)(limit)(reverse))
-FC_REFLECT(eosio::producer_plugin::get_account_ram_corrections_result, (rows)(more))
-FC_REFLECT(eosio::producer_plugin::get_unapplied_transactions_params, (lower_bound)(limit)(time_limit_ms))
-FC_REFLECT(eosio::producer_plugin::unapplied_trx, (trx_id)(expiration)(trx_type)(first_auth)(first_receiver)(first_action)(total_actions)(billed_cpu_time_us)(size))
-FC_REFLECT(eosio::producer_plugin::get_unapplied_transactions_result, (size)(incoming_size)(trxs)(more))
-FC_REFLECT(eosio::producer_plugin::pause_at_block_params, (block_num));
+FC_REFLECT(core_net::producer_plugin::runtime_options, (max_transaction_time)(max_irreversible_block_age)(produce_block_offset_ms)(subjective_cpu_leeway_us)(greylist_limit));
+FC_REFLECT(core_net::producer_plugin::greylist_params, (accounts));
+FC_REFLECT(core_net::producer_plugin::whitelist_blacklist, (actor_whitelist)(actor_blacklist)(contract_whitelist)(contract_blacklist)(action_blacklist)(key_blacklist) )
+FC_REFLECT(core_net::producer_plugin::integrity_hash_information, (head_block_id)(integrity_hash))
+FC_REFLECT(core_net::producer_plugin::scheduled_protocol_feature_activations, (protocol_features_to_activate))
+FC_REFLECT(core_net::producer_plugin::get_supported_protocol_features_params, (exclude_disabled)(exclude_unactivatable))
+FC_REFLECT(core_net::producer_plugin::get_account_ram_corrections_params, (lower_bound)(upper_bound)(limit)(reverse))
+FC_REFLECT(core_net::producer_plugin::get_account_ram_corrections_result, (rows)(more))
+FC_REFLECT(core_net::producer_plugin::get_unapplied_transactions_params, (lower_bound)(limit)(time_limit_ms))
+FC_REFLECT(core_net::producer_plugin::unapplied_trx, (trx_id)(expiration)(trx_type)(first_auth)(first_receiver)(first_action)(total_actions)(billed_cpu_time_us)(size))
+FC_REFLECT(core_net::producer_plugin::get_unapplied_transactions_result, (size)(incoming_size)(trxs)(more))
+FC_REFLECT(core_net::producer_plugin::pause_at_block_params, (block_num));

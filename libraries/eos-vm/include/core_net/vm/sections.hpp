@@ -1,6 +1,6 @@
 #pragma once
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    enum section_id {
       custom_section   = 0,
       type_section     = 1,
@@ -16,4 +16,4 @@ namespace eosio { namespace vm {
       data_section     = 11,
       num_of_elems
    };
-}} // namespace eosio::vm
+}} // namespace core_net::vm

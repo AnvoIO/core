@@ -1,12 +1,12 @@
 #pragma once
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/block_timestamp.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/block_timestamp.hpp>
 #include <chainbase/chainbase.hpp>
-#include <eosio/chain/authority.hpp>
-#include <eosio/chain/snapshot.hpp>
+#include <core_net/chain/authority.hpp>
+#include <core_net/chain/snapshot.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    namespace legacy {
       /**
@@ -307,15 +307,15 @@ namespace eosio::chain {
       return true;
    }
 
-} /// eosio::chain
+} /// core_net::chain
 
-FC_REFLECT( eosio::chain::legacy::producer_key, (producer_name)(block_signing_key) )
-FC_REFLECT( eosio::chain::legacy::producer_schedule_type, (version)(producers) )
-FC_REFLECT( eosio::chain::block_signing_authority_v0, (threshold)(keys))
-FC_REFLECT( eosio::chain::producer_authority, (producer_name)(authority) )
-FC_REFLECT( eosio::chain::producer_authority_schedule, (version)(producers) )
-FC_REFLECT_DERIVED( eosio::chain::producer_schedule_change_extension, (eosio::chain::producer_authority_schedule), )
+FC_REFLECT( core_net::chain::legacy::producer_key, (producer_name)(block_signing_key) )
+FC_REFLECT( core_net::chain::legacy::producer_schedule_type, (version)(producers) )
+FC_REFLECT( core_net::chain::block_signing_authority_v0, (threshold)(keys))
+FC_REFLECT( core_net::chain::producer_authority, (producer_name)(authority) )
+FC_REFLECT( core_net::chain::producer_authority_schedule, (version)(producers) )
+FC_REFLECT_DERIVED( core_net::chain::producer_schedule_change_extension, (core_net::chain::producer_authority_schedule), )
 
-FC_REFLECT( eosio::chain::shared_block_signing_authority_v0, (threshold)(keys))
-FC_REFLECT( eosio::chain::shared_producer_authority, (producer_name)(authority) )
-FC_REFLECT( eosio::chain::shared_producer_authority_schedule, (version)(producers) )
+FC_REFLECT( core_net::chain::shared_block_signing_authority_v0, (threshold)(keys))
+FC_REFLECT( core_net::chain::shared_producer_authority, (producer_name)(authority) )
+FC_REFLECT( core_net::chain::shared_producer_authority_schedule, (version)(producers) )

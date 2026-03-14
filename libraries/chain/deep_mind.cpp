@@ -1,22 +1,22 @@
-#include <eosio/chain/deep_mind.hpp>
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/block_state.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
-#include <eosio/chain/resource_limits_private.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/protocol_feature_manager.hpp>
+#include <core_net/chain/deep_mind.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/block_state.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
+#include <core_net/chain/resource_limits_private.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/protocol_feature_manager.hpp>
 #include <fc/crypto/hex.hpp>
 
 namespace {
 
-   void set_trace_elapsed_to_zero(eosio::chain::action_trace& trace) {
+   void set_trace_elapsed_to_zero(core_net::chain::action_trace& trace) {
       trace.elapsed = fc::microseconds{};
    }
 
-   void set_trace_elapsed_to_zero(eosio::chain::transaction_trace& trace) {
+   void set_trace_elapsed_to_zero(core_net::chain::transaction_trace& trace) {
       trace.elapsed = fc::microseconds{};
       for (auto& act_trace : trace.action_traces) {
          set_trace_elapsed_to_zero(act_trace);
@@ -25,7 +25,7 @@ namespace {
 
 }
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    void deep_mind_handler::update_config(deep_mind_config config)
    {

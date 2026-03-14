@@ -1,12 +1,12 @@
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/http_plugin/http_plugin.hpp>
-#include <eosio/net_plugin/net_plugin.hpp>
-#include <eosio/producer_plugin/producer_plugin.hpp>
-#include <eosio/signature_provider_plugin/signature_provider_plugin.hpp>
-#include <eosio/resource_monitor_plugin/resource_monitor_plugin.hpp>
-#include <eosio/version/version.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/http_plugin/http_plugin.hpp>
+#include <core_net/net_plugin/net_plugin.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
+#include <core_net/signature_provider_plugin/signature_provider_plugin.hpp>
+#include <core_net/resource_monitor_plugin/resource_monitor_plugin.hpp>
+#include <core_net/version/version.hpp>
 
 #include <fc/log/logger.hpp>
 #include <fc/log/logger_config.hpp>
@@ -25,7 +25,7 @@
 #include "config.hpp"
 
 using namespace appbase;
-using namespace eosio;
+using namespace core_net;
 
 namespace detail {
 
@@ -155,30 +155,30 @@ enum return_codes {
 int main(int argc, char** argv)
 {
 
-   ilog("nodeos started");
+   ilog("core_netd started");
 
    try {
       appbase::scoped_app app;
       auto on_exit = fc::make_scoped_exit([&]() {
          ilog("${name} version ${ver} ${fv}",
-              ("name", nodeos::config::node_executable_name)("ver", app->version_string())
+              ("name", core_netd::config::node_executable_name)("ver", app->version_string())
               ("fv", app->version_string() == app->full_version_string() ? "" : app->full_version_string()) );
          ::detail::log_non_default_options(app->get_parsed_options());
       });
       uint32_t short_hash = 0;
-      fc::from_hex(eosio::version::version_hash(), (char*)&short_hash, sizeof(short_hash));
+      fc::from_hex(core_net::version::version_hash(), (char*)&short_hash, sizeof(short_hash));
 
       app->set_version(htonl(short_hash));
-      app->set_version_string(eosio::version::version_client());
-      app->set_full_version_string(eosio::version::version_full());
+      app->set_version_string(core_net::version::version_client());
+      app->set_full_version_string(core_net::version::version_full());
 
       auto root = fc::app_path();
-      app->set_default_data_dir(root / "eosio" / nodeos::config::node_executable_name / "data" );
-      app->set_default_config_dir(root / "eosio" / nodeos::config::node_executable_name / "config" );
+      app->set_default_data_dir(root / "eosio" / core_netd::config::node_executable_name / "data" );
+      app->set_default_config_dir(root / "eosio" / core_netd::config::node_executable_name / "config" );
       http_plugin::set_defaults({
          .default_unix_socket_path = "",
          .default_http_port = 8888,
-         .server_header = nodeos::config::node_executable_name + "/" + app->version_string()
+         .server_header = core_netd::config::node_executable_name + "/" + app->version_string()
       });
       if(!app->initialize<chain_plugin, net_plugin, producer_plugin, resource_monitor_plugin>(argc, argv, initialize_logging)) {
          const auto& opts = app->get_options();
@@ -201,10 +201,10 @@ int main(int argc, char** argv)
          return INITIALIZE_FAIL;
       }
       ilog("${name} version ${ver} ${fv}",
-            ("name", nodeos::config::node_executable_name)("ver", app->version_string())
+            ("name", core_netd::config::node_executable_name)("ver", app->version_string())
             ("fv", app->version_string() == app->full_version_string() ? "" : app->full_version_string()) );
-      ilog("${name} using configuration file ${c}", ("name", nodeos::config::node_executable_name)("c", app->full_config_file_path().string()));
-      ilog("${name} data directory is ${d}", ("name", nodeos::config::node_executable_name)("d", app->data_dir().string()));
+      ilog("${name} using configuration file ${c}", ("name", core_netd::config::node_executable_name)("c", app->full_config_file_path().string()));
+      ilog("${name} data directory is ${d}", ("name", core_netd::config::node_executable_name)("d", app->data_dir().string()));
       ::detail::log_non_default_options(app->get_parsed_options());
       app->startup();
       app->set_thread_priority_max();
@@ -250,6 +250,6 @@ int main(int argc, char** argv)
       return OTHER_FAIL;
    }
 
-   ilog("${name} successfully exiting", ("name", nodeos::config::node_executable_name));
+   ilog("${name} successfully exiting", ("name", core_netd::config::node_executable_name));
    return SUCCESS;
 }

@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/vm/types.hpp>
-#include <eosio/vm/span.hpp>
+#include <core_net/vm/types.hpp>
+#include <core_net/vm/span.hpp>
 
 #include <memory>
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    // Used for pointer arguments to intrinsics.
    // T should be a type that points to external memory, such as a pointer or span.
@@ -107,4 +107,4 @@ namespace eosio { namespace vm {
    template <typename T>
    constexpr inline static bool is_argument_proxy_type_v = std::is_same_v<decltype(detail::is_argument_proxy_type(std::declval<T>())), std::true_type>;
 
-}} // ns eosio::vm
+}} // ns core_net::vm

@@ -3,7 +3,7 @@
 #include <boost/exception_ptr.hpp>
 #include <fc/exception/exception.hpp>
 
-void spring_util_exception_handler::print_exception() noexcept {
+void core_util_exception_handler::print_exception() noexcept {
    try {
       throw;
    } catch(const fc::exception& e) {

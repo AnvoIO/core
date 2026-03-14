@@ -43,7 +43,7 @@ walletMgr=WalletMgr(True, port=walletPort)
 testSuccessful=False
 
 WalletdName=Utils.EosWalletName
-ClientName="cleos"
+ClientName="core-cli"
 
 try:
     TestHelper.printSystemInfo("BEGIN")

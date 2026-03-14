@@ -1,14 +1,14 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/wasm_eosio_constraints.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/wast_to_wasm.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/wasm_constraints.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/wast_to_wasm.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
 
 #include <test_contracts.hpp>
 
@@ -20,9 +20,9 @@
 #include <array>
 #include <utility>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace fc;
 
 static auto get_account_full = [](chain_apis::read_only& plugin,
@@ -89,7 +89,7 @@ BOOST_FIXTURE_TEST_CASE( get_block_with_invalid_abi, validating_tester ) try {
    char headnumstr[20];
    sprintf(headnumstr, "%d", headnum);
    chain_apis::read_only::get_raw_block_params param{headnumstr};
-   std::optional<eosio::chain_apis::tracked_votes> _tracked_votes;
+   std::optional<core_net::chain_apis::tracked_votes> _tracked_votes;
    chain_apis::read_only plugin(*(this->control), {}, {}, _tracked_votes, fc::microseconds::maximum(), fc::microseconds::maximum(), {});
 
    // block should be decoded successfully
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE( get_consensus_parameters ) try {
    tester t{setup_policy::old_wasm_parser};
    t.produce_block();
 
-   std::optional<eosio::chain_apis::tracked_votes> _tracked_votes;
+   std::optional<core_net::chain_apis::tracked_votes> _tracked_votes;
    chain_apis::read_only plugin(*(t.control), {}, {}, _tracked_votes, fc::microseconds::maximum(), fc::microseconds::maximum(), nullptr);
 
    auto parms = plugin.get_consensus_parameters({}, fc::time_point::maximum());
@@ -204,14 +204,14 @@ BOOST_FIXTURE_TEST_CASE( get_account, validating_tester ) try {
 
    produce_block();
 
-   std::optional<eosio::chain_apis::tracked_votes> _tracked_votes;
+   std::optional<core_net::chain_apis::tracked_votes> _tracked_votes;
    chain_apis::read_only plugin(*(this->control), {}, {}, _tracked_votes, fc::microseconds::maximum(), fc::microseconds::maximum(), nullptr);
 
    chain_apis::read_only::get_account_params p{"alice"_n};
 
    chain_apis::read_only::get_account_results result = get_account_full(plugin, p, fc::time_point::maximum());
 
-   auto check_result_basic = [](chain_apis::read_only::get_account_results result, eosio::name nm, bool isPriv) {
+   auto check_result_basic = [](chain_apis::read_only::get_account_results result, core_net::name nm, bool isPriv) {
       BOOST_REQUIRE_EQUAL(nm, result.account_name);
       BOOST_REQUIRE_EQUAL(isPriv, result.privileged);
 

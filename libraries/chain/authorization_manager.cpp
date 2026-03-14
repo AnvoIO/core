@@ -1,19 +1,19 @@
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/chain/permission_link_object.hpp>
-#include <eosio/chain/authority_checker.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/contract_types.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/chain/permission_link_object.hpp>
+#include <core_net/chain/authority_checker.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/contract_types.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
 #include <boost/tuple/tuple_io.hpp>
-#include <eosio/chain/database_utils.hpp>
-#include <eosio/chain/protocol_state_object.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/database_utils.hpp>
+#include <core_net/chain/protocol_state_object.hpp>
+#include <core_net/chain/deep_mind.hpp>
 
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    using authorization_index_set = index_set<
       permission_index,
@@ -381,15 +381,15 @@ namespace eosio { namespace chain {
             || !_control.is_builtin_activated( builtin_protocol_feature_t::fix_linkauth_restriction ) ) 
       {
          EOS_ASSERT( link.type != updateauth::get_name(),  action_validate_exception,
-                     "Cannot link eosio::updateauth to a minimum permission" );
+                     "Cannot link core_net::updateauth to a minimum permission" );
          EOS_ASSERT( link.type != deleteauth::get_name(),  action_validate_exception,
-                     "Cannot link eosio::deleteauth to a minimum permission" );
+                     "Cannot link core_net::deleteauth to a minimum permission" );
          EOS_ASSERT( link.type != linkauth::get_name(),    action_validate_exception,
-                     "Cannot link eosio::linkauth to a minimum permission" );
+                     "Cannot link core_net::linkauth to a minimum permission" );
          EOS_ASSERT( link.type != unlinkauth::get_name(),  action_validate_exception,
-                     "Cannot link eosio::unlinkauth to a minimum permission" );
+                     "Cannot link core_net::unlinkauth to a minimum permission" );
          EOS_ASSERT( link.type != canceldelay::get_name(), action_validate_exception,
-                     "Cannot link eosio::canceldelay to a minimum permission" );
+                     "Cannot link core_net::canceldelay to a minimum permission" );
       }
 
       const auto linked_permission_name = lookup_minimum_permission(link.account, link.code, link.type);
@@ -658,4 +658,4 @@ namespace eosio { namespace chain {
       return checker.used_keys();
    }
 
-} } /// namespace eosio::chain
+} } /// namespace core_net::chain

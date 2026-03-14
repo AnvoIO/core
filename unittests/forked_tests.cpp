@@ -1,14 +1,14 @@
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/testing/tester.hpp>
 
-#include <eosio/chain/fork_database.hpp>
+#include <core_net/chain/fork_database.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include "fork_test_utilities.hpp"
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 // ---------------------------------------------------
 // Following tests in this file are for Legacy only:

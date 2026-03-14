@@ -1,18 +1,18 @@
 #include <vector>
 
-#include <eosio/crypto.hpp>
-#include <eosio/eosio.hpp>
-#include <eosio/print.hpp>
+#include <core_net/crypto.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/print.hpp>
 
 #include "test_api.hpp"
-using namespace eosio;
+using namespace core_net;
 
 void test_checktime::checktime_pass() {
    int p = 0;
    for ( int i = 0; i < 10000; i++ )
       p += i;
 
-   eosio::print(p);
+   core_net::print(p);
 }
 
 static void checktime_failure_common() {
@@ -24,7 +24,7 @@ static void checktime_failure_common() {
       for ( unsigned long long j = 0; j < bound; j++ )
          p += i+j+bound;
 
-   eosio::print(p);
+   core_net::print(p);
 }
 
 void test_checktime::checktime_failure() {

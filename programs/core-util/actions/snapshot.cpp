@@ -1,8 +1,8 @@
 #include "snapshot.hpp"
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/controller.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/controller.hpp>
 
 #include <memory>
 
@@ -13,8 +13,8 @@
 
 #include <boost/exception/diagnostic_information.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
+using namespace core_net;
+using namespace core_net::chain;
 
 
 void snapshot_actions::setup(CLI::App& app) {

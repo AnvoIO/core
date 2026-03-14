@@ -1,7 +1,7 @@
-#include <eosio/chain/webassembly/interface.hpp>
-#include <eosio/chain/protocol_state_object.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/apply_context.hpp>
+#include <core_net/chain/webassembly/interface.hpp>
+#include <core_net/chain/protocol_state_object.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/apply_context.hpp>
 #include <fc/io/datastream.hpp>
 #include <fc/crypto/modular_arithmetic.hpp>
 #include <fc/crypto/blake2.hpp>
@@ -23,12 +23,12 @@ namespace {
 
 // bls implementation
 namespace {
-   using eosio::chain::span;
-   using eosio::chain::webassembly::return_code;
+   using core_net::chain::span;
+   using core_net::chain::webassembly::return_code;
    using bls12_381::from_mont;
 }
 
-namespace eosio::chain::webassembly {
+namespace core_net::chain::webassembly {
 
    void interface::assert_recover_key( legacy_ptr<const fc::sha256> digest,
                                        legacy_span<const char> sig,
@@ -225,7 +225,7 @@ namespace eosio::chain::webassembly {
 
    void interface::sha3( span<const char> input, span<char> output, int32_t keccak ) const {
       bool _keccak = keccak == 1;
-      const size_t bs = eosio::chain::config::hashing_checktime_block_size;
+      const size_t bs = core_net::chain::config::hashing_checktime_block_size;
       const char* data = input.data();
       uint32_t datalen = input.size();
       fc::sha3::encoder enc;
@@ -431,4 +431,4 @@ namespace eosio::chain::webassembly {
       return return_code::success;
    }
 
-} // ns eosio::chain::webassembly
+} // ns core_net::chain::webassembly

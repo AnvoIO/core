@@ -1,12 +1,12 @@
 #pragma once
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/http_plugin/http_plugin.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/http_plugin/http_plugin.hpp>
 
-#include <eosio/chain/application.hpp>
-#include <eosio/chain/controller.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/chain/controller.hpp>
 
-namespace eosio {
-   using eosio::chain::controller;
+namespace core_net {
+   using core_net::chain::controller;
    using std::unique_ptr;
    using namespace appbase;
 

@@ -2,9 +2,9 @@
 
 #include <fc/utility.hpp>
 #include <tuple>
-#include <eosio/trace_api/data_log.hpp>
+#include <core_net/trace_api/data_log.hpp>
 
-namespace eosio::trace_api {
+namespace core_net::trace_api {
    /**
     * A function used to separate cooperative or external concerns from long running tasks
     * calling code should expect that this can throw yield_exception and gracefully unwind if it does
@@ -54,7 +54,7 @@ namespace eosio::trace_api {
     *   except_handler( MAKE_EXCEPTION_WITH_CONTEXT( std::current_exception() ) );
     */
 #define MAKE_EXCEPTION_WITH_CONTEXT(eptr) \
-   (eosio::trace_api::exception_with_context((eptr),  __FILE__, __LINE__, __func__))
+   (core_net::trace_api::exception_with_context((eptr),  __FILE__, __LINE__, __func__))
 
 
 }

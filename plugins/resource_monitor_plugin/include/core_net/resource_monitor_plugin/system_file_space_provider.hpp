@@ -4,7 +4,7 @@
 #include <filesystem>
 
 
-namespace eosio::resource_monitor {
+namespace core_net::resource_monitor {
    class system_file_space_provider {
    public:
       system_file_space_provider()

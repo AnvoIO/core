@@ -10,26 +10,26 @@ typedef enum { FALSE=0, TRUE=1 } BOOL;
 // Number of rows to write/read in ram test
 #define RAM_ROWS 75
 
-using namespace eosio;
+using namespace core_net;
 
-CONTRACT eosmechanics : public eosio::contract {
+CONTRACT eosmechanics : public core_net::contract {
     public:
         using contract::contract;
 
         /**
          * Simple CPU benchmark that calculates Mersenne prime numbers.
          */
-        [[eosio::action]] void cpu() {
+        [[core_net::action]] void cpu() {
             // Only let us run this
             require_auth(_self);
             
             int p;
 
-            //eosio::print_f("Mersenne primes:\n");
+            //core_net::print_f("Mersenne primes:\n");
             for (p = 2; p <= CPU_PRIME_MAX; p += 1) {
                 if (is_prime(p) && is_mersenne_prime(p)) {
                     // We need to keep an eye on this to make sure it doesn't get optimized out. So far so good.
-                    //eosio::print_f(" %u", p);
+                    //core_net::print_f(" %u", p);
                 }
             }
         }
@@ -37,7 +37,7 @@ CONTRACT eosmechanics : public eosio::contract {
         /**
          * Simple EOS RAM benchmark which reads and writes a table.
          */
-        [[eosio::action]] void ram() {
+        [[core_net::action]] void ram() {
             ramdata_index ramdata(_self, _self.value);
 
             // Only let us run this
@@ -55,7 +55,7 @@ CONTRACT eosmechanics : public eosio::contract {
 
             // Read
             for (const auto& row: ramdata) {
-                //eosio::print_f("read %d: %s\n", row.id, row.one);
+                //core_net::print_f("read %d: %s\n", row.id, row.one);
                 i = row.id;
             }
 
@@ -68,7 +68,7 @@ CONTRACT eosmechanics : public eosio::contract {
         /**
          * Simple EOS Net benchmark which just accepts any string passed in.
          */
-        [[eosio::action]] void net(std::string input) {
+        [[core_net::action]] void net(std::string input) {
             // Only let us run this
             require_auth(_self);
         }
@@ -104,7 +104,7 @@ CONTRACT eosmechanics : public eosio::contract {
         }
 
         // @abi table ramdata i64
-        struct [[eosio::table]] ramdata {
+        struct [[core_net::table]] ramdata {
             uint64_t id;
             std::string one;
 
@@ -112,8 +112,8 @@ CONTRACT eosmechanics : public eosio::contract {
             EOSLIB_SERIALIZE(ramdata, (id)(one))
         };
 
-        typedef eosio::multi_index<"ramdata"_n, ramdata> ramdata_index;
+        typedef core_net::multi_index<"ramdata"_n, ramdata> ramdata_index;
 
 };
 
-EOSIO_DISPATCH(eosmechanics, (cpu)(ram)(net))
+CORE_NET_DISPATCH(eosmechanics, (cpu)(ram)(net))

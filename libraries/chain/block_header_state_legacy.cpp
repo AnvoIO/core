@@ -1,10 +1,10 @@
-#include <eosio/chain/block_header_state_legacy.hpp>
-#include <eosio/chain/block_header_state_utils.hpp>
-#include <eosio/chain/snapshot_detail.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/block_header_state_legacy.hpp>
+#include <core_net/chain/block_header_state_utils.hpp>
+#include <core_net/chain/snapshot_detail.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <limits>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    uint32_t block_header_state_legacy::calc_dpos_last_irreversible( account_name producer_of_next_block )const {
       vector<uint32_t> blocknums; blocknums.reserve( producer_to_last_implied_irb.size() );
@@ -497,4 +497,4 @@ namespace eosio::chain {
    }
 
 
-} /// namespace eosio::chain
+} /// namespace core_net::chain

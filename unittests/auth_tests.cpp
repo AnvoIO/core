@@ -1,19 +1,19 @@
 #include <boost/test/unit_test.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/chain/authorization_manager.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/chain/authorization_manager.hpp>
 
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/resource_limits_private.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/resource_limits_private.hpp>
 
-#include <eosio/testing/tester_network.hpp>
+#include <core_net/testing/tester_network.hpp>
 
 #include <test_contracts.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 BOOST_AUTO_TEST_SUITE(auth_tests)
 
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( any_auth, TESTER, validating_testers ) { try {
    chain.link_authority( name("alice"), name("eosio"), name("eosio.any"), name("reqauth") );
    chain.link_authority( name("bob"), name("eosio"), name("eosio.any"), name("reqauth") );
 
-   /// this should succeed because eosio::reqauth is linked to any permission
+   /// this should succeed because core_net::reqauth is linked to any permission
    chain.push_reqauth(name("alice"), { permission_level{"alice"_n, name("spending")} }, { spending_priv_key });
 
    /// this should fail because bob cannot authorize for alice, the permission given must be one-of alices
@@ -428,8 +428,8 @@ try {
 
    const chainbase::database &db = chain.control->db();
 
-   using resource_usage_object = eosio::chain::resource_limits::resource_usage_object;
-   using by_owner = eosio::chain::resource_limits::by_owner;
+   using resource_usage_object = core_net::chain::resource_limits::resource_usage_object;
+   using by_owner = core_net::chain::resource_limits::by_owner;
 
    auto create_acc = [&](account_name a) {
 
@@ -549,7 +549,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( linkauth_special, TESTER, validating_testers ) { 
                ("type", type)
                ("requirement", "first")),
          action_validate_exception,
-         fc_exception_message_is(std::string("Cannot link eosio::") + std::string(type) + std::string(" to a minimum permission"))
+         fc_exception_message_is(std::string("Cannot link core_net::") + std::string(type) + std::string(" to a minimum permission"))
       );
    };
 
@@ -570,8 +570,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( delete_auth, TESTER, validating_testers ) { try {
    chain.create_account("eosio.token"_n);
    chain.produce_block();
 
-   chain.set_code("eosio.token"_n, test_contracts::eosio_token_wasm());
-   chain.set_abi("eosio.token"_n, test_contracts::eosio_token_abi());
+   chain.set_code("eosio.token"_n, test_contracts::core_net_token_wasm());
+   chain.set_abi("eosio.token"_n, test_contracts::core_net_token_abi());
 
    chain.produce_block();
    chain.create_account("tester"_n);

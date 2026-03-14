@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/finality_core.hpp>
-#include <eosio/chain/finalizer_policy.hpp>
-#include <eosio/chain/vote_message.hpp>
-#include <eosio/chain/block_timestamp.hpp>
-#include <eosio/chain/thread_utils.hpp>
+#include <core_net/chain/finality_core.hpp>
+#include <core_net/chain/finalizer_policy.hpp>
+#include <core_net/chain/vote_message.hpp>
+#include <core_net/chain/block_timestamp.hpp>
+#include <core_net/chain/thread_utils.hpp>
 #include <fc/crypto/bls_private_key.hpp>
 #include <fc/crypto/bls_public_key.hpp>
 #include <fc/crypto/bls_signature.hpp>
@@ -15,7 +15,7 @@
 #include <mutex>
 #include <optional>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    using bls_public_key          = fc::crypto::blslib::bls_public_key;
    using bls_signature           = fc::crypto::blslib::bls_signature;
@@ -279,13 +279,13 @@ namespace eosio::chain {
       std::optional<aggregating_qc_sig_t> pending_policy_sig;
    };
 
-} //eosio::chain
+} //core_net::chain
 
 
-FC_REFLECT_ENUM(eosio::chain::vote_result_t, (success)(duplicate)(unknown_public_key)(invalid_signature)(unknown_block)(max_exceeded))
-FC_REFLECT(eosio::chain::qc_sig_t, (strong_votes)(weak_votes)(sig));
-FC_REFLECT(eosio::chain::aggregating_qc_sig_t, (received_qc_sig)(quorum)(max_weak_sum_before_weak_final)(aggregating_state)(strong_sum)(weak_sum)(weak_votes)(strong_votes));
-FC_REFLECT(eosio::chain::aggregating_qc_t, (active_finalizer_policy)(pending_finalizer_policy)(active_policy_sig)(pending_policy_sig));
-FC_REFLECT_ENUM(eosio::chain::aggregating_qc_sig_t::state_t, (unrestricted)(restricted)(weak_achieved)(weak_final)(strong));
-FC_REFLECT(eosio::chain::aggregating_qc_sig_t::votes_t, (bitset)(sig));
-FC_REFLECT(eosio::chain::qc_t, (block_num)(active_policy_sig)(pending_policy_sig));
+FC_REFLECT_ENUM(core_net::chain::vote_result_t, (success)(duplicate)(unknown_public_key)(invalid_signature)(unknown_block)(max_exceeded))
+FC_REFLECT(core_net::chain::qc_sig_t, (strong_votes)(weak_votes)(sig));
+FC_REFLECT(core_net::chain::aggregating_qc_sig_t, (received_qc_sig)(quorum)(max_weak_sum_before_weak_final)(aggregating_state)(strong_sum)(weak_sum)(weak_votes)(strong_votes));
+FC_REFLECT(core_net::chain::aggregating_qc_t, (active_finalizer_policy)(pending_finalizer_policy)(active_policy_sig)(pending_policy_sig));
+FC_REFLECT_ENUM(core_net::chain::aggregating_qc_sig_t::state_t, (unrestricted)(restricted)(weak_achieved)(weak_final)(strong));
+FC_REFLECT(core_net::chain::aggregating_qc_sig_t::votes_t, (bitset)(sig));
+FC_REFLECT(core_net::chain::qc_t, (block_num)(active_policy_sig)(pending_policy_sig));

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eosio/chain/application.hpp>
-#include <eosio/http_plugin/http_plugin.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/producer_plugin/producer_plugin.hpp>
-#include <eosio/net_plugin/net_plugin.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/http_plugin/http_plugin.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
+#include <core_net/net_plugin/net_plugin.hpp>
 
-namespace eosio {
+namespace core_net {
 
    using namespace appbase;
 

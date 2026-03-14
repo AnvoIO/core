@@ -1,9 +1,9 @@
 #pragma once
-#include <eosio/chain/block_timestamp.hpp>
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/producer_schedule.hpp>
+#include <core_net/chain/block_timestamp.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/producer_schedule.hpp>
 
-namespace eosio {
+namespace core_net {
 
 enum class pending_block_mode { producing, speculating };
 
@@ -136,4 +136,4 @@ namespace block_timing_util {
    }
 
 } // namespace block_timing_util
-} // namespace eosio
+} // namespace core_net

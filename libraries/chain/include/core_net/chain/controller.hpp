@@ -1,16 +1,16 @@
 #pragma once
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/block_state.hpp>
-#include <eosio/chain/block_handle.hpp>
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/genesis_state.hpp>
-#include <eosio/chain/snapshot.hpp>
-#include <eosio/chain/protocol_feature_manager.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/config.hpp>
-#include <eosio/chain/vote_message.hpp>
-#include <eosio/chain/finalizer.hpp>
-#include <eosio/chain/peer_keys_db.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/block_state.hpp>
+#include <core_net/chain/block_handle.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/genesis_state.hpp>
+#include <core_net/chain/snapshot.hpp>
+#include <core_net/chain/protocol_feature_manager.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/config.hpp>
+#include <core_net/chain/vote_message.hpp>
+#include <core_net/chain/finalizer.hpp>
+#include <core_net/chain/peer_keys_db.hpp>
 
 #include <chainbase/pinnable_mapped_file.hpp>
 
@@ -28,9 +28,9 @@ namespace savanna_cluster {
    class node_t;
 }
 
-namespace eosio::vm { class wasm_allocator; }
+namespace core_net::vm { class wasm_allocator; }
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    struct speculative_block_metrics {
       account_name block_producer{};
@@ -148,7 +148,7 @@ namespace eosio::chain {
             bool                     contracts_console      =  false;
             bool                     allow_ram_billing_in_notify = false;
             uint32_t                 maximum_variable_signature_length = chain::config::default_max_variable_signature_length;
-            bool                     disable_all_subjective_mitigations = false; //< for developer & testing purposes, can be configured using `disable-all-subjective-mitigations` when `EOSIO_DEVELOPER` build option is provided
+            bool                     disable_all_subjective_mitigations = false; //< for developer & testing purposes, can be configured using `disable-all-subjective-mitigations` when `CORE_NET_DEVELOPER` build option is provided
             uint32_t                 terminate_at_block     = 0;
             uint32_t                 truncate_at_block      = 0;
             uint32_t                 num_configured_p2p_peers = 0;
@@ -463,10 +463,10 @@ namespace eosio::chain {
          void enable_deep_mind( deep_mind_handler* logger );
          uint32_t earliest_available_block_num() const;
 
-#if defined(EOSIO_EOS_VM_RUNTIME_ENABLED) || defined(EOSIO_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
          vm::wasm_allocator&  get_wasm_allocator();
 #endif
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
          bool is_eos_vm_oc_enabled() const;
 #endif
 
@@ -531,6 +531,6 @@ namespace eosio::chain {
          std::unique_ptr<controller_impl> my;
    }; // controller
 
-}  /// eosio::chain
+}  /// core_net::chain
 
-FC_REFLECT(eosio::chain::peerkeys_t, (producer_name)(peer_key))
+FC_REFLECT(core_net::chain::peerkeys_t, (producer_name)(peer_key))

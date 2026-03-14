@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/transaction.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/transaction.hpp>
 
 using namespace std;
-using namespace eosio::chain;
+using namespace core_net::chain;
 
-namespace eosio { namespace wallet {
+namespace core_net { namespace wallet {
 
 class wallet_api
 {

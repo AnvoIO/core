@@ -2,50 +2,50 @@
 #include <type_traits>
 #include <tuple>
 
-#define EOS_VM_HAS_MEMBER(ARG, NAME)                           \
-   eosio::vm::detail::overloaded {                             \
+#define CORE_NET_VM_HAS_MEMBER(ARG, NAME)                           \
+   core_net::vm::detail::overloaded {                             \
         [](auto&& f, std::enable_if_t<std::is_class_v<std::decay_t<decltype(f)>> && \
-                        eosio::vm::detail::pass_type<          \
+                        core_net::vm::detail::pass_type<          \
                             decltype(&std::decay_t<decltype(f)>::type::NAME)>(), int> = 0) constexpr { \
                             return true;                       \
        }, [](...) constexpr { return false; }                  \
-    }(eosio::vm::detail::wrapper_t<decltype(ARG)>{})
+    }(core_net::vm::detail::wrapper_t<decltype(ARG)>{})
 
-#define EOS_VM_HAS_MEMBER_TY(TY, NAME)                         \
-   eosio::vm::detail::overloaded {                             \
+#define CORE_NET_VM_HAS_MEMBER_TY(TY, NAME)                         \
+   core_net::vm::detail::overloaded {                             \
         [](auto&& f, std::enable_if_t<std::is_class_v<TY> &&   \
-                        eosio::vm::detail::pass_type<          \
+                        core_net::vm::detail::pass_type<          \
                             decltype(&std::decay_t<decltype(f)>::type::NAME)>(), int> = 0) constexpr { \
                             return true;                       \
        }, [](...) constexpr { return false; }                  \
-    }(eosio::vm::detail::wrapper_t<TY>{})
+    }(core_net::vm::detail::wrapper_t<TY>{})
 
-#define EOS_VM_HAS_TEMPLATE_MEMBER(ARG, NAME)                  \
-   eosio::vm::detail::overloaded {                             \
+#define CORE_NET_VM_HAS_TEMPLATE_MEMBER(ARG, NAME)                  \
+   core_net::vm::detail::overloaded {                             \
         [&](auto&& f, std::enable_if_t<std::is_class_v<std::decay_t<decltype(f)>> && \
-                        eosio::vm::detail::pass_type<          \
+                        core_net::vm::detail::pass_type<          \
                             decltype(&std::decay_t<decltype(f)>::type::template NAME)>(), int> = 0) constexpr { \
                             return true;                       \
        }, [](...) constexpr { return false; }                  \
-    }(eosio::vm::detail::wrapper_t<decltype(ARG)>{})
+    }(core_net::vm::detail::wrapper_t<decltype(ARG)>{})
 
-#define EOS_VM_HAS_TEMPLATE_MEMBER_TY(TY, NAME)                \
-   eosio::vm::detail::overloaded {                             \
+#define CORE_NET_VM_HAS_TEMPLATE_MEMBER_TY(TY, NAME)                \
+   core_net::vm::detail::overloaded {                             \
         [](auto&& f, std::enable_if_t<std::is_class_v<TY> &&   \
-                        eosio::vm::detail::pass_type<          \
+                        core_net::vm::detail::pass_type<          \
                             decltype(&std::decay_t<decltype(f)>::type::template NAME)>(), int> = 0) constexpr { \
                             return true;                       \
        }, [](...) constexpr { return false; }                  \
-    }(eosio::vm::detail::wrapper_t<TY>{})
+    }(core_net::vm::detail::wrapper_t<TY>{})
 
 
 // Workaround for compiler bug handling C++g17 auto template parameters.
 // The parameter is not treated as being type-dependent in all contexts,
 // causing early evaluation of the containing expression.
 // Tested at Apple LLVM version 10.0.1 (clang-1001.0.46.4)
-#define AUTO_PARAM_WORKAROUND(X) eosio::vm::detail::make_dependent<decltype(X)>(X)
+#define AUTO_PARAM_WORKAROUND(X) core_net::vm::detail::make_dependent<decltype(X)>(X)
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    struct freestanding {};
 
@@ -73,7 +73,7 @@ namespace eosio { namespace vm {
    }
 
    template <typename F>
-   constexpr bool is_callable(F&& fn) { return EOS_VM_HAS_MEMBER(fn, operator()); }
+   constexpr bool is_callable(F&& fn) { return CORE_NET_VM_HAS_MEMBER(fn, operator()); }
 
    namespace detail {
       template <bool Decay, typename R, typename... Args>
@@ -149,7 +149,7 @@ namespace eosio { namespace vm {
 
       template <std::size_t N, typename F>
       using parameters_from_impl_t = decltype(parameters_from_impl<N>(std::declval<F>()));
-   } // ns eosio::vm::detail
+   } // ns core_net::vm::detail
 
    template <typename R, typename... Args>
    constexpr bool is_function(R(*)(Args...)) { return true; }

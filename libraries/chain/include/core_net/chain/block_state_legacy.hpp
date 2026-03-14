@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/chain/block_header_state_legacy.hpp>
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/transaction_metadata.hpp>
-#include <eosio/chain/action_receipt.hpp>
+#include <core_net/chain/block_header_state_legacy.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/transaction_metadata.hpp>
+#include <core_net/chain/action_receipt.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    struct block_state_legacy_accessor;
 
@@ -89,6 +89,6 @@ namespace eosio::chain {
 
    using block_state_legacy_ptr = std::shared_ptr<block_state_legacy>;
 
-} /// namespace eosio::chain
+} /// namespace core_net::chain
 
-FC_REFLECT_DERIVED( eosio::chain::block_state_legacy, (eosio::chain::block_header_state_legacy), (block)(validated)(action_mroot_savanna) )
+FC_REFLECT_DERIVED( core_net::chain::block_state_legacy, (core_net::chain::block_header_state_legacy), (block)(validated)(action_mroot_savanna) )

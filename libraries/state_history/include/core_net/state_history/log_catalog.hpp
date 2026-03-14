@@ -7,12 +7,12 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/key.hpp>
 
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 
-#include <eosio/state_history/log.hpp>
-#include <eosio/state_history/log_config.hpp>
+#include <core_net/state_history/log.hpp>
+#include <core_net/state_history/log_config.hpp>
 
-namespace eosio::state_history {
+namespace core_net::state_history {
 
 using namespace boost::multi_index;
 

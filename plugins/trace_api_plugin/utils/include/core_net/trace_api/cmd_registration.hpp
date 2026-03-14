@@ -8,7 +8,7 @@
 
 namespace bpo = boost::program_options;
 
-namespace eosio::trace_api {
+namespace core_net::trace_api {
    /**
     * passes global opts and then the remaining command line
     */

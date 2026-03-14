@@ -12,7 +12,7 @@ node_t::node_t(size_t node_idx, cluster_t& cluster, setup_policy policy /* = set
    // since we are creating forks, finalizers may be locked on another fork and unable to vote.
    do_check_for_votes(false);
 
-   _voted_block_cb = [&, node_idx](const eosio::chain::vote_signal_params& v) {
+   _voted_block_cb = [&, node_idx](const core_net::chain::vote_signal_params& v) {
       // no mutex needed because controller is set in tester (via `disable_async_voting(true)`)
       // to vote (and emit the `voted_block` signal) synchronously.
       // --------------------------------------------------------------------------------------
@@ -38,7 +38,7 @@ node_t::node_t(size_t node_idx, cluster_t& cluster, setup_policy policy /* = set
    };
 
    // called on `commit_block`, for both blocks received from `push_block` and produced blocks
-   _accepted_block_cb = [&, node_idx](const eosio::chain::block_signal_params& p) {
+   _accepted_block_cb = [&, node_idx](const core_net::chain::block_signal_params& p) {
       if (!_pushing_a_block) {
          // we want to propagate only blocks we produce, not the ones we receive from the network
          auto& b = std::get<0>(p);

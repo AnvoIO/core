@@ -1,11 +1,11 @@
 #pragma once
-#include <eosio/chain/code_object.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/whitelisted_intrinsics.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/code_object.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/whitelisted_intrinsics.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <functional>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    struct platform_timer;
    class apply_context;
@@ -50,7 +50,7 @@ namespace eosio { namespace chain {
          wasm_interface(vm_type vm, vm_oc_enable eosvmoc_tierup, const chainbase::database& d, platform_timer& main_thread_timer, const std::filesystem::path data_dir, const eosvmoc::config& eosvmoc_config, bool profile);
          ~wasm_interface();
 
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
          // initialize exec per thread
          void init_thread_local_data();
 
@@ -88,9 +88,9 @@ namespace eosio { namespace chain {
          unique_ptr<struct wasm_interface_impl> my;
    };
 
-} } // eosio::chain
+} } // core_net::chain
 
-namespace eosio{ namespace chain {
+namespace core_net{ namespace chain {
    std::istream& operator>>(std::istream& in, wasm_interface::vm_type& runtime);
    inline std::ostream& operator<<(std::ostream& os, wasm_interface::vm_oc_enable t) {
       if (t == wasm_interface::vm_oc_enable::oc_auto) {
@@ -104,4 +104,4 @@ namespace eosio{ namespace chain {
    }
 }}
 
-FC_REFLECT_ENUM( eosio::chain::wasm_interface::vm_type, (eos_vm)(eos_vm_jit)(eos_vm_oc) )
+FC_REFLECT_ENUM( core_net::chain::wasm_interface::vm_type, (eos_vm)(eos_vm_jit)(eos_vm_oc) )

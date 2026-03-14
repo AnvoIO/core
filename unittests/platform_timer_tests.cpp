@@ -1,9 +1,9 @@
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/chain/platform_timer.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/chain/platform_timer.hpp>
 
 #include <boost/test/unit_test.hpp>
 
-namespace eosio {
+namespace core_net {
 using namespace std;
 using namespace chain;
 
@@ -109,4 +109,4 @@ BOOST_AUTO_TEST_CASE(correct_callback_test)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace eosio
+} // namespace core_net

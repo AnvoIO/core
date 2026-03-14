@@ -1,17 +1,17 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
-class [[eosio::contract]] payloadless : public eosio::contract {
+class [[core_net::contract]] payloadless : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action]]
+   [[core_net::action]]
    void doit();
 
-   [[eosio::action]]
+   [[core_net::action]]
    void doitslow();
 
-   [[eosio::action]]
+   [[core_net::action]]
    void doitforever();
 };

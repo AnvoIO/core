@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-namespace eosio { namespace chain { namespace eosvmoc {
+namespace core_net { namespace chain { namespace eosvmoc {
 
 extern "C" void eosvmoc_switch_stack(void* stack, void(*fn)(void*), void* data);
 

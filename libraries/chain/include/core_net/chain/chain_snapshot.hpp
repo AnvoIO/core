@@ -1,8 +1,8 @@
 #pragma once
 
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/exceptions.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 struct chain_snapshot_header {
    /**
@@ -51,4 +51,4 @@ struct chain_snapshot_header {
 
 }
 
-FC_REFLECT(eosio::chain::chain_snapshot_header,(version))
+FC_REFLECT(core_net::chain::chain_snapshot_header,(version))

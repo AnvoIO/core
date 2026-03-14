@@ -1,9 +1,9 @@
 #pragma once
-#include <eosio/chain/wasm_interface.hpp>
+#include <core_net/chain/wasm_interface.hpp>
 #include <fc/time.hpp>
 #include <fc/utility.hpp>
 
-namespace eosio { namespace chain { namespace config {
+namespace core_net { namespace chain { namespace config {
 
 typedef __uint128_t uint128_t;
 
@@ -117,10 +117,10 @@ const static uint32_t   setcode_ram_bytes_multiplier       = 10;     ///< multip
 
 const static uint32_t   hashing_checktime_block_size       = 10*1024;  /// call checktime from hashing intrinsic once per this number of bytes
 
-#ifdef EOSIO_EOS_VM_JIT_RUNTIME_ENABLED
-const static eosio::chain::wasm_interface::vm_type default_wasm_runtime = eosio::chain::wasm_interface::vm_type::eos_vm_jit;
+#ifdef CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED
+const static core_net::chain::wasm_interface::vm_type default_wasm_runtime = core_net::chain::wasm_interface::vm_type::eos_vm_jit;
 #else
-const static eosio::chain::wasm_interface::vm_type default_wasm_runtime = eosio::chain::wasm_interface::vm_type::eos_vm;
+const static core_net::chain::wasm_interface::vm_type default_wasm_runtime = core_net::chain::wasm_interface::vm_type::eos_vm;
 #endif
 
 const static uint32_t   default_abi_serializer_max_time_us = 15*1000; ///< default deadline for abi serialization methods
@@ -158,13 +158,13 @@ template<typename T>
 constexpr uint64_t billable_size_v = ((billable_size<T>::value + billable_alignment - 1) / billable_alignment) * billable_alignment;
 
 
-} } } // namespace eosio::chain::config
+} } } // namespace core_net::chain::config
 
 constexpr uint64_t EOS_PERCENT(uint64_t value, uint32_t percentage) {
-   return (value * percentage) / eosio::chain::config::percent_100;
+   return (value * percentage) / core_net::chain::config::percent_100;
 }
 
 template<typename Number>
 Number EOS_PERCENT_CEIL(Number value, uint32_t percentage) {
-   return ((value * percentage) + eosio::chain::config::percent_100 - eosio::chain::config::percent_1)  / eosio::chain::config::percent_100;
+   return ((value * percentage) + core_net::chain::config::percent_100 - core_net::chain::config::percent_1)  / core_net::chain::config::percent_100;
 }

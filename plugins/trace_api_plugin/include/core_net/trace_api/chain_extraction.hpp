@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/trace_api/common.hpp>
-#include <eosio/trace_api/trace.hpp>
-#include <eosio/trace_api/extract_util.hpp>
+#include <core_net/trace_api/common.hpp>
+#include <core_net/trace_api/trace.hpp>
+#include <core_net/trace_api/extract_util.hpp>
 #include <exception>
 #include <functional>
 #include <map>
 
-namespace eosio { namespace trace_api {
+namespace core_net { namespace trace_api {
 
 using chain::transaction_id_type;
 using chain::packed_transaction;

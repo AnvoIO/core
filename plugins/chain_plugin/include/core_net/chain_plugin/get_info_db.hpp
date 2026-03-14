@@ -1,8 +1,8 @@
 #pragma once
 
-#include <eosio/chain/controller.hpp>
+#include <core_net/chain/controller.hpp>
 
-namespace eosio::chain_apis {
+namespace core_net::chain_apis {
    /**
     * This class manages the ephemeral data that is needed by `get_info` RPC call.
     * There is no persistence and the data is recreated when the class is instantiated
@@ -21,7 +21,7 @@ namespace eosio::chain_apis {
        * @param chain            - controller to read data from
        * @param get_info_enabled - true if get_info RPC endpoint is enabled
        */
-      get_info_db( const class eosio::chain::controller& chain, bool get_info_enabled );
+      get_info_db( const class core_net::chain::controller& chain, bool get_info_enabled );
       ~get_info_db();
 
       /**
@@ -69,9 +69,9 @@ namespace eosio::chain_apis {
    private:
       std::unique_ptr<struct get_info_db_impl> _impl;
    }; // get_info_db
-} // namespace eosio::chain_apis
+} // namespace core_net::chain_apis
 
-FC_REFLECT(eosio::chain_apis::get_info_db::get_info_results,
+FC_REFLECT(core_net::chain_apis::get_info_db::get_info_results,
            (server_version)(chain_id)(head_block_num)(last_irreversible_block_num)(last_irreversible_block_id)
            (head_block_id)(head_block_time)(head_block_producer)
            (virtual_block_cpu_limit)(virtual_block_net_limit)(block_cpu_limit)(block_net_limit)

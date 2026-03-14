@@ -1,9 +1,9 @@
- #include <eosio/eosio.hpp>
- #include <eosio/print.hpp>
+ #include <core_net/eosio.hpp>
+ #include <core_net/print.hpp>
 
 #include "test_api.hpp"
 
-using namespace eosio::internal_use_do_not_use;
+using namespace core_net::internal_use_do_not_use;
 
 void test_print::test_prints_l() {
   char ab[] = { 'a', 'b' };
@@ -60,25 +60,25 @@ void test_print::test_printui128() {
 }
 
 void test_print::test_printn() {
-   printn(eosio::name{"1"}.value);
-   printn(eosio::name{"5"}.value);
-   printn(eosio::name{"a"}.value);
-   printn(eosio::name{"z"}.value);
+   printn(core_net::name{"1"}.value);
+   printn(core_net::name{"5"}.value);
+   printn(core_net::name{"a"}.value);
+   printn(core_net::name{"z"}.value);
 
-   printn(eosio::name{"abc"}.value);
-   printn(eosio::name{"123"}.value);
+   printn(core_net::name{"abc"}.value);
+   printn(core_net::name{"123"}.value);
 
-   printn(eosio::name{"abc.123"}.value);
-   printn(eosio::name{"123.abc"}.value);
+   printn(core_net::name{"abc.123"}.value);
+   printn(core_net::name{"123.abc"}.value);
 
-   printn(eosio::name{"12345abcdefgj"}.value);
-   printn(eosio::name{"ijklmnopqrstj"}.value);
-   printn(eosio::name{"vwxyz.12345aj"}.value);
+   printn(core_net::name{"12345abcdefgj"}.value);
+   printn(core_net::name{"ijklmnopqrstj"}.value);
+   printn(core_net::name{"vwxyz.12345aj"}.value);
 
-   printn(eosio::name{"111111111111j"}.value);
-   printn(eosio::name{"555555555555j"}.value);
-   printn(eosio::name{"aaaaaaaaaaaaj"}.value);
-   printn(eosio::name{"zzzzzzzzzzzzj"}.value);
+   printn(core_net::name{"111111111111j"}.value);
+   printn(core_net::name{"555555555555j"}.value);
+   printn(core_net::name{"aaaaaaaaaaaaj"}.value);
+   printn(core_net::name{"zzzzzzzzzzzzj"}.value);
 }
 
 
@@ -120,7 +120,7 @@ void test_print::test_printqf() {
 
 void test_print::test_print_simple() {
     const std::string cvalue = "cvalue";
-    eosio::print(cvalue);
+    core_net::print(cvalue);
     std::string value = "value";
-    eosio::print(std::move(value));
+    core_net::print(std::move(value));
 }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <eosio/http_plugin/common.hpp>
-#include <eosio/http_plugin/api_category.hpp>
+#include <core_net/http_plugin/common.hpp>
+#include <core_net/http_plugin/api_category.hpp>
 
 #include <fc/io/json.hpp>
 #include <fc/time.hpp>
@@ -13,7 +13,7 @@
 #include <string>
 #include <charconv>
 
-namespace eosio {
+namespace core_net {
 
 using std::chrono::steady_clock;
 
@@ -518,11 +518,11 @@ public:
       if constexpr(std::is_same_v<Socket, tcp::socket>) {
          const std::string host_str(req["host"]);
          if (host_str != local_address_)
-            return eosio::allow_host(host_str, socket_, *plugin_state_);
+            return core_net::allow_host(host_str, socket_, *plugin_state_);
       }
       return true;
    }
 
 }; // end class beast_http_session
 
-}// namespace eosio
+}// namespace core_net

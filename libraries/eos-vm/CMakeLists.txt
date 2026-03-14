@@ -64,7 +64,7 @@ target_compile_options( eos-vm INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-Wno-register
 # Enable debugging stats for eos-vm.
 # ##################################################################################################
 if(FULL_DEBUG_BUILD)
-   target_compile_definitions(eos-vm INTERFACE -DEOS_VM_FULL_DEBUG)
+   target_compile_definitions(eos-vm INTERFACE -DCORE_NET_VM_FULL_DEBUG)
 endif()
 
 # ##################################################################################################
@@ -77,12 +77,12 @@ if(ENABLE_SOFTFLOAT)
       add_subdirectory(external)
       remove_definitions( -w )
    endif()
-   target_compile_definitions(eos-vm INTERFACE -DEOS_VM_SOFTFLOAT)
+   target_compile_definitions(eos-vm INTERFACE -DCORE_NET_VM_SOFTFLOAT)
    target_link_libraries(eos-vm INTERFACE softfloat)
 endif()
 
 if(ENABLE_MEMORY_OPS_ALIGNMENT)
-   target_compile_definitions(eos-vm INTERFACE -DEOS_VM_ALIGN_MEMORY_OPS)
+   target_compile_definitions(eos-vm INTERFACE -DCORE_NET_VM_ALIGN_MEMORY_OPS)
 endif()
 
 # ##################################################################################################
@@ -144,7 +144,7 @@ if(ENABLE_INSTALL)
                DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
                ${INSTALL_PUBLIC_HEADER_TARGETS_COMPONENT_ARGS})
 
-   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/eosio
+   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/include/core_net
       DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
       ${INSTALL_DIRECTORY_COMPONENT_ARGS})
 endif()

@@ -1,20 +1,20 @@
 #pragma once
 
-#include <eosio/action.hpp>
-#include <eosio/crypto.hpp>
-#include <eosio/print.hpp>
-#include <eosio/privileged.hpp>
-#include <eosio/producer_schedule.hpp>
-#include <eosio/contract.hpp>
-#include <eosio/ignore.hpp>
-#include <eosio/system.hpp>
+#include <core_net/action.hpp>
+#include <core_net/crypto.hpp>
+#include <core_net/print.hpp>
+#include <core_net/privileged.hpp>
+#include <core_net/producer_schedule.hpp>
+#include <core_net/contract.hpp>
+#include <core_net/ignore.hpp>
+#include <core_net/system.hpp>
 
 namespace eosiosystem {
-using eosio::name;
-using eosio::permission_level;
-using eosio::public_key;
-using eosio::ignore;
-using eosio::checksum256;
+using core_net::name;
+using core_net::permission_level;
+using core_net::public_key;
+using core_net::ignore;
+using core_net::checksum256;
 
 struct permission_level_weight {
    permission_level  permission;
@@ -25,7 +25,7 @@ struct permission_level_weight {
 };
 
 struct key_weight {
-   eosio::public_key  key;
+   core_net::public_key  key;
    uint16_t           weight;
 
    // explicit serialization macro is not necessary, used here only to improve compilation time
@@ -58,7 +58,7 @@ struct block_header {
    checksum256                               transaction_mroot;
    checksum256                               action_mroot;
    uint32_t                                  schedule_version = 0;
-   std::optional<eosio::producer_schedule>   new_producers;
+   std::optional<core_net::producer_schedule>   new_producers;
 
    // explicit serialization macro is not necessary, used here only to improve compilation time
    EOSLIB_SERIALIZE(block_header, (timestamp)(producer)(confirmed)(previous)(transaction_mroot)(action_mroot)
@@ -66,7 +66,7 @@ struct block_header {
 };
 
 
-struct [[eosio::table("abihash"), eosio::contract("eosio.system")]] abi_hash {
+struct [[core_net::table("abihash"), core_net::contract("eosio.system")]] abi_hash {
    name              owner;
    checksum256       hash;
    uint64_t primary_key()const { return owner.value; }
@@ -77,10 +77,10 @@ struct [[eosio::table("abihash"), eosio::contract("eosio.system")]] abi_hash {
 /*
  * Method parameters commented out to prevent generation of code that parses input data.
  */
-class [[eosio::contract("eosio.system")]] native : public eosio::contract {
+class [[core_net::contract("eosio.system")]] native : public core_net::contract {
 public:
 
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
    /**
     *  Called after a new account is created. This code enforces resource-limits rules
@@ -94,44 +94,44 @@ public:
     *     therefore, this method will execute an inline buyram from receiver for newacnt in
     *     an amount equal to the current new account creation fee.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void newaccount( name             creator,
                     name             name,
                     ignore<authority> owner,
                     ignore<authority> active);
 
 
-   [[eosio::action]]
+   [[core_net::action]]
    void updateauth(  ignore<name>  account,
                      ignore<name>  permission,
                      ignore<name>  parent,
                      ignore<authority> auth ) {}
 
-   [[eosio::action]]
+   [[core_net::action]]
    void deleteauth( ignore<name>  account,
                     ignore<name>  permission ) {}
 
-   [[eosio::action]]
+   [[core_net::action]]
    void linkauth(  ignore<name>    account,
                    ignore<name>    code,
                    ignore<name>    type,
                    ignore<name>    requirement  ) {}
 
-   [[eosio::action]]
+   [[core_net::action]]
    void unlinkauth( ignore<name>  account,
                     ignore<name>  code,
                     ignore<name>  type ) {}
 
-   [[eosio::action]]
+   [[core_net::action]]
    void canceldelay( ignore<permission_level> canceling_auth, ignore<checksum256> trx_id ) {}
 
-   [[eosio::action]]
+   [[core_net::action]]
    void onerror( ignore<uint128_t> sender_id, ignore<std::vector<char>> sent_trx ) {}
 
-   [[eosio::action]]
+   [[core_net::action]]
    void setabi( name account, const std::vector<char>& abi );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void setcode( name account, uint8_t vmtype, uint8_t vmversion, const std::vector<char>& code ) {}
 };
 }

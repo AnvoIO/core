@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/vm/config.hpp>
+#include <core_net/vm/config.hpp>
 
 #include <string>
 
-#ifdef EOS_VM_USE_BOOST
+#ifdef CORE_NET_VM_USE_BOOST
 #   include <boost/system/error_code.hpp>
 #   include <boost/type_traits.hpp>
 using error_category_t = boost::system::error_category;
@@ -21,7 +21,7 @@ using error_code_t     = std::error_code;
 #endif
 
 #define GENERATE_ERROR_CATEGORY(CATEGORY, NAME)                                                                        \
-   namespace eosio { namespace vm {                                                                                    \
+   namespace core_net { namespace vm {                                                                                    \
          struct CATEGORY##_category : error_category_t {                                                               \
             const char* name() const noexcept override { return #NAME; }                                               \
             std::string message(int ev) const override;                                                                \
@@ -42,15 +42,15 @@ using error_code_t     = std::error_code;
       return #ITEM;
 
 #define CREATE_ERROR_CODES(CATEGORY, ERRORS)                                                                           \
-   namespace eosio { namespace vm {                                                                                    \
+   namespace core_net { namespace vm {                                                                                    \
          enum class CATEGORY { ERRORS(GENERATE_ENUM_ELEM) };                                                           \
       }                                                                                                                \
    }                                                                                                                   \
    namespace ERROR_CODE_NAMESPACE {                                                                                    \
       template <>                                                                                                      \
-      struct is_error_code_enum<eosio::vm::CATEGORY> : TRUE_TYPE {};                                                   \
+      struct is_error_code_enum<core_net::vm::CATEGORY> : TRUE_TYPE {};                                                   \
    }                                                                                                                   \
-   namespace eosio { namespace vm {                                                                                    \
+   namespace core_net { namespace vm {                                                                                    \
          inline std::string CATEGORY##_category::message(int ev) const {                                               \
             switch (static_cast<CATEGORY>(ev)) { ERRORS(GENERATE_STR_ELEM) }                                           \
             return "";                                                                                                 \

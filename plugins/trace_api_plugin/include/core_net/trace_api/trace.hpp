@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/block.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/block.hpp>
 #include <utility>
 
-namespace eosio { namespace trace_api {
+namespace core_net { namespace trace_api {
 
    struct authorization_trace_v0 {
       chain::name account;
@@ -97,15 +97,15 @@ namespace eosio { namespace trace_api {
 
 } }
 
-FC_REFLECT(eosio::trace_api::authorization_trace_v0, (account)(permission))
-FC_REFLECT(eosio::trace_api::action_trace_v0, (global_sequence)(receiver)(account)(action)(authorization)(data))
-FC_REFLECT_DERIVED(eosio::trace_api::action_trace_v1, (eosio::trace_api::action_trace_v0),(return_value))
-FC_REFLECT(eosio::trace_api::transaction_trace_v0, (id)(actions))
-FC_REFLECT_DERIVED(eosio::trace_api::transaction_trace_v1, (eosio::trace_api::transaction_trace_v0), (status)(cpu_usage_us)(net_usage_words)(signatures)(trx_header))
-FC_REFLECT(eosio::trace_api::transaction_trace_v2, (id)(actions)(status)(cpu_usage_us)(net_usage_words)(signatures)(trx_header))
-FC_REFLECT_DERIVED(eosio::trace_api::transaction_trace_v3, (eosio::trace_api::transaction_trace_v2), (block_num)(block_time)(producer_block_id))
-FC_REFLECT(eosio::trace_api::block_trace_v0, (id)(number)(previous_id)(timestamp)(producer)(transactions))
-FC_REFLECT_DERIVED(eosio::trace_api::block_trace_v1, (eosio::trace_api::block_trace_v0), (transaction_mroot)(action_mroot)(schedule_version)(transactions_v1))
-FC_REFLECT(eosio::trace_api::block_trace_v2, (id)(number)(previous_id)(timestamp)(producer)(transaction_mroot)(action_mroot)(schedule_version)(transactions))
-FC_REFLECT(eosio::trace_api::cache_trace, (trace)(trx))
-FC_REFLECT(eosio::trace_api::block_trxs_entry, (ids)(block_num))
+FC_REFLECT(core_net::trace_api::authorization_trace_v0, (account)(permission))
+FC_REFLECT(core_net::trace_api::action_trace_v0, (global_sequence)(receiver)(account)(action)(authorization)(data))
+FC_REFLECT_DERIVED(core_net::trace_api::action_trace_v1, (core_net::trace_api::action_trace_v0),(return_value))
+FC_REFLECT(core_net::trace_api::transaction_trace_v0, (id)(actions))
+FC_REFLECT_DERIVED(core_net::trace_api::transaction_trace_v1, (core_net::trace_api::transaction_trace_v0), (status)(cpu_usage_us)(net_usage_words)(signatures)(trx_header))
+FC_REFLECT(core_net::trace_api::transaction_trace_v2, (id)(actions)(status)(cpu_usage_us)(net_usage_words)(signatures)(trx_header))
+FC_REFLECT_DERIVED(core_net::trace_api::transaction_trace_v3, (core_net::trace_api::transaction_trace_v2), (block_num)(block_time)(producer_block_id))
+FC_REFLECT(core_net::trace_api::block_trace_v0, (id)(number)(previous_id)(timestamp)(producer)(transactions))
+FC_REFLECT_DERIVED(core_net::trace_api::block_trace_v1, (core_net::trace_api::block_trace_v0), (transaction_mroot)(action_mroot)(schedule_version)(transactions_v1))
+FC_REFLECT(core_net::trace_api::block_trace_v2, (id)(number)(previous_id)(timestamp)(producer)(transaction_mroot)(action_mroot)(schedule_version)(transactions))
+FC_REFLECT(core_net::trace_api::cache_trace, (trace)(trx))
+FC_REFLECT(core_net::trace_api::block_trxs_entry, (ids)(block_num))

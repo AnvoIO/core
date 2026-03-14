@@ -1,8 +1,8 @@
-#include <eosio/chain/finalizer.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/finalizer.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <fc/log/logger_config.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 // ----------------------------------------------------------------------------------------
 finalizer::vote_result finalizer::decide_vote(const block_state_ptr& bsp) {
@@ -339,7 +339,7 @@ my_finalizers_t::fsi_map my_finalizers_t::load_finalizer_safety_info() {
       EOS_ASSERT(magic == fsi_t::magic, finalizer_safety_exception,
                  "bad magic number in finalizer safety persistence file: ${p}", ("p", persist_file_path));
 
-      // We can load files with older, but not files with a version higher that the running nodeos understands.
+      // We can load files with older, but not files with a version higher that the running core_netd understands.
       // -----------------------------------------------------------------------------------------------------
       uint64_t file_version = 0; // current file version
       fc::raw::unpack(persist_file, file_version);
@@ -435,4 +435,4 @@ void my_finalizers_t::set_default_safety_information(const fsi_t& fsi) {
    default_fsi = fsi;
 }
 
-} // namespace eosio::chain
+} // namespace core_net::chain

@@ -1,11 +1,11 @@
 #include <string>
-#include <eosio/chain/asset.hpp>
+#include <core_net/chain/asset.hpp>
 #include <boost/rational.hpp>
 #include <boost/algorithm/string.hpp>
 #include <fc/reflect/variant.hpp>
 #include <fc/safe.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 using fc::safe;
 
@@ -53,7 +53,7 @@ asset asset::from_string(const string& from)
       // Parse symbol
       string precision_digit_str;
       if (dot_pos != string::npos) {
-         precision_digit_str = eosio::chain::to_string(amount_str.size() - dot_pos - 1);
+         precision_digit_str = core_net::chain::to_string(amount_str.size() - dot_pos - 1);
       } else {
          precision_digit_str = "0";
       }
@@ -80,4 +80,4 @@ asset asset::from_string(const string& from)
    FC_CAPTURE_LOG_AND_RETHROW( (from) )
 }
 
-} }  // eosio::types
+} }  // core_net::types

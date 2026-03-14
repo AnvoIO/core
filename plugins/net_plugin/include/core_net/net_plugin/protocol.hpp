@@ -1,9 +1,9 @@
 #pragma once
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/vote_message.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/vote_message.hpp>
+#include <core_net/chain/types.hpp>
 
-namespace eosio {
+namespace core_net {
    using namespace chain;
    using namespace fc;
 
@@ -149,7 +149,7 @@ namespace eosio {
       // bp_peer_info_v2 can derive from bp_peer_info_v1, so old peers can still unpack bp_peer_info_v1 from bp_peer::bp_peer_info
       struct bp_peer {
          unsigned_int              version = 1;
-         eosio::name               producer_name;
+         core_net::name               producer_name;
          std::vector<char>         bp_peer_info;         // serialized bp_peer_info
 
          digest_type digest(const chain_id_type& chain_id) const;
@@ -212,30 +212,30 @@ namespace eosio {
       return static_cast<msg_type_t>(v);
    }
 
-} // namespace eosio
+} // namespace core_net
 
-FC_REFLECT( eosio::select_ids<fc::sha256>, (mode)(pending)(ids) )
-FC_REFLECT( eosio::chain_size_message,
+FC_REFLECT( core_net::select_ids<fc::sha256>, (mode)(pending)(ids) )
+FC_REFLECT( core_net::chain_size_message,
             (last_irreversible_block_num)(last_irreversible_block_id)
             (head_num)(head_id))
-FC_REFLECT( eosio::handshake_message,
+FC_REFLECT( core_net::handshake_message,
             (network_version)(chain_id)(node_id)(key)
             (time)(token)(sig)(p2p_address)
             (fork_db_root_num)(fork_db_root_id)
             (fork_db_head_num)(fork_db_head_id)
             (os)(agent)(generation) )
-FC_REFLECT( eosio::go_away_message, (reason)(node_id) )
-FC_REFLECT( eosio::time_message, (org)(rec)(xmt)(dst) )
-FC_REFLECT( eosio::notice_message, (known_trx)(known_blocks) )
-FC_REFLECT( eosio::request_message, (req_trx)(req_blocks) )
-FC_REFLECT( eosio::sync_request_message, (start_block)(end_block) )
-FC_REFLECT( eosio::block_nack_message, (id) )
-FC_REFLECT( eosio::block_notice_message, (previous)(id) )
-FC_REFLECT( eosio::transaction_notice_message, (id) )
-FC_REFLECT( eosio::gossip_bp_peers_message::bp_peer_info_v1, (server_endpoint)(outbound_ip_address)(expiration) )
-FC_REFLECT( eosio::gossip_bp_peers_message::bp_peer, (version)(producer_name)(bp_peer_info) )
-FC_REFLECT_DERIVED(eosio::gossip_bp_peers_message::signed_bp_peer, (eosio::gossip_bp_peers_message::bp_peer), (sig) )
-FC_REFLECT( eosio::gossip_bp_peers_message, (peers) )
+FC_REFLECT( core_net::go_away_message, (reason)(node_id) )
+FC_REFLECT( core_net::time_message, (org)(rec)(xmt)(dst) )
+FC_REFLECT( core_net::notice_message, (known_trx)(known_blocks) )
+FC_REFLECT( core_net::request_message, (req_trx)(req_blocks) )
+FC_REFLECT( core_net::sync_request_message, (start_block)(end_block) )
+FC_REFLECT( core_net::block_nack_message, (id) )
+FC_REFLECT( core_net::block_notice_message, (previous)(id) )
+FC_REFLECT( core_net::transaction_notice_message, (id) )
+FC_REFLECT( core_net::gossip_bp_peers_message::bp_peer_info_v1, (server_endpoint)(outbound_ip_address)(expiration) )
+FC_REFLECT( core_net::gossip_bp_peers_message::bp_peer, (version)(producer_name)(bp_peer_info) )
+FC_REFLECT_DERIVED(core_net::gossip_bp_peers_message::signed_bp_peer, (core_net::gossip_bp_peers_message::bp_peer), (sig) )
+FC_REFLECT( core_net::gossip_bp_peers_message, (peers) )
 
 /**
  *

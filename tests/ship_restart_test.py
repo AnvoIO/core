@@ -59,8 +59,8 @@ try:
     Print("Stand up cluster")
 
     specificExtraNodeosArgs={}
-    specificExtraNodeosArgs[prodNodeId]="--plugin eosio::producer_api_plugin"
-    specificExtraNodeosArgs[shipNodeId]="--plugin eosio::state_history_plugin --trace-history --chain-state-history --finality-data-history --state-history-stride 200 --plugin eosio::net_api_plugin --plugin eosio::producer_api_plugin"
+    specificExtraNodeosArgs[prodNodeId]="--plugin core_net::producer_api_plugin"
+    specificExtraNodeosArgs[shipNodeId]="--plugin core_net::state_history_plugin --trace-history --chain-state-history --finality-data-history --state-history-stride 200 --plugin core_net::net_api_plugin --plugin core_net::producer_api_plugin"
 
     if cluster.launch(topo="mesh", pnodes=totalProducerNodes, totalNodes=totalNodes,
                       activateIF=True,

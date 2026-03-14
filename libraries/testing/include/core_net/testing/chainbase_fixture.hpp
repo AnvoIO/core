@@ -3,7 +3,7 @@
 
 #include <memory>
 
-namespace eosio { namespace testing {
+namespace core_net { namespace testing {
 
 /**
  * Utility class to create and tear down a temporary chainbase::database using RAII
@@ -27,4 +27,4 @@ struct chainbase_fixture {
    std::unique_ptr<chainbase::database>  _db;
 };
 
-} }  // eosio::testing
+} }  // core_net::testing

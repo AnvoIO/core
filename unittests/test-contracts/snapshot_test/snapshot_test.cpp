@@ -1,6 +1,6 @@
 #include "snapshot_test.hpp"
 
-using namespace eosio;
+using namespace core_net;
 
 void snapshot_test::increment( uint32_t value ) {
    require_auth( get_self() );
@@ -28,7 +28,7 @@ void snapshot_test::increment( uint32_t value ) {
    }
 }
 
-void snapshot_test::add(eosio::name scope, uint64_t id, eosio::checksum256 payload) {
+void snapshot_test::add(core_net::name scope, uint64_t id, core_net::checksum256 payload) {
    require_auth(get_self());
 
    test_table(get_self(), scope.value).emplace(get_self(), [&](test_record& record) {
@@ -37,7 +37,7 @@ void snapshot_test::add(eosio::name scope, uint64_t id, eosio::checksum256 paylo
    });
 }
 
-void snapshot_test::remove(eosio::name scope, uint64_t id) {
+void snapshot_test::remove(core_net::name scope, uint64_t id) {
    require_auth(get_self());
 
    test_table table(get_self(), scope.value);
@@ -45,7 +45,7 @@ void snapshot_test::remove(eosio::name scope, uint64_t id) {
    table.erase(it);
 }
 
-void snapshot_test::verify(eosio::name scope, uint64_t id, eosio::checksum256 payload) {
+void snapshot_test::verify(core_net::name scope, uint64_t id, core_net::checksum256 payload) {
    require_auth(get_self());
 
    test_table table(get_self(), scope.value);

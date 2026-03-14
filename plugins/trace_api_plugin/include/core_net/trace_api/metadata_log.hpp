@@ -1,10 +1,10 @@
 #pragma once
 #include <fc/variant.hpp>
-#include <eosio/trace_api/trace.hpp>
-#include <eosio/chain/abi_def.hpp>
-#include <eosio/chain/protocol_feature_activation.hpp>
+#include <core_net/trace_api/trace.hpp>
+#include <core_net/chain/abi_def.hpp>
+#include <core_net/chain/protocol_feature_activation.hpp>
 
-namespace eosio { namespace trace_api {
+namespace core_net { namespace trace_api {
    struct block_entry_v0 {
       chain::block_id_type   id;
       uint32_t               number;
@@ -23,5 +23,5 @@ namespace eosio { namespace trace_api {
 
 }}
 
-FC_REFLECT(eosio::trace_api::block_entry_v0, (id)(number)(offset));
-FC_REFLECT(eosio::trace_api::lib_entry_v0, (lib));
+FC_REFLECT(core_net::trace_api::block_entry_v0, (id)(number)(offset));
+FC_REFLECT(core_net::trace_api::lib_entry_v0, (lib));

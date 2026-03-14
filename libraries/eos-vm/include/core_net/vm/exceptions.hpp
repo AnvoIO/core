@@ -1,16 +1,16 @@
 #pragma once
 
-#include <eosio/vm/utils.hpp>
+#include <core_net/vm/utils.hpp>
 
 #include <cstdint>
 #include <exception>
 
-#define EOS_VM_ASSERT( expr, exc_type, msg ) \
+#define CORE_NET_VM_ASSERT( expr, exc_type, msg ) \
    if (!UNLIKELY(expr)) {                    \
       throw exc_type{msg};                   \
    }
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    struct exception : public std::exception {
       virtual const char* what()const throw()=0;
       virtual const char* detail()const throw()=0;
@@ -18,7 +18,7 @@ namespace eosio { namespace vm {
 }}
 
 #define DECLARE_EXCEPTION(name, _code, _what)                   \
-   struct name : public eosio::vm::exception {                  \
+   struct name : public core_net::vm::exception {                  \
       name(std::string msg) : msg(msg) {}                       \
       virtual const char* what()const throw() { return _what; } \
       virtual const char* detail()const throw() { return msg.c_str(); } \
@@ -26,7 +26,7 @@ namespace eosio { namespace vm {
       std::string msg;                                          \
    };
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    DECLARE_EXCEPTION( wasm_interpreter_exception,        4000000, "wasm interpreter exception" )
    DECLARE_EXCEPTION( wasm_section_length_exception,     4000001, "wasm section length exception" )
    DECLARE_EXCEPTION( wasm_bad_alloc,                    4000002, "wasm allocation failed" )
@@ -43,6 +43,6 @@ namespace eosio { namespace vm {
    DECLARE_EXCEPTION( wasm_exit_exception,               4010002, "exit" )
    DECLARE_EXCEPTION( span_exception,                    4020000, "span exception" )
    DECLARE_EXCEPTION( profile_exception,                 4030000, "profile exception" )
-}} // eosio::vm
+}} // core_net::vm
 
 #undef DECLARE_EXCEPTION

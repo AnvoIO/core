@@ -1,21 +1,21 @@
 /**
   @defgroup eosclienttool
 
-  @section intro Introduction to cleos
+  @section intro Introduction to core-cli
 
-  `cleos` is a command line tool that interfaces with the REST api exposed by @ref nodeos. In order to use `cleos` you will need to
-  have a local copy of `nodeos` running and configured to load the 'eosio::chain_api_plugin'.
+  `core-cli` is a command line tool that interfaces with the REST api exposed by @ref core_netd. In order to use `core-cli` you will need to
+  have a local copy of `core_netd` running and configured to load the 'core_net::chain_api_plugin'.
 
-   cleos contains documentation for all of its commands. For a list of all commands known to cleos, simply run it with no arguments:
+   core-cli contains documentation for all of its commands. For a list of all commands known to core-cli, simply run it with no arguments:
 ```
-$ ./cleos
+$ ./core-cli
 Command Line Interface to EOSIO Client
-Usage: programs/cleos/cleos [OPTIONS] SUBCOMMAND
+Usage: programs/core-cli/core-cli [OPTIONS] SUBCOMMAND
 
 Options:
   -h,--help                   Print this help message and exit
   -u,--url TEXT=http://localhost:8888/
-                              the http URL where nodeos is running
+                              the http URL where core_netd is running
   --wallet-url TEXT=http://localhost:8888/
                               the http URL where keosd is running
   -r,--header                 pass specific HTTP header, repeat this option to pass multiple headers
@@ -37,17 +37,17 @@ Subcommands:
 ```
 To get help with any particular subcommand, run it with no arguments as well:
 ```
-$ ./cleos create
+$ ./core-cli create
 Create various items, on and off the blockchain
-Usage: ./cleos create SUBCOMMAND
+Usage: ./core-cli create SUBCOMMAND
 
 Subcommands:
   key                         Create a new keypair and print the public and private keys
   account                     Create a new account on the blockchain (assumes system contract does not restrict RAM usage)
 
-$ ./cleos create account
+$ ./core-cli create account
 Create a new account on the blockchain (assumes system contract does not restrict RAM usage)
-Usage: ./cleos create account [OPTIONS] creator name OwnerKey ActiveKey
+Usage: ./core-cli create account [OPTIONS] creator name OwnerKey ActiveKey
 
 Positionals:
   creator TEXT                The name of the account creating the new account
@@ -82,12 +82,12 @@ Options:
 #include <fc/variant_object.hpp>
 #include <fc/io/fstream.hpp>
 
-#include <eosio/chain/name.hpp>
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/chain/contract_types.hpp>
-#include <eosio/version/version.hpp>
+#include <core_net/chain/name.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/chain/contract_types.hpp>
+#include <core_net/version/version.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
@@ -108,12 +108,12 @@ Options:
 #include "httpc.hpp"
 
 using namespace std;
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::client::help;
-using namespace eosio::client::http;
-using namespace eosio::client::localize;
-using namespace eosio::client::config;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::client::help;
+using namespace core_net::client::http;
+using namespace core_net::client::localize;
+using namespace core_net::client::config;
 
 template <typename... Types>
 bool try_each_type(const std::tuple<Types...>&, auto&& func) {
@@ -181,8 +181,8 @@ uint16_t tx_retry_num_blocks = 0;
 bool   tx_use_old_rpc = false;
 bool   tx_use_old_send_rpc = false;
 string tx_json_save_file;
-eosio::client::http::config_t http_config;
-bool   no_auto_keosd = false;
+core_net::client::http::config_t http_config;
+bool   no_auto_core_wallet = false;
 bool   verbose = false;
 int    return_code = 0;
 
@@ -338,7 +338,7 @@ fc::variant call( const std::string& url,
                   const std::string& path,
                   const T& v ) {
    try {
-      return eosio::client::http::do_http_call(http_config, url, path, fc::variant(v));
+      return core_net::client::http::do_http_call(http_config, url, path, fc::variant(v));
    }
    catch(connection_exception& e) {
       std::string exec_name;
@@ -362,12 +362,12 @@ template<>
 fc::variant call( const std::string& url,
                   const std::string& path) { return call( url, path, fc::variant() ); }
 
-eosio::chain_apis::read_only::get_consensus_parameters_results get_consensus_parameters() {
-   return call(::default_url, get_consensus_parameters_func).as<eosio::chain_apis::read_only::get_consensus_parameters_results>();
+core_net::chain_apis::read_only::get_consensus_parameters_results get_consensus_parameters() {
+   return call(::default_url, get_consensus_parameters_func).as<core_net::chain_apis::read_only::get_consensus_parameters_results>();
 }
 
-eosio::chain_apis::get_info_db::get_info_results get_info() {
-   return call(::default_url, get_info_func).as<eosio::chain_apis::get_info_db::get_info_results>();
+core_net::chain_apis::get_info_db::get_info_results get_info() {
+   return call(::default_url, get_info_func).as<core_net::chain_apis::get_info_db::get_info_results>();
 }
 
 string generate_nonce_string() {
@@ -786,7 +786,7 @@ chain::permission_level to_permission_level(const std::string& s) {
 chain::action create_newaccount(const name& creator, const name& newaccount, authority owner, authority active) {
    return action {
       get_account_permissions(tx_permission, {creator,config::active_name}),
-      eosio::chain::newaccount{
+      core_net::chain::newaccount{
          .creator      = creator,
          .name         = newaccount,
          .owner        = owner,
@@ -923,13 +923,13 @@ authority parse_json_authority_or_key(const std::string& authorityJsonOrFile) {
    } else {
       auto result = parse_json_authority(authorityJsonOrFile);
       result.sort_fields();
-      EOS_ASSERT( eosio::chain::validate(result), authority_type_exception, "Authority failed validation! ensure that keys, accounts, and waits are sorted and that the threshold is valid and satisfiable!");
+      EOS_ASSERT( core_net::chain::validate(result), authority_type_exception, "Authority failed validation! ensure that keys, accounts, and waits are sorted and that the threshold is valid and satisfiable!");
       return result;
    }
 }
 
 asset to_asset( account_name code, const string& s ) {
-   static map< pair<account_name, eosio::chain::symbol_code>, eosio::chain::symbol> cache;
+   static map< pair<account_name, core_net::chain::symbol_code>, core_net::chain::symbol> cache;
    auto a = asset::from_string( s );
    symbol asset_symbol = a.get_symbol();
    symbol_code sym = asset_symbol.to_symbol_code();
@@ -946,7 +946,7 @@ asset to_asset( account_name code, const string& s ) {
       auto obj = json.get_object();
       auto obj_it = obj.find( sym_str );
       if (obj_it != obj.end()) {
-         auto result = obj_it->value().as<eosio::chain_apis::read_only::get_currency_stats_result>();
+         auto result = obj_it->value().as<core_net::chain_apis::read_only::get_currency_stats_result>();
          auto p = cache.emplace( make_pair( code, sym ), result.max_supply.get_symbol() );
          it = p.first;
       } else {
@@ -1002,7 +1002,7 @@ struct set_account_permission_subcommand {
 
          if ( need_parent || need_auth ) {
             fc::variant json = call(get_account_func, fc::mutable_variant_object("account_name", account));
-            auto res = json.as<eosio::chain_apis::read_only::get_account_results>();
+            auto res = json.as<core_net::chain_apis::read_only::get_account_results>();
             auto itr = std::find_if(res.permissions.begin(), res.permissions.end(), [&](const auto& perm) {
                return perm.perm_name == name(permission);
             });
@@ -1153,8 +1153,8 @@ void try_local_port(uint32_t duration) {
    }
 }
 
-void ensure_keosd_running(CLI::App* app) {
-    if (no_auto_keosd)
+void ensure_core_wallet_running(CLI::App* app) {
+    if (no_auto_core_wallet)
         return;
     // get, version, net, convert do not require keosd
     if (tx_skip_sign || app->got_subcommand("get") || app->got_subcommand("version") || app->got_subcommand("net") || app->got_subcommand("convert"))
@@ -1176,7 +1176,7 @@ void ensure_keosd_running(CLI::App* app) {
     auto parent_path = boost::dll::program_location().parent_path();
     auto binPath = parent_path / key_store_executable_name;
     if (!std::filesystem::exists(binPath)) {
-        binPath = parent_path.parent_path() / "keosd"/ key_store_executable_name;
+        binPath = parent_path.parent_path() / "core-wallet"/ key_store_executable_name;
     }
 
     if (std::filesystem::exists(binPath)) {
@@ -1419,12 +1419,12 @@ struct approve_producer_subcommand {
                                ("table_key", "owner")
                                ("lower_bound", name(voter).to_uint64_t())
                                ("upper_bound", name(voter).to_uint64_t() + 1)
-                               // Less than ideal upper_bound usage preserved so cleos can still work with old buggy nodeos versions
-                               // Change to voter.value when cleos no longer needs to support nodeos versions older than 1.5.0
+                               // Less than ideal upper_bound usage preserved so core-cli can still work with old buggy core_netd versions
+                               // Change to voter.value when core-cli no longer needs to support core_netd versions older than 1.5.0
                                ("limit", 1)
             );
-            auto res = result.as<eosio::chain_apis::read_only::get_table_rows_result>();
-            // Condition in if statement below can simply be res.rows.empty() when cleos no longer needs to support nodeos versions older than 1.5.0
+            auto res = result.as<core_net::chain_apis::read_only::get_table_rows_result>();
+            // Condition in if statement below can simply be res.rows.empty() when core-cli no longer needs to support core_netd versions older than 1.5.0
             // Although since this subcommand will actually change the voter's vote, it is probably better to just keep this check to protect
             //  against future potential chain_plugin bugs.
             if( res.rows.empty() || res.rows[0].get_object()["owner"].as_string() != name(voter).to_string() ) {
@@ -1433,7 +1433,7 @@ struct approve_producer_subcommand {
             }
             EOS_ASSERT( 1 == res.rows.size(), multiple_voter_info, "More than one voter_info for account" );
             auto prod_vars = res.rows[0]["producers"].get_array();
-            vector<eosio::name> prods;
+            vector<core_net::name> prods;
             for ( auto& x : prod_vars ) {
                prods.push_back( name(x.as_string()) );
             }
@@ -1472,12 +1472,12 @@ struct unapprove_producer_subcommand {
                                ("table_key", "owner")
                                ("lower_bound", name(voter).to_uint64_t())
                                ("upper_bound", name(voter).to_uint64_t() + 1)
-                               // Less than ideal upper_bound usage preserved so cleos can still work with old buggy nodeos versions
-                               // Change to voter.value when cleos no longer needs to support nodeos versions older than 1.5.0
+                               // Less than ideal upper_bound usage preserved so core-cli can still work with old buggy core_netd versions
+                               // Change to voter.value when core-cli no longer needs to support core_netd versions older than 1.5.0
                                ("limit", 1)
             );
-            auto res = result.as<eosio::chain_apis::read_only::get_table_rows_result>();
-            // Condition in if statement below can simply be res.rows.empty() when cleos no longer needs to support nodeos versions older than 1.5.0
+            auto res = result.as<core_net::chain_apis::read_only::get_table_rows_result>();
+            // Condition in if statement below can simply be res.rows.empty() when core-cli no longer needs to support core_netd versions older than 1.5.0
             // Although since this subcommand will actually change the voter's vote, it is probably better to just keep this check to protect
             //  against future potential chain_plugin bugs.
             if( res.rows.empty() || res.rows[0].get_object()["owner"].as_string() != name(voter).to_string() ) {
@@ -1486,7 +1486,7 @@ struct unapprove_producer_subcommand {
             }
             EOS_ASSERT( 1 == res.rows.size(), multiple_voter_info, "More than one voter_info for account" );
             auto prod_vars = res.rows[0]["producers"].get_array();
-            vector<eosio::name> prods;
+            vector<core_net::name> prods;
             for ( auto& x : prod_vars ) {
                prods.push_back( name(x.as_string()) );
             }
@@ -1527,7 +1527,7 @@ struct list_producers_subcommand {
             std::cout << fc::json::to_pretty_string(rawResult) << std::endl;
             return;
          }
-         auto result = rawResult.as<eosio::chain_apis::read_only::get_producers_result>();
+         auto result = rawResult.as<core_net::chain_apis::read_only::get_producers_result>();
          if ( result.rows.empty() && result.more.empty() ) {
             std::cout << "No producers found" << std::endl;
             return;
@@ -1766,15 +1766,15 @@ struct bidname_info_subcommand {
                                ("table", "namebids")
                                ("lower_bound", name(newname).to_uint64_t())
                                ("upper_bound", name(newname).to_uint64_t() + 1)
-                               // Less than ideal upper_bound usage preserved so cleos can still work with old buggy nodeos versions
-                               // Change to newname.value when cleos no longer needs to support nodeos versions older than 1.5.0
+                               // Less than ideal upper_bound usage preserved so core-cli can still work with old buggy core_netd versions
+                               // Change to newname.value when core-cli no longer needs to support core_netd versions older than 1.5.0
                                ("limit", 1));
          if ( print_json ) {
             std::cout << fc::json::to_pretty_string(rawResult) << std::endl;
             return;
          }
-         auto result = rawResult.as<eosio::chain_apis::read_only::get_table_rows_result>();
-         // Condition in if statement below can simply be res.rows.empty() when cleos no longer needs to support nodeos versions older than 1.5.0
+         auto result = rawResult.as<core_net::chain_apis::read_only::get_table_rows_result>();
+         // Condition in if statement below can simply be res.rows.empty() when core-cli no longer needs to support core_netd versions older than 1.5.0
          if( result.rows.empty() || result.rows[0].get_object()["newname"].as_string() != name(newname).to_string() ) {
             std::cout << "No bidname record found" << std::endl;
             return;
@@ -1812,7 +1812,7 @@ struct list_bw_subcommand {
                                ("table", "delband")
             );
             if (!print_json) {
-               auto res = result.as<eosio::chain_apis::read_only::get_table_rows_result>();
+               auto res = result.as<core_net::chain_apis::read_only::get_table_rows_result>();
                if ( !res.rows.empty() ) {
                   std::cout << std::setw(13) << std::left << "Receiver" << std::setw(21) << std::left << "Net bandwidth"
                             << std::setw(21) << std::left << "CPU bandwidth" << std::endl;
@@ -2446,7 +2446,7 @@ struct activate_subcommand {
 
    activate_subcommand(CLI::App* actionRoot) {
       auto activate = actionRoot->add_subcommand("activate", localized("Activate protocol feature by name"));
-      activate->add_option("feature",  feature_name_str, localized("The name, can be found from \"cleos get supported_protoctol_features\" command"))->required();
+      activate->add_option("feature",  feature_name_str, localized("The name, can be found from \"core-cli get supported_protoctol_features\" command"))->required();
       activate->add_option("-a,--account", account_str, localized("The contract account name, default is eosio"));
       activate->add_option("-p,--permission", permission_str, localized("The permission level to authorize, default is eosio"));
       activate->fallthrough(false);
@@ -2485,7 +2485,7 @@ void get_account( const string& accountName, const string& coresym, bool json_fo
       json = call(get_account_func, fc::mutable_variant_object("account_name", accountName)("expected_core_symbol", symbol::from_string(coresym)));
    }
 
-   auto res = json.as<eosio::chain_apis::read_only::get_account_results>();
+   auto res = json.as<core_net::chain_apis::read_only::get_account_results>();
    if (!json_format) {
       asset staked;
       asset unstaking;
@@ -2505,7 +2505,7 @@ void get_account( const string& accountName, const string& coresym, bool json_fo
       std::cout << "permissions: " << std::endl;
       unordered_map<name, vector<name>/*children*/> tree;
       vector<name> roots; //we don't have multiple roots, but we can easily handle them here, so let's do it just in case
-      unordered_map<name, eosio::chain_apis::permission> cache;
+      unordered_map<name, core_net::chain_apis::permission> cache;
       for ( auto& perm : res.permissions ) {
          if ( perm.parent ) {
             tree[perm.parent].push_back( perm.perm_name );
@@ -2517,7 +2517,7 @@ void get_account( const string& accountName, const string& coresym, bool json_fo
          cache.insert( std::make_pair(name, std::move(perm)) );
       }
 
-      using dfs_fn_t = std::function<void (const eosio::chain_apis::permission&, int)>;
+      using dfs_fn_t = std::function<void (const core_net::chain_apis::permission&, int)>;
       std::function<void (account_name, int, dfs_fn_t&)> dfs_exec = [&]( account_name name, int depth, dfs_fn_t& f ) -> void {
          auto& p = cache.at(name);
 
@@ -2533,7 +2533,7 @@ void get_account( const string& accountName, const string& coresym, bool json_fo
          } // else it's a leaf node
       };
 
-      dfs_fn_t print_auth = [&]( const eosio::chain_apis::permission& p, int depth ) -> void {
+      dfs_fn_t print_auth = [&]( const core_net::chain_apis::permission& p, int depth ) -> void {
          std::cout << indent << std::string(depth*3, ' ') << p.perm_name << ' ' << std::setw(5) << p.required_auth.threshold << ":    ";
 
          const char *sep = "";
@@ -2554,7 +2554,7 @@ void get_account( const string& accountName, const string& coresym, bool json_fo
       std::cout << std::endl;
 
       std::cout << "permission links: " << std::endl;
-      dfs_fn_t print_links = [&](const eosio::chain_apis::permission& p, int) -> void {
+      dfs_fn_t print_links = [&](const core_net::chain_apis::permission& p, int) -> void {
          if (p.linked_actions) {
             if (!p.linked_actions->empty()) {
                std::cout << indent << p.perm_name.to_string() + ":" << std::endl;
@@ -2619,7 +2619,7 @@ void get_account( const string& accountName, const string& coresym, bool json_fo
          auto net_total = to_asset(res.total_resources.get_object()["net_weight"].as_string());
 
          if( net_total.get_symbol() != unstaking.get_symbol() ) {
-            // Core symbol of nodeos responding to the request is different than core symbol built into cleos
+            // Core symbol of core_netd responding to the request is different than core symbol built into core-cli
             unstaking = asset( 0, net_total.get_symbol() ); // Correct core symbol for unstaking asset.
             staked = asset( 0, net_total.get_symbol() ); // Correct core symbol for staked asset.
          }
@@ -2740,7 +2740,7 @@ void get_account( const string& accountName, const string& coresym, bool json_fo
             std::cout << "unstaking tokens:" << std::endl;
             std::cout << indent << std::left << std::setw(25) << "time of unstake request:" << std::right << std::setw(20) << request_time.to_iso_string();
             if( now >= refund_time ) {
-               std::cout << " (available to claim now with 'eosio::refund' action)\n";
+               std::cout << " (available to claim now with 'core_net::refund' action)\n";
             } else {
                std::cout << " (funds will be available in " << to_pretty_time( (refund_time - now).count(), 0 ) << ")\n";
             }
@@ -2880,8 +2880,8 @@ int main( int argc, char** argv ) {
    app.add_option( "--abi-file", abi_files_overide_callback, localized("In form of <contract name>:<abi file path>, use a local abi file for serialization and deserialization instead of getting the abi data from the blockchain; repeat this option to pass multiple abi files for different contracts"))->type_size(0, 1000);
    app.add_option( "-r,--header", header_opt_callback, localized("Pass specific HTTP header; repeat this option to pass multiple headers"));
    app.add_flag( "-n,--no-verify", http_config.no_verify_cert, localized("Don't verify peer certificate when using HTTPS"));
-   app.add_flag( "--no-auto-" + string(key_store_executable_name), no_auto_keosd, localized("Don't automatically launch a ${k} if one is not currently running", ("k", key_store_executable_name)));
-   app.parse_complete_callback([&app]{ ensure_keosd_running(&app);});
+   app.add_flag( "--no-auto-" + string(key_store_executable_name), no_auto_core_wallet, localized("Don't automatically launch a ${k} if one is not currently running", ("k", key_store_executable_name)));
+   app.parse_complete_callback([&app]{ ensure_core_wallet_running(&app);});
 
    app.add_flag( "-v,--verbose", verbose, localized("Output verbose errors and action console output"));
    app.add_flag("--print-request", http_config.print_request, localized("Print HTTP request to STDERR"));
@@ -2893,11 +2893,11 @@ int main( int argc, char** argv ) {
    version->require_subcommand();
 
    version->add_subcommand("client", localized("Retrieve basic version information of the client"))->callback([] {
-      std::cout << eosio::version::version_client() << '\n';
+      std::cout << core_net::version::version_client() << '\n';
    });
 
    version->add_subcommand("full", localized("Retrieve full version information of the client"))->callback([] {
-     std::cout << eosio::version::version_full() << '\n';
+     std::cout << core_net::version::version_full() << '\n';
    });
 
    // Create subcommand
@@ -3255,7 +3255,7 @@ int main( int argc, char** argv ) {
             abi = fc::json::to_pretty_string(abi_d);
       }
       catch(chain::missing_chain_api_plugin_exception&) {
-         //see if this is an old nodeos that doesn't support get_raw_code_and_abi
+         //see if this is an old core_netd that doesn't support get_raw_code_and_abi
          const auto old_result = call(get_code_func, fc::mutable_variant_object("account_name", accountName)("code_as_wasm",code_as_wasm));
          code_hash = old_result["code_hash"].as_string();
          wasm = old_result["wasm"].as_string();
@@ -4302,14 +4302,14 @@ int main( int argc, char** argv ) {
                                  ("table_key", "")
                                  ("lower_bound", name(proposal_name).to_uint64_t())
                                  ("upper_bound", name(proposal_name).to_uint64_t() + 1)
-                                 // Less than ideal upper_bound usage preserved so cleos can still work with old buggy nodeos versions
-                                 // Change to name(proposal_name).value when cleos no longer needs to support nodeos versions older than 1.5.0
+                                 // Less than ideal upper_bound usage preserved so core-cli can still work with old buggy core_netd versions
+                                 // Change to name(proposal_name).value when core-cli no longer needs to support core_netd versions older than 1.5.0
                                  ("limit", 1)
                            );
       //std::cout << fc::json::to_pretty_string(result) << std::endl;
 
       const auto& rows1 = result1.get_object()["rows"].get_array();
-      // Condition in if statement below can simply be rows.empty() when cleos no longer needs to support nodeos versions older than 1.5.0
+      // Condition in if statement below can simply be rows.empty() when core-cli no longer needs to support core_netd versions older than 1.5.0
       if( rows1.empty() || rows1[0].get_object()["proposal_name"] != proposal_name ) {
          std::cerr << "Proposal not found" << std::endl;
          return;
@@ -4324,7 +4324,7 @@ int main( int argc, char** argv ) {
       };
 
       std::map<permission_level, std::pair<fc::time_point, approval_status>>                               all_approvals;
-      std::map<eosio::account_name, std::pair<fc::time_point, vector<decltype(all_approvals)::iterator>>>  provided_approvers;
+      std::map<core_net::account_name, std::pair<fc::time_point, vector<decltype(all_approvals)::iterator>>>  provided_approvers;
 
       bool new_multisig = true;
       if( show_approvals_in_multisig_review ) {
@@ -4338,8 +4338,8 @@ int main( int argc, char** argv ) {
                                        ("table_key", "")
                                        ("lower_bound", name(proposal_name).to_uint64_t())
                                        ("upper_bound", name(proposal_name).to_uint64_t() + 1)
-                                       // Less than ideal upper_bound usage preserved so cleos can still work with old buggy nodeos versions
-                                       // Change to name(proposal_name).value when cleos no longer needs to support nodeos versions older than 1.5.0
+                                       // Less than ideal upper_bound usage preserved so core-cli can still work with old buggy core_netd versions
+                                       // Change to name(proposal_name).value when core-cli no longer needs to support core_netd versions older than 1.5.0
                                        ("limit", 1)
                                  );
             rows2 = result2.get_object()["rows"].get_array();
@@ -4368,8 +4368,8 @@ int main( int argc, char** argv ) {
                                        ("table_key", "")
                                        ("lower_bound", name(proposal_name).to_uint64_t())
                                        ("upper_bound", name(proposal_name).to_uint64_t() + 1)
-                                       // Less than ideal upper_bound usage preserved so cleos can still work with old buggy nodeos versions
-                                       // Change to name(proposal_name).value when cleos no longer needs to support nodeos versions older than 1.5.0
+                                       // Less than ideal upper_bound usage preserved so core-cli can still work with old buggy core_netd versions
+                                       // Change to name(proposal_name).value when core-cli no longer needs to support core_netd versions older than 1.5.0
                                        ("limit", 1)
                                  );
             const auto& rows3 = result3.get_object()["rows"].get_array();
@@ -4401,12 +4401,12 @@ int main( int argc, char** argv ) {
                                           ("table_key", "")
                                           ("lower_bound", a.first.to_uint64_t())
                                           ("upper_bound", a.first.to_uint64_t() + 1)
-                                          // Less than ideal upper_bound usage preserved so cleos can still work with old buggy nodeos versions
-                                          // Change to name(proposal_name).value when cleos no longer needs to support nodeos versions older than 1.5.0
+                                          // Less than ideal upper_bound usage preserved so core-cli can still work with old buggy core_netd versions
+                                          // Change to name(proposal_name).value when core-cli no longer needs to support core_netd versions older than 1.5.0
                                           ("limit", 1)
                                     );
                const auto& rows4 = result4.get_object()["rows"].get_array();
-               if( rows4.empty() || rows4[0].get_object()["account"].as<eosio::name>() != a.first ) {
+               if( rows4.empty() || rows4[0].get_object()["account"].as<core_net::name>() != a.first ) {
                   continue;
                }
 

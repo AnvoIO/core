@@ -1,14 +1,14 @@
 #pragma once
 
-#include <eosio/chain/transaction_metadata.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/transaction_metadata.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/member.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 using namespace boost::multi_index;
 
@@ -207,4 +207,4 @@ private:
 
 };
 
-} } //eosio::chain
+} } //core_net::chain

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eosio/wasm_backend/exceptions.hpp>
-#include <eosio/wasm_backend/utils.hpp>
+#include <core_net/wasm_backend/exceptions.hpp>
+#include <core_net/wasm_backend/utils.hpp>
 
 #include <array>
 #include <iostream>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    class validator {
       public:
          // validate limits 3.2.1
@@ -39,4 +39,4 @@ namespace eosio { namespace vm {
          }
 
    };
-}} // ns eosio::vm
+}} // ns core_net::vm

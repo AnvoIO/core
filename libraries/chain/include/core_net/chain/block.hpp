@@ -1,9 +1,9 @@
 #pragma once
-#include <eosio/chain/block_header.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/qc.hpp>
+#include <core_net/chain/block_header.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/qc.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    /**
     * When a transaction is referenced by a block it could imply one of several outcomes which
@@ -121,7 +121,7 @@ namespace eosio { namespace chain {
    private:
       friend struct block_state;
       friend struct block_state_legacy;
-      template<typename Stream> friend void fc::raw::unpack(Stream& s, eosio::chain::signed_block& v);
+      template<typename Stream> friend void fc::raw::unpack(Stream& s, core_net::chain::signed_block& v);
       void pack() { packed_block = fc::raw::pack( *this ); }
 
       bytes packed_block; // packed this
@@ -134,27 +134,27 @@ namespace eosio { namespace chain {
       signature_type  sig;
    };
 
-} } /// eosio::chain
+} } /// core_net::chain
 
-FC_REFLECT_ENUM( eosio::chain::transaction_receipt::status_enum,
+FC_REFLECT_ENUM( core_net::chain::transaction_receipt::status_enum,
                  (executed)(soft_fail)(hard_fail)(delayed)(expired) )
 
-FC_REFLECT(eosio::chain::transaction_receipt_header, (status)(cpu_usage_us)(net_usage_words) )
-FC_REFLECT_DERIVED(eosio::chain::transaction_receipt, (eosio::chain::transaction_receipt_header), (trx) )
-FC_REFLECT(eosio::chain::additional_block_signatures_extension, (signatures));
-FC_REFLECT(eosio::chain::quorum_certificate_extension, (qc));
-FC_REFLECT_DERIVED(eosio::chain::signed_block, (eosio::chain::signed_block_header), (transactions)(block_extensions) )
+FC_REFLECT(core_net::chain::transaction_receipt_header, (status)(cpu_usage_us)(net_usage_words) )
+FC_REFLECT_DERIVED(core_net::chain::transaction_receipt, (core_net::chain::transaction_receipt_header), (trx) )
+FC_REFLECT(core_net::chain::additional_block_signatures_extension, (signatures));
+FC_REFLECT(core_net::chain::quorum_certificate_extension, (qc));
+FC_REFLECT_DERIVED(core_net::chain::signed_block, (core_net::chain::signed_block_header), (transactions)(block_extensions) )
 
 namespace fc::raw {
    template <typename Stream>
-   void unpack(Stream& s, eosio::chain::signed_block& v) {
+   void unpack(Stream& s, core_net::chain::signed_block& v) {
       try {
          if constexpr (requires { s.extract_mirror(); }) {
-            fc::reflector<eosio::chain::signed_block>::visit( fc::raw::detail::unpack_object_visitor<Stream, eosio::chain::signed_block>( v, s ) );
+            fc::reflector<core_net::chain::signed_block>::visit( fc::raw::detail::unpack_object_visitor<Stream, core_net::chain::signed_block>( v, s ) );
             v.packed_block = s.extract_mirror();
          } else {
-            fc::datastream_mirror<Stream> ds(s, sizeof(eosio::chain::signed_block) + 4096);
-            fc::reflector<eosio::chain::signed_block>::visit( fc::raw::detail::unpack_object_visitor<fc::datastream_mirror<Stream>, eosio::chain::signed_block>( v, ds ) );
+            fc::datastream_mirror<Stream> ds(s, sizeof(core_net::chain::signed_block) + 4096);
+            fc::reflector<core_net::chain::signed_block>::visit( fc::raw::detail::unpack_object_visitor<fc::datastream_mirror<Stream>, core_net::chain::signed_block>( v, ds ) );
             v.packed_block = ds.extract_mirror();
          }
       } FC_RETHROW_EXCEPTIONS(warn, "error unpacking signed_block")

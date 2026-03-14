@@ -1,10 +1,10 @@
 #pragma   once
 
-#include <eosio/chain/finalizer_policy.hpp>
-#include <eosio/chain/proposer_policy.hpp>
-#include <eosio/chain/finality_core.hpp>
+#include <core_net/chain/finalizer_policy.hpp>
+#include <core_net/chain/proposer_policy.hpp>
+#include <core_net/chain/finality_core.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 struct finality_extension : fc::reflect_init {
    static constexpr uint16_t extension_id()   { return 2; }
@@ -30,6 +30,6 @@ struct finality_extension : fc::reflect_init {
    std::optional<proposer_policy_diff>     new_proposer_policy_diff;
 };
 
-} /// eosio::chain
+} /// core_net::chain
 
-FC_REFLECT( eosio::chain::finality_extension, (qc_claim)(new_finalizer_policy_diff)(new_proposer_policy_diff) )
+FC_REFLECT( core_net::chain::finality_extension, (qc_claim)(new_finalizer_policy_diff)(new_proposer_policy_diff) )

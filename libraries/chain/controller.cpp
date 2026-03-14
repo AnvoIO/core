@@ -1,42 +1,42 @@
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/transaction_context.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/transaction_context.hpp>
 
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/fork_database.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/fork_database.hpp>
+#include <core_net/chain/exceptions.hpp>
 
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/code_object.hpp>
-#include <eosio/chain/block_summary_object.hpp>
-#include <eosio/chain/eosio_contract.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/protocol_state_object.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/chain/transaction_object.hpp>
-#include <eosio/chain/genesis_intrinsics.hpp>
-#include <eosio/chain/whitelisted_intrinsics.hpp>
-#include <eosio/chain/database_header_object.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/code_object.hpp>
+#include <core_net/chain/block_summary_object.hpp>
+#include <core_net/chain/system_contract.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/protocol_state_object.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/chain/transaction_object.hpp>
+#include <core_net/chain/genesis_intrinsics.hpp>
+#include <core_net/chain/whitelisted_intrinsics.hpp>
+#include <core_net/chain/database_header_object.hpp>
 
-#include <eosio/chain/protocol_feature_manager.hpp>
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/subjective_billing.hpp>
-#include <eosio/chain/chain_snapshot.hpp>
-#include <eosio/chain/snapshot_detail.hpp>
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/chain/platform_timer.hpp>
-#include <eosio/chain/block_header_state_utils.hpp>
-#include <eosio/chain/deep_mind.hpp>
-#include <eosio/chain/finalizer.hpp>
-#include <eosio/chain/finalizer_policy.hpp>
-#include <eosio/chain/qc.hpp>
-#include <eosio/chain/vote_message.hpp>
-#include <eosio/chain/vote_processor.hpp>
-#include <eosio/chain/peer_keys_db.hpp>
+#include <core_net/chain/protocol_feature_manager.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/subjective_billing.hpp>
+#include <core_net/chain/chain_snapshot.hpp>
+#include <core_net/chain/snapshot_detail.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/chain/platform_timer.hpp>
+#include <core_net/chain/block_header_state_utils.hpp>
+#include <core_net/chain/deep_mind.hpp>
+#include <core_net/chain/finalizer.hpp>
+#include <core_net/chain/finalizer_policy.hpp>
+#include <core_net/chain/qc.hpp>
+#include <core_net/chain/vote_message.hpp>
+#include <core_net/chain/vote_processor.hpp>
+#include <core_net/chain/peer_keys_db.hpp>
 
 #include <chainbase/chainbase.hpp>
-#include <eosio/vm/allocator.hpp>
+#include <core_net/vm/allocator.hpp>
 #include <fc/io/json.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/scoped_exit.hpp>
@@ -48,7 +48,7 @@
 #include <shared_mutex>
 #include <utility>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 using resource_limits::resource_limits_manager;
 
@@ -1013,7 +1013,7 @@ struct controller_impl {
    peer_keys_db_t                  peer_keys_db;
 
    thread_local static platform_timer timer; // a copy for main thread and each read-only thread
-#if defined(EOSIO_EOS_VM_RUNTIME_ENABLED) || defined(EOSIO_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
    thread_local static vm::wasm_allocator wasm_alloc; // a copy for main thread and each read-only thread
 #endif
    wasm_interface wasmif;
@@ -2315,7 +2315,7 @@ struct controller_impl {
          section.add_row(chain_snapshot_header(), db);
       });
 
-      snapshot->write_section("eosio::chain::block_state", [&]( auto& section ) {
+      snapshot->write_section("core_net::chain::block_state", [&]( auto& section ) {
          section.add_row(snapshot_detail::snapshot_block_state_data_v8(get_block_state_to_snapshot()), db);
       });
 
@@ -2372,7 +2372,7 @@ struct controller_impl {
          // loading a snapshot saved by Spring 1.0.1 and above.
          // ---------------------------------------------------
          if (std::clamp(header.version, v8::minimum_version, v8::maximum_version) == header.version ) {
-            snapshot->read_section("eosio::chain::block_state", [this, &result]( auto &section ){
+            snapshot->read_section("core_net::chain::block_state", [this, &result]( auto &section ){
                v8 block_state_data;
                section.read_row(block_state_data, db);
                assert(block_state_data.bs_l || block_state_data.bs);
@@ -2408,13 +2408,13 @@ struct controller_impl {
          using v3 = snapshot_block_header_state_legacy_v3;
 
          if (std::clamp(header.version, v2::minimum_version, v2::maximum_version) == header.version ) {
-            snapshot->read_section("eosio::chain::block_state", [this, &head_header_state]( auto &section ) {
+            snapshot->read_section("core_net::chain::block_state", [this, &head_header_state]( auto &section ) {
                v2 legacy_header_state;
                section.read_row(legacy_header_state, db);
                static_cast<block_header_state_legacy&>(*head_header_state) = block_header_state_legacy(std::move(legacy_header_state));
             });
          } else if (std::clamp(header.version, v3::minimum_version, v3::maximum_version) == header.version ) {
-            snapshot->read_section("eosio::chain::block_state", [this,&head_header_state]( auto &section ){
+            snapshot->read_section("core_net::chain::block_state", [this,&head_header_state]( auto &section ){
                v3 legacy_header_state;
                section.read_row(legacy_header_state, db);
                static_cast<block_header_state_legacy&>(*head_header_state) = block_header_state_legacy(std::move(legacy_header_state));
@@ -5017,7 +5017,7 @@ struct controller_impl {
       return app_window == app_window_type::write;
    }
 
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
    bool is_eos_vm_oc_enabled() const {
       return wasmif.is_eos_vm_oc_enabled();
    }
@@ -5026,7 +5026,7 @@ struct controller_impl {
    // Only called from read-only trx execution threads when producer_plugin
    // starts them. Only OC requires initialize thread specific data.
    void init_thread_local_data() {
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
       if ( is_eos_vm_oc_enabled() ) {
          wasmif.init_thread_local_data();
       }
@@ -5181,8 +5181,8 @@ struct controller_impl {
 }; /// controller_impl
 
 thread_local platform_timer controller_impl::timer;
-#if defined(EOSIO_EOS_VM_RUNTIME_ENABLED) || defined(EOSIO_EOS_VM_JIT_RUNTIME_ENABLED)
-thread_local eosio::vm::wasm_allocator controller_impl::wasm_alloc;
+#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
+thread_local core_net::vm::wasm_allocator controller_impl::wasm_alloc;
 #endif
 
 const resource_limits_manager&   controller::get_resource_limits_manager()const
@@ -5310,7 +5310,7 @@ void controller::preactivate_feature( const digest_type& feature_digest, bool is
    // But it is still possible for a producer to retire a deferred transaction that deals with this subjective
    // information. If they recognized the feature, they would retire it successfully, but a validator that
    // does not recognize the feature should reject the entire block (not just fail the deferred transaction).
-   // Even if they don't recognize the feature, the producer could change their nodeos code to treat it like an
+   // Even if they don't recognize the feature, the producer could change their core_netd code to treat it like an
    // objective failure thus leading the deferred transaction to retire with soft_fail or hard_fail.
    // In this case, validators that don't recognize the feature would reject the whole block immediately, and
    // validators that do recognize the feature would likely lead to a different retire status which would
@@ -6106,12 +6106,12 @@ void controller::enable_deep_mind(deep_mind_handler* logger) {
 uint32_t controller::earliest_available_block_num() const{
    return my->earliest_available_block_num();
 }
-#if defined(EOSIO_EOS_VM_RUNTIME_ENABLED) || defined(EOSIO_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
 vm::wasm_allocator& controller::get_wasm_allocator() {
    return my->wasm_alloc;
 }
 #endif
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
 bool controller::is_eos_vm_oc_enabled() const {
    return my->is_eos_vm_oc_enabled();
 }
@@ -6436,4 +6436,4 @@ void controller_impl::on_activation<builtin_protocol_feature_t::savanna>() {
 
 /// End of protocol feature activation handlers
 
-} /// eosio::chain
+} /// core_net::chain

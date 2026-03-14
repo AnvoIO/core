@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/action.hpp>
-#include <eosio/chain/action_receipt.hpp>
-#include <eosio/chain/block.hpp>
+#include <core_net/chain/action.hpp>
+#include <core_net/chain/action_receipt.hpp>
+#include <core_net/chain/block.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    struct account_delta {
       account_delta( const account_name& n, int64_t d):account(n),delta(d){}
@@ -116,25 +116,25 @@ namespace eosio::chain {
       if (tt.action_traces.empty())
          return false;
       const auto& act = tt.action_traces[0].act;
-      if (act.account != eosio::chain::config::system_account_name || act.name != "onblock"_n ||
+      if (act.account != core_net::chain::config::system_account_name || act.name != "onblock"_n ||
           act.authorization.size() != 1)
          return false;
       const auto& auth = act.authorization[0];
-      return auth.actor == eosio::chain::config::system_account_name &&
-             auth.permission == eosio::chain::config::active_name;
+      return auth.actor == core_net::chain::config::system_account_name &&
+             auth.permission == core_net::chain::config::active_name;
    }
 
-}  /// namespace eosio::chain
+}  /// namespace core_net::chain
 
-FC_REFLECT( eosio::chain::account_delta,
+FC_REFLECT( core_net::chain::account_delta,
             (account)(delta) )
 
-FC_REFLECT( eosio::chain::action_trace,
+FC_REFLECT( core_net::chain::action_trace,
                (action_ordinal)(creator_action_ordinal)(closest_unnotified_ancestor_action_ordinal)(receipt)
                (receiver)(act)(context_free)(elapsed)(console)(trx_id)(block_num)(block_time)
                (producer_block_id)(account_ram_deltas)(except)(error_code)(return_value) )
 
 // @ignore except_ptr
-FC_REFLECT( eosio::chain::transaction_trace, (id)(block_num)(block_time)(producer_block_id)
+FC_REFLECT( core_net::chain::transaction_trace, (id)(block_num)(block_time)(producer_block_id)
                                              (receipt)(elapsed)(net_usage)(scheduled)
                                              (action_traces)(account_ram_delta)(failed_dtrx_trace)(except)(error_code) )

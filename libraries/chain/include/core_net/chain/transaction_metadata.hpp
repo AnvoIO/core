@@ -1,6 +1,6 @@
 #pragma once
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/types.hpp>
 #include <boost/asio/io_context.hpp>
 #include <future>
 
@@ -8,7 +8,7 @@ namespace boost { namespace asio {
    class thread_pool;
 }}
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 class transaction_metadata;
 using transaction_metadata_ptr = std::shared_ptr<transaction_metadata>;
@@ -99,4 +99,4 @@ class transaction_metadata {
 
 };
 
-} } // eosio::chain
+} } // core_net::chain

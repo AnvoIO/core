@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eosio/vm/allocator.hpp>
-#include <eosio/vm/execution_interface.hpp>
-#include <eosio/vm/function_traits.hpp>
-#include <eosio/vm/argument_proxy.hpp>
-#include <eosio/vm/span.hpp>
-#include <eosio/vm/utils.hpp>
-#include <eosio/vm/wasm_stack.hpp>
+#include <core_net/vm/allocator.hpp>
+#include <core_net/vm/execution_interface.hpp>
+#include <core_net/vm/function_traits.hpp>
+#include <core_net/vm/argument_proxy.hpp>
+#include <core_net/vm/span.hpp>
+#include <core_net/vm/utils.hpp>
+#include <core_net/vm/wasm_stack.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -21,7 +21,7 @@
 #include <utility>
 #include <vector>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    // types for host functions to use
    typedef std::nullptr_t standalone_function_t;
    struct no_match_t {};
@@ -58,11 +58,11 @@ namespace eosio { namespace vm {
    template<typename T>
    struct tag {};
 
-#define EOS_VM_FROM_WASM_ADD_TAG(...) (__VA_ARGS__, ::eosio::vm::tag<T> = {})
+#define CORE_NET_VM_FROM_WASM_ADD_TAG(...) (__VA_ARGS__, ::core_net::vm::tag<T> = {})
 
-#define EOS_VM_FROM_WASM(TYPE, PARAMS) \
+#define CORE_NET_VM_FROM_WASM(TYPE, PARAMS) \
    template <typename T>                    \
-   auto from_wasm EOS_VM_FROM_WASM_ADD_TAG PARAMS const -> std::enable_if_t<std::is_same_v<T, TYPE>, TYPE>
+   auto from_wasm CORE_NET_VM_FROM_WASM_ADD_TAG PARAMS const -> std::enable_if_t<std::is_same_v<T, TYPE>, TYPE>
 
    template <typename Host, typename Execution_Interface=execution_interface>
    struct type_converter : public running_context<Host, Execution_Interface> {
@@ -73,7 +73,7 @@ namespace eosio { namespace vm {
       // TODO clean this up and figure out a more elegant way to get this for the macro
       using elem_type = operand_stack_elem;
 
-      EOS_VM_FROM_WASM(bool, (uint32_t value)) { return value ? 1 : 0; }
+      CORE_NET_VM_FROM_WASM(bool, (uint32_t value)) { return value ? 1 : 0; }
       uint32_t to_wasm(bool&& value) { return value ? 1 : 0; }
       template<typename T>
       no_match_t to_wasm(T&&);
@@ -194,7 +194,7 @@ namespace eosio { namespace vm {
       static inline constexpr std::size_t total_operands_v = total_operands<Args, 0, Type_Converter>();
 
       template <typename S, typename Type_Converter>
-      constexpr inline static bool has_from_wasm_v = EOS_VM_HAS_TEMPLATE_MEMBER_TY(Type_Converter, from_wasm<S>);
+      constexpr inline static bool has_from_wasm_v = CORE_NET_VM_HAS_TEMPLATE_MEMBER_TY(Type_Converter, from_wasm<S>);
 
       template <typename S, typename Type_Converter>
       constexpr inline static bool has_to_wasm_v =
@@ -284,16 +284,16 @@ namespace eosio { namespace vm {
       detail::invoke_on_impl<Once, 0, T>(std::forward<F>(func), args...);
    }
 
-#define EOS_VM_INVOKE_ON(TYPE, CONDITION) \
-   eosio::vm::invoke_on<false, TYPE>(CONDITION, args...);
+#define CORE_NET_VM_INVOKE_ON(TYPE, CONDITION) \
+   core_net::vm::invoke_on<false, TYPE>(CONDITION, args...);
 
-#define EOS_VM_INVOKE_ON_ALL(CONDITION) \
-   eosio::vm::invoke_on<false, eosio::vm::invoke_on_all_t>(CONDITION, args...);
+#define CORE_NET_VM_INVOKE_ON_ALL(CONDITION) \
+   core_net::vm::invoke_on<false, core_net::vm::invoke_on_all_t>(CONDITION, args...);
 
-#define EOS_VM_INVOKE_ONCE(CONDITION) \
-   eosio::vm::invoke_on<true, eosio::vm::invoke_on_all_t>(CONDITION, args...);
+#define CORE_NET_VM_INVOKE_ONCE(CONDITION) \
+   core_net::vm::invoke_on<true, core_net::vm::invoke_on_all_t>(CONDITION, args...);
 
-#define EOS_VM_PRECONDITION(NAME, ...)                                       \
+#define CORE_NET_VM_PRECONDITION(NAME, ...)                                       \
    struct NAME {                                                             \
       template <typename Type_Converter, typename... Args>                   \
       inline static decltype(auto) condition(Type_Converter& ctx, const Args&... args) { \
@@ -466,11 +466,11 @@ namespace eosio { namespace vm {
             std::string mod_name =
                   std::string((char*)mod.imports[i].module_str.data(), mod.imports[i].module_str.size());
             std::string fn_name = std::string((char*)mod.imports[i].field_str.data(), mod.imports[i].field_str.size());
-            EOS_VM_ASSERT(current_mappings.named_mapping.count({ mod_name, fn_name }), wasm_link_exception,
+            CORE_NET_VM_ASSERT(current_mappings.named_mapping.count({ mod_name, fn_name }), wasm_link_exception,
                           std::string("no mapping for imported function ") + fn_name);
             imports[i] = current_mappings.named_mapping[{ mod_name, fn_name }];
-            EOS_VM_ASSERT(mod.imports[i].kind == Function, wasm_link_exception, std::string("importing non-function ") + fn_name);
-            EOS_VM_ASSERT(current_mappings.host_functions[imports[i]] == mod.types[mod.imports[i].type.func_t], wasm_link_exception, std::string("wrong type for imported function ") + fn_name);
+            CORE_NET_VM_ASSERT(mod.imports[i].kind == Function, wasm_link_exception, std::string("importing non-function ") + fn_name);
+            CORE_NET_VM_ASSERT(current_mappings.host_functions[imports[i]] == mod.types[mod.imports[i].type.func_t], wasm_link_exception, std::string("wrong type for imported function ") + fn_name);
          }
       }
 
@@ -480,4 +480,4 @@ namespace eosio { namespace vm {
          std::invoke(_func, host, tc);
       }
    };
-}} // namespace eosio::vm
+}} // namespace core_net::vm

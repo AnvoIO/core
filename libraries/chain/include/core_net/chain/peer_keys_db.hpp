@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 
 #include <fc/mutex.hpp>
 
 #include <boost/unordered/unordered_flat_map.hpp>
 #include <boost/container/flat_set.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 // vector, sorted by rank, of the top-50 producers by `total_votes` (whether
 // active or not) and their peer key if populated on-chain.
@@ -71,5 +71,5 @@ private:
    peer_key_map_t     _peer_info_map GUARDED_BY(_m);
 };
 
-} // namespace eosio::chain
+} // namespace core_net::chain
 

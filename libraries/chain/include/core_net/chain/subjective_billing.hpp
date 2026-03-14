@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/resource_limits_private.hpp>
-#include <eosio/chain/config.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/resource_limits_private.hpp>
+#include <core_net/chain/config.hpp>
 
 #include <fc/time.hpp>
 
@@ -14,7 +14,7 @@
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 class subjective_billing {
 private:
@@ -198,4 +198,4 @@ public:
    }
 };
 
-} //eosio::chain
+} //core_net::chain

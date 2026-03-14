@@ -1,7 +1,7 @@
 #pragma once
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 #include <stdint.h>
-namespace eosio {
+namespace core_net {
 
 enum class api_category : uint32_t {
    unknown      = 0,
@@ -29,10 +29,10 @@ public:
          insert(c);
    }
    constexpr bool contains(api_category category) const { 
-      return eosio::chain::has_field(data, category);
+      return core_net::chain::has_field(data, category);
    }
    constexpr void insert(api_category category) { 
-      data = eosio::chain::set_field(data, category, true);
+      data = core_net::chain::set_field(data, category, true);
    }
 
    constexpr static api_category_set all() {

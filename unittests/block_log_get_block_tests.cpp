@@ -1,12 +1,12 @@
-#include <eosio/chain/block_log.hpp>
-#include <eosio/testing/tester.hpp> // for fc_exception_message_contains
+#include <core_net/chain/block_log.hpp>
+#include <core_net/testing/tester.hpp> // for fc_exception_message_contains
 
 #include <fc/io/cfile.hpp>
 
 #include <boost/test/unit_test.hpp>
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 struct block_log_get_block_fixture {
    block_log_get_block_fixture() {

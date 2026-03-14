@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/abi_def.hpp>
-#include <eosio/trace_api/trace.hpp>
-#include <eosio/trace_api/common.hpp>
+#include <core_net/chain/abi_def.hpp>
+#include <core_net/trace_api/trace.hpp>
+#include <core_net/trace_api/common.hpp>
 
-namespace eosio {
+namespace core_net {
    namespace chain {
       struct abi_serializer;
    }
@@ -12,7 +12,7 @@ namespace eosio {
    namespace trace_api {
 
    /**
-    * Data Handler that uses eosio::chain::abi_serializer to decode data with a known set of ABI's
+    * Data Handler that uses core_net::chain::abi_serializer to decode data with a known set of ABI's
     * Can be used directly as a Data_handler_provider OR shared between request_handlers using the
     * ::shared_provider abstraction.
     */

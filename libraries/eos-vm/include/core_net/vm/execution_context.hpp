@@ -1,15 +1,15 @@
 #pragma once
 
-#include <eosio/vm/allocator.hpp>
-#include <eosio/vm/constants.hpp>
-#include <eosio/vm/exceptions.hpp>
-#include <eosio/vm/execution_interface.hpp>
-#include <eosio/vm/host_function.hpp>
-#include <eosio/vm/opcodes.hpp>
-#include <eosio/vm/signals.hpp>
-#include <eosio/vm/types.hpp>
-#include <eosio/vm/utils.hpp>
-#include <eosio/vm/wasm_stack.hpp>
+#include <core_net/vm/allocator.hpp>
+#include <core_net/vm/constants.hpp>
+#include <core_net/vm/exceptions.hpp>
+#include <core_net/vm/execution_interface.hpp>
+#include <core_net/vm/host_function.hpp>
+#include <core_net/vm/opcodes.hpp>
+#include <core_net/vm/signals.hpp>
+#include <core_net/vm/types.hpp>
+#include <core_net/vm/utils.hpp>
+#include <core_net/vm/wasm_stack.hpp>
 
 #include <algorithm>
 #include <cassert>
@@ -32,12 +32,12 @@
 #endif
 #include <ucontext.h>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    struct null_host_functions {
       template<typename... A>
       void operator()(A&&...) const {
-         EOS_VM_ASSERT(false, wasm_interpreter_exception,
+         CORE_NET_VM_ASSERT(false, wasm_interpreter_exception,
                        "Should never get here because it's impossible to link a module "
                        "that imports any host functions, when no host functions are available");
       }
@@ -62,7 +62,7 @@ namespace eosio { namespace vm {
       };
       template <>
       struct type_converter<std::nullptr_t> {
-         using type = eosio::vm::type_converter<std::nullptr_t, eosio::vm::execution_interface>;
+         using type = core_net::vm::type_converter<std::nullptr_t, core_net::vm::execution_interface>;
       };
 
       template <typename HF>
@@ -99,7 +99,7 @@ namespace eosio { namespace vm {
 
       template<typename Module>
       inline void initialize_globals_impl(const Module& mod) {
-         EOS_VM_ASSERT(_globals.empty(), wasm_memory_exception, "initialize_globals called on non-empty _globals");
+         CORE_NET_VM_ASSERT(_globals.empty(), wasm_memory_exception, "initialize_globals called on non-empty _globals");
          _globals.reserve(mod.globals.size());
          for (uint32_t i = 0; i < mod.globals.size(); i++) {
             _globals.emplace_back(mod.globals[i].init);
@@ -151,7 +151,7 @@ namespace eosio { namespace vm {
 
       template<typename Module>
       inline void reset(Module& mod) {
-         EOS_VM_ASSERT(_mod->error == nullptr, wasm_interpreter_exception, _mod->error);
+         CORE_NET_VM_ASSERT(_mod->error == nullptr, wasm_interpreter_exception, _mod->error);
 
          // Reset the capacity of underlying memory used by operand stack if it is
          // greater than initial_stack_size
@@ -159,7 +159,7 @@ namespace eosio { namespace vm {
 
          _linear_memory = _wasm_alloc->get_base_ptr<char>();
          if(mod.memories.size()) {
-            EOS_VM_ASSERT(mod.memories[0].limits.initial <= _max_pages, wasm_bad_alloc, "Cannot allocate initial linear memory.");
+            CORE_NET_VM_ASSERT(mod.memories[0].limits.initial <= _max_pages, wasm_bad_alloc, "Cannot allocate initial linear memory.");
             _wasm_alloc->reset(mod.memories[0].limits.initial);
          } else
             _wasm_alloc->reset();
@@ -169,7 +169,7 @@ namespace eosio { namespace vm {
             uint32_t offset = data_seg.offset.value.i32; // force to unsigned
             auto available_memory =  mod.memories[0].limits.initial * static_cast<uint64_t>(page_size);
             auto required_memory = static_cast<uint64_t>(offset) + data_seg.data.size();
-            EOS_VM_ASSERT(required_memory <= available_memory, wasm_memory_exception, "data out of range");
+            CORE_NET_VM_ASSERT(required_memory <= available_memory, wasm_memory_exception, "data out of range");
             auto addr = _linear_memory + offset;
             if(data_seg.data.size())
                memcpy((char*)(addr), data_seg.data.data(), data_seg.data.size());
@@ -201,9 +201,9 @@ namespace eosio { namespace vm {
 
       template<typename Func_type, typename... Args>
       static void type_check_args(const Func_type& ft, Args&&...) {
-         EOS_VM_ASSERT(sizeof...(Args) == ft.param_types.size(), wasm_interpreter_exception, "wrong number of arguments");
+         CORE_NET_VM_ASSERT(sizeof...(Args) == ft.param_types.size(), wasm_interpreter_exception, "wrong number of arguments");
          uint32_t i = 0;
-         EOS_VM_ASSERT((... && (to_wasm_type_v<detail::type_converter_t<Host>, Args> == ft.param_types.at(i++))), wasm_interpreter_exception, "unexpected argument type");
+         CORE_NET_VM_ASSERT((... && (to_wasm_type_v<detail::type_converter_t<Host>, Args> == ft.param_types.at(i++))), wasm_interpreter_exception, "unexpected argument type");
       }
 
       static void handle_signal(int sig) {
@@ -656,8 +656,8 @@ namespace eosio { namespace vm {
       inline operand_stack_elem  pop_operand() { return get_operand_stack().pop(); }
       inline operand_stack_elem& peek_operand(size_t i = 0) { return get_operand_stack().peek(i); }
       inline operand_stack_elem  get_global(uint32_t index) {
-         EOS_VM_ASSERT(index < _mod->globals.size(), wasm_interpreter_exception, "global index out of range");
-         EOS_VM_ASSERT(index < _globals.size(), wasm_interpreter_exception, "index for _globals out of range in get_global for interpreter");
+         CORE_NET_VM_ASSERT(index < _mod->globals.size(), wasm_interpreter_exception, "global index out of range");
+         CORE_NET_VM_ASSERT(index < _globals.size(), wasm_interpreter_exception, "index for _globals out of range in get_global for interpreter");
          const auto& gl = _mod->globals[index];
          switch (gl.type.content_type) {
             case types::i32: return i32_const_t{ _globals[index].value.i32 };
@@ -669,27 +669,27 @@ namespace eosio { namespace vm {
       }
 
       inline void set_global(uint32_t index, const operand_stack_elem& el) {
-         EOS_VM_ASSERT(index < _mod->globals.size(), wasm_interpreter_exception, "global index out of range");
-         EOS_VM_ASSERT(index < _globals.size(), wasm_interpreter_exception, "index for _globals out of range");
+         CORE_NET_VM_ASSERT(index < _mod->globals.size(), wasm_interpreter_exception, "global index out of range");
+         CORE_NET_VM_ASSERT(index < _globals.size(), wasm_interpreter_exception, "index for _globals out of range");
          auto& gl = _mod->globals[index];
-         EOS_VM_ASSERT(gl.type.mutability, wasm_interpreter_exception, "global is not mutable");
+         CORE_NET_VM_ASSERT(gl.type.mutability, wasm_interpreter_exception, "global is not mutable");
          visit(overloaded{ [&](const i32_const_t& i) {
-                                  EOS_VM_ASSERT(gl.type.content_type == types::i32, wasm_interpreter_exception,
+                                  CORE_NET_VM_ASSERT(gl.type.content_type == types::i32, wasm_interpreter_exception,
                                                 "expected i32 global type");
                                   _globals[index].value.i32 = i.data.ui;
                                },
                                 [&](const i64_const_t& i) {
-                                   EOS_VM_ASSERT(gl.type.content_type == types::i64, wasm_interpreter_exception,
+                                   CORE_NET_VM_ASSERT(gl.type.content_type == types::i64, wasm_interpreter_exception,
                                                  "expected i64 global type");
                                    _globals[index].value.i64 = i.data.ui;
                                 },
                                 [&](const f32_const_t& f) {
-                                   EOS_VM_ASSERT(gl.type.content_type == types::f32, wasm_interpreter_exception,
+                                   CORE_NET_VM_ASSERT(gl.type.content_type == types::f32, wasm_interpreter_exception,
                                                  "expected f32 global type");
                                    _globals[index].value.f32 = f.data.ui;
                                 },
                                 [&](const f64_const_t& f) {
-                                   EOS_VM_ASSERT(gl.type.content_type == types::f64, wasm_interpreter_exception,
+                                   CORE_NET_VM_ASSERT(gl.type.content_type == types::f64, wasm_interpreter_exception,
                                                  "expected f64 global type");
                                    _globals[index].value.f64 = f.data.ui;
                                 },
@@ -709,19 +709,19 @@ namespace eosio { namespace vm {
          for (uint32_t i = 0; i < ft.param_types.size(); i++) {
             const auto& op = peek_operand((ft.param_types.size() - 1) - i);
             visit(overloaded{ [&](const i32_const_t&) {
-                                     EOS_VM_ASSERT(ft.param_types[i] == types::i32, wasm_interpreter_exception,
+                                     CORE_NET_VM_ASSERT(ft.param_types[i] == types::i32, wasm_interpreter_exception,
                                                    "function param type mismatch");
                                   },
                                    [&](const f32_const_t&) {
-                                      EOS_VM_ASSERT(ft.param_types[i] == types::f32, wasm_interpreter_exception,
+                                      CORE_NET_VM_ASSERT(ft.param_types[i] == types::f32, wasm_interpreter_exception,
                                                     "function param type mismatch");
                                    },
                                    [&](const i64_const_t&) {
-                                      EOS_VM_ASSERT(ft.param_types[i] == types::i64, wasm_interpreter_exception,
+                                      CORE_NET_VM_ASSERT(ft.param_types[i] == types::i64, wasm_interpreter_exception,
                                                     "function param type mismatch");
                                    },
                                    [&](const f64_const_t&) {
-                                      EOS_VM_ASSERT(ft.param_types[i] == types::f64, wasm_interpreter_exception,
+                                      CORE_NET_VM_ASSERT(ft.param_types[i] == types::f64, wasm_interpreter_exception,
                                                     "function param type mismatch");
                                    },
                                    [&](auto) { throw wasm_interpreter_exception{ "function param invalid type" }; } },
@@ -769,7 +769,7 @@ namespace eosio { namespace vm {
 
       template <typename Visitor, typename... Args>
       inline std::optional<operand_stack_elem> execute(host_type* host, Visitor&& visitor, uint32_t func_index, Args&&... args) {
-         EOS_VM_ASSERT(func_index < std::numeric_limits<uint32_t>::max(), wasm_interpreter_exception,
+         CORE_NET_VM_ASSERT(func_index < std::numeric_limits<uint32_t>::max(), wasm_interpreter_exception,
                        "cannot execute function, function not found");
 
          auto last_last_op_index = _last_op_index;
@@ -859,7 +859,7 @@ namespace eosio { namespace vm {
 
 #define CREATE_TABLE_ENTRY(NAME, CODE) &&ev_label_##NAME,
 #define CREATE_LABEL(NAME, CODE)                                                                                  \
-      ev_label_##NAME : std::forward<Visitor>(visitor)(ev_variant->template get<eosio::vm::EOS_VM_OPCODE_T(NAME)>()); \
+      ev_label_##NAME : std::forward<Visitor>(visitor)(ev_variant->template get<core_net::vm::CORE_NET_VM_OPCODE_T(NAME)>()); \
       ev_variant = _state.pc; \
       goto* dispatch_table[ev_variant->index()];
 #define CREATE_EXIT_LABEL(NAME, CODE) ev_label_##NAME : \
@@ -870,47 +870,47 @@ namespace eosio { namespace vm {
       template <typename Visitor>
       void execute(Visitor&& visitor) {
          static void* dispatch_table[] = {
-            EOS_VM_CONTROL_FLOW_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_BR_TABLE_OP(CREATE_TABLE_ENTRY)
-            EOS_VM_RETURN_OP(CREATE_TABLE_ENTRY)
-            EOS_VM_CALL_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_CALL_IMM_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_PARAMETRIC_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_VARIABLE_ACCESS_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_MEMORY_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_I32_CONSTANT_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_I64_CONSTANT_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_F32_CONSTANT_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_F64_CONSTANT_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_COMPARISON_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_NUMERIC_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_CONVERSION_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_EXIT_OP(CREATE_TABLE_ENTRY)
-            EOS_VM_EMPTY_OPS(CREATE_TABLE_ENTRY)
-            EOS_VM_ERROR_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_CONTROL_FLOW_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_BR_TABLE_OP(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_RETURN_OP(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_CALL_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_CALL_IMM_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_PARAMETRIC_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_VARIABLE_ACCESS_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_MEMORY_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_I32_CONSTANT_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_I64_CONSTANT_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_F32_CONSTANT_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_F64_CONSTANT_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_COMPARISON_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_NUMERIC_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_CONVERSION_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_EXIT_OP(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_EMPTY_OPS(CREATE_TABLE_ENTRY)
+            CORE_NET_VM_ERROR_OPS(CREATE_TABLE_ENTRY)
             &&__ev_last
          };
          auto* ev_variant = _state.pc;
          goto *dispatch_table[ev_variant->index()];
          while (1) {
-             EOS_VM_CONTROL_FLOW_OPS(CREATE_LABEL);
-             EOS_VM_BR_TABLE_OP(CREATE_LABEL);
-             EOS_VM_RETURN_OP(CREATE_LABEL);
-             EOS_VM_CALL_OPS(CREATE_LABEL);
-             EOS_VM_CALL_IMM_OPS(CREATE_LABEL);
-             EOS_VM_PARAMETRIC_OPS(CREATE_LABEL);
-             EOS_VM_VARIABLE_ACCESS_OPS(CREATE_LABEL);
-             EOS_VM_MEMORY_OPS(CREATE_LABEL);
-             EOS_VM_I32_CONSTANT_OPS(CREATE_LABEL);
-             EOS_VM_I64_CONSTANT_OPS(CREATE_LABEL);
-             EOS_VM_F32_CONSTANT_OPS(CREATE_LABEL);
-             EOS_VM_F64_CONSTANT_OPS(CREATE_LABEL);
-             EOS_VM_COMPARISON_OPS(CREATE_LABEL);
-             EOS_VM_NUMERIC_OPS(CREATE_LABEL);
-             EOS_VM_CONVERSION_OPS(CREATE_LABEL);
-             EOS_VM_EXIT_OP(CREATE_EXIT_LABEL);
-             EOS_VM_EMPTY_OPS(CREATE_EMPTY_LABEL);
-             EOS_VM_ERROR_OPS(CREATE_LABEL);
+             CORE_NET_VM_CONTROL_FLOW_OPS(CREATE_LABEL);
+             CORE_NET_VM_BR_TABLE_OP(CREATE_LABEL);
+             CORE_NET_VM_RETURN_OP(CREATE_LABEL);
+             CORE_NET_VM_CALL_OPS(CREATE_LABEL);
+             CORE_NET_VM_CALL_IMM_OPS(CREATE_LABEL);
+             CORE_NET_VM_PARAMETRIC_OPS(CREATE_LABEL);
+             CORE_NET_VM_VARIABLE_ACCESS_OPS(CREATE_LABEL);
+             CORE_NET_VM_MEMORY_OPS(CREATE_LABEL);
+             CORE_NET_VM_I32_CONSTANT_OPS(CREATE_LABEL);
+             CORE_NET_VM_I64_CONSTANT_OPS(CREATE_LABEL);
+             CORE_NET_VM_F32_CONSTANT_OPS(CREATE_LABEL);
+             CORE_NET_VM_F64_CONSTANT_OPS(CREATE_LABEL);
+             CORE_NET_VM_COMPARISON_OPS(CREATE_LABEL);
+             CORE_NET_VM_NUMERIC_OPS(CREATE_LABEL);
+             CORE_NET_VM_CONVERSION_OPS(CREATE_LABEL);
+             CORE_NET_VM_EXIT_OP(CREATE_EXIT_LABEL);
+             CORE_NET_VM_EMPTY_OPS(CREATE_EMPTY_LABEL);
+             CORE_NET_VM_ERROR_OPS(CREATE_LABEL);
              __ev_last:
                 throw wasm_interpreter_exception{"should never reach here"};
          }
@@ -937,4 +937,4 @@ namespace eosio { namespace vm {
       opcode                          _halt;
       host_type*                      _host = nullptr;
    };
-}} // namespace eosio::vm
+}} // namespace core_net::vm

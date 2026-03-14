@@ -1,9 +1,9 @@
 #include "subcommand.hpp"
-#include <eosio/chain/config.hpp>
+#include <core_net/chain/config.hpp>
 
 #include <fc/crypto/bls_private_key.hpp>
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 struct bls_options {
    std::string key_file;

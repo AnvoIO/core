@@ -1,13 +1,13 @@
 #pragma once
-#include <eosio/chain/transaction.hpp>
-#include <eosio/wallet_plugin/wallet_api.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/wallet_plugin/wallet_api.hpp>
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 #include <chrono>
 
 namespace fc { class variant; }
 
-namespace eosio {
+namespace core_net {
 namespace wallet {
 
 /// Provides associate of wallet name to wallet and manages the interaction with each wallet.
@@ -143,4 +143,4 @@ private:
 };
 
 } // namespace wallet
-} // namespace eosio
+} // namespace core_net

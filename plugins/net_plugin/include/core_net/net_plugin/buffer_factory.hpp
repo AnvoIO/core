@@ -1,14 +1,14 @@
 #pragma once
 
-#include <eosio/net_plugin/protocol.hpp>
-#include <eosio/net_plugin/gossip_bps_index.hpp>
-#include <eosio/net_plugin/net_logger.hpp>
+#include <core_net/net_plugin/protocol.hpp>
+#include <core_net/net_plugin/gossip_bps_index.hpp>
+#include <core_net/net_plugin/net_logger.hpp>
 #include <fc/io/raw.hpp>
 
 #include <memory>
 #include <vector>
 
-namespace eosio {
+namespace core_net {
 
    using send_buffer_type = std::shared_ptr<std::vector<char>>;
 
@@ -222,4 +222,4 @@ namespace eosio {
       }
    };
 
-} // namespace eosio
+} // namespace core_net

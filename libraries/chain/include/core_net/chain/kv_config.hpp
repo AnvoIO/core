@@ -3,7 +3,7 @@
 #include <fc/reflect/reflect.hpp>
 #include <cstdint>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    /**
     * @brief limits for a kv database: NOT IN USE for spring
@@ -33,5 +33,5 @@ namespace eosio { namespace chain {
    }
 }}
 
-FC_REFLECT(eosio::chain::kv_database_config, (max_key_size)(max_value_size)(max_iterators))
+FC_REFLECT(core_net::chain::kv_database_config, (max_key_size)(max_value_size)(max_iterators))
 

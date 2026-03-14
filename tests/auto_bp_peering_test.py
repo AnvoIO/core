@@ -77,7 +77,7 @@ try:
         totalProducers=producerNodes,
         activateIF=activateIF,
         topo="./tests/auto_bp_peering_test_shape.json",
-        extraNodeosArgs=" --plugin eosio::net_api_plugin ",
+        extraNodeosArgs=" --plugin core_net::net_api_plugin ",
         specificExtraNodeosArgs=specificNodeosArgs,
     )
 

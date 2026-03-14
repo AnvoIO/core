@@ -1,11 +1,11 @@
 #pragma once
 #include <chainbase/chainbase.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/config.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/config.hpp>
 
 #include <type_traits>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 using shared_public_key_data = std::variant<fc::ecc::public_key_shim, fc::crypto::r1::public_key_shim, shared_string>;
 
@@ -352,16 +352,16 @@ inline bool validate( const Authority& auth ) {
    return total_weight >= auth.threshold;
 }
 
-} } // namespace eosio::chain
+} } // namespace core_net::chain
 
 namespace fc {
-   void to_variant(const eosio::chain::shared_public_key& var, fc::variant& vo);
+   void to_variant(const core_net::chain::shared_public_key& var, fc::variant& vo);
 } // namespace fc
 
-FC_REFLECT(eosio::chain::permission_level_weight, (permission)(weight) )
-FC_REFLECT(eosio::chain::key_weight, (key)(weight) )
-FC_REFLECT(eosio::chain::wait_weight, (wait_sec)(weight) )
-FC_REFLECT(eosio::chain::authority, (threshold)(keys)(accounts)(waits) )
-FC_REFLECT(eosio::chain::shared_key_weight, (key)(weight) )
-FC_REFLECT(eosio::chain::shared_authority, (threshold)(keys)(accounts)(waits) )
-FC_REFLECT(eosio::chain::shared_public_key, (pubkey))
+FC_REFLECT(core_net::chain::permission_level_weight, (permission)(weight) )
+FC_REFLECT(core_net::chain::key_weight, (key)(weight) )
+FC_REFLECT(core_net::chain::wait_weight, (wait_sec)(weight) )
+FC_REFLECT(core_net::chain::authority, (threshold)(keys)(accounts)(waits) )
+FC_REFLECT(core_net::chain::shared_key_weight, (key)(weight) )
+FC_REFLECT(core_net::chain::shared_authority, (threshold)(keys)(accounts)(waits) )
+FC_REFLECT(core_net::chain::shared_public_key, (pubkey))

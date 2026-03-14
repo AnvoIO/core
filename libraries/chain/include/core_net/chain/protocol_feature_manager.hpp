@@ -1,9 +1,9 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 #include <iterator>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 class deep_mind_handler;
 
@@ -403,13 +403,13 @@ private:
 std::optional<builtin_protocol_feature> read_builtin_protocol_feature( const std::filesystem::path& p  );
 protocol_feature_set initialize_protocol_features( const std::filesystem::path& p, bool populate_missing_builtins = true );
 
-} // namespace eosio::chain
+} // namespace core_net::chain
 
-FC_REFLECT(eosio::chain::protocol_feature_subjective_restrictions,
+FC_REFLECT(core_net::chain::protocol_feature_subjective_restrictions,
                (earliest_allowed_activation_time)(preactivation_required)(enabled))
 
-FC_REFLECT(eosio::chain::protocol_feature_base,
+FC_REFLECT(core_net::chain::protocol_feature_base,
                (protocol_feature_type)(dependencies)(description_digest)(subjective_restrictions))
 
-FC_REFLECT_DERIVED(eosio::chain::builtin_protocol_feature, (eosio::chain::protocol_feature_base),
+FC_REFLECT_DERIVED(core_net::chain::builtin_protocol_feature, (core_net::chain::protocol_feature_base),
                      (builtin_feature_codename))

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/chain/block_header_state.hpp>
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/transaction_metadata.hpp>
-#include <eosio/chain/action_receipt.hpp>
-#include <eosio/chain/incremental_merkle.hpp>
-#include <eosio/chain/thread_utils.hpp>
+#include <core_net/chain/block_header_state.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/transaction_metadata.hpp>
+#include <core_net/chain/action_receipt.hpp>
+#include <core_net/chain/incremental_merkle.hpp>
+#include <core_net/chain/thread_utils.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 struct vote_message;
 
@@ -199,10 +199,10 @@ public:
 using block_state_ptr       = std::shared_ptr<block_state>;
 using block_state_pair      = std::pair<std::shared_ptr<block_state_legacy>, block_state_ptr>;
 
-} // namespace eosio::chain
+} // namespace core_net::chain
 
 // not exporting pending_qc or valid_qc
-FC_REFLECT( eosio::chain::valid_t::finality_leaf_node_t, (major_version)(minor_version)(block_num)(timestamp)(parent_timestamp)(finality_digest)(action_mroot) )
-FC_REFLECT( eosio::chain::valid_t, (validation_tree)(validation_mroots))
-FC_REFLECT( eosio::chain::finality_data_t, (major_version)(minor_version)(active_finalizer_policy_generation)(action_mroot)(reversible_blocks_mroot)(latest_qc_claim_block_num)(latest_qc_claim_finality_digest)(latest_qc_claim_timestamp)(base_digest)(pending_finalizer_policy)(last_pending_finalizer_policy_generation) )
-FC_REFLECT_DERIVED( eosio::chain::block_state, (eosio::chain::block_header_state), (block)(strong_digest)(weak_digest)(aggregating_qc)(valid)(validated) )
+FC_REFLECT( core_net::chain::valid_t::finality_leaf_node_t, (major_version)(minor_version)(block_num)(timestamp)(parent_timestamp)(finality_digest)(action_mroot) )
+FC_REFLECT( core_net::chain::valid_t, (validation_tree)(validation_mroots))
+FC_REFLECT( core_net::chain::finality_data_t, (major_version)(minor_version)(active_finalizer_policy_generation)(action_mroot)(reversible_blocks_mroot)(latest_qc_claim_block_num)(latest_qc_claim_finality_digest)(latest_qc_claim_timestamp)(base_digest)(pending_finalizer_policy)(last_pending_finalizer_policy_generation) )
+FC_REFLECT_DERIVED( core_net::chain::block_state, (core_net::chain::block_header_state), (block)(strong_digest)(weak_digest)(aggregating_qc)(valid)(validated) )

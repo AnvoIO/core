@@ -3,7 +3,7 @@
 #include <fc/crypto/bls_public_key.hpp>
 #include <string>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    struct finalizer_authority {
 
@@ -28,7 +28,7 @@ namespace eosio::chain {
          , weight(input.weight)
          , public_key(input.public_key.to_string()) {}
    };
-} /// eosio::chain
+} /// core_net::chain
 
-FC_REFLECT( eosio::chain::finalizer_authority, (description)(weight)(public_key) )
-FC_REFLECT( eosio::chain::finalizer_authority_with_string_key, (description)(weight)(public_key) )
+FC_REFLECT( core_net::chain::finalizer_authority, (description)(weight)(public_key) )
+FC_REFLECT( core_net::chain::finalizer_authority_with_string_key, (description)(weight)(public_key) )

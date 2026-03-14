@@ -3,7 +3,7 @@
 #include <linux/memfd.h>
 #include <sys/mman.h>
 
-namespace eosio::chain::eosvmoc {
+namespace core_net::chain::eosvmoc {
 
 // added in glibc 2.38
 #ifndef MFD_NOEXEC_SEAL

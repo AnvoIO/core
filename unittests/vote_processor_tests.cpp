@@ -1,26 +1,26 @@
 #include <boost/test/unit_test.hpp>
 
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/vote_processor.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/vote_processor.hpp>
+#include <core_net/testing/tester.hpp>
 #include <fc/bitutil.hpp>
 #include <boost/signals2/signal.hpp>
 
 namespace std {
-std::ostream& operator<<(std::ostream& os, const eosio::chain::vote_message& v) {
+std::ostream& operator<<(std::ostream& os, const core_net::chain::vote_message& v) {
    os << "vote_message{" << v.block_id << std::endl;
    return os;
 }
-std::ostream& operator<<(std::ostream& os, const eosio::chain::vote_result_t& v) {
-   os << fc::reflector<eosio::chain::vote_result_t>::to_string(v) << std::endl;
+std::ostream& operator<<(std::ostream& os, const core_net::chain::vote_result_t& v) {
+   os << fc::reflector<core_net::chain::vote_result_t>::to_string(v) << std::endl;
    return os;
 }
 }
 
 namespace {
 
-using namespace eosio;
-using namespace eosio::chain;
+using namespace core_net;
+using namespace core_net::chain;
 
 block_id_type make_block_id(uint32_t block_num) {
    block_id_type block_id;
@@ -37,8 +37,8 @@ std::vector<bls_private_key> bls_priv_keys{bls_priv_key_0, bls_priv_key_1, bls_p
 auto create_genesis_block_state() { // block 2
    auto block = signed_block::create_mutable_block({});
 
-   block->producer = eosio::chain::config::system_account_name;
-   auto pub_key = eosio::testing::base_tester::get_public_key( block->producer, "active" );
+   block->producer = core_net::chain::config::system_account_name;
+   auto pub_key = core_net::testing::base_tester::get_public_key( block->producer, "active" );
 
    std::vector<finalizer_authority> finalizers;
    finalizers.push_back(finalizer_authority{.description = "first", .weight = 1, .public_key = bls_priv_keys.at(0).get_public_key()});
@@ -67,12 +67,12 @@ auto create_test_block_state(const block_state_ptr& prev) {
    static block_timestamp_type timestamp;
    timestamp = timestamp.next(); // each test block state will be unique
    auto block = prev->block->clone();
-   block->producer = eosio::chain::config::system_account_name;
+   block->producer = core_net::chain::config::system_account_name;
    block->previous = prev->id();
    block->timestamp = timestamp;
 
-   auto priv_key = eosio::testing::base_tester::get_private_key( block->producer, "active" );
-   auto pub_key  = eosio::testing::base_tester::get_public_key( block->producer, "active" );
+   auto priv_key = core_net::testing::base_tester::get_private_key( block->producer, "active" );
+   auto pub_key  = core_net::testing::base_tester::get_public_key( block->producer, "active" );
 
    auto sig_digest = digest_type::hash("something");
    block->producer_signature = priv_key.sign( sig_digest );

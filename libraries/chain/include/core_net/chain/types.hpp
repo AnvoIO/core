@@ -1,6 +1,6 @@
 #pragma once
-#include <eosio/chain/name.hpp>
-#include <eosio/chain/chain_id_type.hpp>
+#include <core_net/chain/name.hpp>
+#include <core_net/chain/chain_id_type.hpp>
 
 #include <chainbase/chainbase.hpp>
 
@@ -40,7 +40,7 @@
 
 #define _V(n, v)  fc::mutable_variant_object(n, v)
 
-namespace eosio::chain {
+namespace core_net::chain {
    using                               std::map;
    using                               std::vector;
    using                               std::unordered_map;
@@ -398,6 +398,6 @@ namespace eosio::chain {
    // to configure whether a process should be done asynchronously or not
    enum class async_t { no, yes };
 
-}  // eosio::chain
+}  // core_net::chain
 
-FC_REFLECT_EMPTY( eosio::chain::void_t )
+FC_REFLECT_EMPTY( core_net::chain::void_t )

@@ -1,4 +1,4 @@
 #pragma once
 
 #include <system_error>
-#include <eosio/vm/error_codes_def.hpp>
+#include <core_net/vm/error_codes_def.hpp>

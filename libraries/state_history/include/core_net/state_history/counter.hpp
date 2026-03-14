@@ -2,7 +2,7 @@
 
 #include <boost/iostreams/filtering_streambuf.hpp>
 
-namespace eosio::detail {
+namespace core_net::detail {
 
 namespace bio = boost::iostreams;
 

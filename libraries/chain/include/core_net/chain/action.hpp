@@ -1,9 +1,9 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/exceptions.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    struct permission_level {
       account_name    actor;
@@ -100,8 +100,8 @@ namespace eosio { namespace chain {
       return fc::sha256::packhash(fc::sha256::packhash(base), fc::sha256::packhash(act.data, action_output));
    }
 
-} } /// namespace eosio::chain
+} } /// namespace core_net::chain
 
-FC_REFLECT( eosio::chain::permission_level, (actor)(permission) )
-FC_REFLECT( eosio::chain::action_base, (account)(name)(authorization) )
-FC_REFLECT_DERIVED( eosio::chain::action, (eosio::chain::action_base), (data) )
+FC_REFLECT( core_net::chain::permission_level, (actor)(permission) )
+FC_REFLECT( core_net::chain::action_base, (account)(name)(authorization) )
+FC_REFLECT_DERIVED( core_net::chain::action, (core_net::chain::action_base), (data) )

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <boost/numeric/conversion/cast.hpp>
 #include <boost/algorithm/string.hpp>
 
@@ -8,7 +8,7 @@
 #include <sstream>
 #include <regex>
 
-namespace eosio::net_utils {
+namespace core_net::net_utils {
 
 // Longest domain name is 253 characters according to wikipedia.
 // Addresses include ":port" where max port is 65535, which adds 6 chars.
@@ -157,6 +157,6 @@ namespace detail {
       return {std::move(listen_addr), block_sync_rate_limit};
    }
 
-} // namespace eosio::net_utils
+} // namespace core_net::net_utils
 
-FC_REFLECT(eosio::net_utils::endpoint, (host)(port))
+FC_REFLECT(core_net::net_utils::endpoint, (host)(port))

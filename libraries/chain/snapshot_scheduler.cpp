@@ -1,9 +1,9 @@
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/pending_snapshot.hpp>
-#include <eosio/chain/snapshot_scheduler.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/pending_snapshot.hpp>
+#include <core_net/chain/snapshot_scheduler.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 // snapshot_scheduler_listener
 void snapshot_scheduler::on_start_block(uint32_t height, chain::controller& chain) {
@@ -230,4 +230,4 @@ void snapshot_scheduler::create_snapshot(next_function<snapshot_information> nex
    }
 }
 
-}// namespace eosio::chain
+}// namespace core_net::chain

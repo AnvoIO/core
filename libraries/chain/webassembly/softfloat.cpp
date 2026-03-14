@@ -1,8 +1,8 @@
-#include <eosio/chain/webassembly/interface.hpp>
-#include <eosio/chain/webassembly/preconditions.hpp>
+#include <core_net/chain/webassembly/interface.hpp>
+#include <core_net/chain/webassembly/preconditions.hpp>
 #include <softfloat.hpp>
 
-namespace eosio { namespace chain { namespace webassembly {
+namespace core_net { namespace chain { namespace webassembly {
    static constexpr uint32_t inv_float_eps = 0x4B000000;
    static constexpr uint64_t inv_double_eps = 0x4330000000000000;
 
@@ -361,67 +361,67 @@ namespace eosio { namespace chain { namespace webassembly {
    int32_t interface::_eosio_f32_trunc_i32s( float af ) const {
       float32_t a = to_softfloat32(af);
       if (_eosio_f32_ge(af, 2147483648.0f) || _eosio_f32_lt(af, -2147483648.0f))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f32.convert_s/i32 overflow" );
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f32.convert_s/i32 overflow" );
 
       if (is_nan(a))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f32.convert_s/i32 unrepresentable");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f32.convert_s/i32 unrepresentable");
       return f32_to_i32( to_softfloat32(_eosio_f32_trunc( af )), 0, false );
    }
    int32_t interface::_eosio_f64_trunc_i32s( double af ) const {
       float64_t a = to_softfloat64(af);
       if (_eosio_f64_ge(af, 2147483648.0) || _eosio_f64_lt(af, -2147483648.0))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f64.convert_s/i32 overflow");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f64.convert_s/i32 overflow");
       if (is_nan(a))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f64.convert_s/i32 unrepresentable");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f64.convert_s/i32 unrepresentable");
       return f64_to_i32( to_softfloat64(_eosio_f64_trunc( af )), 0, false );
    }
    uint32_t interface::_eosio_f32_trunc_i32u( float af ) const {
       float32_t a = to_softfloat32(af);
       if (_eosio_f32_ge(af, 4294967296.0f) || _eosio_f32_le(af, -1.0f))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f32.convert_u/i32 overflow");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f32.convert_u/i32 overflow");
       if (is_nan(a))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f32.convert_u/i32 unrepresentable");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f32.convert_u/i32 unrepresentable");
       return f32_to_ui32( to_softfloat32(_eosio_f32_trunc( af )), 0, false );
    }
    uint32_t interface::_eosio_f64_trunc_i32u( double af ) const {
       float64_t a = to_softfloat64(af);
       if (_eosio_f64_ge(af, 4294967296.0) || _eosio_f64_le(af, -1.0))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f64.convert_u/i32 overflow");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f64.convert_u/i32 overflow");
       if (is_nan(a))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f64.convert_u/i32 unrepresentable");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f64.convert_u/i32 unrepresentable");
       return f64_to_ui32( to_softfloat64(_eosio_f64_trunc( af )), 0, false );
    }
    int64_t interface::_eosio_f32_trunc_i64s( float af ) const {
       float32_t a = to_softfloat32(af);
       if (_eosio_f32_ge(af, 9223372036854775808.0f) || _eosio_f32_lt(af, -9223372036854775808.0f))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f32.convert_s/i64 overflow");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f32.convert_s/i64 overflow");
       if (is_nan(a))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f32.convert_s/i64 unrepresentable");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f32.convert_s/i64 unrepresentable");
       return f32_to_i64( to_softfloat32(_eosio_f32_trunc( af )), 0, false );
    }
    int64_t interface::_eosio_f64_trunc_i64s( double af ) const {
       float64_t a = to_softfloat64(af);
       if (_eosio_f64_ge(af, 9223372036854775808.0) || _eosio_f64_lt(af, -9223372036854775808.0))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f64.convert_s/i64 overflow");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f64.convert_s/i64 overflow");
       if (is_nan(a))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f64.convert_s/i64 unrepresentable");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f64.convert_s/i64 unrepresentable");
 
       return f64_to_i64( to_softfloat64(_eosio_f64_trunc( af )), 0, false );
    }
    uint64_t interface::_eosio_f32_trunc_i64u( float af ) const {
       float32_t a = to_softfloat32(af);
       if (_eosio_f32_ge(af, 18446744073709551616.0f) || _eosio_f32_le(af, -1.0f))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f32.convert_u/i64 overflow");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f32.convert_u/i64 overflow");
       if (is_nan(a))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f32.convert_u/i64 unrepresentable");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f32.convert_u/i64 unrepresentable");
       return f32_to_ui64( to_softfloat32(_eosio_f32_trunc( af )), 0, false );
    }
    uint64_t interface::_eosio_f64_trunc_i64u( double af ) const {
       float64_t a = to_softfloat64(af);
       if (_eosio_f64_ge(af, 18446744073709551616.0) || _eosio_f64_le(af, -1.0))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f64.convert_u/i64 overflow");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f64.convert_u/i64 overflow");
       if (is_nan(a))
-         FC_THROW_EXCEPTION( eosio::chain::wasm_execution_error, "Error, f64.convert_u/i64 unrepresentable");
+         FC_THROW_EXCEPTION( core_net::chain::wasm_execution_error, "Error, f64.convert_u/i64 unrepresentable");
       return f64_to_ui64( to_softfloat64(_eosio_f64_trunc( af )), 0, false );
    }
    float interface::_eosio_i32_to_f32( int32_t a ) const {
@@ -448,4 +448,4 @@ namespace eosio { namespace chain { namespace webassembly {
    double interface::_eosio_ui64_to_f64( uint64_t a ) const {
       return from_softfloat64(ui64_to_f64( a ));
    }
-}}} // ns eosio::chain::webassembly
+}}} // ns core_net::chain::webassembly

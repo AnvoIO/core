@@ -1,9 +1,9 @@
 #pragma once
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/symbol.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/symbol.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 /**
 
@@ -101,17 +101,17 @@ struct extended_asset  {
 bool  operator <  (const asset& a, const asset& b);
 bool  operator <= (const asset& a, const asset& b);
 
-}} // namespace eosio::chain
+}} // namespace core_net::chain
 
 namespace fc {
-inline void to_variant(const eosio::chain::asset& var, fc::variant& vo) { vo = var.to_string(); }
-inline void from_variant(const fc::variant& var, eosio::chain::asset& vo) {
-   vo = eosio::chain::asset::from_string(var.get_string());
+inline void to_variant(const core_net::chain::asset& var, fc::variant& vo) { vo = var.to_string(); }
+inline void from_variant(const fc::variant& var, core_net::chain::asset& vo) {
+   vo = core_net::chain::asset::from_string(var.get_string());
 }
 }
 
 namespace fc {
-inline void from_variant(const fc::variant& var, eosio::chain::extended_asset& vo) {
+inline void from_variant(const fc::variant& var, core_net::chain::extended_asset& vo) {
    if( var.is_array() ) {
       const auto& va = var.get_array();
       from_variant(va.at(0), vo.quantity);
@@ -124,5 +124,5 @@ inline void from_variant(const fc::variant& var, eosio::chain::extended_asset& v
 }
 }
 
-FC_REFLECT(eosio::chain::asset, (amount)(sym))
-FC_REFLECT(eosio::chain::extended_asset, (quantity)(contract) )
+FC_REFLECT(core_net::chain::asset, (amount)(sym))
+FC_REFLECT(core_net::chain::extended_asset, (quantity)(contract) )

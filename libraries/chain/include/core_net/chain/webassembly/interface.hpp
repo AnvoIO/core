@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/webassembly/common.hpp>
-#include <eosio/chain/webassembly/return_codes.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/webassembly/common.hpp>
+#include <core_net/chain/webassembly/return_codes.hpp>
 #include <fc/crypto/sha1.hpp>
 #include <boost/hana/string.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 class apply_context;
 namespace webassembly {
 
@@ -620,7 +620,7 @@ namespace webassembly {
           * @param condition - test condition.
           * @param msg - string explaining the reason for failure.
          */
-         void eosio_assert(bool condition, null_terminated_ptr msg) const;
+         void core_net_assert(bool condition, null_terminated_ptr msg) const;
 
          /**
           * Aborts processing of this action if the test condition is false.
@@ -629,7 +629,7 @@ namespace webassembly {
           * @param condition - test condition.
           * @param msg - string explaining the reason for failure.
           */
-         void eosio_assert_message(bool condition, legacy_span<const char> msg) const;
+         void core_net_assert_message(bool condition, legacy_span<const char> msg) const;
 
          /**
           * Aborts processing of this action if the test condition is false.
@@ -640,7 +640,7 @@ namespace webassembly {
           * @param condition - test condition.
           * @param error_code - the error code associated.
          */
-         void eosio_assert_code(bool condition, uint64_t error_code) const;
+         void core_net_assert_code(bool condition, uint64_t error_code) const;
 
          /**
           * This method will abort execution of wasm without failing the contract.
@@ -648,7 +648,7 @@ namespace webassembly {
           * @ingroup context-free
           * @param code - the exit code
          */
-         void eosio_exit(int32_t code) const;
+         void core_net_exit(int32_t code) const;
 
          /**
           * Copy up to length bytes of the current action data to the specified location.
@@ -1970,4 +1970,4 @@ namespace webassembly {
          apply_context& context;
    };
 
-}}} // ns eosio::chain::webassembly
+}}} // ns core_net::chain::webassembly

@@ -11,7 +11,7 @@ from TestHarness.accounts import Account
 
 ###############################################################
 # prod_preactivation_test
-# --dump-error-details <Upon error print etc/eosio/node_*/config.ini and prod_preactivation_test<pid>/node_*/stderr.log to stdout>
+# --dump-error-details <Upon error print etc/core_net/node_*/config.ini and prod_preactivation_test<pid>/node_*/stderr.log to stdout>
 # --keep-logs <Don't delete TestLogs/prod_preactivation_test<pid>/node_* folders upon test completion>
 ###############################################################
 
@@ -39,7 +39,7 @@ walletMgr=WalletMgr(True, port=walletPort)
 testSuccessful=False
 
 WalletdName=Utils.EosWalletName
-ClientName="cleos"
+ClientName="core-cli"
 
 try:
     TestHelper.printSystemInfo("BEGIN prod_preactivation_test.py")
@@ -50,7 +50,7 @@ try:
     if localTest and not dontLaunch:
         Print("Stand up cluster")
         if cluster.launch(pnodes=prodCount, totalNodes=prodCount, prodCount=1,
-                          pfSetupPolicy=PFSetupPolicy.NONE, extraNodeosArgs=" --plugin eosio::producer_api_plugin  --http-max-response-time-ms 990000 ") is False:
+                          pfSetupPolicy=PFSetupPolicy.NONE, extraNodeosArgs=" --plugin core_net::producer_api_plugin  --http-max-response-time-ms 990000 ") is False:
             cmdError("launcher")
             errorExit("Failed to stand up eos cluster.")
 

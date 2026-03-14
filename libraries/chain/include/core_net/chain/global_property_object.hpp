@@ -2,20 +2,20 @@
 #include <fc/uint128.hpp>
 #include <fc/array.hpp>
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/block_timestamp.hpp>
-#include <eosio/chain/chain_config.hpp>
-#include <eosio/chain/chain_snapshot.hpp>
-#include <eosio/chain/kv_config.hpp>
-#include <eosio/chain/wasm_config.hpp>
-#include <eosio/chain/producer_schedule.hpp>
-#include <eosio/chain/finalizer_policy.hpp>
-#include <eosio/chain/snapshot.hpp>
-#include <eosio/chain/genesis_state.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/block_timestamp.hpp>
+#include <core_net/chain/chain_config.hpp>
+#include <core_net/chain/chain_snapshot.hpp>
+#include <core_net/chain/kv_config.hpp>
+#include <core_net/chain/wasm_config.hpp>
+#include <core_net/chain/producer_schedule.hpp>
+#include <core_net/chain/finalizer_policy.hpp>
+#include <core_net/chain/snapshot.hpp>
+#include <core_net/chain/genesis_state.hpp>
 #include <chainbase/chainbase.hpp>
 #include "multi_index_includes.hpp"
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    /**
     * a fc::raw::unpack compatible version of the old global_property_object structure stored in
@@ -183,34 +183,34 @@ namespace eosio::chain {
 
 }
 
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::global_property_object, eosio::chain::global_property_multi_index)
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::dynamic_global_property_object,
-                         eosio::chain::dynamic_global_property_multi_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::global_property_object, core_net::chain::global_property_multi_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::dynamic_global_property_object,
+                         core_net::chain::dynamic_global_property_multi_index)
 
-FC_REFLECT(eosio::chain::global_property_object,
+FC_REFLECT(core_net::chain::global_property_object,
             (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)(wasm_configuration)
           )
 
-FC_REFLECT(eosio::chain::legacy::snapshot_global_property_object_v2,
+FC_REFLECT(core_net::chain::legacy::snapshot_global_property_object_v2,
             (proposed_schedule_block_num)(proposed_schedule)(configuration)
           )
 
-FC_REFLECT(eosio::chain::legacy::snapshot_global_property_object_v3,
+FC_REFLECT(core_net::chain::legacy::snapshot_global_property_object_v3,
             (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)
           )
 
-FC_REFLECT(eosio::chain::legacy::snapshot_global_property_object_v4,
+FC_REFLECT(core_net::chain::legacy::snapshot_global_property_object_v4,
             (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)(kv_configuration)(wasm_configuration)
           )
 
-FC_REFLECT(eosio::chain::legacy::snapshot_global_property_object_v5,
+FC_REFLECT(core_net::chain::legacy::snapshot_global_property_object_v5,
             (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)(kv_configuration)(wasm_configuration)
           )
 
-FC_REFLECT(eosio::chain::snapshot_global_property_object,
+FC_REFLECT(core_net::chain::snapshot_global_property_object,
             (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)(wasm_configuration)
           )
 
-FC_REFLECT(eosio::chain::dynamic_global_property_object,
+FC_REFLECT(core_net::chain::dynamic_global_property_object,
             (global_action_sequence)
           )

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <eosio/chain/thread_utils.hpp>// for thread pool
-#include <eosio/http_plugin/http_plugin.hpp>
+#include <core_net/chain/thread_utils.hpp>// for thread pool
+#include <core_net/http_plugin/http_plugin.hpp>
 
 #include <fc/io/raw.hpp>
 #include <fc/log/logger_config.hpp>
@@ -36,7 +36,7 @@
 #include <string>
 
 
-namespace eosio {
+namespace core_net {
 static uint16_t const uri_default_port = 80;
 /// Default port for wss://
 static uint16_t const uri_default_secure_port = 443;
@@ -133,7 +133,7 @@ struct http_plugin_state {
 
    uint16_t thread_pool_size = 2;
    struct http; // http is a namespace so use an embedded type for the named_thread_pool tag
-   eosio::chain::named_thread_pool<http> thread_pool;
+   core_net::chain::named_thread_pool<http> thread_pool;
 
    fc::logger& logger;
    std::function<void(http_plugin::metrics)> update_metrics;
@@ -204,4 +204,4 @@ inline bool host_is_valid(const http_plugin_state& plugin_state,
    }
    return header_addr == addr;
 }
-}// end namespace eosio
+}// end namespace core_net

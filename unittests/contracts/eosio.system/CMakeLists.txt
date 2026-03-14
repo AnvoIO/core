@@ -1,4 +1,4 @@
-if( EOSIO_COMPILE_TEST_CONTRACTS )
+if( CORE_NET_COMPILE_TEST_CONTRACTS )
    add_contract( eosio.system eosio.system eosio.system.cpp peer_keys.cpp )
    target_include_directories(eosio.system
            PUBLIC

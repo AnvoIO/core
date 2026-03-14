@@ -2,10 +2,10 @@
 
 #include <fc/log/logger.hpp>
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/block.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/block.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 class account_ram_correction_object;
 class generated_transaction_object;

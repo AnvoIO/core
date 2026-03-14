@@ -1,11 +1,11 @@
-#include <eosio/chain_plugin/tracked_votes.hpp>
+#include <core_net/chain_plugin/tracked_votes.hpp>
 
 #include <shared_mutex>
 
-using namespace eosio;
-using namespace eosio::chain::literals;
+using namespace core_net;
+using namespace core_net::chain::literals;
 
-namespace eosio::chain_apis {
+namespace core_net::chain_apis {
    /**
     * Implementation details of the last tracked cache
     */
@@ -142,4 +142,4 @@ namespace eosio::chain_apis {
       _impl->set_tracking_enabled(enabled);
    }
 
-} // namespace eosio::chain_apis
+} // namespace core_net::chain_apis

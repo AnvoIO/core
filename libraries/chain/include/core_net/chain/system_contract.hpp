@@ -1,9 +1,9 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/contract_types.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/contract_types.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    class apply_context;
 
@@ -29,4 +29,4 @@ namespace eosio { namespace chain {
    void apply_eosio_canceldelay(apply_context&);
    ///@}  end action handlers
 
-} } /// namespace eosio::chain
+} } /// namespace core_net::chain

@@ -1,7 +1,7 @@
-#include <eosio/eosio.hpp>                   /* contract, datastream, check */
-#include <eosio/privileged.hpp>              /* blockchain_parameters */
+#include <core_net/eosio.hpp>                   /* contract, datastream, check */
+#include <core_net/privileged.hpp>              /* blockchain_parameters */
 #include <vector>                            /* vector */
-using namespace eosio;
+using namespace core_net;
 using namespace std;
 
 #define STR_I(x) #x
@@ -94,11 +94,11 @@ struct params_object{
    }
 };
 
-class [[eosio::contract("params_test")]] params_test : public eosio::contract {
+class [[core_net::contract("params_test")]] params_test : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action]] void maintest(){
+   [[core_net::action]] void maintest(){
 
       //make sure no throw for zero parameters provided
       params_object(0_ui).set();
@@ -211,32 +211,32 @@ public:
                 params_object(1_ui)(17_ui)(512_32));
    }
 
-   [[eosio::action]] void setthrow1(){
+   [[core_net::action]] void setthrow1(){
       //unknown configuration index
       params_object(1_ui)(100_ui).set();    
    }
 
-   [[eosio::action]] void setthrow2(){
+   [[core_net::action]] void setthrow2(){
       //length=2, only 1 argument provided
       params_object(2_ui)(1_ui).set();    
    }
 
-   [[eosio::action]] void setthrow3(){
+   [[core_net::action]] void setthrow3(){
       //passing argument that will fail validation
       params_object(1_ui)(1_ui)(200*100_32).set();
    }
 
-   [[eosio::action]] void getthrow1(){
+   [[core_net::action]] void getthrow1(){
       //unknown configuration index
       params_object(1_ui)(100_ui).get();    
    }
 
-   [[eosio::action]] void getthrow2(){
+   [[core_net::action]] void getthrow2(){
       //length=2, only 1 argument provided
       params_object(2_ui)(1_ui).get();    
    }
 
-   [[eosio::action]] void getthrow3(){
+   [[core_net::action]] void getthrow3(){
       //buffer too small
       char buffer[4];
       datastream<char*> ds((char*)&buffer, sizeof(buffer));
@@ -244,7 +244,7 @@ public:
       get_parameters_packed(pp.packed.c_str(), pp.packed.size(), buffer, sizeof(buffer));
    }
 
-   [[eosio::action]] void throwrvia1(){
+   [[core_net::action]] void throwrvia1(){
       //throws when setting parameter that is not allowed because of protocol feature for
       //this parameter is not active
       
@@ -254,7 +254,7 @@ public:
                 params_object(1_ui)(17_ui)(1024_32));
    }
 
-   [[eosio::action]] void throwrvia2(){
+   [[core_net::action]] void throwrvia2(){
       //this test tries to get parameter with corresponding inactive protocol feature
       
       //v1 config, max_action_return_value_size

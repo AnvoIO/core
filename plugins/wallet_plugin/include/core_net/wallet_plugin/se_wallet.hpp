@@ -1,12 +1,12 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/wallet_plugin/wallet_api.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/wallet_plugin/wallet_api.hpp>
 
 using namespace std;
-using namespace eosio::chain;
+using namespace core_net::chain;
 
-namespace eosio { namespace wallet {
+namespace core_net { namespace wallet {
 
 namespace detail {
 struct se_wallet_impl;

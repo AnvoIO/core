@@ -1,20 +1,20 @@
 #pragma once
 
-#include <eosio/chain/chain_config.hpp>
-#include <eosio/chain/wasm_config.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/chain_config.hpp>
+#include <core_net/chain/wasm_config.hpp>
+#include <core_net/chain/types.hpp>
 
 #include <fc/crypto/sha256.hpp>
 
 #include <string>
 #include <vector>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 struct genesis_state {
    genesis_state();
 
-   static const string eosio_root_key;
+   static const string core_net_root_key;
 
    chain_config_v0   initial_configuration = {
       .max_block_net_usage                  = config::default_max_block_net_usage,
@@ -71,8 +71,8 @@ struct genesis_state {
 
 };
 
-} } // namespace eosio::chain
+} } // namespace core_net::chain
 
 // @swap initial_timestamp initial_key initial_configuration
-FC_REFLECT(eosio::chain::genesis_state,
+FC_REFLECT(core_net::chain::genesis_state,
            (initial_timestamp)(initial_key)(initial_configuration))

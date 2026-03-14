@@ -1,21 +1,21 @@
 #pragma once
 #include <fc/exception/exception.hpp>
 
-#include <eosio/chain/wasm_eosio_constraints.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/eos-vm-oc.h>
-#include <eosio/chain/webassembly/eos-vm-oc/intrinsic_mapping.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/gs_seg_helpers.h>
+#include <core_net/chain/wasm_constraints.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/eos-vm-oc.h>
+#include <core_net/chain/webassembly/eos-vm-oc/intrinsic_mapping.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/gs_seg_helpers.h>
 
 #include <stdint.h>
 #include <stddef.h>
 
-namespace eosio::chain::eosvmoc {
+namespace core_net::chain::eosvmoc {
 
 class memory {
       static constexpr uint64_t intrinsic_count                   = intrinsic_table_size();
       //warning: changing the following 3 params will invalidate existing PIC
-      static constexpr uint64_t mutable_global_size               = 8u  * eosio::chain::wasm_constraints::maximum_mutable_globals/4u;
-      static constexpr uint64_t table_size                        = 16u * eosio::chain::wasm_constraints::maximum_table_elements;
+      static constexpr uint64_t mutable_global_size               = 8u  * core_net::chain::wasm_constraints::maximum_mutable_globals/4u;
+      static constexpr uint64_t table_size                        = 16u * core_net::chain::wasm_constraints::maximum_table_elements;
       static constexpr size_t   wcb_allowance                     = 512u;
       static_assert(sizeof(control_block) <= wcb_allowance, "EOS VM OC memory doesn't set aside enough memory for control block");
 
@@ -69,5 +69,5 @@ class memory {
 
 }
 
-#define OFFSET_OF_CONTROL_BLOCK_MEMBER(M) (-(int)eosio::chain::eosvmoc::memory::cb_offset + (int)offsetof(eosio::chain::eosvmoc::control_block, M))
-#define OFFSET_OF_FIRST_INTRINSIC ((int)-eosio::chain::eosvmoc::memory::first_intrinsic_offset)
+#define OFFSET_OF_CONTROL_BLOCK_MEMBER(M) (-(int)core_net::chain::eosvmoc::memory::cb_offset + (int)offsetof(core_net::chain::eosvmoc::control_block, M))
+#define OFFSET_OF_FIRST_INTRINSIC ((int)-core_net::chain::eosvmoc::memory::first_intrinsic_offset)

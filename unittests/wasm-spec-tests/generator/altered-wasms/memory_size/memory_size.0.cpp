@@ -1,4 +1,4 @@
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
 extern "C" {
    int32_t _size() {
@@ -11,22 +11,22 @@ extern "C" {
 
    void sub_apply_0() {
       int32_t x1 = _size();
-      eosio::check(x1 == (int32_t)1, "_size fail 1");
+      core_net::check(x1 == (int32_t)1, "_size fail 1");
 
       _grow((int32_t)1);
 
       int32_t x3 = _size();
-      eosio::check(x3 == (int32_t)2, "_size fail 3");
+      core_net::check(x3 == (int32_t)2, "_size fail 3");
 
       _grow((int32_t)4);
 
       int32_t x5 = _size();
-      eosio::check(x5 == (int32_t)6, "_size fail 5");
+      core_net::check(x5 == (int32_t)6, "_size fail 5");
 
       _grow((int32_t)0);
 
       int32_t x7 = _size();
-      eosio::check(x7 == (int32_t)6, "_size fail 7");
+      core_net::check(x7 == (int32_t)6, "_size fail 7");
 
    }
    void apply(uint64_t, uint64_t, uint64_t test_to_run) {

@@ -1,13 +1,13 @@
 #pragma once
 
-#include <eosio/net_plugin/protocol.hpp>
-#include <eosio/chain/thread_utils.hpp>
+#include <core_net/net_plugin/protocol.hpp>
+#include <core_net/chain/thread_utils.hpp>
 
 #include <fc/mutex.hpp>
 
 #include <boost/multi_index_container.hpp>
 
-namespace eosio {
+namespace core_net {
 
 struct gossip_bp_index_t {
    using gossip_bps_index_container_t = boost::multi_index_container<
@@ -38,4 +38,4 @@ struct gossip_bp_index_t {
 };
 
 
-} // namespace eosio
+} // namespace core_net

@@ -1,7 +1,7 @@
 #pragma once
 
 // temporarily use exceptions
-#include <eosio/vm/exceptions.hpp>
+#include <core_net/vm/exceptions.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -12,7 +12,7 @@
 #include <variant>
 #include <utility>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    // forward declaration
    template <typename... Alternatives>
@@ -161,7 +161,7 @@ namespace eosio { namespace vm {
    template <typename... Alternatives>
    class variant {
       static_assert(sizeof...(Alternatives) <= std::numeric_limits<uint8_t>::max()+1,
-                    "eosio::vm::variant can only accept 256 alternatives");
+                    "core_net::vm::variant can only accept 256 alternatives");
       static_assert((... && (std::is_trivially_copy_constructible_v<Alternatives> && std::is_trivially_move_constructible_v<Alternatives> &&
                     std::is_trivially_copy_assignable_v<Alternatives> && std::is_trivially_move_assignable_v<Alternatives> &&
                     std::is_trivially_destructible_v<Alternatives>)), "Variant requires trivial types");
@@ -259,4 +259,4 @@ namespace eosio { namespace vm {
       detail::variant_storage<Alternatives...> _storage;
    };
 
-}} // namespace eosio::vm
+}} // namespace core_net::vm

@@ -1,9 +1,9 @@
 #pragma once
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/merkle_legacy.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/merkle_legacy.hpp>
 #include <fc/io/raw.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 namespace detail {
 
@@ -198,6 +198,6 @@ class incremental_merkle_impl {
 
 typedef incremental_merkle_impl<digest_type> incremental_merkle_tree_legacy;
 
-} /// eosio::chain
+} /// core_net::chain
 
-FC_REFLECT( eosio::chain::incremental_merkle_tree_legacy, (_active_nodes)(_node_count) );
+FC_REFLECT( core_net::chain::incremental_merkle_tree_legacy, (_active_nodes)(_node_count) );

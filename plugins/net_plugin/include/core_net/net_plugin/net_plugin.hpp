@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/chain/application.hpp>
-#include <eosio/net_plugin/protocol.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
-#include <eosio/producer_plugin/producer_plugin.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/net_plugin/protocol.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
 
-namespace eosio {
+namespace core_net {
    using namespace appbase;
 
    struct connection_status {
@@ -24,7 +24,7 @@ namespace eosio {
    };
 
    struct gossip_peer {
-      eosio::name               producer_name;
+      core_net::name               producer_name;
       std::string               server_endpoint;      // externally available address to connect to
       std::string               outbound_ip_address;  // outbound ip address for firewall
       block_timestamp_type      expiration;           // head block to remove bp_peer
@@ -112,7 +112,7 @@ namespace eosio {
 
 }
 
-FC_REFLECT( eosio::connection_status, (peer)(remote_ip)(remote_port)(connecting)(syncing)
+FC_REFLECT( core_net::connection_status, (peer)(remote_ip)(remote_port)(connecting)(syncing)
                                       (is_bp_peer)(is_bp_gossip_peer)(is_socket_open)(is_blocks_only)(is_transactions_only)
                                       (last_vote_received)(last_handshake) )
-FC_REFLECT( eosio::gossip_peer, (producer_name)(server_endpoint)(outbound_ip_address)(expiration) )
+FC_REFLECT( core_net::gossip_peer, (producer_name)(server_endpoint)(outbound_ip_address)(expiration) )

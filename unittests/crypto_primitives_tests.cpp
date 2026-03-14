@@ -1,8 +1,8 @@
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/webassembly/return_codes.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/webassembly/return_codes.hpp>
 
 #include <fc/variant_object.hpp>
 
@@ -12,9 +12,9 @@
 
 #include "fork_test_utilities.hpp"
 
-using namespace eosio::chain;
-using namespace eosio::testing;
-using namespace eosio::chain::webassembly;
+using namespace core_net::chain;
+using namespace core_net::testing;
+using namespace core_net::chain::webassembly;
 using namespace std::literals;
 
 using bytes = std::vector<char>;
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_CASE( modexp_subjective_limit_test ) { try {
                                        ("modulo", h2bin("0F"))
                                        ("expected_error", static_cast<int32_t>(return_code::success))
                                        ("expected_result", h2bin("01"))),
-                         eosio::chain::subjective_block_production_exception,
+                         core_net::chain::subjective_block_production_exception,
                          fc_exception_message_is("mod_exp restriction: exponent bit size cannot exceed bit size of either base or modulus")
    );
 
@@ -570,7 +570,7 @@ BOOST_AUTO_TEST_CASE( modexp_subjective_limit_test ) { try {
                                        ("modulo", modulus)
                                        ("expected_error", static_cast<int32_t>(return_code::success))
                                        ("expected_result", expected_result)),
-                         eosio::chain::subjective_block_production_exception,
+                         core_net::chain::subjective_block_production_exception,
                          fc_exception_message_is("mod_exp restriction: bit size too large for input arguments")
    );
 

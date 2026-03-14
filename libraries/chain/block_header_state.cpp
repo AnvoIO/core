@@ -1,11 +1,11 @@
-#include <eosio/chain/block_header_state.hpp>
-#include <eosio/chain/block_header_state_utils.hpp>
-#include <eosio/chain/finality_extension.hpp>
-#include <eosio/chain/proposer_policy.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/block_header_state.hpp>
+#include <core_net/chain/block_header_state_utils.hpp>
+#include <core_net/chain/finality_extension.hpp>
+#include <core_net/chain/proposer_policy.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <limits>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 // this is a versioning scheme that is separate from protocol features that only
 // gets updated if a protocol feature causes a breaking change to light block
@@ -539,5 +539,5 @@ block_header_state block_header_state::next(const signed_block_header& h, valida
    return next_header_state;
 }
 
-} // namespace eosio::chain
+} // namespace core_net::chain
 

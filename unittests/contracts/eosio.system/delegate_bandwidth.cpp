@@ -1,12 +1,12 @@
 #include "eosio.system.hpp"
 
-#include <eosio/eosio.hpp>
-#include <eosio/print.hpp>
-#include <eosio/datastream.hpp>
-#include <eosio/serialize.hpp>
-#include <eosio/multi_index.hpp>
-#include <eosio/privileged.hpp>
-#include <eosio/transaction.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/print.hpp>
+#include <core_net/datastream.hpp>
+#include <core_net/serialize.hpp>
+#include <core_net/multi_index.hpp>
+#include <core_net/privileged.hpp>
+#include <core_net/transaction.hpp>
 
 #include <eosio.token.hpp>
 
@@ -15,19 +15,19 @@
 #include <map>
 
 namespace eosiosystem {
-using eosio::asset;
-using eosio::indexed_by;
-using eosio::const_mem_fun;
-using eosio::print;
-using eosio::permission_level;
-using eosio::time_point_sec;
+using core_net::asset;
+using core_net::indexed_by;
+using core_net::const_mem_fun;
+using core_net::print;
+using core_net::permission_level;
+using core_net::time_point_sec;
 using std::map;
 using std::pair;
 
 static constexpr uint32_t refund_delay_sec = 3*24*3600;
 static constexpr int64_t  ram_gift_bytes = 1400;
 
-struct [[eosio::table, eosio::contract("eosio.system")]] user_resources {
+struct [[core_net::table, core_net::contract("eosio.system")]] user_resources {
    name          owner;
    asset         net_weight;
    asset         cpu_weight;
@@ -44,7 +44,7 @@ struct [[eosio::table, eosio::contract("eosio.system")]] user_resources {
 /**
  *  Every user 'from' has a scope/table that uses every receipient 'to' as the primary key.
  */
-struct [[eosio::table, eosio::contract("eosio.system")]] delegated_bandwidth {
+struct [[core_net::table, core_net::contract("eosio.system")]] delegated_bandwidth {
    name          from;
    name          to;
    asset         net_weight;
@@ -58,11 +58,11 @@ struct [[eosio::table, eosio::contract("eosio.system")]] delegated_bandwidth {
 
 };
 
-struct [[eosio::table, eosio::contract("eosio.system")]] refund_request {
+struct [[core_net::table, core_net::contract("eosio.system")]] refund_request {
    name            owner;
    time_point_sec  request_time;
-   eosio::asset    net_amount;
-   eosio::asset    cpu_amount;
+   core_net::asset    net_amount;
+   core_net::asset    cpu_amount;
 
    bool is_empty()const { return net_amount.amount == 0 && cpu_amount.amount == 0; }
    uint64_t  primary_key()const { return owner.value; }
@@ -75,9 +75,9 @@ struct [[eosio::table, eosio::contract("eosio.system")]] refund_request {
  *  These tables are designed to be constructed in the scope of the relevant user, this
  *  facilitates simpler API for per-user queries
  */
-typedef eosio::multi_index< "userres"_n, user_resources >      user_resources_table;
-typedef eosio::multi_index< "delband"_n, delegated_bandwidth > del_bandwidth_table;
-typedef eosio::multi_index< "refunds"_n, refund_request >      refunds_table;
+typedef core_net::multi_index< "userres"_n, user_resources >      user_resources_table;
+typedef core_net::multi_index< "delband"_n, delegated_bandwidth > del_bandwidth_table;
+typedef core_net::multi_index< "refunds"_n, refund_request >      refunds_table;
 
 
 
@@ -120,13 +120,13 @@ void system_contract::buyram( name payer, name receiver, asset quant )
    // quant_after_fee.amount should be > 0 if quant.amount > 1.
    // If quant.amount == 1, then quant_after_fee.amount == 0 and the next inline transfer will fail causing the buyram action to fail.
 
-   INLINE_ACTION_SENDER(eosio::token, transfer)(
+   INLINE_ACTION_SENDER(core_net::token, transfer)(
          token_account, { {payer, active_permission}, {ram_account, active_permission} },
          { payer, ram_account, quant_after_fee, std::string("buy ram") }
    );
 
    if( fee.amount > 0 ) {
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
+      INLINE_ACTION_SENDER(core_net::token, transfer)(
             token_account, { {payer, active_permission} },
             { payer, ramfee_account, fee, std::string("ram fee") }
       );
@@ -199,7 +199,7 @@ void system_contract::sellram( name account, int64_t bytes ) {
    });
    set_resource_limits( res_itr->owner, res_itr->ram_bytes + ram_gift_bytes, res_itr->net_weight.amount, res_itr->cpu_weight.amount );
 
-   INLINE_ACTION_SENDER(eosio::token, transfer)(
+   INLINE_ACTION_SENDER(core_net::token, transfer)(
          token_account, { {ram_account, active_permission}, {account, active_permission} },
          { ram_account, account, asset(tokens_out), std::string("sell ram") }
    );
@@ -207,7 +207,7 @@ void system_contract::sellram( name account, int64_t bytes ) {
    auto fee = ( tokens_out.amount + 199 ) / 200; /// .5% fee (round up)
    // since tokens_out.amount was asserted to be at least 2 earlier, fee.amount < tokens_out.amount
    if( fee > 0 ) {
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
+      INLINE_ACTION_SENDER(core_net::token, transfer)(
             token_account, { {account, active_permission} },
             { account, ramfee_account, asset(fee, core_symbol()), std::string("sell ram fee") }
       );
@@ -360,7 +360,7 @@ void system_contract::changebw( name from, name receiver,
       } /// end if is_delegating_to_self || is_undelegating
 
       if ( need_deferred_trx ) {
-         eosio::transaction out;
+         core_net::transaction out;
          out.actions.emplace_back( permission_level{from, active_permission},
                                    _self, "refund"_n,
                                    from
@@ -374,7 +374,7 @@ void system_contract::changebw( name from, name receiver,
 
       auto transfer_amount = net_balance + cpu_balance;
       if ( 0 < transfer_amount.amount ) {
-         INLINE_ACTION_SENDER(eosio::token, transfer)(
+         INLINE_ACTION_SENDER(core_net::token, transfer)(
                token_account, { {source_stake_from, active_permission} },
                { source_stake_from, stake_account, asset(transfer_amount), std::string("stake bandwidth") }
          );
@@ -445,7 +445,7 @@ void system_contract::refund( const name owner ) {
    check( req->request_time + seconds(refund_delay_sec) <= current_time_point(),
           "refund is not available yet" );
 
-   INLINE_ACTION_SENDER(eosio::token, transfer)(
+   INLINE_ACTION_SENDER(core_net::token, transfer)(
          token_account, { {stake_account, active_permission}, {req->owner, active_permission} },
          { stake_account, req->owner, req->net_amount + req->cpu_amount, std::string("unstake") }
    );

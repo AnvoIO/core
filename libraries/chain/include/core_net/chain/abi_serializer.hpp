@@ -1,15 +1,15 @@
 #pragma once
-#include <eosio/chain/abi_def.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/contract_types.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/abi_def.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/contract_types.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <utility>
 #include <fc/variant_object.hpp>
 #include <fc/variant_dynamic_bitset.hpp>
 #include <fc/scoped_exit.hpp>
 #include <fc/time.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 using std::map;
 using std::string;
@@ -959,7 +959,7 @@ namespace impl {
       const variant_object& vo = v.get_object();
       fc::reflector<M>::visit( abi_from_variant_visitor<M, decltype(resolver)>( vo, o, resolver, ctx ) );
    }
-} /// namespace eosio::chain::impl
+} /// namespace core_net::chain::impl
 
 template<typename T, typename Resolver>
 void abi_serializer::to_variant( const T& o, fc::variant& vo, const Resolver& resolver, const yield_function_t& yield ) try {
@@ -1116,4 +1116,4 @@ private:
 };
       
 
-} // eosio::chain
+} // core_net::chain

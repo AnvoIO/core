@@ -1,9 +1,9 @@
 #pragma once
 
 #include <fc/exception/exception.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/wasm_eosio_binary_ops.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/wasm_binary_ops.hpp>
 #include <functional>
 #include <vector>
 #include <iostream>
@@ -11,7 +11,7 @@
 #include "IR/Operators.h"
 #include "WASM/WASM.h"
 
-namespace eosio { namespace chain { namespace wasm_validations {
+namespace core_net { namespace chain { namespace wasm_validations {
 
    // module validators
    // effectively do nothing and pass
@@ -330,7 +330,7 @@ namespace eosio { namespace chain { namespace wasm_validations {
                                                                              maximum_function_stack_visitor,
                                                                              ensure_apply_exported_visitor>;
       public:
-         wasm_binary_validation( const eosio::chain::controller& control, IR::Module& mod ) : _module( &mod ) {
+         wasm_binary_validation( const core_net::chain::controller& control, IR::Module& mod ) : _module( &mod ) {
             // initialize validators here
             nested_validator::init(!control.is_speculative_block());
          }
@@ -338,7 +338,7 @@ namespace eosio { namespace chain { namespace wasm_validations {
          void validate() {
             _module_validators.validate( *_module );
             for ( auto& fd : _module->functions.defs ) {
-               wasm_ops::EOSIO_OperatorDecoderStream<op_constrainers> decoder(fd.code);
+               wasm_ops::CORE_NET_OperatorDecoderStream<op_constrainers> decoder(fd.code);
                while ( decoder ) {
                   wasm_ops::instruction_stream new_code(0);
                   auto op = decoder.decodeOp();

@@ -3,11 +3,11 @@
 
 #include <fc/variant_object.hpp>
 
-#include <eosio/resource_monitor_plugin/resource_monitor_plugin.hpp>
+#include <core_net/resource_monitor_plugin/resource_monitor_plugin.hpp>
 
 #include <thread>
 
-using namespace eosio;
+using namespace core_net;
 using namespace boost::system;
 
 

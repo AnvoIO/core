@@ -1,20 +1,20 @@
-#include <eosio/chain/webassembly/interface.hpp>
-#include <eosio/chain/webassembly/eos-vm.hpp>
-#include <eosio/chain/wasm_interface.hpp>
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/producer_schedule.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/webassembly/interface.hpp>
+#include <core_net/chain/webassembly/eos-vm.hpp>
+#include <core_net/chain/wasm_interface.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/producer_schedule.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <boost/core/ignore_unused.hpp>
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/wasm_interface_private.hpp>
-#include <eosio/chain/wasm_eosio_validation.hpp>
-#include <eosio/chain/wasm_eosio_injection.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/protocol_state_object.hpp>
-#include <eosio/chain/account_object.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/wasm_interface_private.hpp>
+#include <core_net/chain/wasm_validation.hpp>
+#include <core_net/chain/wasm_injection.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/protocol_state_object.hpp>
+#include <core_net/chain/account_object.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/sha256.hpp>
 #include <fc/crypto/sha1.hpp>
@@ -26,11 +26,11 @@
 #include <fstream>
 #include <string.h>
 
-#if defined(EOSIO_EOS_VM_RUNTIME_ENABLED) || defined(EOSIO_EOS_VM_JIT_RUNTIME_ENABLED)
-#include <eosio/vm/allocator.hpp>
+#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
+#include <core_net/vm/allocator.hpp>
 #endif
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    wasm_interface::wasm_interface(vm_type vm, vm_oc_enable eosvmoc_tierup, const chainbase::database& d,
                                   platform_timer& main_thread_timer, const std::filesystem::path data_dir, const eosvmoc::config& eosvmoc_config, bool profile)
@@ -38,7 +38,7 @@ namespace eosio { namespace chain {
 
    wasm_interface::~wasm_interface() {}
 
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
    void wasm_interface::init_thread_local_data() {
       // OC tierup and OC runtime are mutually exclusive
       if (my->eosvmoc) {
@@ -97,7 +97,7 @@ namespace eosio { namespace chain {
       return my->is_code_cached(code_hash, vm_type, vm_version);
    }
 
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
    bool wasm_interface::is_eos_vm_oc_enabled() const {
       return my->is_eos_vm_oc_enabled();
    }
@@ -110,7 +110,7 @@ namespace eosio { namespace chain {
    wasm_instantiated_module_interface::~wasm_instantiated_module_interface() = default;
    wasm_runtime_interface::~wasm_runtime_interface() = default;
 
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
    thread_local std::unique_ptr<eosvmoc::executor> wasm_interface_impl::eosvmoc_tier::exec{};
    thread_local std::unique_ptr<eosvmoc::memory>   wasm_interface_impl::eosvmoc_tier::mem{};
 #endif
@@ -119,14 +119,14 @@ std::istream& operator>>(std::istream& in, wasm_interface::vm_type& runtime) {
    std::string s;
    in >> s;
    if (s == "eos-vm")
-      runtime = eosio::chain::wasm_interface::vm_type::eos_vm;
+      runtime = core_net::chain::wasm_interface::vm_type::eos_vm;
    else if (s == "eos-vm-jit")
-      runtime = eosio::chain::wasm_interface::vm_type::eos_vm_jit;
+      runtime = core_net::chain::wasm_interface::vm_type::eos_vm_jit;
    else if (s == "eos-vm-oc-forced")
-      runtime = eosio::chain::wasm_interface::vm_type::eos_vm_oc;
+      runtime = core_net::chain::wasm_interface::vm_type::eos_vm_oc;
    else
       in.setstate(std::ios_base::failbit);
    return in;
 }
 
-} } /// eosio::chain
+} } /// core_net::chain

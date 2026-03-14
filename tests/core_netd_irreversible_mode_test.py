@@ -162,17 +162,17 @@ try:
          0:"--enable-stale-production",
          4:"--read-mode irreversible",
          6:"--read-mode irreversible",
-         9:"--plugin eosio::producer_api_plugin",
+         9:"--plugin core_net::producer_api_plugin",
         10:"--read-mode speculative",
         11:"--read-mode irreversible",
         12:"--read-mode speculative",
         13:"--read-mode irreversible",
-        14:"--read-mode speculative --plugin eosio::producer_api_plugin",
+        14:"--read-mode speculative --plugin core_net::producer_api_plugin",
         15:"--read-mode speculative",
         16:"--read-mode irreversible",
         17:"--read-mode speculative",
         18:"--read-mode irreversible",
-        19:"--read-mode speculative --plugin eosio::producer_api_plugin"
+        19:"--read-mode speculative --plugin core_net::producer_api_plugin"
         })
 
    producingNodeId = 0

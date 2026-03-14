@@ -1,10 +1,10 @@
 #pragma once
 
 #include <fc/filesystem.hpp>
-#include <eosio/chain/abi_def.hpp>
+#include <core_net/chain/abi_def.hpp>
 
-namespace eosio::trace_api::configuration_utils {
-   using namespace eosio;
+namespace core_net::trace_api::configuration_utils {
+   using namespace core_net;
 
    /**
     * Given a path (absolute or relative) to a file that contains a JSON-encoded ABI, return the parsed ABI

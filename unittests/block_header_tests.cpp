@@ -1,7 +1,7 @@
-#include <eosio/chain/block_header.hpp>
+#include <core_net/chain/block_header.hpp>
 #include <boost/test/unit_test.hpp>
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 BOOST_AUTO_TEST_SUITE(block_header_tests)
 

@@ -1,11 +1,11 @@
 #include <boost/test/unit_test.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/fork_database.hpp>
-#include <eosio/chain/unapplied_transaction_queue.hpp>
-#include <eosio/chain/contract_types.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/fork_database.hpp>
+#include <core_net/chain/unapplied_transaction_queue.hpp>
+#include <core_net/chain/contract_types.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
+using namespace core_net;
+using namespace core_net::chain;
 
 BOOST_AUTO_TEST_SUITE(unapplied_transaction_queue_tests)
 
@@ -39,10 +39,10 @@ auto create_test_block_state( deque<transaction_metadata_ptr> trx_metas ) {
       block->transactions.emplace_back( *trx_meta->packed_trx() );
    }
 
-   block->producer = eosio::chain::config::system_account_name;
+   block->producer = core_net::chain::config::system_account_name;
 
-   auto priv_key = eosio::testing::base_tester::get_private_key( block->producer, "active" );
-   auto pub_key  = eosio::testing::base_tester::get_public_key( block->producer, "active" );
+   auto priv_key = core_net::testing::base_tester::get_private_key( block->producer, "active" );
+   auto pub_key  = core_net::testing::base_tester::get_public_key( block->producer, "active" );
 
    auto prev = std::make_shared<block_state_legacy>();
    auto header_bmroot = digest_type::hash( std::make_pair( block->digest(), prev->blockroot_merkle.get_root() ) );

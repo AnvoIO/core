@@ -1,13 +1,13 @@
 #pragma once
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/platform_timer.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/platform_timer.hpp>
 
-namespace eosio::benchmark {
+namespace core_net::benchmark {
    struct interface_in_benchmark; // for benchmark testing
 }
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    struct transaction_checktime_timer {
       public:
@@ -138,7 +138,7 @@ namespace eosio::chain {
 
          template <typename DigestType>
          inline DigestType hash_with_checktime( const char* data, uint32_t datalen )const {
-            const size_t bs = eosio::chain::config::hashing_checktime_block_size;
+            const size_t bs = core_net::chain::config::hashing_checktime_block_size;
             typename DigestType::encoder enc;
             while ( datalen > bs ) {
                enc.write( data, bs );
@@ -270,4 +270,4 @@ namespace eosio::chain {
          tx_cpu_usage_exceeded_reason  tx_cpu_usage_reason = tx_cpu_usage_exceeded_reason::account_cpu_limit;
    };
 
-} // namespace eosio::chain
+} // namespace core_net::chain

@@ -1,11 +1,11 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/algorithm/string/predicate.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/wast_to_wasm.hpp>
-#include <eosio/chain/eosio_contract.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/testing/bls_utils.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/wast_to_wasm.hpp>
+#include <core_net/chain/system_contract.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/testing/bls_utils.hpp>
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
@@ -16,14 +16,14 @@
 
 namespace bio = boost::iostreams;
 
-eosio::chain::asset core_from_string(const std::string& s) {
-  return eosio::chain::asset::from_string(s + " " CORE_SYMBOL_NAME);
+core_net::chain::asset core_from_string(const std::string& s) {
+  return core_net::chain::asset::from_string(s + " " CORE_SYMBOL_NAME);
 }
 
 using bls_private_key = fc::crypto::blslib::bls_private_key;
 using bls_public_key = fc::crypto::blslib::bls_public_key;
 
-namespace eosio::testing {
+namespace core_net::testing {
 
    fc::logger test_logger = fc::logger::get();
 
@@ -1110,7 +1110,7 @@ namespace eosio::testing {
       push_transaction( trx );
    }
 
-   bool base_tester::is_code_cached( eosio::chain::account_name name ) const {
+   bool base_tester::is_code_cached( core_net::chain::account_name name ) const {
       const auto& db  = control->db();
       const account_metadata_object* receiver_account = &db.template get<account_metadata_object,by_name>( name );
       if ( receiver_account->code_hash == digest_type() ) return false;
@@ -1233,18 +1233,18 @@ namespace eosio::testing {
    }
 
    void base_tester::set_before_preactivate_bios_contract() {
-      set_code(config::system_account_name, contracts::before_preactivate_eosio_bios_wasm());
-      set_abi(config::system_account_name, contracts::before_preactivate_eosio_bios_abi());
+      set_code(config::system_account_name, contracts::before_preactivate_core_net_bios_wasm());
+      set_abi(config::system_account_name, contracts::before_preactivate_core_net_bios_abi());
    }
 
    void base_tester::set_before_producer_authority_bios_contract() {
-      set_code(config::system_account_name, contracts::before_producer_authority_eosio_bios_wasm());
-      set_abi(config::system_account_name, contracts::before_producer_authority_eosio_bios_abi());
+      set_code(config::system_account_name, contracts::before_producer_authority_core_net_bios_wasm());
+      set_abi(config::system_account_name, contracts::before_producer_authority_core_net_bios_abi());
    }
 
    void base_tester::set_bios_contract() {
-      set_code(config::system_account_name, contracts::eosio_bios_wasm());
-      set_abi(config::system_account_name, contracts::eosio_bios_abi());
+      set_code(config::system_account_name, contracts::core_net_bios_wasm());
+      set_abi(config::system_account_name, contracts::core_net_bios_abi());
    }
 
 
@@ -1580,7 +1580,7 @@ namespace eosio::testing {
       return match;
    }
 
-   bool eosio_assert_message_is::operator()( const eosio_assert_message_exception& ex ) {
+   bool eosio_assert_message_is::operator()( const core_net_assert_message_exception& ex ) {
       auto message = ex.get_log().at( 0 ).get_message();
       bool match = (message == expected);
       if( !match ) {
@@ -1589,7 +1589,7 @@ namespace eosio::testing {
       return match;
    }
 
-   bool eosio_assert_message_starts_with::operator()( const eosio_assert_message_exception& ex ) {
+   bool eosio_assert_message_starts_with::operator()( const core_net_assert_message_exception& ex ) {
       auto message = ex.get_log().at( 0 ).get_message();
       bool match = boost::algorithm::starts_with( message, expected );
       if( !match ) {
@@ -1598,7 +1598,7 @@ namespace eosio::testing {
       return match;
    }
 
-   bool eosio_assert_code_is::operator()( const eosio_assert_code_exception& ex ) {
+   bool eosio_assert_code_is::operator()( const core_net_assert_code_exception& ex ) {
       auto message = ex.get_log().at( 0 ).get_message();
       bool match = (message == expected);
       if( !match ) {
@@ -1609,7 +1609,7 @@ namespace eosio::testing {
 
    const std::string mock::webauthn_private_key::_origin = "mock.webauthn.invalid";
    const sha256 mock::webauthn_private_key::_origin_hash = fc::sha256::hash(mock::webauthn_private_key::_origin);
-}  /// eosio::testing
+}  /// core_net::testing
 
 std::ostream& operator<<( std::ostream& osm, const fc::variant& v ) {
    //fc::json::to_stream( osm, v );

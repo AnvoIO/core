@@ -4,14 +4,14 @@
  */
 #pragma once
 
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 
 #include <array>
 #include <algorithm>
 #include <functional>
 #include <type_traits>
 
-namespace eosio {
+namespace core_net {
 
    /// @cond IMPLEMENTATIONS
 

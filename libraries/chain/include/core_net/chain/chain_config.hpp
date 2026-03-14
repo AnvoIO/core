@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/chain_config_helper.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/chain_config_helper.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 /**
  * @brief Producer-voted blockchain configuration parameters
@@ -196,9 +196,9 @@ struct config_entry_validator{
 using chain_config = chain_config_v1;
 using config_range = data_range<chain_config, config_entry_validator>;
 
-} } // namespace eosio::chain
+} } // namespace core_net::chain
 
-FC_REFLECT(eosio::chain::chain_config_v0,
+FC_REFLECT(core_net::chain::chain_config_v0,
            (max_block_net_usage)(target_block_net_usage_pct)
            (max_transaction_net_usage)(base_per_transaction_net_usage)(net_usage_leeway)
            (context_free_discount_net_usage_num)(context_free_discount_net_usage_den)
@@ -211,7 +211,7 @@ FC_REFLECT(eosio::chain::chain_config_v0,
 
 )
 
-FC_REFLECT_DERIVED(eosio::chain::chain_config_v1, (eosio::chain::chain_config_v0), 
+FC_REFLECT_DERIVED(core_net::chain::chain_config_v1, (core_net::chain::chain_config_v0), 
            (max_action_return_value_size)
 )
 
@@ -225,8 +225,8 @@ namespace fc {
  * @throws config_parse_error if id is unknown
  */
 template <typename DataStream>
-inline DataStream &operator<<(DataStream &s, const eosio::chain::data_entry<eosio::chain::chain_config_v0, eosio::chain::config_entry_validator> &entry){
-   using namespace eosio::chain;
+inline DataStream &operator<<(DataStream &s, const core_net::chain::data_entry<core_net::chain::chain_config_v0, core_net::chain::config_entry_validator> &entry){
+   using namespace core_net::chain;
 
    //initial requirements were to skip packing field if it is not activated.
    //this approach allows to spam this function with big buffer so changing this behavior
@@ -298,15 +298,15 @@ inline DataStream &operator<<(DataStream &s, const eosio::chain::data_entry<eosi
  * @throws unsupported_feature if protocol feature for particular id is not activated
  */
 template <typename DataStream>
-inline DataStream &operator<<(DataStream &s, const eosio::chain::data_entry<eosio::chain::chain_config_v1, eosio::chain::config_entry_validator> &entry){
-   using namespace eosio::chain;
+inline DataStream &operator<<(DataStream &s, const core_net::chain::data_entry<core_net::chain::chain_config_v1, core_net::chain::config_entry_validator> &entry){
+   using namespace core_net::chain;
 
    //initial requirements were to skip packing field if it is not activated.
    //this approach allows to spam this function with big buffer so changing this behavior
    //moreover:
    //The contract has no way to know that the value was skipped and is likely to behave incorrectly.
-   //When the protocol feature is not activated, the old version of nodeos that doesn't know about 
-   //the entry MUST behave the same as the new version of nodeos that does.
+   //When the protocol feature is not activated, the old version of core_netd that doesn't know about 
+   //the entry MUST behave the same as the new version of core_netd that does.
    //Skipping known but unactivated entries violates this.
    EOS_ASSERT(entry.is_allowed(), unsupported_feature, "config id ${id} is no allowed", ("id", entry.id));
    
@@ -330,10 +330,10 @@ inline DataStream &operator<<(DataStream &s, const eosio::chain::data_entry<eosi
  * @throws unsupported_feature if protocol feature for particular id is not activated
  */
 template <typename DataStream>
-inline DataStream &operator>>(DataStream &s, eosio::chain::data_entry<eosio::chain::chain_config_v0, eosio::chain::config_entry_validator> &entry){
-   using namespace eosio::chain;
+inline DataStream &operator>>(DataStream &s, core_net::chain::data_entry<core_net::chain::chain_config_v0, core_net::chain::config_entry_validator> &entry){
+   using namespace core_net::chain;
 
-   EOS_ASSERT(entry.is_allowed(), eosio::chain::unsupported_feature, "config id ${id} is no allowed", ("id", entry.id));
+   EOS_ASSERT(entry.is_allowed(), core_net::chain::unsupported_feature, "config id ${id} is no allowed", ("id", entry.id));
 
    switch (entry.id){
       case chain_config_v0::max_block_net_usage_id:
@@ -388,7 +388,7 @@ inline DataStream &operator>>(DataStream &s, eosio::chain::data_entry<eosio::cha
       fc::raw::unpack(s, entry.config.max_authority_depth);
       break;
       default:
-      FC_THROW_EXCEPTION(eosio::chain::config_parse_error, "DataStream& operator<<: no such id: ${id}", ("id", entry.id));
+      FC_THROW_EXCEPTION(core_net::chain::config_parse_error, "DataStream& operator<<: no such id: ${id}", ("id", entry.id));
    }
    
    return s;
@@ -402,8 +402,8 @@ inline DataStream &operator>>(DataStream &s, eosio::chain::data_entry<eosio::cha
  * @throws unsupported_feature if protocol feature for particular id is not activated
  */
 template <typename DataStream>
-inline DataStream &operator>>(DataStream &s, eosio::chain::data_entry<eosio::chain::chain_config_v1, eosio::chain::config_entry_validator> &entry){
-   using namespace eosio::chain;
+inline DataStream &operator>>(DataStream &s, core_net::chain::data_entry<core_net::chain::chain_config_v1, core_net::chain::config_entry_validator> &entry){
+   using namespace core_net::chain;
 
    EOS_ASSERT(entry.is_allowed(), unsupported_feature, "config id ${id} is no allowed", ("id", entry.id));
 
@@ -412,7 +412,7 @@ inline DataStream &operator>>(DataStream &s, eosio::chain::data_entry<eosio::cha
       fc::raw::unpack(s, entry.config.max_action_return_value_size);
       break;
       default:
-      eosio::chain::data_entry<chain_config_v0, config_entry_validator> base_entry(entry);
+      core_net::chain::data_entry<chain_config_v0, config_entry_validator> base_entry(entry);
       fc::raw::unpack(s, base_entry);
    }
 
@@ -427,8 +427,8 @@ inline DataStream &operator>>(DataStream &s, eosio::chain::data_entry<eosio::cha
  * @throws config_parse_error on duplicate or unknown id in selection
  */
 template<typename DataStream, typename T>
-inline DataStream& operator<<( DataStream& s, const eosio::chain::data_range<T, eosio::chain::config_entry_validator>& selection ) {
-   using namespace eosio::chain;
+inline DataStream& operator<<( DataStream& s, const core_net::chain::data_range<T, core_net::chain::config_entry_validator>& selection ) {
+   using namespace core_net::chain;
    
    fc::unsigned_int size = selection.ids.size();
    fc::raw::pack(s, size);
@@ -456,8 +456,8 @@ inline DataStream& operator<<( DataStream& s, const eosio::chain::data_range<T, 
  * @throws config_parse_error on duplicate or unknown id in stream
  */
 template<typename DataStream, typename T>
-inline DataStream& operator>>( DataStream& s, eosio::chain::data_range<T, eosio::chain::config_entry_validator>& selection ) {
-   using namespace eosio::chain;
+inline DataStream& operator>>( DataStream& s, core_net::chain::data_range<T, core_net::chain::config_entry_validator>& selection ) {
+   using namespace core_net::chain;
    
    fc::unsigned_int length;
    fc::raw::unpack(s, length);

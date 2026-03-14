@@ -1,10 +1,10 @@
 #pragma once
 #include <fc/variant.hpp>
-#include <eosio/trace_api/trace.hpp>
-#include <eosio/chain/abi_def.hpp>
-#include <eosio/chain/protocol_feature_activation.hpp>
+#include <core_net/trace_api/trace.hpp>
+#include <core_net/chain/abi_def.hpp>
+#include <core_net/chain/protocol_feature_activation.hpp>
 
-namespace eosio { namespace trace_api {
+namespace core_net { namespace trace_api {
 
    using data_log_entry = std::variant<
       block_trace_v0,

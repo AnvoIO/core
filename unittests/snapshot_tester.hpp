@@ -1,8 +1,8 @@
 #pragma once
 
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/snapshot.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/snapshot.hpp>
+#include <core_net/testing/tester.hpp>
 
 
 inline std::filesystem::path get_parent_path(std::filesystem::path blocks_dir, int ordinal) {

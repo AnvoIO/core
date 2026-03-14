@@ -1,10 +1,10 @@
 #pragma once
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/merkle.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/merkle.hpp>
 #include <fc/io/raw.hpp>
 #include <bit>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 /**
  * A balanced merkle tree built in such that the set of leaf nodes can be
@@ -92,6 +92,6 @@ private:
                                       // invariant: `trees.size() == detail::popcount(mask)`
 };
 
-} /// eosio::chain
+} /// core_net::chain
 
-FC_REFLECT( eosio::chain::incremental_merkle_tree, (mask)(trees) );
+FC_REFLECT( core_net::chain::incremental_merkle_tree, (mask)(trees) );

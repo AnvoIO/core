@@ -1,7 +1,7 @@
-#include <eosio/chain/peer_keys_db.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
+#include <core_net/chain/peer_keys_db.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 std::optional<peer_info_t> peer_keys_db_t::get_peer_info(name n) const {
    fc::lock_guard g(_m);
@@ -58,4 +58,4 @@ void peer_keys_db_t::update_peer_keys(block_num_type block_num, const getpeerkey
       _configured_bp_peers_updated = true;
 }
 
-} // namespace eosio::chain
+} // namespace core_net::chain

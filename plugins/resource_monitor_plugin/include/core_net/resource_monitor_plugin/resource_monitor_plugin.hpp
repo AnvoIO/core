@@ -1,8 +1,8 @@
 #pragma once
-#include <eosio/chain//application.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
+#include <core_net/chain//application.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
 
-namespace eosio {
+namespace core_net {
 
 using namespace appbase;
 

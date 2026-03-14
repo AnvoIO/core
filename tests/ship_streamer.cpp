@@ -2,8 +2,8 @@
 #include <boost/beast.hpp>
 #include <boost/program_options.hpp>
 
-#include <eosio/chain/abi_def.hpp>
-#include <eosio/chain/abi_serializer.hpp>
+#include <core_net/chain/abi_def.hpp>
+#include <core_net/chain/abi_serializer.hpp>
 #include <fc/io/json.hpp>
 
 #include <map>
@@ -16,13 +16,13 @@ using mvo = fc::mutable_variant_object;
 
 namespace bpo = boost::program_options;
 
-static const eosio::chain::abi_serializer::yield_function_t null_yield_function{};
+static const core_net::chain::abi_serializer::yield_function_t null_yield_function{};
 
 int main(int argc, char* argv[]) {
    boost::asio::io_context ctx;
    boost::asio::ip::tcp::resolver resolver(ctx);
    boost::beast::websocket::stream<boost::asio::ip::tcp::socket> stream(ctx);
-   eosio::chain::abi_serializer abi;
+   core_net::chain::abi_serializer abi;
 
    bpo::options_description cli("ship_streamer command line options");
    bool help = false;
@@ -72,10 +72,10 @@ int main(int argc, char* argv[]) {
          std::regex scrub_all_tables(R"(\{ "name": "[^"]+", "type": "[^"]+", "key_names": \[[^\]]*\] \},?)");
          abi_string = std::regex_replace(abi_string, scrub_all_tables, "");
 
-         abi = eosio::chain::abi_serializer(fc::json::from_string(abi_string).as<eosio::chain::abi_def>(), null_yield_function);
+         abi = core_net::chain::abi_serializer(fc::json::from_string(abi_string).as<core_net::chain::abi_def>(), null_yield_function);
          //state history may have 'bytes' larger than MAX_SIZE_OF_BYTE_ARRAYS, so divert 'bytes' to an impl that does not have that check
-         abi.add_specialized_unpack_pack("bytes", std::make_pair<eosio::chain::abi_serializer::unpack_function, eosio::chain::abi_serializer::pack_function>(
-            [](fc::datastream<const char*>& stream, bool is_array, bool is_optional, const eosio::chain::abi_serializer::yield_function_t& yield) {
+         abi.add_specialized_unpack_pack("bytes", std::make_pair<core_net::chain::abi_serializer::unpack_function, core_net::chain::abi_serializer::pack_function>(
+            [](fc::datastream<const char*>& stream, bool is_array, bool is_optional, const core_net::chain::abi_serializer::yield_function_t& yield) {
                FC_ASSERT(!is_array, "sorry, this kludge doesn't support bytes[]");
                if(is_optional) {
                   bool present = false;
@@ -91,7 +91,7 @@ int main(int argc, char* argv[]) {
                stream.read(data.data(), sz);
                return fc::variant(fc::to_hex(data.data(),data.size()));
          },
-         [](const fc::variant&, fc::datastream<char*>&, bool, bool, const eosio::chain::abi_serializer::yield_function_t&) {
+         [](const fc::variant&, fc::datastream<char*>&, bool, bool, const core_net::chain::abi_serializer::yield_function_t&) {
             FC_ASSERT(false, "sorry, this kludge can't write out bytes");
          }));
       }
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
       //};
 
       stream.binary(true);
-      const eosio::chain::bytes get_status_bytes = abi.variant_to_binary("request",
+      const core_net::chain::bytes get_status_bytes = abi.variant_to_binary("request",
          fc::variants{"get_blocks_request_v1", mvo()("start_block_num", start_block_num)
                                                     ("end_block_num", std::to_string(end_block_num + 1)) // SHiP is (start-end] exclusive
                                                     ("max_messages_in_flight",std::to_string(std::numeric_limits<u_int32_t>::max()))

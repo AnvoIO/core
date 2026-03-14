@@ -5,8 +5,8 @@
 #include <type_traits>
 
 #include <fc/exception/exception.hpp>
-#include <eosio/chain/exceptions.hpp>
-namespace eosio {
+#include <core_net/chain/exceptions.hpp>
+namespace core_net {
 
    using chain::uint128_t;
 

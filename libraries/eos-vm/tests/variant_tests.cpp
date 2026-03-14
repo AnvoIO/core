@@ -1,9 +1,9 @@
-#include <eosio/vm/variant.hpp>
+#include <core_net/vm/variant.hpp>
 
 #include <catch2/catch.hpp>
 
-using namespace eosio;
-using namespace eosio::vm;
+using namespace core_net;
+using namespace core_net::vm;
 
 TEST_CASE("Testing variant with stateless class", "[variant_stateless_tests]") {
    struct vis {

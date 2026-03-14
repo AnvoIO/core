@@ -1,7 +1,7 @@
 #include <cmath>
 
-#include <eosio/eosio.hpp>
-#include <eosio/datastream.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/datastream.hpp>
 
 #include "test_api.hpp"
 
@@ -9,7 +9,7 @@ template <typename T>
 struct testtype {
     static void run( const T &v, const char *errmsg = "" )  {
         char buf[128];
-        eosio::datastream<char *> ds( buf, sizeof(buf) );
+        core_net::datastream<char *> ds( buf, sizeof(buf) );
         ds << v;
         T v2;
         ds.seekp(0);
@@ -22,7 +22,7 @@ template <>
 struct testtype<double> {
    static void run( const double &v, const char *errmsg = "" ) {
       char buf[128];
-      eosio::datastream<char *> ds( buf, sizeof(buf) );
+      core_net::datastream<char *> ds( buf, sizeof(buf) );
       ds << v;
       double v2;
       ds.seekp(0);
@@ -35,7 +35,7 @@ template <>
 struct testtype<float> {
    static void run( const float &v, const char *errmsg = "" ) {
       char buf[128];
-      eosio::datastream<char *> ds( buf, sizeof(buf) );
+      core_net::datastream<char *> ds( buf, sizeof(buf) );
       ds << v;
       float v2;
       ds.seekp(0);

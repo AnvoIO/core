@@ -1,13 +1,13 @@
 #pragma once
-#include <eosio/chain/block_timestamp.hpp>
-#include <eosio/chain/producer_schedule.hpp>
-#include <eosio/chain/protocol_feature_activation.hpp>
-#include <eosio/chain/finality_extension.hpp>
+#include <core_net/chain/block_timestamp.hpp>
+#include <core_net/chain/producer_schedule.hpp>
+#include <core_net/chain/protocol_feature_activation.hpp>
+#include <core_net/chain/finality_extension.hpp>
 
 #include <optional>
 #include <type_traits>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    namespace detail {
       template<typename... Ts>
@@ -110,11 +110,11 @@ namespace eosio::chain {
       signature_type    producer_signature;
    };
 
-} /// namespace eosio::chain
+} /// namespace core_net::chain
 
-FC_REFLECT(eosio::chain::block_header,
+FC_REFLECT(core_net::chain::block_header,
            (timestamp)(producer)(confirmed)(previous)
            (transaction_mroot)(action_mroot)
            (schedule_version)(new_producers)(header_extensions))
 
-FC_REFLECT_DERIVED(eosio::chain::signed_block_header, (eosio::chain::block_header), (producer_signature))
+FC_REFLECT_DERIVED(core_net::chain::signed_block_header, (core_net::chain::block_header), (producer_signature))

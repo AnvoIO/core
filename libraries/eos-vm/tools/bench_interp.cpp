@@ -1,12 +1,12 @@
-#include <eosio/vm/backend.hpp>
-#include <eosio/vm/error_codes.hpp>
-#include <eosio/vm/watchdog.hpp>
+#include <core_net/vm/backend.hpp>
+#include <core_net/vm/error_codes.hpp>
+#include <core_net/vm/watchdog.hpp>
 
 #include <chrono>
 #include <iostream>
 
-using namespace eosio;
-using namespace eosio::vm;
+using namespace core_net;
+using namespace core_net::vm;
 
 int main(int argc, char** argv) {
    wasm_allocator wa;
@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
       auto t4 = std::chrono::high_resolution_clock::now();
       std::cout << "Execution " << std::chrono::duration_cast<std::chrono::nanoseconds>(t4-t3).count() << "\n";
 
-   } catch ( const eosio::vm::exception& ex ) {
+   } catch ( const core_net::vm::exception& ex ) {
       auto t4 = std::chrono::high_resolution_clock::now();
       std::cout << "Execution " << std::chrono::duration_cast<std::chrono::nanoseconds>(t4-t3).count() << "\n";
       std::cerr << "eos-vm interpreter error\n";

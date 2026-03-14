@@ -1,8 +1,8 @@
 #include "test_api_db.hpp"
 
-using namespace eosio;
+using namespace core_net;
 
-using namespace eosio::internal_use_do_not_use;
+using namespace core_net::internal_use_do_not_use;
 
 void test_api_db::primary_i64_general()
 {
@@ -521,7 +521,7 @@ void test_api_db::test_invalid_access( name _code, uint64_t val, uint32_t index,
             break;
          }
       }
-      //eosio::print("test_invalid_access: stored ", value_to_store, "\n");
+      //core_net::print("test_invalid_access: stored ", value_to_store, "\n");
    } else {
       eosio_assert( itr >= 0, "test_invalid_access: could not find row" );
       switch(index) {
@@ -533,7 +533,7 @@ void test_api_db::test_invalid_access( name _code, uint64_t val, uint32_t index,
                           "test_invalid_access: value in primary table was incorrect size" );
          break;
       }
-      //eosio::print("test_invalid_access: expected ", val, " and retrieved ", value, "\n");
+      //core_net::print("test_invalid_access: expected ", val, " and retrieved ", value, "\n");
       eosio_assert( value == val, "test_invalid_access: value did not match" );
    }
 }
@@ -582,7 +582,7 @@ void test_api_db::idx_double_nan_lookup_fail( uint32_t lookup_type ) {
 
 void test_api_db::misaligned_secondary_key256_tests() {
    uint64_t receiver = get_self().value;
-   auto key = eosio::checksum256::make_from_word_sequence<uint64_t>( 0ULL, 0ULL, 0ULL, 42ULL );
+   auto key = core_net::checksum256::make_from_word_sequence<uint64_t>( 0ULL, 0ULL, 0ULL, 42ULL );
    char* ptr = (char*)(&key);
    ptr += 1;
    // test that store doesn't crash on unaligned data

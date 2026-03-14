@@ -1,13 +1,13 @@
 #include <boost/test/unit_test.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/wasm_eosio_constraints.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/wast_to_wasm.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/wasm_constraints.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/wast_to_wasm.hpp>
+#include <core_net/chain_plugin/chain_plugin.hpp>
 
 #include <test_contracts.hpp>
 
@@ -19,9 +19,9 @@
 #include <array>
 #include <utility>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace fc;
 
 static auto get_table_rows_full = [](chain_apis::read_only& plugin,
@@ -43,7 +43,7 @@ BOOST_FIXTURE_TEST_CASE( get_table_next_key_test, validating_tester ) try {
    set_abi( "test"_n, test_contracts::get_table_seckey_test_abi() );
    produce_block();
 
-   std::optional<eosio::chain_apis::tracked_votes> _tracked_votes;
+   std::optional<core_net::chain_apis::tracked_votes> _tracked_votes;
    chain_apis::read_only plugin(*(this->control), {}, {}, _tracked_votes, fc::microseconds::maximum(), fc::microseconds::maximum(), {});
    chain_apis::read_only::get_table_rows_params params = []{
       chain_apis::read_only::get_table_rows_params params{};

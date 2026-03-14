@@ -1,12 +1,12 @@
 #pragma once
-#include <eosio/chain/block_header.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/multi_index_includes.hpp>
+#include <core_net/chain/block_header.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/multi_index_includes.hpp>
 #include <boost/multi_index/hashed_index.hpp>
 
 namespace bmi = boost::multi_index;
 
-namespace eosio {
+namespace core_net {
    /**
     * @brief tracks status related to a transaction in the blockchain
     * @ingroup object
@@ -59,4 +59,4 @@ namespace eosio {
 
 }
 
-FC_REFLECT( eosio::finality_status_object, (trx_id)(trx_expiry)(received)(block_id)(block_timestamp)(forked_out) )
+FC_REFLECT( core_net::finality_status_object, (trx_id)(trx_expiry)(received)(block_id)(block_timestamp)(forked_out) )

@@ -1,20 +1,20 @@
 #include <algorithm>
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/code_object.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/code_object.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/deep_mind.hpp>
 #include <boost/container/flat_set.hpp>
 
 using boost::container::flat_set;
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 static inline void print_debug(account_name receiver, const action_trace& ar) {
    if (!ar.console.empty()) {
@@ -1104,4 +1104,4 @@ bool apply_context::should_use_eos_vm_oc()const {
 }
 
 
-} /// eosio::chain
+} /// core_net::chain

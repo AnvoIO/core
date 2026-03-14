@@ -1,14 +1,14 @@
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <vector>
 
-using namespace eosio;
+using namespace core_net;
 using namespace chain;
-using namespace eosio::testing;
+using namespace core_net::testing;
 
 BOOST_AUTO_TEST_SUITE(special_account_tests)
 

@@ -1,18 +1,18 @@
 #pragma once
 
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/types.hpp>
 
 #include <string>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 namespace fs = std::filesystem;
 
 template<typename T>
 class pending_snapshot {
 public:
-   using next_t = eosio::chain::next_function<T>;
+   using next_t = core_net::chain::next_function<T>;
 
    pending_snapshot(const chain::block_id_type& block_id, block_timestamp_type timestamp, const next_t& next, std::string pending_path, std::string final_path)
        : block_id(block_id), timestamp(timestamp), next(next), pending_path(std::move(pending_path)), final_path(std::move(final_path)) {}
@@ -75,4 +75,4 @@ public:
    std::string pending_path;
    std::string final_path;
 };
-}// namespace eosio::chain
+}// namespace core_net::chain

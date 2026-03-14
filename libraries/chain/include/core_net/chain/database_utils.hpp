@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 #include <fc/io/raw.hpp>
 #include <softfloat.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    template<typename ...Indices>
    class index_set;
@@ -164,12 +164,12 @@ namespace fc {
    }
 
    inline
-   void float128_to_uint128 (const float128_t& f, eosio::chain::uint128_t& u) {
+   void float128_to_uint128 (const float128_t& f, core_net::chain::uint128_t& u) {
       memcpy(&u, &f, sizeof(u));
    }
 
    inline
-   void uint128_to_float128 (const eosio::chain::uint128_t& u,  float128_t& f) {
+   void uint128_to_float128 (const core_net::chain::uint128_t& u,  float128_t& f) {
       memcpy(&f, &u, sizeof(f));
    }
 
@@ -190,7 +190,7 @@ namespace fc {
    inline
    void to_variant( const float128_t& f, variant& v ) {
       // Assumes platform is little endian and hex representation of 128-bit integer is in little endian order.	
-      char as_bytes[sizeof(eosio::chain::uint128_t)];
+      char as_bytes[sizeof(core_net::chain::uint128_t)];
       memcpy(as_bytes, &f, sizeof(as_bytes));
       std::string s = "0x";	
       s.append( to_hex( as_bytes, sizeof(as_bytes) ) );
@@ -200,7 +200,7 @@ namespace fc {
    inline
    void from_variant( const variant& v, float128_t& f ) {
       // Temporarily hold the binary in uint128_t before casting it to float128_t
-      char temp[sizeof(eosio::chain::uint128_t)];
+      char temp[sizeof(core_net::chain::uint128_t)];
       memset(temp, 0, sizeof(temp));
       auto s = v.as_string();	
       FC_ASSERT( s.size() == 2 + 2 * sizeof(temp) && s.find("0x") == 0,	"Failure in converting hex data into a float128_t");	
@@ -211,49 +211,49 @@ namespace fc {
    }
 
    inline
-   void to_variant( const eosio::chain::shared_string& s, variant& v ) {
+   void to_variant( const core_net::chain::shared_string& s, variant& v ) {
       v = variant(std::string(s.begin(), s.end()));
    }
 
    inline
-   void from_variant( const variant& v, eosio::chain::shared_string& s ) {
+   void from_variant( const variant& v, core_net::chain::shared_string& s ) {
       std::string _s;
       from_variant(v, _s);
       s = _s;
    }
 
    inline
-   void to_variant( const eosio::chain::shared_blob& b, variant& v ) {
+   void to_variant( const core_net::chain::shared_blob& b, variant& v ) {
       v = variant(base64_encode(b.data(), b.size()));
    }
 
    inline
-   void from_variant( const variant& v, eosio::chain::shared_blob& b ) {
+   void from_variant( const variant& v, core_net::chain::shared_blob& b ) {
       std::vector<char> b64 = base64_decode(v.as_string());
       b = std::string_view(b64.data(), b64.size());
    }
 
    template<typename T>
-   void to_variant( const eosio::chain::shared_vector<T>& sv, variant& v ) {
+   void to_variant( const core_net::chain::shared_vector<T>& sv, variant& v ) {
       to_variant(std::vector<T>(sv.begin(), sv.end()), v);
    }
 
    template<typename T>
-   void from_variant( const variant& v, eosio::chain::shared_vector<T>& sv ) {
+   void from_variant( const variant& v, core_net::chain::shared_vector<T>& sv ) {
       std::vector<T> _v;
       from_variant(v, _v);
       sv = v;
    }
 
    inline
-   void to_variant(const eosio::chain::detail::snapshot_key_value_object& a, fc::variant& v) {
+   void to_variant(const core_net::chain::detail::snapshot_key_value_object& a, fc::variant& v) {
       v = fc::mutable_variant_object("primary_key", a.primary_key)
                                     ("payer", a.payer)
                                     ("value", base64_encode(a.value.data(), a.value.size()));
    }
 
    inline
-   void from_variant(const fc::variant& v, eosio::chain::detail::snapshot_key_value_object& a) {
+   void from_variant(const fc::variant& v, core_net::chain::detail::snapshot_key_value_object& a) {
       from_variant(v["primary_key"], a.primary_key);
       from_variant(v["payer"], a.payer);
       a.value = base64_decode(v["value"].as_string());
@@ -353,7 +353,7 @@ DataStream& operator >> ( DataStream& ds, float64_t& v ) {
 
 template<typename DataStream>
 DataStream& operator << ( DataStream& ds, const float128_t& v ) {
-   eosio::chain::uint128_t uint128_v;
+   core_net::chain::uint128_t uint128_v;
    fc::float128_to_uint128(v, uint128_v);
    fc::raw::pack(ds, uint128_v);
    return ds;
@@ -361,7 +361,7 @@ DataStream& operator << ( DataStream& ds, const float128_t& v ) {
 
 template<typename DataStream>
 DataStream& operator >> ( DataStream& ds, float128_t& v ) {
-   eosio::chain::uint128_t uint128_v;
+   core_net::chain::uint128_t uint128_v;
    fc::raw::unpack(ds, uint128_v);
    fc::uint128_to_float128(uint128_v, v);
    return ds;

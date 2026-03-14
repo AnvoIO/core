@@ -1,17 +1,17 @@
 #pragma once
 
-#include <eosio/crypto.hpp>
-#include <eosio/eosio.hpp>
+#include <core_net/crypto.hpp>
+#include <core_net/eosio.hpp>
 
 namespace eosioboot {
 
-   using eosio::action_wrapper;
-   using eosio::check;
-   using eosio::checksum256;
-   using eosio::ignore;
-   using eosio::name;
-   using eosio::permission_level;
-   using eosio::public_key;
+   using core_net::action_wrapper;
+   using core_net::check;
+   using core_net::checksum256;
+   using core_net::ignore;
+   using core_net::name;
+   using core_net::permission_level;
+   using core_net::public_key;
 
    /**
     * A weighted permission.
@@ -35,7 +35,7 @@ namespace eosioboot {
     * @details A weighted key is defined by a public key and an associated weight.
     */
    struct key_weight {
-      eosio::public_key  key;
+      core_net::public_key  key;
       uint16_t           weight;
 
       // explicit serialization macro is not necessary, used here only to improve compilation time
@@ -84,7 +84,7 @@ namespace eosioboot {
     *
     * @{
     */
-   class [[eosio::contract("eosio.boot")]] boot : public eosio::contract {
+   class [[core_net::contract("eosio.boot")]] boot : public core_net::contract {
       public:
          using contract::contract;
          /**
@@ -105,7 +105,7 @@ namespace eosioboot {
           * @param owner - the authority for the owner permission of the new account
           * @param active - the authority for the active permission of the new account
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void newaccount( name             creator,
                           name             name,
                           ignore<authority> owner,
@@ -120,7 +120,7 @@ namespace eosioboot {
           * @param parem - the parent of the permission which is updated,
           * @param aut - the json describing the permission authorization.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void updateauth(  ignore<name>  account,
                            ignore<name>  permission,
                            ignore<name>  parent,
@@ -134,7 +134,7 @@ namespace eosioboot {
           * @param account - the account for which the permission authorization is deleted,
           * @param permission - the permission name been deleted.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void deleteauth( ignore<name>  account,
                           ignore<name>  permission ) {}
 
@@ -155,7 +155,7 @@ namespace eosioboot {
           * @param type - the action to be linked,
           * @param requirement - the permission to be linked.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void linkauth(  ignore<name>    account,
                          ignore<name>    code,
                          ignore<name>    type,
@@ -170,7 +170,7 @@ namespace eosioboot {
           * @param code - the owner of the action to be unlinked,
           * @param type - the action to be unlinked.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void unlinkauth( ignore<name>  account,
                           ignore<name>  code,
                           ignore<name>  type ) {}
@@ -183,7 +183,7 @@ namespace eosioboot {
           * @param canceling_auth - the permission that authorizes this action,
           * @param trx_id - the deferred transaction id to be cancelled.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void canceldelay( ignore<permission_level> canceling_auth, ignore<checksum256> trx_id ) {}
 
          /**
@@ -196,7 +196,7 @@ namespace eosioboot {
           * @param vmversion - reserved, set it to zero.
           * @param code - the code content to be set, in the form of a blob binary..
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void setcode( name account, uint8_t vmtype, uint8_t vmversion, const std::vector<char>& code ) {}
 
          /**
@@ -207,7 +207,7 @@ namespace eosioboot {
           * @param account - the name of the account to set the abi for
           * @param abi     - the abi hash represented as a vector of characters
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void setabi( name account, const std::vector<char>& abi ) {}
 
          /** @}*/
@@ -222,7 +222,7 @@ namespace eosioboot {
           * @param sender_id - the id for the deferred transaction chosen by the sender,
           * @param sent_trx - the deferred transaction that failed.
           */
-         [[eosio::action]]
+         [[core_net::action]]
          void onerror( ignore<uint128_t> sender_id, ignore<std::vector<char>> sent_trx );
 
          /**
@@ -232,8 +232,8 @@ namespace eosioboot {
           *
           * @param feature_digest - hash of the protocol feature to activate.
           */
-         [[eosio::action]]
-         void activate( const eosio::checksum256& feature_digest );
+         [[core_net::action]]
+         void activate( const core_net::checksum256& feature_digest );
 
          /**
           * Asserts that a protocol feature has been activated.
@@ -242,8 +242,8 @@ namespace eosioboot {
           *
           * @param feature_digest - hash of the protocol feature to check for activation.
           */
-         [[eosio::action]]
-         void reqactivated( const eosio::checksum256& feature_digest );
+         [[core_net::action]]
+         void reqactivated( const core_net::checksum256& feature_digest );
 
          using newaccount_action = action_wrapper<"newaccount"_n, &boot::newaccount>;
          using updateauth_action = action_wrapper<"updateauth"_n, &boot::updateauth>;

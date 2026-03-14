@@ -1,13 +1,13 @@
 #pragma once
-#include <eosio/chain/database_utils.hpp>
-#include <eosio/chain/authority.hpp>
-#include <eosio/chain/code_object.hpp>
-#include <eosio/chain/block_timestamp.hpp>
-#include <eosio/chain/abi_def.hpp>
+#include <core_net/chain/database_utils.hpp>
+#include <core_net/chain/authority.hpp>
+#include <core_net/chain/code_object.hpp>
+#include <core_net/chain/block_timestamp.hpp>
+#include <core_net/chain/abi_def.hpp>
 
 #include "multi_index_includes.hpp"
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    class account_object : public chainbase::object<account_object_type, account_object> {
       OBJECT_CTOR(account_object,(abi))
@@ -17,15 +17,15 @@ namespace eosio { namespace chain {
       block_timestamp_type creation_date;
       shared_blob          abi;
 
-      void set_abi( const eosio::chain::abi_def& a ) {
+      void set_abi( const core_net::chain::abi_def& a ) {
          abi.resize_and_fill( fc::raw::pack_size( a ), [&a](char* data, std::size_t size) {
             fc::datastream<char*> ds( data, size );
             fc::raw::pack( ds, a );
          });
       }
 
-      eosio::chain::abi_def get_abi()const {
-         eosio::chain::abi_def a;
+      core_net::chain::abi_def get_abi()const {
+         core_net::chain::abi_def a;
          EOS_ASSERT( abi.size() != 0, abi_not_found_exception, "No ABI set on account ${n}", ("n",name) );
 
          fc::datastream<const char*> ds( abi.data(), abi.size() );
@@ -98,13 +98,13 @@ namespace eosio { namespace chain {
       >
    >;
 
-} } // eosio::chain
+} } // core_net::chain
 
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::account_object, eosio::chain::account_index)
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::account_metadata_object, eosio::chain::account_metadata_index)
-CHAINBASE_SET_INDEX_TYPE(eosio::chain::account_ram_correction_object, eosio::chain::account_ram_correction_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::account_object, core_net::chain::account_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::account_metadata_object, core_net::chain::account_metadata_index)
+CHAINBASE_SET_INDEX_TYPE(core_net::chain::account_ram_correction_object, core_net::chain::account_ram_correction_index)
 
-FC_REFLECT(eosio::chain::account_object, (name)(creation_date)(abi))
-FC_REFLECT(eosio::chain::account_metadata_object, (name)(recv_sequence)(auth_sequence)(code_sequence)(abi_sequence)
+FC_REFLECT(core_net::chain::account_object, (name)(creation_date)(abi))
+FC_REFLECT(core_net::chain::account_metadata_object, (name)(recv_sequence)(auth_sequence)(code_sequence)(abi_sequence)
                                                   (code_hash)(last_code_update)(flags)(vm_type)(vm_version))
-FC_REFLECT(eosio::chain::account_ram_correction_object, (name)(ram_correction))
+FC_REFLECT(core_net::chain::account_ram_correction_object, (name)(ram_correction))

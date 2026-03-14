@@ -5,7 +5,7 @@
 #include <boost/preprocessor/seq/remove.hpp>
 #include <boost/preprocessor/seq/push_back.hpp>
 #include <fc/reflect/reflect.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #include <cstdint>
 #include <functional>
@@ -20,7 +20,7 @@
 #include "IR/Operators.h"
 #include "IR/Module.h"
 
-namespace eosio { namespace chain { namespace wasm_ops {
+namespace core_net { namespace chain { namespace wasm_ops {
 
 class instruction_stream {
    public:
@@ -136,9 +136,9 @@ template <typename Field>
 struct field_specific_params {
    static constexpr int skip_ahead = sizeof(uint16_t) + sizeof(Field);
    static auto unpack( char* opcode, Field& f ) { memcpy(&f, opcode, sizeof(f)); }
-   static void pack(instruction_stream* stream, Field& f) { return eosio::chain::wasm_ops::pack(stream, f); }
+   static void pack(instruction_stream* stream, Field& f) { return core_net::chain::wasm_ops::pack(stream, f); }
    static auto to_string(Field& f) { return std::string(" ")+
-                                       eosio::chain::wasm_ops::to_string(f); }
+                                       core_net::chain::wasm_ops::to_string(f); }
 };
 template <>
 struct field_specific_params<voidtype> {
@@ -652,9 +652,9 @@ using namespace IR;
 // Decodes an operator from an input stream and dispatches by opcode.
 // This code is from wasm-jit/Include/IR/Operators.h
 template <class Op_Types>
-struct EOSIO_OperatorDecoderStream
+struct CORE_NET_OperatorDecoderStream
 {
-   EOSIO_OperatorDecoderStream(const std::vector<U8>& codeBytes)
+   CORE_NET_OperatorDecoderStream(const std::vector<U8>& codeBytes)
    : start(codeBytes.data()), nextByte(codeBytes.data()), end(codeBytes.data()+codeBytes.size()) {
      if(!_cached_ops)
         _cached_ops = cached_ops<Op_Types>::get_cached_ops();
@@ -702,11 +702,11 @@ private:
 };
 
 template <class Op_Types>
-const std::vector<instr*>* EOSIO_OperatorDecoderStream<Op_Types>::_cached_ops;
+const std::vector<instr*>* CORE_NET_OperatorDecoderStream<Op_Types>::_cached_ops;
 
-}}} // namespace eosio, chain, wasm_ops
+}}} // namespace core_net, chain, wasm_ops
 
-FC_REFLECT_TEMPLATE( (typename T), eosio::chain::wasm_ops::block< T >, (code)(rt) )
-FC_REFLECT( eosio::chain::wasm_ops::memarg, (a)(o) )
-FC_REFLECT( eosio::chain::wasm_ops::blocktype, (result) )
-FC_REFLECT( eosio::chain::wasm_ops::memoryoptype, (end) )
+FC_REFLECT_TEMPLATE( (typename T), core_net::chain::wasm_ops::block< T >, (code)(rt) )
+FC_REFLECT( core_net::chain::wasm_ops::memarg, (a)(o) )
+FC_REFLECT( core_net::chain::wasm_ops::blocktype, (result) )
+FC_REFLECT( core_net::chain::wasm_ops::memoryoptype, (end) )

@@ -6,12 +6,12 @@
 #include <condition_variable>
 #include <fc/io/cfile.hpp>
 #include <fc/variant.hpp>
-#include <eosio/trace_api/common.hpp>
-#include <eosio/trace_api/metadata_log.hpp>
-#include <eosio/trace_api/data_log.hpp>
-#include <eosio/trace_api/compressed_file.hpp>
+#include <core_net/trace_api/common.hpp>
+#include <core_net/trace_api/metadata_log.hpp>
+#include <core_net/trace_api/data_log.hpp>
+#include <core_net/trace_api/compressed_file.hpp>
 
-namespace eosio::trace_api {
+namespace core_net::trace_api {
 
    class path_does_not_exist : public std::runtime_error {
    public:
@@ -385,4 +385,4 @@ namespace eosio::trace_api {
 
 }
 
-FC_REFLECT(eosio::trace_api::slice_directory::index_header, (version))
+FC_REFLECT(core_net::trace_api::slice_directory::index_header, (version))

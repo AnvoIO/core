@@ -5,7 +5,7 @@ list(REMOVE_ITEM UNIT_TESTS ship_client.cpp)
 list(REMOVE_ITEM UNIT_TESTS ship_streamer.cpp)
 
 add_executable( plugin_test ${UNIT_TESTS} )
-target_link_libraries( plugin_test eosio_testing eosio_chain_wrap chainbase chain_plugin producer_plugin wallet_plugin fc state_history Boost::included_unit_test_framework ${PLATFORM_SPECIFIC_LIBS} )
+target_link_libraries( plugin_test core_net_testing core_net_chain_wrap chainbase chain_plugin producer_plugin wallet_plugin fc state_history Boost::included_unit_test_framework ${PLATFORM_SPECIFIC_LIBS} )
 
 target_include_directories( plugin_test PUBLIC
                             ${CMAKE_SOURCE_DIR}/plugins/net_plugin/include
@@ -19,8 +19,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/block_log_retain_blocks_test.py ${CMA
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bridge_for_fork_test_shape.json ${CMAKE_CURRENT_BINARY_DIR}/bridge_for_fork_test_shape.json COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cluster_launcher.py ${CMAKE_CURRENT_BINARY_DIR}/cluster_launcher.py COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/distributed-transactions-test.py ${CMAKE_CURRENT_BINARY_DIR}/distributed-transactions-test.py COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/spring_util_bls_test.py ${CMAKE_CURRENT_BINARY_DIR}/spring_util_bls_test.py COPYONLY)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/spring_util_snapshot_info_test.py ${CMAKE_CURRENT_BINARY_DIR}/spring_util_snapshot_info_test.py COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/core_util_bls_test.py ${CMAKE_CURRENT_BINARY_DIR}/core_util_bls_test.py COPYONLY)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/core_util_snapshot_info_test.py ${CMAKE_CURRENT_BINARY_DIR}/core_util_snapshot_info_test.py COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sample-cluster-map.json ${CMAKE_CURRENT_BINARY_DIR}/sample-cluster-map.json COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/restart-scenarios-test.py ${CMAKE_CURRENT_BINARY_DIR}/restart-scenarios-test.py COPYONLY)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/terminate-scenarios-test.py ${CMAKE_CURRENT_BINARY_DIR}/terminate-scenarios-test.py COPYONLY)
@@ -138,9 +138,9 @@ add_subdirectory( PerformanceHarness )
 
 find_package(Threads)
 add_executable(ship_client ship_client.cpp)
-target_link_libraries(ship_client eosio_chain Boost::program_options Boost::system Boost::algorithm Boost::asio Boost::beast Threads::Threads)
+target_link_libraries(ship_client core_net_chain Boost::program_options Boost::system Boost::algorithm Boost::asio Boost::beast Threads::Threads)
 add_executable(ship_streamer ship_streamer.cpp)
-target_link_libraries(ship_streamer eosio_chain Boost::program_options Boost::system Boost::asio Boost::beast Threads::Threads)
+target_link_libraries(ship_streamer core_net_chain Boost::program_options Boost::system Boost::asio Boost::beast Threads::Threads)
 
 add_np_test(NAME cluster_launcher COMMAND tests/cluster_launcher.py -v ${UNSHARE})
 add_np_test(NAME cluster_launcher_if COMMAND tests/cluster_launcher.py --activate-if -v ${UNSHARE})
@@ -282,8 +282,8 @@ add_np_test(NAME cli_test COMMAND tests/cli_test.py)
 add_np_test(NAME lib_advance_test COMMAND tests/lib_advance_test.py -v ${UNSHARE})
 add_np_test(NAME lib_advance_if_test COMMAND tests/lib_advance_test.py --activate-if -v ${UNSHARE})
 
-add_p_test(NAME spring_util_bls_test COMMAND tests/spring_util_bls_test.py)
-add_p_test(NAME spring_util_snapshot_info_test COMMAND tests/spring_util_snapshot_info_test.py)
+add_p_test(NAME core_util_bls_test COMMAND tests/core_util_bls_test.py)
+add_p_test(NAME core_util_snapshot_info_test COMMAND tests/core_util_snapshot_info_test.py)
 
 add_np_test(NAME http_plugin_test COMMAND tests/http_plugin_test.py ${UNSHARE} TIMEOUT 100)
 

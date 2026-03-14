@@ -1,14 +1,14 @@
 #include <iostream>
 #include <vector>
 
-#include <eosio/vm/backend.hpp>
-#include <eosio/vm/watchdog.hpp>
+#include <core_net/vm/backend.hpp>
+#include <core_net/vm/watchdog.hpp>
 
 #include "utils.hpp"
 #include <catch2/catch.hpp>
 
-using namespace eosio;
-using namespace eosio::vm;
+using namespace core_net;
+using namespace core_net::vm;
 
 extern wasm_allocator wa;
 

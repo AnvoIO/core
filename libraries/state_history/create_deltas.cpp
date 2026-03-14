@@ -1,7 +1,7 @@
-#include <eosio/state_history/create_deltas.hpp>
-#include <eosio/state_history/serialization.hpp>
+#include <core_net/state_history/create_deltas.hpp>
+#include <core_net/state_history/serialization.hpp>
 
-namespace eosio {
+namespace core_net {
 namespace state_history {
 
 template <typename T>
@@ -49,7 +49,7 @@ bool include_delta(const chain::account_metadata_object& old, const chain::accou
 
 bool include_delta(const chain::code_object& old, const chain::code_object& curr) { //
    // code_object data that is exported by SHiP is never modified they are only deleted or created,
-   // see serialization of history_serial_wrapper<eosio::chain::code_object>
+   // see serialization of history_serial_wrapper<core_net::chain::code_object>
    return false;
 }
 
@@ -189,4 +189,4 @@ void pack_deltas(boost::iostreams::filtering_ostreambuf& obuf, const chainbase::
 
 
 } // namespace state_history
-} // namespace eosio
+} // namespace core_net

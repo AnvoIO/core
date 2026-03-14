@@ -1,9 +1,9 @@
 #pragma once
 
-#include <eosio/chain/block_timestamp.hpp>
-#include <eosio/chain/producer_schedule.hpp>
+#include <core_net/chain/block_timestamp.hpp>
+#include <core_net/chain/producer_schedule.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 using producer_auth_differ = fc::ordered_diff<producer_authority, uint16_t>;
 // Verify producer_auth_differ::size_type can represent all index values in the
@@ -18,7 +18,7 @@ struct proposer_policy_diff {
 };
 
 struct proposer_policy {
-   // Useful for light clients, not necessary for nodeos
+   // Useful for light clients, not necessary for core_netd
    block_timestamp_type        proposal_time; // block when schedule was proposed
    producer_authority_schedule proposer_schedule;
 
@@ -43,8 +43,8 @@ struct proposer_policy {
 
 using proposer_policy_ptr = std::shared_ptr<proposer_policy>;
 
-} /// eosio::chain
+} /// core_net::chain
 
-FC_REFLECT( eosio::chain::proposer_policy, (proposal_time)(proposer_schedule) )
-FC_REFLECT( eosio::chain::producer_auth_diff_t, (remove_indexes)(insert_indexes) )
-FC_REFLECT( eosio::chain::proposer_policy_diff, (version)(proposal_time)(producer_auth_diff) )
+FC_REFLECT( core_net::chain::proposer_policy, (proposal_time)(proposer_schedule) )
+FC_REFLECT( core_net::chain::producer_auth_diff_t, (remove_indexes)(insert_indexes) )
+FC_REFLECT( core_net::chain::proposer_policy_diff, (version)(proposal_time)(producer_auth_diff) )

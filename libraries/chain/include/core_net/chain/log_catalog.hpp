@@ -5,7 +5,7 @@
 #include <regex>
 #include <map>
 
-namespace eosio {
+namespace core_net {
 namespace chain {
 
 
@@ -309,4 +309,4 @@ struct log_catalog {
 };
 
 } // namespace chain
-} // namespace eosio
+} // namespace core_net

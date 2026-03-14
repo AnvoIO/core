@@ -4,7 +4,7 @@
 #include <setjmp.h>
 #include <string.h>
 
-#include <eosio/chain/webassembly/eos-vm-oc/eos-vm-oc.h>
+#include <core_net/chain/webassembly/eos-vm-oc/eos-vm-oc.h>
 
 #ifdef __clang__
    #define GS_PTR __attribute__((address_space(256)))

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <eosio/chain/types.hpp>                      /* vector */
+#include <core_net/chain/types.hpp>                      /* vector */
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 /**
  * helper class to serialize only selected ids of the class
@@ -48,4 +48,4 @@ public:
    }
 };
 
-}} // namespace eosio::chain
+}} // namespace core_net::chain

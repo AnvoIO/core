@@ -1,30 +1,30 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
-class [[eosio::contract]] restrict_action_test : public eosio::contract {
+class [[core_net::contract]] restrict_action_test : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action]]
+   [[core_net::action]]
    void noop( );
 
-   [[eosio::action]]
-   void sendinline( eosio::name authorizer );
+   [[core_net::action]]
+   void sendinline( core_net::name authorizer );
 
-   [[eosio::action]]
-   void senddefer( eosio::name authorizer, uint32_t senderid );
+   [[core_net::action]]
+   void senddefer( core_net::name authorizer, uint32_t senderid );
 
 
-   [[eosio::action]]
-   void notifyinline( eosio::name acctonotify, eosio::name authorizer );
+   [[core_net::action]]
+   void notifyinline( core_net::name acctonotify, core_net::name authorizer );
 
-   [[eosio::action]]
-   void notifydefer( eosio::name acctonotify, eosio::name authorizer, uint32_t senderid );
+   [[core_net::action]]
+   void notifydefer( core_net::name acctonotify, core_net::name authorizer, uint32_t senderid );
 
-   [[eosio::on_notify("testacc::notifyinline")]]
-   void on_notify_inline( eosio::name acctonotify, eosio::name authorizer );
+   [[core_net::on_notify("testacc::notifyinline")]]
+   void on_notify_inline( core_net::name acctonotify, core_net::name authorizer );
 
-   [[eosio::on_notify("testacc::notifydefer")]]
-   void on_notify_defer( eosio::name acctonotify, eosio::name authorizer, uint32_t senderid );
+   [[core_net::on_notify("testacc::notifydefer")]]
+   void on_notify_defer( core_net::name acctonotify, core_net::name authorizer, uint32_t senderid );
 };

@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
 enum class max_func_local_bytes_flags_t {
    params = 1,
@@ -63,7 +63,7 @@ struct options {
 struct default_options {
 };
 
-struct eosio_options {
+struct core_net_options {
    static constexpr std::uint32_t max_mutable_global_bytes = 1024;
    static constexpr std::uint32_t max_table_elements = 1024;
    // maximum_section_elements in nodeos is a lie.
@@ -75,7 +75,7 @@ struct eosio_options {
    static constexpr std::uint32_t max_linear_memory_init = 64*1024;
    static constexpr std::uint32_t max_func_local_bytes = 8192;
    static constexpr std::uint32_t max_local_sets = 1023;
-   static constexpr std::uint32_t eosio_max_nested_structures = 1023;
+   static constexpr std::uint32_t core_net_max_nested_structures = 1023;
    static constexpr std::uint32_t max_br_table_elements = 8191;
    static constexpr std::uint32_t max_symbol_bytes = 8191;
    static constexpr std::uint32_t max_memory_offset = (33*1024*1024 - 1);

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <eosio/chain/trace.hpp>
+#include <core_net/chain/trace.hpp>
 
-namespace eosio {
+namespace core_net {
 namespace state_history {
 
 using chain::block_id_type;
@@ -143,19 +143,19 @@ using get_blocks_request = std::variant<get_blocks_request_v0, get_blocks_reques
 using get_blocks_result = std::variant<get_blocks_result_v0, get_blocks_result_v1>;
 
 } // namespace state_history
-} // namespace eosio
+} // namespace core_net
 
 // clang-format off
-FC_REFLECT(eosio::state_history::table_delta, (struct_version)(name)(rows));
-FC_REFLECT(eosio::state_history::block_position, (block_num)(block_id));
-FC_REFLECT_EMPTY(eosio::state_history::get_status_request_v0);
-FC_REFLECT_DERIVED(eosio::state_history::get_status_request_v1, (eosio::state_history::get_status_request_v0), )
-FC_REFLECT(eosio::state_history::get_status_result_v0, (head)(last_irreversible)(trace_begin_block)(trace_end_block)(chain_state_begin_block)(chain_state_end_block)(chain_id));
-FC_REFLECT_DERIVED(eosio::state_history::get_status_result_v1, (eosio::state_history::get_status_result_v0), (finality_data_begin_block)(finality_data_end_block));
-FC_REFLECT(eosio::state_history::get_blocks_request_v0, (start_block_num)(end_block_num)(max_messages_in_flight)(have_positions)(irreversible_only)(fetch_block)(fetch_traces)(fetch_deltas));
-FC_REFLECT_DERIVED(eosio::state_history::get_blocks_request_v1, (eosio::state_history::get_blocks_request_v0), (fetch_finality_data));
-FC_REFLECT(eosio::state_history::get_blocks_ack_request_v0, (num_messages));
-FC_REFLECT(eosio::state_history::get_blocks_result_base, (head)(last_irreversible)(this_block)(prev_block)(block));
-FC_REFLECT_DERIVED(eosio::state_history::get_blocks_result_v0, (eosio::state_history::get_blocks_result_base), (traces)(deltas));
-FC_REFLECT_DERIVED(eosio::state_history::get_blocks_result_v1, (eosio::state_history::get_blocks_result_v0), (finality_data));
+FC_REFLECT(core_net::state_history::table_delta, (struct_version)(name)(rows));
+FC_REFLECT(core_net::state_history::block_position, (block_num)(block_id));
+FC_REFLECT_EMPTY(core_net::state_history::get_status_request_v0);
+FC_REFLECT_DERIVED(core_net::state_history::get_status_request_v1, (core_net::state_history::get_status_request_v0), )
+FC_REFLECT(core_net::state_history::get_status_result_v0, (head)(last_irreversible)(trace_begin_block)(trace_end_block)(chain_state_begin_block)(chain_state_end_block)(chain_id));
+FC_REFLECT_DERIVED(core_net::state_history::get_status_result_v1, (core_net::state_history::get_status_result_v0), (finality_data_begin_block)(finality_data_end_block));
+FC_REFLECT(core_net::state_history::get_blocks_request_v0, (start_block_num)(end_block_num)(max_messages_in_flight)(have_positions)(irreversible_only)(fetch_block)(fetch_traces)(fetch_deltas));
+FC_REFLECT_DERIVED(core_net::state_history::get_blocks_request_v1, (core_net::state_history::get_blocks_request_v0), (fetch_finality_data));
+FC_REFLECT(core_net::state_history::get_blocks_ack_request_v0, (num_messages));
+FC_REFLECT(core_net::state_history::get_blocks_result_base, (head)(last_irreversible)(this_block)(prev_block)(block));
+FC_REFLECT_DERIVED(core_net::state_history::get_blocks_result_v0, (core_net::state_history::get_blocks_result_base), (traces)(deltas));
+FC_REFLECT_DERIVED(core_net::state_history::get_blocks_result_v1, (core_net::state_history::get_blocks_result_v0), (finality_data));
 // clang-format on

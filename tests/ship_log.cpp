@@ -10,15 +10,15 @@
 #include <fc/crypto/sha256.hpp>
 #include <fc/io/fstream.hpp>
 
-#include <eosio/state_history/log_catalog.hpp>
+#include <core_net/state_history/log_catalog.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/device/back_inserter.hpp>
 
 
 namespace bdata = boost::unit_test::data;
 namespace bio = boost::iostreams;
-using namespace eosio;
-using namespace eosio::chain;
+using namespace core_net;
+using namespace core_net::chain;
 using namespace fc;
 using namespace std::literals;
 
@@ -82,7 +82,7 @@ struct ship_log_fixture {
      enable_read(enable_read), reopen_on_mark(reopen_on_mark),
      remove_index_on_reopen(remove_index_on_reopen), vacuum_on_exit_if_small(vacuum_on_exit_if_small){
       if (prune_blocks)
-         conf = eosio::state_history::prune_config{ .prune_blocks = *prune_blocks };
+         conf = core_net::state_history::prune_config{ .prune_blocks = *prune_blocks };
       bounce();
    }
 
@@ -111,7 +111,7 @@ struct ship_log_fixture {
       BOOST_REQUIRE_EQUAL(r.second-1, last);
       if(enable_read) {
          for(auto i = first; i <= last; i++) {
-            std::optional<eosio::state_history::ship_log_entry> entry = log->get_entry(i);
+            std::optional<core_net::state_history::ship_log_entry> entry = log->get_entry(i);
             BOOST_REQUIRE(!!entry);
             bio::filtering_istreambuf istream = entry->get_stream();
             std::vector<char> buff;
@@ -140,10 +140,10 @@ struct ship_log_fixture {
    }
 
    bool enable_read, reopen_on_mark, remove_index_on_reopen, vacuum_on_exit_if_small;
-   eosio::state_history::state_history_log_config conf;
+   core_net::state_history::state_history_log_config conf;
    fc::temp_directory log_dir;
 
-   std::optional<eosio::state_history::log_catalog> log;
+   std::optional<core_net::state_history::log_catalog> log;
 
    std::vector<std::vector<char>> written_data;
 
@@ -152,7 +152,7 @@ private:
       log.reset();
       if(remove_index_on_reopen)
          std::filesystem::remove(log_dir.path()/ (std::string("shipit") + ".index"));
-      auto prune_conf = std::get_if<eosio::state_history::prune_config>(&conf);
+      auto prune_conf = std::get_if<core_net::state_history::prune_config>(&conf);
       if(prune_conf) {
          prune_conf->prune_threshold = 8; //every 8 bytes check in and see if to prune. should make it always check after each entry for us
          if(vacuum_on_exit_if_small)
@@ -261,7 +261,7 @@ BOOST_DATA_TEST_CASE(basic_prune_test, bdata::xrange(2) * bdata::xrange(2) * bda
    });
 
    //invalid fork, previous should be 'X'
-   BOOST_REQUIRE_EXCEPTION(t.add(14, payload_size, '*', 'W' ), eosio::chain::plugin_exception, [](const eosio::chain::plugin_exception& e) {
+   BOOST_REQUIRE_EXCEPTION(t.add(14, payload_size, '*', 'W' ), core_net::chain::plugin_exception, [](const core_net::chain::plugin_exception& e) {
       return e.to_detail_string().find("missed a fork change") != std::string::npos;
    });
 
@@ -310,33 +310,33 @@ BOOST_AUTO_TEST_CASE(empty) { try {
    fc::temp_directory log_dir;
 
    {
-      eosio::state_history::state_history_log log(log_dir.path()/ "empty");
+      core_net::state_history::state_history_log log(log_dir.path()/ "empty");
       BOOST_REQUIRE(log.empty());
    }
    //reopen
    {
-      eosio::state_history::state_history_log log(log_dir.path() / "empty");
+      core_net::state_history::state_history_log log(log_dir.path() / "empty");
       BOOST_REQUIRE(log.empty());
    }
    //reopen but prunned set
-   const eosio::state_history::prune_config simple_prune_conf = {
+   const core_net::state_history::prune_config simple_prune_conf = {
       .prune_blocks = 4
    };
    {
-      eosio::state_history::state_history_log log(log_dir.path() / "empty", state_history::state_history_log::no_non_local_get_block_id_func, simple_prune_conf);
+      core_net::state_history::state_history_log log(log_dir.path() / "empty", state_history::state_history_log::no_non_local_get_block_id_func, simple_prune_conf);
       BOOST_REQUIRE(log.empty());
    }
    {
-      eosio::state_history::state_history_log log(log_dir.path() / "empty", state_history::state_history_log::no_non_local_get_block_id_func, simple_prune_conf);
+      core_net::state_history::state_history_log log(log_dir.path() / "empty", state_history::state_history_log::no_non_local_get_block_id_func, simple_prune_conf);
       BOOST_REQUIRE(log.empty());
    }
    //back to non pruned
    {
-      eosio::state_history::state_history_log log(log_dir.path() / "empty");
+      core_net::state_history::state_history_log log(log_dir.path() / "empty");
       BOOST_REQUIRE(log.empty());
    }
    {
-      eosio::state_history::state_history_log log(log_dir.path() / "empty");
+      core_net::state_history::state_history_log log(log_dir.path() / "empty");
       BOOST_REQUIRE(log.empty());
    }
 
@@ -348,7 +348,7 @@ BOOST_AUTO_TEST_CASE(empty) { try {
 
    //one more time to pruned, just to make sure
    {
-      eosio::state_history::state_history_log log(log_dir.path()/ "empty", state_history::state_history_log::no_non_local_get_block_id_func, simple_prune_conf);
+      core_net::state_history::state_history_log log(log_dir.path()/ "empty", state_history::state_history_log::no_non_local_get_block_id_func, simple_prune_conf);
       BOOST_REQUIRE(log.empty());
    }
    BOOST_REQUIRE(std::filesystem::file_size(log_file.c_str()) == 0);
@@ -374,7 +374,7 @@ BOOST_DATA_TEST_CASE(non_prune_to_prune, bdata::xrange(2) * bdata::xrange(2), en
    });
 
    //upgrade to pruned...
-   t.conf = eosio::state_history::prune_config{ .prune_blocks = 4 };
+   t.conf = core_net::state_history::prune_config{ .prune_blocks = 4 };
    t.check_n_bounce([]() {});
 
    t.check_n_bounce([&]() {
@@ -446,7 +446,7 @@ BOOST_DATA_TEST_CASE(prune_to_partitioned, bdata::xrange(2) * bdata::xrange(2), 
    });
 
    //no more pruned
-   t.conf = eosio::state_history::partition_config{
+   t.conf = core_net::state_history::partition_config{
        .stride  = 5
    };
 
@@ -470,7 +470,7 @@ BOOST_DATA_TEST_CASE(prune_to_partitioned, bdata::xrange(2) * bdata::xrange(2), 
 BOOST_DATA_TEST_CASE(basic, bdata::make({2u, 333u, 578'000u, 3'123'456'789u}) ^ bdata::make({102u, 400u, 578'111u, 3'123'456'900u}), start, end) try {
    const fc::temp_directory tmpdir;
 
-   eosio::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "testlog");
+   core_net::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "testlog");
    BOOST_REQUIRE(lc.empty());
 
    std::map<block_num_type, sha256> wrote_data_for_blocknum;
@@ -602,20 +602,20 @@ BOOST_AUTO_TEST_CASE(regen_index) try {
 
    //try recreating the index for an empty log
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "empty");
+      core_net::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "empty");
       BOOST_REQUIRE(lc.empty());
    }
    BOOST_REQUIRE(std::filesystem::exists(tmpdir.path() / "empty.index"));
    std::filesystem::remove(tmpdir.path() / "empty.index");
    BOOST_REQUIRE(!std::filesystem::exists(tmpdir.path() / "empty.index"));
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "empty");
+      core_net::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "empty");
       BOOST_REQUIRE(lc.empty());
    }
 
    //fill up a log with a handful of blocks
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "newlog");
+      core_net::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "newlog");
       BOOST_REQUIRE(lc.empty());
 
       for(unsigned i = 2; i < 34; ++i)
@@ -640,7 +640,7 @@ BOOST_AUTO_TEST_CASE(regen_index) try {
    std::filesystem::remove(tmpdir.path() / "newlog.index");
    BOOST_REQUIRE(!std::filesystem::exists(tmpdir.path() / "newlog.index"));
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "newlog");
+      core_net::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "newlog");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, 2u);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, 34u);
 
@@ -668,7 +668,7 @@ BOOST_AUTO_TEST_CASE(empty_empty_empty) try {
    const fc::temp_directory tmpdir;
 
    for(unsigned i = 0; i < 4; ++i) {
-      eosio::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "empty");
+      core_net::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "empty");
       BOOST_REQUIRE(lc.empty());
    }
    BOOST_REQUIRE(std::filesystem::exists(tmpdir.path() / "empty.log"));
@@ -695,7 +695,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
    std::map<block_num_type, sha256> wrote_data_for_blocknum;
 
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
       BOOST_REQUIRE(lc.empty());
 
       std::mt19937 mt_random(0xbeefbeefu * start);
@@ -725,7 +725,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
 
    //load the catalog back up and read through all the blocks
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, start);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
 
@@ -756,7 +756,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
          }
    }
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, start);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
    }
@@ -775,7 +775,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
    }
    //and we'll go through the process of reading all blocks after the indexes have been recreated
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, start);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
 
@@ -796,7 +796,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
 
    //now switch over to no splitting. this is allowed but old split logs will not be "visible" when configured this way
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "splitit");
       if(start % conf.stride == 0) {  //"head log" will be empty in this case
          BOOST_REQUIRE(lc.empty());
       }
@@ -822,7 +822,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
 
    //and back to split log mode. all those retained logs will be visible again
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, start);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
 
@@ -842,7 +842,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
 
    //one more time where we read through everything
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, start);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
 
@@ -865,7 +865,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
    conf.max_retained_files = 4u;
    //and go generate enough blocks to cause a rotation which will move old logs to the archive directory
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, start);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
 
@@ -912,7 +912,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
    conf.max_retained_files = 3u;
    //generate enough blocks for a rotation...
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
 
       std::mt19937 mt_random(0xbeefbeefu * end);
@@ -951,7 +951,7 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
 
    //one more pass through all the blocks
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "splitit");
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
 
       for(unsigned i = lc.block_range().first; i < end; i++) {
@@ -983,14 +983,14 @@ BOOST_DATA_TEST_CASE(basic_split, boost::unit_test::data::make({5u, 6u, 7u, 8u, 
       BOOST_REQUIRE_GT(found.size(), 1u);
    }
    std::filesystem::remove(std::next(found.rbegin())->second);
-   BOOST_REQUIRE_EXCEPTION(eosio::state_history::log_catalog(tmpdir.path(), conf, "splitit"),
+   BOOST_REQUIRE_EXCEPTION(core_net::state_history::log_catalog(tmpdir.path(), conf, "splitit"),
                            plugin_exception,
                            [](const plugin_exception& e) {return e.to_detail_string().find("which results in a hole") != std::string::npos;});
    std::filesystem::remove(found.rbegin()->second);
 
    //only perform this check if we expect the "head log" to be non-empty
    if(start % conf.stride)
-      BOOST_REQUIRE_EXCEPTION(eosio::state_history::log_catalog(tmpdir.path(), conf, "splitit"),
+      BOOST_REQUIRE_EXCEPTION(core_net::state_history::log_catalog(tmpdir.path(), conf, "splitit"),
                               plugin_exception,
                               [](const plugin_exception& e) {return e.to_detail_string().find("which results in a hole") != std::string::npos;});
    //unfortuately if the "head log" _is_ empty we're in quite a problem since we won't be able to detect the hole until a block is appended
@@ -1014,7 +1014,7 @@ BOOST_DATA_TEST_CASE(split_forks, bdata::xrange(1u, 6u), fork_size) try {
    std::mt19937 mt_random(0xbeefbeefu * start);
 
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
       BOOST_REQUIRE(lc.empty());
 
       for(unsigned i = start; i < end; ++i)
@@ -1060,7 +1060,7 @@ BOOST_DATA_TEST_CASE(split_forks, bdata::xrange(1u, 6u), fork_size) try {
 
    const unsigned start_fork_at = end-fork_size;
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, start);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
 
@@ -1121,14 +1121,14 @@ BOOST_DATA_TEST_CASE(split_forks, bdata::xrange(1u, 6u), fork_size) try {
 
    //reopen the log while we're in this shortened fork state
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, start);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, start_fork_at+1);
    }
 
    //continue on writing to the log replacing all blocks after the fork block
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
       for(unsigned i = start_fork_at+1; i < end; ++i)
          lc.pack_and_write_entry(fake_blockid_for_num(i, 0xdeadUL), fake_blockid_for_num(i-1, 0xdeadUL), [&](bio::filtering_ostreambuf& obuf) {
             bio::filtering_istreambuf hashed_randomness(sha256_filter() | bio::restrict(random_source(), 0, mt_random()%1024*1024));
@@ -1153,7 +1153,7 @@ BOOST_DATA_TEST_CASE(split_forks, bdata::xrange(1u, 6u), fork_size) try {
 
    //read through all the blocks and validate contents
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
+      core_net::state_history::log_catalog lc(tmpdir.path(), conf, "logz");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, start);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end);
 
@@ -1186,10 +1186,10 @@ BOOST_AUTO_TEST_CASE(old_log_format) try {
          legacy_header.first.block_id = fake_blockid_for_num(blocknum);
 
          bio::filtering_istreambuf hashed_randomness(sha256_filter() | bio::restrict(random_source(), 0, 128*1024));
-         bio::filtering_ostreambuf output(bio::zlib_compressor() | eosio::detail::counter() | bio::restrict(file.seekable_device(), insertpos + raw::pack_size(legacy_header)));
+         bio::filtering_ostreambuf output(bio::zlib_compressor() | core_net::detail::counter() | bio::restrict(file.seekable_device(), insertpos + raw::pack_size(legacy_header)));
          bio::copy(hashed_randomness, output);
          wrote_data_for_blocknum[blocknum] = hashed_randomness.component<sha256_filter>(0)->enc->result();
-         legacy_header.first.payload_size = output.component<eosio::detail::counter>(1)->characters() + sizeof(decltype(legacy_header.second));
+         legacy_header.first.payload_size = output.component<core_net::detail::counter>(1)->characters() + sizeof(decltype(legacy_header.second));
 
          file.pack_to(legacy_header, insertpos);
          file.pack_to_end(insertpos);
@@ -1198,7 +1198,7 @@ BOOST_AUTO_TEST_CASE(old_log_format) try {
 
    {
       //will regenerate index too
-      eosio::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "old");
+      core_net::state_history::log_catalog lc(tmpdir.path(), std::monostate(), "old");
 
       BOOST_REQUIRE_EQUAL(begin_block, lc.block_range().first);
       BOOST_REQUIRE_EQUAL(end_block, lc.block_range().second);
@@ -1233,7 +1233,7 @@ BOOST_DATA_TEST_CASE(rewrite_same, bdata::make(log_configs_for_rewrite_same), co
    const unsigned end_block = 105;
 
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "mr,log");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "mr,log");
       for(unsigned i = begin_block; i < end_block; ++i)
          lc.pack_and_write_entry(fake_blockid_for_num(i), fake_blockid_for_num(i-1), [&](bio::filtering_ostreambuf& obuf) {
             bio::filtering_istreambuf hashed_randomness(sha256_filter() | bio::restrict(random_source(), 0, 64*1024));
@@ -1247,7 +1247,7 @@ BOOST_DATA_TEST_CASE(rewrite_same, bdata::make(log_configs_for_rewrite_same), co
 
    //reopen and write different data for each block id. This should silently be swallowed
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "mr,log");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "mr,log");
       for(unsigned i = begin_block; i < end_block; ++i)
          lc.pack_and_write_entry(fake_blockid_for_num(i), fake_blockid_for_num(i-1), [&](bio::filtering_ostreambuf& obuf) {
             bio::filtering_istreambuf hashed_randomness(sha256_filter() | bio::restrict(random_source(), 0, 64*1024));
@@ -1257,7 +1257,7 @@ BOOST_DATA_TEST_CASE(rewrite_same, bdata::make(log_configs_for_rewrite_same), co
 
    //read the blocks back, making sure the hash of data is what was originally written and that the size of the log remained equal
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "mr,log");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "mr,log");
       BOOST_REQUIRE_EQUAL(lc.block_range().first, begin_block);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end_block);
 
@@ -1291,7 +1291,7 @@ BOOST_DATA_TEST_CASE(rewrite_same_remembered, bdata::make(log_configs_for_rewrit
 
    //fill up blocks 10 through 104, but many of the early blocks are forgotten
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
       for(unsigned i = begin_block; i < end_block; ++i)
          lc.pack_and_write_entry(fake_blockid_for_num(i), fake_blockid_for_num(i-1), [&](bio::filtering_ostreambuf& obuf) {
             bio::filtering_istreambuf hashed_randomness(sha256_filter() | bio::restrict(random_source(), 0, 64*1024));
@@ -1307,7 +1307,7 @@ BOOST_DATA_TEST_CASE(rewrite_same_remembered, bdata::make(log_configs_for_rewrit
 
    //rewrite blocks 70-104
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
       for(unsigned i = start_rewrite_block; i < end_block; ++i)
          lc.pack_and_write_entry(fake_blockid_for_num(i), fake_blockid_for_num(i-1), [&](bio::filtering_ostreambuf& obuf) {
             bio::filtering_istreambuf hashed_randomness(sha256_filter() | bio::restrict(random_source(), 0, 64*1024));
@@ -1317,7 +1317,7 @@ BOOST_DATA_TEST_CASE(rewrite_same_remembered, bdata::make(log_configs_for_rewrit
 
    //read the blocks back, making sure the hash of data is what was originally written and that the size of the log remained equal
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
       BOOST_REQUIRE_LT(lc.block_range().first, start_rewrite_block);
       BOOST_REQUIRE_EQUAL(lc.block_range().second, end_block);
 
@@ -1349,7 +1349,7 @@ BOOST_AUTO_TEST_CASE(rewrite_same_forgotten) try {
 
    //fill up blocks 10 through 104, but many of the early blocks are forgotten
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
       for(unsigned i = begin_block; i < end_block; ++i)
          lc.pack_and_write_entry(fake_blockid_for_num(i), fake_blockid_for_num(i-1), [&](bio::filtering_ostreambuf& obuf) {
             bio::filtering_istreambuf hashed_randomness(sha256_filter() | bio::restrict(random_source(), 0, 64*1024));
@@ -1361,7 +1361,7 @@ BOOST_AUTO_TEST_CASE(rewrite_same_forgotten) try {
    const unsigned start_rewrite_block = 30;
 
    //try and rewrite block 30. This is a forgotten block that is before the first block in the catalog, so it will fail
-   eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+   core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
    BOOST_REQUIRE_EXCEPTION(lc.pack_and_write_entry(fake_blockid_for_num(start_rewrite_block), fake_blockid_for_num(start_rewrite_block-1), [&](bio::filtering_ostreambuf& obuf) {}), chain::plugin_exception,
                            [](const chain::plugin_exception& e) {return e.get_log().at(0).get_message().find("is before first block") != std::string::npos;});
 } FC_LOG_AND_RETHROW();
@@ -1379,7 +1379,7 @@ BOOST_AUTO_TEST_CASE(rewrite_same_forgotten_pruned_range) try {
 
    //fill up blocks 10 through 104, but many of the early blocks are forgotten
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
       for(unsigned i = begin_block; i < end_block; ++i)
          lc.pack_and_write_entry(fake_blockid_for_num(i), fake_blockid_for_num(i-1), [&](bio::filtering_ostreambuf& obuf) {
             bio::filtering_istreambuf hashed_randomness(sha256_filter() | bio::restrict(random_source(), 0, 64*1024));
@@ -1395,7 +1395,7 @@ BOOST_AUTO_TEST_CASE(rewrite_same_forgotten_pruned_range) try {
 
    //rewrite block 30, and check that the log state seems sane
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
       lc.pack_and_write_entry(fake_blockid_for_num(start_rewrite_block), fake_blockid_for_num(start_rewrite_block-1), [&](bio::filtering_ostreambuf& obuf) {});
       const auto [after_begin_block, after_end_block] = lc.block_range();
 
@@ -1404,7 +1404,7 @@ BOOST_AUTO_TEST_CASE(rewrite_same_forgotten_pruned_range) try {
    }
    //open again just in case
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
       const auto [after_begin_block, after_end_block] = lc.block_range();
       BOOST_REQUIRE_EQUAL(after_begin_block, start_rewrite_block);
       BOOST_REQUIRE_EQUAL(after_end_block, start_rewrite_block+1u);
@@ -1428,7 +1428,7 @@ BOOST_AUTO_TEST_CASE(rewrite_too_old_pruned_block) try {
 
    //fill up blocks 10 through 104, but many of the early blocks are forgotten
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
       for(unsigned i = begin_block; i < end_block; ++i)
          lc.pack_and_write_entry(fake_blockid_for_num(i), fake_blockid_for_num(i-1), [&](bio::filtering_ostreambuf& obuf) {
             bio::filtering_istreambuf hashed_randomness(sha256_filter() | bio::restrict(random_source(), 0, 64*1024));
@@ -1439,7 +1439,7 @@ BOOST_AUTO_TEST_CASE(rewrite_too_old_pruned_block) try {
 
    const unsigned start_rewrite_block = 9;
 
-   eosio::state_history::log_catalog lc(tmpdir.path(), config, "huh");
+   core_net::state_history::log_catalog lc(tmpdir.path(), config, "huh");
    BOOST_REQUIRE_EXCEPTION(lc.pack_and_write_entry(fake_blockid_for_num(start_rewrite_block), fake_blockid_for_num(start_rewrite_block-1), [&](bio::filtering_ostreambuf& obuf) {}), chain::plugin_exception,
                            [](const chain::plugin_exception& e) {return e.get_log().at(0).get_message().find("is before start block") != std::string::npos;});
 
@@ -1473,7 +1473,7 @@ BOOST_DATA_TEST_CASE(clear, bdata::make(log_configs_for_clear) * bdata::make({9u
    const unsigned after_clear_end_block = after_clear_begin_block+4;
 
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "clearme");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "clearme");
       for(unsigned i = before_clear_begin_block; i < before_clear_end_block; ++i)
          lc.pack_and_write_entry(fake_blockid_for_num(i), fake_blockid_for_num(i-1), [&](bio::filtering_ostreambuf& obuf) {});
 
@@ -1506,7 +1506,7 @@ BOOST_DATA_TEST_CASE(clear, bdata::make(log_configs_for_clear) * bdata::make({9u
 
    //reopen for sanity check
    {
-      eosio::state_history::log_catalog lc(tmpdir.path(), config, "clearme");
+      core_net::state_history::log_catalog lc(tmpdir.path(), config, "clearme");
       const auto [begin_block, end_block] = lc.block_range();
       BOOST_REQUIRE_EQUAL(begin_block, after_clear_begin_block);
       BOOST_REQUIRE_EQUAL(end_block, after_clear_end_block);

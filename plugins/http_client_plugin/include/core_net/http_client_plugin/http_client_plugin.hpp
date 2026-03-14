@@ -1,8 +1,8 @@
 #pragma once
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 #include <fc/network/http/http_client.hpp>
 
-namespace eosio {
+namespace core_net {
    using namespace appbase;
    using fc::http_client;
 

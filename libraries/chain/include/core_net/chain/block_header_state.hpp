@@ -1,14 +1,14 @@
 #pragma once
-#include <eosio/chain/block_header.hpp>
-#include <eosio/chain/finality_core.hpp>
-#include <eosio/chain/protocol_feature_manager.hpp>
-#include <eosio/chain/qc.hpp>
-#include <eosio/chain/finalizer_policy.hpp>
-#include <eosio/chain/finality_extension.hpp>
-#include <eosio/chain/chain_snapshot.hpp>
+#include <core_net/chain/block_header.hpp>
+#include <core_net/chain/finality_core.hpp>
+#include <core_net/chain/protocol_feature_manager.hpp>
+#include <core_net/chain/qc.hpp>
+#include <core_net/chain/finalizer_policy.hpp>
+#include <core_net/chain/finality_extension.hpp>
+#include <core_net/chain/chain_snapshot.hpp>
 #include <future>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 namespace snapshot_detail {
   struct snapshot_block_state_v7;
@@ -232,12 +232,12 @@ using block_header_state_ptr = std::shared_ptr<block_header_state>;
 
 }
 
-FC_REFLECT( eosio::chain::block_header_state, (block_id)(header)
+FC_REFLECT( core_net::chain::block_header_state, (block_id)(header)
             (activated_protocol_features)(core)(active_finalizer_policy)
             (active_proposer_policy)(latest_proposed_proposer_policy)(latest_pending_proposer_policy)(proposed_finalizer_policies)
             (pending_finalizer_policy)(latest_qc_claim_block_active_finalizer_policy)(finalizer_policy_generation)
             (last_pending_finalizer_policy_digest)(last_pending_finalizer_policy_start_timestamp))
 
-FC_REFLECT( eosio::chain::level_3_commitments_t, (reversible_blocks_mroot)(latest_qc_claim_block_num )(latest_qc_claim_finality_digest)(latest_qc_claim_timestamp)(timestamp)(base_digest))
-FC_REFLECT( eosio::chain::level_2_commitments_t, (last_pending_fin_pol_digest)(last_pending_fin_pol_start_timestamp)(l3_commitments_digest) )
-FC_REFLECT( eosio::chain::finality_digest_data_v1, (major_version)(minor_version)(active_finalizer_policy_generation)(last_pending_finalizer_policy_generation)(finality_tree_digest)(l2_commitments_digest) )
+FC_REFLECT( core_net::chain::level_3_commitments_t, (reversible_blocks_mroot)(latest_qc_claim_block_num )(latest_qc_claim_finality_digest)(latest_qc_claim_timestamp)(timestamp)(base_digest))
+FC_REFLECT( core_net::chain::level_2_commitments_t, (last_pending_fin_pol_digest)(last_pending_fin_pol_start_timestamp)(l3_commitments_digest) )
+FC_REFLECT( core_net::chain::finality_digest_data_v1, (major_version)(minor_version)(active_finalizer_policy_generation)(last_pending_finalizer_policy_generation)(finality_tree_digest)(l2_commitments_digest) )

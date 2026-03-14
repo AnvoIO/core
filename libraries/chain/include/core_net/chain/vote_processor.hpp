@@ -1,8 +1,8 @@
 #pragma once
 
-#include <eosio/chain/vote_message.hpp>
-#include <eosio/chain/block_state.hpp>
-#include <eosio/chain/controller.hpp>
+#include <core_net/chain/vote_message.hpp>
+#include <core_net/chain/block_state.hpp>
+#include <core_net/chain/controller.hpp>
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/composite_key.hpp>
@@ -12,7 +12,7 @@
 
 #include <unordered_map>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 /**
  * Process votes in a dedicated thread pool.
@@ -263,4 +263,4 @@ public:
 
 };
 
-} // namespace eosio::chain
+} // namespace core_net::chain

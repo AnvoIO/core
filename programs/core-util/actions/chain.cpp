@@ -11,15 +11,15 @@
 
 #include <boost/exception/diagnostic_information.hpp>
 
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <filesystem>
 
-using namespace eosio;
-using namespace eosio::chain;
+using namespace core_net;
+using namespace core_net::chain;
 
 void chain_actions::setup(CLI::App& app) {
    auto* sub = app.add_subcommand("chain-state", "chain utility");
@@ -67,7 +67,7 @@ int chain_actions::run_subcommand_sstate() {
    // default state dir, if none specified
    if(opt->sstate_state_dir.empty()) {
       auto root = fc::app_path();
-      auto default_data_dir = root / "eosio" / "nodeos" / "data" ;
+      auto default_data_dir = root / "eosio" / "core_netd" / "data" ;
       state_dir  = default_data_dir / config::default_state_dir_name;
    }
    else {
@@ -83,7 +83,7 @@ int chain_actions::run_subcommand_sstate() {
    try {
       fc::random_access_file file(shared_mem_path, fc::random_access_file::read_only);
       chainbase::db_header header = file.unpack_from<chainbase::db_header>(0);
-      FC_ASSERT(header.id == chainbase::header_id, "\"" + state_dir.string() + "\" database format not compatible with this version of spring-util");
+      FC_ASSERT(header.id == chainbase::header_id, "\"" + state_dir.string() + "\" database format not compatible with this version of core-util");
       FC_ASSERT(header.dirty == false, "Database dirty flag is set, shutdown was not clean");
    }
    catch (fc::exception& e) {

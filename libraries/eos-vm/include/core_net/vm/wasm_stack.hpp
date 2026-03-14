@@ -4,14 +4,14 @@
  * definitions from https://github.com/WebAssembly/design/blob/master/BinaryEncoding.md
  */
 
-#include <eosio/vm/allocator.hpp>
-#include <eosio/vm/constants.hpp>
-#include <eosio/vm/exceptions.hpp>
-#include <eosio/vm/stack_elem.hpp>
-#include <eosio/vm/types.hpp>
-#include <eosio/vm/vector.hpp>
+#include <core_net/vm/allocator.hpp>
+#include <core_net/vm/constants.hpp>
+#include <core_net/vm/exceptions.hpp>
+#include <core_net/vm/stack_elem.hpp>
+#include <core_net/vm/types.hpp>
+#include <core_net/vm/vector.hpp>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
    using std::nullptr_t;
 
    template <typename ElemT, size_t ElemSz, typename Allocator = nullptr_t >
@@ -40,11 +40,11 @@ namespace eosio { namespace vm {
       ElemT pop() { return _store[--_index]; }
 
       ElemT& get(uint32_t index) const {
-         EOS_VM_ASSERT(index <= _index, wasm_interpreter_exception, "invalid stack index");
+         CORE_NET_VM_ASSERT(index <= _index, wasm_interpreter_exception, "invalid stack index");
          return (ElemT&)_store[index];
       }
       void set(uint32_t index, const ElemT& el) {
-         EOS_VM_ASSERT(index <= _index, wasm_interpreter_exception, "invalid stack index");
+         CORE_NET_VM_ASSERT(index <= _index, wasm_interpreter_exception, "invalid stack index");
          _store[index] = el;
       }
       void  eat(uint32_t index) { _index = index; }
@@ -84,4 +84,4 @@ namespace eosio { namespace vm {
    using operand_stack = stack<operand_stack_elem, constants::initial_stack_size>;
    using call_stack    = stack<activation_frame,   constants::max_call_depth + 1, bounded_allocator>;
 
-}} // namespace eosio::vm
+}} // namespace core_net::vm

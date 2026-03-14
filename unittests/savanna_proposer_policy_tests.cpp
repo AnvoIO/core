@@ -1,7 +1,7 @@
 #include "savanna_cluster.hpp"
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 static const uint32_t prod_rep = static_cast<uint32_t>(config::producer_repetitions);
 

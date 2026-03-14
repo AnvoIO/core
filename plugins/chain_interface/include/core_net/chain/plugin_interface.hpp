@@ -3,13 +3,13 @@
 #include <appbase/channel.hpp>
 #include <appbase/method.hpp>
 
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/transaction_metadata.hpp>
-#include <eosio/chain/trace.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/transaction_metadata.hpp>
+#include <core_net/chain/trace.hpp>
 
-namespace eosio::chain::plugin_interface {
-   using namespace eosio::chain;
+namespace core_net::chain::plugin_interface {
+   using namespace core_net::chain;
    using namespace appbase;
    struct chain_plugin_interface;
 
@@ -39,4 +39,4 @@ namespace eosio::chain::plugin_interface {
       }
    }
 
-} // namespace eosio::chain::plugin_interface
+} // namespace core_net::chain::plugin_interface

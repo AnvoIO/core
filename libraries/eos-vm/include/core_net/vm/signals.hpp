@@ -1,8 +1,8 @@
 #pragma once
 
-#include <eosio/vm/exceptions.hpp>
-#include <eosio/vm/span.hpp>
-#include <eosio/vm/utils.hpp>
+#include <core_net/vm/exceptions.hpp>
+#include <core_net/vm/span.hpp>
+#include <core_net/vm/utils.hpp>
 
 #include <atomic>
 #include <cstdlib>
@@ -11,7 +11,7 @@
 #include <signal.h>
 #include <setjmp.h>
 
-namespace eosio { namespace vm {
+namespace core_net { namespace vm {
 
    // Fixes a duplicate symbol build issue when building with `-fvisibility=hidden`
    __attribute__((visibility("default")))
@@ -199,4 +199,4 @@ namespace eosio { namespace vm {
       }
    }
 
-}} // namespace eosio::vm
+}} // namespace core_net::vm

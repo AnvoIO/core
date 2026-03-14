@@ -1,13 +1,13 @@
-#include <eosio/chain/abi_serializer.hpp>
+#include <core_net/chain/abi_serializer.hpp>
 #include <boost/test/unit_test.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/global_property_object.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/global_property_object.hpp>
 #include <fc/variant_object.hpp>
 #include <test_contracts.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace fc;
 
 using mvo = fc::mutable_variant_object;
@@ -223,8 +223,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( linkauth_test, T, dry_run_trx_testers ) { try {
    chain.produce_block();
 
    chain.create_account("eosio.token"_n);
-   chain.set_code("eosio.token"_n, test_contracts::eosio_token_wasm());
-   chain.set_abi("eosio.token"_n, test_contracts::eosio_token_abi());
+   chain.set_code("eosio.token"_n, test_contracts::core_net_token_wasm());
+   chain.set_abi("eosio.token"_n, test_contracts::core_net_token_abi());
 
    chain.create_accounts( {"alice"_n} );
 
@@ -255,8 +255,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( unlinkauth_test, T, dry_run_trx_testers ) { try {
    chain.produce_block();
 
    chain.create_account("eosio.token"_n);
-   chain.set_code("eosio.token"_n, test_contracts::eosio_token_wasm());
-   chain.set_abi("eosio.token"_n, test_contracts::eosio_token_abi());
+   chain.set_code("eosio.token"_n, test_contracts::core_net_token_wasm());
+   chain.set_abi("eosio.token"_n, test_contracts::core_net_token_abi());
 
    chain.create_accounts( {"alice"_n} );
 

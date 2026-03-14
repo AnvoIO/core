@@ -7,7 +7,7 @@
 #ifdef __cplusplus
 #include <vector>
 #include <list>
-namespace eosio::chain {
+namespace core_net::chain {
    class apply_context;
 }
 #endif
@@ -19,7 +19,7 @@ struct eos_vm_oc_control_block {
    uintptr_t execution_thread_memory_start;
    size_t execution_thread_memory_length;
 #ifdef __cplusplus
-   eosio::chain::apply_context* ctx;
+   core_net::chain::apply_context* ctx;
    std::exception_ptr* eptr;
 #else
    void* ctx;
@@ -42,7 +42,7 @@ struct eos_vm_oc_control_block {
 };
 
 #ifdef __cplusplus
-namespace eosio::chain::eosvmoc {
+namespace core_net::chain::eosvmoc {
    using control_block = eos_vm_oc_control_block;
 }
 #endif

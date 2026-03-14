@@ -1,11 +1,11 @@
 #pragma once
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/trace.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/trace.hpp>
 
 #include <fc/container/tracked_storage.hpp>
 #include <memory>
 
-namespace eosio::chain_apis {
+namespace core_net::chain_apis {
 
    struct trx_finality_status_processing_impl; 
    using trx_finality_status_processing_impl_ptr = std::unique_ptr<trx_finality_status_processing_impl>;
@@ -58,4 +58,4 @@ namespace eosio::chain_apis {
    };
 
    using trx_finality_status_processing_ptr = std::unique_ptr<trx_finality_status_processing>;
-} // namespace eosio::chain_apis
+} // namespace core_net::chain_apis

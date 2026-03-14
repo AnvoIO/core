@@ -1,12 +1,12 @@
 #pragma once
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 #include <fc/variant.hpp>
-#include <eosio/chain/contract_types.hpp>
-#include <eosio/chain/transaction.hpp>
+#include <core_net/chain/contract_types.hpp>
+#include <core_net/chain/transaction.hpp>
 
 namespace fc { class variant; }
 
-namespace eosio {
+namespace core_net {
    using namespace appbase;
 
    namespace wallet {

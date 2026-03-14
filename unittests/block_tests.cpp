@@ -1,8 +1,8 @@
 #include <boost/test/unit_test.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 #include <test_contracts.hpp>
 
-using namespace eosio;
+using namespace core_net;
 using namespace testing;
 using namespace chain;
 
@@ -357,8 +357,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(no_onblock_test, T, testers) { try {
    BOOST_TEST(!r.block->action_mroot.empty());
 
    // Deploy contract that rejects all actions dispatched to it with the following exceptions:
-   //   * eosio::setcode to set code on the eosio is allowed (unless the rejectall account exists)
-   //   * eosio::newaccount is allowed only if it creates the rejectall account.
+   //   * core_net::setcode to set code on the eosio is allowed (unless the rejectall account exists)
+   //   * core_net::newaccount is allowed only if it creates the rejectall account.
    c.set_code( config::system_account_name, test_contracts::reject_all_wasm() );
    c.produce_block();
    r = c.produce_block_ex(); // empty block, no valid onblock since it is rejected

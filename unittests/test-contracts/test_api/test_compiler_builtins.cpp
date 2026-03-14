@@ -2,8 +2,8 @@
  *    @file test_compiler_builtins.cpp
  *    @copyright defined in eos/LICENSE
  */
-#include <eosio/eosio.hpp>
-#include <eosio/print.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/print.hpp>
 
 #include "test_api.hpp"
 

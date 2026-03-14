@@ -1,16 +1,16 @@
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/testing/tester_network.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/testing/tester_network.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include <contracts.hpp>
 #include <test_contracts.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 using mvo = fc::mutable_variant_object;
 
@@ -28,10 +28,10 @@ static void create_accounts(validating_tester& chain) {
          ("account", "eosio.msig")
          ("is_priv", 1) );
 
-   chain.set_code("eosio.token"_n, test_contracts::eosio_token_wasm());
-   chain.set_abi("eosio.token"_n, test_contracts::eosio_token_abi());
-   chain.set_code("eosio.msig"_n, test_contracts::eosio_msig_wasm());
-   chain.set_abi("eosio.msig"_n, test_contracts::eosio_msig_abi());
+   chain.set_code("eosio.token"_n, test_contracts::core_net_token_wasm());
+   chain.set_abi("eosio.token"_n, test_contracts::core_net_token_abi());
+   chain.set_code("eosio.msig"_n, test_contracts::core_net_msig_wasm());
+   chain.set_abi("eosio.msig"_n, test_contracts::core_net_msig_abi());
 
    chain.produce_block();
    chain.create_account("tester"_n);
@@ -1372,8 +1372,8 @@ BOOST_AUTO_TEST_CASE( canceldelay_test ) { try {
    chain.create_account("eosio.token"_n);
    chain.produce_block();
 
-   chain.set_code("eosio.token"_n, test_contracts::eosio_token_wasm());
-   chain.set_abi("eosio.token"_n, test_contracts::eosio_token_abi());
+   chain.set_code("eosio.token"_n, test_contracts::core_net_token_wasm());
+   chain.set_abi("eosio.token"_n, test_contracts::core_net_token_abi());
 
    chain.produce_block();
    chain.create_account("tester"_n);
@@ -1614,8 +1614,8 @@ BOOST_AUTO_TEST_CASE( canceldelay_test2 ) { try {
    chain.create_account("eosio.token"_n);
    chain.produce_block();
 
-   chain.set_code("eosio.token"_n, test_contracts::eosio_token_wasm());
-   chain.set_abi("eosio.token"_n, test_contracts::eosio_token_abi());
+   chain.set_code("eosio.token"_n, test_contracts::core_net_token_wasm());
+   chain.set_abi("eosio.token"_n, test_contracts::core_net_token_abi());
 
    chain.produce_block();
    chain.create_account("tester"_n);

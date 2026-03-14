@@ -1,10 +1,10 @@
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <boost/test/unit_test.hpp>
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 BOOST_AUTO_TEST_SUITE(database_tests)
 
@@ -14,7 +14,7 @@ BOOST_AUTO_TEST_SUITE(database_tests)
          T test;
 
          // Bypass read-only restriction on state DB access for this unit test which really needs to mutate the DB to properly conduct its test.
-         eosio::chain::database& db = const_cast<eosio::chain::database&>( test.control->db() );
+         core_net::chain::database& db = const_cast<core_net::chain::database&>( test.control->db() );
 
          auto ses = db.start_undo_session(true);
 
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_SUITE(database_tests)
          T test(
             tempdir,
             [&](controller::config& cfg) {
-               cfg.blog = eosio::chain::empty_blocklog_config{};
+               cfg.blog = core_net::chain::empty_blocklog_config{};
             },
             use_genesis
          );

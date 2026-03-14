@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/wasm_backend/opcodes.hpp>
+#include <core_net/wasm_backend/opcodes.hpp>
 #include <iostream>
 #include <variant>
 
-namespace eosio { namespace wasm_backend {
+namespace core_net { namespace wasm_backend {
 struct disassembly_visitor {
    void print(const std::string& s) {
       //std::string tb(tab_width, '\t');
@@ -537,4 +537,4 @@ struct disassembly_visitor {
    uint32_t tab_width;
 };
 
-}} // ns eosio::wasm_backend
+}} // ns core_net::wasm_backend

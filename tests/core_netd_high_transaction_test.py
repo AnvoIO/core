@@ -58,7 +58,7 @@ walletMgr=WalletMgr(True, port=walletPort)
 testSuccessful=False
 
 WalletdName=Utils.EosWalletName
-ClientName="cleos"
+ClientName="core-cli"
 
 maxTransactionAttempts = 2            # max number of attempts to try to send a transaction
 maxTransactionAttemptsNoSend = 1      # max number of attempts to try to create a transaction to be sent as a duplicate

@@ -1,35 +1,35 @@
 #pragma once
 
-#include <eosio/chain/wasm_interface.hpp>
-#include <eosio/chain/wasm_eosio_constraints.hpp>
-#include <eosio/vm/host_function.hpp>
-#include <eosio/vm/argument_proxy.hpp>
-#include <eosio/vm/span.hpp>
-#include <eosio/vm/types.hpp>
+#include <core_net/chain/wasm_interface.hpp>
+#include <core_net/chain/wasm_constraints.hpp>
+#include <core_net/vm/host_function.hpp>
+#include <core_net/vm/argument_proxy.hpp>
+#include <core_net/vm/span.hpp>
+#include <core_net/vm/types.hpp>
 
-namespace eosio { namespace chain { namespace webassembly {
+namespace core_net { namespace chain { namespace webassembly {
    // forward declaration
    class interface;
-}}} // ns eosio::chain::webassembly
+}}} // ns core_net::chain::webassembly
 
 // TODO need to fix up wasm_tests to not use this macro
-#define EOSIO_INJECTED_MODULE_NAME "eosio_injection"
+#define CORE_NET_INJECTED_MODULE_NAME "core_net_injection"
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    class apply_context;
    class transaction_context;
 
-   inline static constexpr auto eosio_injected_module_name = EOSIO_INJECTED_MODULE_NAME;
+   inline static constexpr auto core_net_injected_module_name = CORE_NET_INJECTED_MODULE_NAME;
 
-   template <typename T, std::size_t Extent = eosio::vm::dynamic_extent>
-   using span = eosio::vm::span<T, Extent>;
-
-   template <typename T, std::size_t Align = alignof(T)>
-   using legacy_ptr = eosio::vm::argument_proxy<T*, Align>;
+   template <typename T, std::size_t Extent = core_net::vm::dynamic_extent>
+   using span = core_net::vm::span<T, Extent>;
 
    template <typename T, std::size_t Align = alignof(T)>
-   using legacy_span = eosio::vm::argument_proxy<eosio::vm::span<T>, Align>;
+   using legacy_ptr = core_net::vm::argument_proxy<T*, Align>;
+
+   template <typename T, std::size_t Align = alignof(T)>
+   using legacy_span = core_net::vm::argument_proxy<core_net::vm::span<T>, Align>;
 
    struct null_terminated_ptr {
       null_terminated_ptr(const char* ptr) : ptr(ptr) {}
@@ -57,9 +57,9 @@ namespace eosio { namespace chain {
 
    // define the type converter for eosio
    template<typename Interface>
-   struct basic_type_converter : public eosio::vm::type_converter<webassembly::interface, Interface> {
-      using base_type = eosio::vm::type_converter<webassembly::interface, Interface>;
-      using eosio::vm::type_converter<webassembly::interface, Interface>::type_converter;
+   struct basic_type_converter : public core_net::vm::type_converter<webassembly::interface, Interface> {
+      using base_type = core_net::vm::type_converter<webassembly::interface, Interface>;
+      using core_net::vm::type_converter<webassembly::interface, Interface>::type_converter;
       using base_type::from_wasm;
       using base_type::to_wasm;
 
@@ -113,11 +113,11 @@ namespace eosio { namespace chain {
       EOS_VM_FROM_WASM(float64_t, (double f)) { return ::to_softfloat64(f); }
    };
 
-   using type_converter = basic_type_converter<eosio::vm::execution_interface>;
+   using type_converter = basic_type_converter<core_net::vm::execution_interface>;
 
-   using eos_vm_host_functions_t = eosio::vm::registered_host_functions<webassembly::interface,
-                                                                        eosio::vm::execution_interface,
-                                                                        eosio::chain::type_converter>;
-   using wasm_size_t = eosio::vm::wasm_size_t;
+   using eos_vm_host_functions_t = core_net::vm::registered_host_functions<webassembly::interface,
+                                                                        core_net::vm::execution_interface,
+                                                                        core_net::chain::type_converter>;
+   using wasm_size_t = core_net::vm::wasm_size_t;
 
-}} // eosio::chain
+}} // core_net::chain

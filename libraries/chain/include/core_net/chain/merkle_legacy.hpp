@@ -1,8 +1,8 @@
 #pragma once
-#include <eosio/chain/types.hpp>
+#include <core_net/chain/types.hpp>
 #include <fc/io/raw.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 namespace detail {
 
@@ -54,4 +54,4 @@ inline digest_type calculate_merkle_legacy( deque<digest_type> ids ) {
    return ids.front();
 }
 
-} /// eosio::chain
+} /// core_net::chain

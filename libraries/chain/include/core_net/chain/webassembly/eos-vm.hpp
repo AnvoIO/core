@@ -1,33 +1,33 @@
 #pragma once
 
-#include <eosio/chain/webassembly/common.hpp>
-#include <eosio/chain/webassembly/runtime_interface.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/wasm_config.hpp>
-#include <eosio/chain/whitelisted_intrinsics.hpp>
+#include <core_net/chain/webassembly/common.hpp>
+#include <core_net/chain/webassembly/runtime_interface.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/wasm_config.hpp>
+#include <core_net/chain/whitelisted_intrinsics.hpp>
 #include <softfloat_types.h>
 
 //eos-vm includes
-#include <eosio/vm/backend.hpp>
-#include <eosio/vm/profile.hpp>
+#include <core_net/vm/backend.hpp>
+#include <core_net/vm/profile.hpp>
 
-namespace eosio { namespace chain { namespace webassembly { namespace eos_vm_runtime {
+namespace core_net { namespace chain { namespace webassembly { namespace eos_vm_runtime {
 
 struct apply_options;
 
 }}
 
 template <typename Impl>
-using eos_vm_backend_t = eosio::vm::backend<eos_vm_host_functions_t, Impl, webassembly::eos_vm_runtime::apply_options, vm::profile_instr_map>;
+using eos_vm_backend_t = core_net::vm::backend<eos_vm_host_functions_t, Impl, webassembly::eos_vm_runtime::apply_options, vm::profile_instr_map>;
 
 template <typename Options>
-using eos_vm_null_backend_t = eosio::vm::backend<eos_vm_host_functions_t, eosio::vm::null_backend, Options>;
+using eos_vm_null_backend_t = core_net::vm::backend<eos_vm_host_functions_t, core_net::vm::null_backend, Options>;
 
 namespace webassembly { namespace eos_vm_runtime {
 
 using namespace fc;
-using namespace eosio::vm;
+using namespace core_net::vm;
 
 void validate(const bytes& code, const whitelisted_intrinsics_type& intrinsics );
 
@@ -40,7 +40,7 @@ struct profile_config {
 };
 
 template<typename Backend>
-class eos_vm_runtime : public eosio::chain::wasm_runtime_interface {
+class eos_vm_runtime : public core_net::chain::wasm_runtime_interface {
    using context_t = typename Backend::template context<eos_vm_host_functions_t>;
    public:
       eos_vm_runtime();
@@ -59,11 +59,11 @@ class eos_vm_runtime : public eosio::chain::wasm_runtime_interface {
    friend class eos_vm_instantiated_module;
 };
 
-class eos_vm_profile_runtime : public eosio::chain::wasm_runtime_interface {
+class eos_vm_profile_runtime : public core_net::chain::wasm_runtime_interface {
    public:
       eos_vm_profile_runtime();
       std::unique_ptr<wasm_instantiated_module_interface> instantiate_module(const char* code_bytes, size_t code_size,
                                                                              const digest_type& code_hash, const uint8_t& vm_type, const uint8_t& vm_version) override;
 };
 
-}}}}// eosio::chain::webassembly::eos_vm_runtime
+}}}}// core_net::chain::webassembly::eos_vm_runtime

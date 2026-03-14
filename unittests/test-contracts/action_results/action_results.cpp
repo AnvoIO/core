@@ -1,7 +1,7 @@
-#include <eosio/eosio.hpp>                   /* contract, datastream, unsigned_int */
+#include <core_net/eosio.hpp>                   /* contract, datastream, unsigned_int */
 #include <vector>                            /* vector */
 
-using namespace eosio;
+using namespace core_net;
 using namespace std;
 
 extern "C" { 
@@ -11,27 +11,27 @@ __attribute__((eosio_wasm_import))
 void set_action_return_value(void*, size_t);
 };
 
-class [[eosio::contract]] action_results : public contract {
+class [[core_net::contract]] action_results : public contract {
   public:
       using contract::contract;
 
-      [[eosio::action]]
+      [[core_net::action]]
       int actionresret() {
          return 10;
       }
 
-      [[eosio::action]]
+      [[core_net::action]]
       vector<char> retoverlim() {
          return vector<char>(512, '0');
       }
 
-      [[eosio::action]]
+      [[core_net::action]]
       vector<char> retlim() {
          //2 is for size of type unsigned_int
          return vector<char>(256 - 2, '0');
       }
 
-      [[eosio::action]]
+      [[core_net::action]]
       vector<char> ret1overlim() {
          //2 is for size of type unsigned_int
          return vector<char>(257 - 2, '0');
@@ -40,7 +40,7 @@ class [[eosio::contract]] action_results : public contract {
       /**
        * required to be called as system contract for priviledged host function call  
        */
-      [[eosio::action]]
+      [[core_net::action]]
       void retmaxlim() {
          
          char buffer[12];
@@ -55,7 +55,7 @@ class [[eosio::contract]] action_results : public contract {
          set_action_return_value( ret_vec.data(), ret_vec.size() );
       }
 
-      [[eosio::action]]
+      [[core_net::action]]
       void setliminv() {
          
          char buffer[12];

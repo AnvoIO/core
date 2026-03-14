@@ -1,11 +1,11 @@
 #pragma once
 
-#include <eosio/wallet_plugin/wallet_plugin.hpp>
-#include <eosio/http_plugin/http_plugin.hpp>
+#include <core_net/wallet_plugin/wallet_plugin.hpp>
+#include <core_net/http_plugin/http_plugin.hpp>
 
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 
-namespace eosio {
+namespace core_net {
 
 using namespace appbase;
 

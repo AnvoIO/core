@@ -1,7 +1,7 @@
 #pragma once
 #include <variant>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 
    struct basic_blocklog_config {};
@@ -26,4 +26,4 @@ namespace eosio { namespace chain {
    using block_log_config =
          std::variant<basic_blocklog_config, empty_blocklog_config, partitioned_blocklog_config, prune_blocklog_config>;
 
-}} // namespace eosio::chain
+}} // namespace core_net::chain

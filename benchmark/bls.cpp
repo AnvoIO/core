@@ -1,7 +1,7 @@
 #include <benchmark.hpp>
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/webassembly/interface.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/webassembly/interface.hpp>
+#include <core_net/testing/tester.hpp>
 #include <test_contracts.hpp>
 #include <bls12-381/bls12-381.hpp>
 #include <random>
@@ -13,9 +13,9 @@
 #define BOOST_TEST_NO_MAIN
 #include <boost/test/included/unit_test.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace bls12_381;
 
 // Benchmark BLS host functions without relying on CDT wrappers.
@@ -23,12 +23,12 @@ using namespace bls12_381;
 // To run a benchmarking session, in the build directory, type
 //    benchmark/benchmark -f bls
 
-namespace eosio::benchmark {
+namespace core_net::benchmark {
 
 // To benchmark host functions directly without CDT wrappers,
-// we need to contruct an eosio::chain::webassembly::interface object,
+// we need to contruct an core_net::chain::webassembly::interface object,
 // because host functions are implemented in
-// eosio::chain::webassembly::interface class.
+// core_net::chain::webassembly::interface class.
 struct interface_in_benchmark {
    interface_in_benchmark() {
       // prevent logging from interwined with output benchmark results
@@ -72,7 +72,7 @@ struct interface_in_benchmark {
       trx->sign( chain->get_private_key( "payloadless"_n, "active" ), chain->control.get()->get_chain_id() );
 
       // construct a packed transaction
-      ptrx = std::make_unique<packed_transaction>(*trx, eosio::chain::packed_transaction::compression_type::zlib);
+      ptrx = std::make_unique<packed_transaction>(*trx, core_net::chain::packed_transaction::compression_type::zlib);
 
       // build transaction context from the packed transaction
       timer = std::make_unique<platform_timer>();
@@ -247,7 +247,7 @@ void benchmark_bls_g2_weighted_sum_impl(const std::string& test_name, uint32_t n
       g2 p = random_g2();
       p.toAffineBytesLE(std::span<uint8_t, 192>((uint8_t*)g2_buf.data() + i * 192, 192), from_mont::yes);
    }
-   eosio::chain::span<const char> g2_points(g2_buf.data(), g2_buf.size());
+   core_net::chain::span<const char> g2_points(g2_buf.data(), g2_buf.size());
 
    // prepare scalars operand
    std::vector<char> scalars_buf(32*num_points);
@@ -255,7 +255,7 @@ void benchmark_bls_g2_weighted_sum_impl(const std::string& test_name, uint32_t n
       std::array<uint64_t, 4> s = random_scalar();
       scalar::toBytesLE(s, std::span<uint8_t, 32>((uint8_t*)scalars_buf.data() + i*32, 32));
    }
-   eosio::chain::span<const char> scalars(scalars_buf.data(), scalars_buf.size());
+   core_net::chain::span<const char> scalars(scalars_buf.data(), scalars_buf.size());
 
    // prepare result operand
    std::array<char, 192> result;
@@ -292,7 +292,7 @@ void benchmark_bls_pairing_impl(const std::string& test_name, uint32_t num_pairs
       g1 p = random_g1();
       p.toAffineBytesLE(std::span<uint8_t, 96>((uint8_t*)g1_buf.data() + i * 96, 96), from_mont::yes);
    }
-   eosio::chain::span<const char> g1_points(g1_buf.data(), g1_buf.size());
+   core_net::chain::span<const char> g1_points(g1_buf.data(), g1_buf.size());
 
    // prepare g2 operand
    std::vector<char> g2_buf(192*num_pairs);
@@ -300,7 +300,7 @@ void benchmark_bls_pairing_impl(const std::string& test_name, uint32_t num_pairs
       g2 p2 = random_g2();
       p2.toAffineBytesLE(std::span<uint8_t, (192)>((uint8_t*)g2_buf.data() + i * 192, (192)), from_mont::yes);
    }
-   eosio::chain::span<const char> g2_points(g2_buf.data(), g2_buf.size());
+   core_net::chain::span<const char> g2_points(g2_buf.data(), g2_buf.size());
 
    // prepare result operand
    std::array<char, 576> result;
