@@ -121,17 +121,17 @@ testnet T2 (Month 2-3) depends on them.
 
 **What was done (genesis accounts branch `feature/genesis-accounts`):**
 12. ✓ Forked CLI11/bls12-381/bn256 to Anvo-Network org, updated .gitmodules
-13. ✓ Genesis-configurable system accounts — Steps 1-6 complete:
+13. ✓ Genesis-configurable system accounts — ALL 7 steps complete:
     - system_accounts struct + global accessors (config.hpp/config.cpp)
     - 432+ call sites converted to function calls
     - SET_APP_HANDLER macro refactored to use config::system_account_name()
     - "eosio." prefix checks made configurable
     - Genesis JSON support (optional system_account_prefix field)
     - Persistence in global_property_object (snapshot v9, all 3 startup paths wired)
-14. TODO: Step 7 — Tests for "core" prefix chain behavior
+    - Test suite: 4 tests covering default/custom prefix, reserved names, factory methods
+    - Bug fix: native handler registration moved after set_system_accounts()
 
 **What remains:**
-- Step 7: System accounts test suite
 - CLI11 rebase onto upstream v2.6.2 (SpringFormatter → CoreNetFormatter)
 - Documentation (docs/, README.md)
 - CI/CD workflows

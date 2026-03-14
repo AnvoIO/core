@@ -10,7 +10,7 @@ The Anvo Network codebase has been rebranded from `eosio::` to `core_net::`, but
 
 ## Implementation Steps
 
-**Status:** Steps 1-6 COMPLETE, build passes 100%. Step 7 (tests) remaining.
+**Status:** ALL 7 STEPS COMPLETE. Build passes 100%, all 4 tests pass.
 
 ### Step 1: system_accounts struct + global accessors ✓ DONE
 **Files:** `config.hpp`, new `config.cpp`, `CMakeLists.txt`
@@ -55,13 +55,17 @@ Add `std::optional<name> system_account_prefix` — NOT in FC_REFLECT (preserves
 - Wired all 3 startup paths: genesis (stores prefix in GPO), snapshot (reads from GPO), existing state (reads from GPO)
 - Updated `extract_chain_id` and `snapshot_info` for v7/v8 handling
 
-### Step 7: Tests
+### Step 7: Tests ✓ DONE
 **New file:** `unittests/system_accounts_tests.cpp`
 
-- Default "eosio" chain works identically to before
-- "core" prefix chain: native actions work, "core." names reserved, "eosio." names not reserved
-- Snapshot round-trip preserves prefix
-- Old genesis without field defaults to "eosio"
+4 tests, all passing:
+- `default_prefix_is_eosio`: default genesis creates eosio/eosio.null/eosio.prods
+- `custom_core_prefix`: "core" prefix genesis creates core/core.null/core.prods
+- `reserved_prefix_with_custom`: e2e — core.* reserved, eosio.* not, normal names work
+- `from_prefix_unit_test`: factory methods produce correct derivative names
+
+Also added `reset_system_accounts_for_testing()` (config.hpp/config.cpp) and fixed
+native handler registration timing bug (controller.cpp).
 
 ## Key Files
 
