@@ -15,7 +15,7 @@
 	url = https://github.com/Anvo-Network/bn256
 [submodule "libraries/cli11/cli11"]
 	path = libraries/cli11/cli11
-	url = https://github.com/Anvo-Network/CLI11.git
+	url = https://github.com/CLIUtils/CLI11.git
 [submodule "libraries/libfc/libraries/bls12-381"]
 	path = libraries/libfc/libraries/bls12-381
 	url = https://github.com/Anvo-Network/bls12-381

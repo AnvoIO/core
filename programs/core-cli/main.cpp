@@ -101,6 +101,7 @@ Options:
 
 #define CLI11_HAS_FILESYSTEM 0
 #include <CLI/CLI.hpp>
+#include <core_net/cli/formatter.hpp>
 
 #include "help_text.hpp"
 #include "localize.hpp"
@@ -2858,7 +2859,7 @@ int main( int argc, char** argv ) {
    CLI::App app{"Command Line Interface to Spring Client"};
 
    // custom leap formatter
-   auto fmt = std::make_shared<CLI::SpringFormatter>();
+   auto fmt = std::make_shared<core_net::cli::CoreNetFormatter>();
    app.formatter(fmt);
 
    // enable help-all, display help on error

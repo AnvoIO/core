@@ -4,6 +4,7 @@
 #include <fc/variant.hpp>
 
 #include <CLI/CLI.hpp>
+#include <core_net/cli/formatter.hpp>
 
 #include "actions/blocklog.hpp"
 #include "actions/bls.hpp"
@@ -19,7 +20,7 @@ int main(int argc, char** argv) {
    CLI::App app{"Spring Command Line Utility"};
 
    // custom leap formatter
-   auto fmt = std::make_shared<CLI::SpringFormatter>();
+   auto fmt = std::make_shared<core_net::cli::CoreNetFormatter>();
    app.formatter(fmt);
 
    app.set_help_all_flag("--help-all", "Show all help");
