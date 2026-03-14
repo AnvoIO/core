@@ -131,8 +131,18 @@ testnet T2 (Month 2-3) depends on them.
     - Test suite: 4 tests covering default/custom prefix, reserved names, factory methods
     - Bug fix: native handler registration moved after set_system_accounts()
 
-**What remains:**
-- CLI11 rebase onto upstream v2.6.2 (SpringFormatter → CoreNetFormatter)
+**What was done (CLI11 upgrade):**
+16. ✓ Switched CLI11 submodule from AntelopeIO fork (v2.2.0) to upstream CLIUtils/CLI11 (v2.6.2)
+17. ✓ Created CoreNetFormatter in our own codebase (libraries/cli11/include/core_net/cli/formatter.hpp)
+    — no CLI11 fork needed, custom formatter lives outside the submodule
+18. ✓ Anvo-Network/CLI11 GitHub fork is orphaned (can be deleted)
+
+**Submodule final state:**
+- Absorbed into repo: eos-vm, appbase, softfloat
+- Anvo-Network forks (shared crypto libs): bls12-381, bn256
+- Upstream: boost, boringssl, prometheus-cpp, rapidjson, secp256k1, CLI11
+
+**Phase 1A status: COMPLETE.** All code work done. Remaining items are non-code:
 - Documentation (see below)
 - CI/CD workflows
 - New genesis configuration
