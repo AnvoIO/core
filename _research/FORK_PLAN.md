@@ -161,7 +161,20 @@ testnet T2 (Month 2-3) depends on them.
 4. **Developer guide** — Updated namespace (`core_net::`), include paths
    (`#include <core_net/...>`), macro prefix (`CORE_NET_`), API endpoint paths
 
-5. **README.md** — Project overview for Anvo Network, build instructions, quick start
+5. **WASM ABI compatibility guide** — Critical documentation for contract developers:
+   - **Dual-name intrinsics:** Legacy WASM intrinsic names (`eosio_assert`,
+     `eosio_exit`, etc.) are permanently supported for backward compatibility.
+     New names (`core_net_assert`, `core_net_exit`) are also registered.
+     Both resolve to the same implementation.
+   - **New intrinsics:** Any new WASM intrinsics added to the platform will be
+     registered ONLY under `core_net_*` names. No `eosio_*` aliases for new functions.
+   - **Existing contracts:** All contracts compiled against EOSIO CDT work unmodified.
+     No recompilation needed.
+   - **New contracts:** Should use `core_net_*` intrinsic names via the updated SDK/CDT.
+   - **Injection functions:** Internal softfloat injection names (`_core_net_f32_add`,
+     etc.) are purely runtime-internal — contracts never import them directly.
+
+6. **README.md** — Project overview for Anvo Network, build instructions, quick start
 
 #### 1B. System Contracts
 **Goal:** Fork and modify the bundled system contracts for the new chain.
