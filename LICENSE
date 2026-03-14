@@ -1,27 +1,106 @@
-AntelopeIO/spring
-Copyright (c) 2025-2025 Vaulta Foundation (VF) and its contributors.  All rights reserved. 
-Copyright (c) 2021-2025 EOS Network Foundation (ENF) and its contributors.  All rights reserved. 
-This Vaulta software is based upon:
+Anvo Network
+Copyright (c) 2026 Stratovera LLC and its contributors. All rights reserved.
 
-EOSIO/eos
-Copyright (c) 2017-2021 block.one and its contributors.  All rights reserved.
+License text copyright (c) 2023 MariaDB plc, All Rights Reserved.
+"Business Source License" is a trademark of MariaDB plc.
 
-The MIT License
+Parameters
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Licensor:           Stratovera LLC
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+Licensed Work:      Anvo Network v1.0 and all subsequent versions
+                    released under this License.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+Additional Use Grant:
+
+    You are granted the right to use, copy, modify, create derivative
+    works, and redistribute the Licensed Work for any purpose, subject
+    to the following limitation:
+
+    You may NOT use the Licensed Work, or any substantial portion of it,
+    to operate, deploy, or provide a public blockchain network that
+    competes with Anvo Network as a general-purpose Layer 1 blockchain.
+
+    The following uses are expressly PERMITTED without limitation:
+
+    (a) Operating nodes, validators, finalizers, API endpoints, indexers,
+        or any other infrastructure for the Anvo Network.
+
+    (b) Building and deploying smart contracts, dApps, tools, SDKs,
+        wallets, explorers, bridges, or any other software that interacts
+        with the Anvo Network.
+
+    (c) Operating private, permissioned, or enterprise blockchain networks
+        for internal use that are not offered as public general-purpose
+        Layer 1 networks.
+
+    (d) Academic research, education, personal study, and non-commercial
+        experimentation.
+
+    (e) Migrating an existing EOSIO/Antelope blockchain network to run
+        Anvo Network software as its node implementation.
+
+    (f) Any use that the Licensor has separately authorized in writing.
+
+    For the purposes of this license:
+
+    "Public blockchain network" means a permissionless blockchain network
+    that is accessible to the general public and processes transactions
+    from any participant.
+
+    "Competes with Anvo Network" means a blockchain network that
+    positions itself as an alternative general-purpose Layer 1 to
+    Anvo Network for the purpose of attracting users, developers,
+    validators, or liquidity away from Anvo Network.
+
+Change Date:        Three (3) years from the date each version of the
+                    Licensed Work is first publicly released by the
+                    Licensor.
+
+Change License:     Apache License, Version 2.0
+
+Notice
+
+Business Source License 1.1
+
+Terms
+
+The Licensor hereby grants you the right to copy, modify, create
+derivative works, redistribute, and make non-production use of the
+Licensed Work. The Licensor may make an Additional Use Grant, above,
+permitting limited production use.
+
+Effective on the Change Date, or the third anniversary of the first
+publicly available distribution of a specific version of the Licensed
+Work under this License, whichever comes first, the Licensor hereby
+grants you rights under the terms of the Change License, and the rights
+granted in the paragraph above terminate.
+
+If your use of the Licensed Work does not comply with the requirements
+currently in effect as described in this License, you must purchase a
+commercial license from the Licensor, its affiliated entities, or
+authorized resellers, or you must refrain from using the Licensed Work.
+
+All copies of the original and modified Licensed Work, and derivative
+works of the Licensed Work, are subject to this License. This License
+applies separately for each version of the Licensed Work and the Change
+Date may vary for each version of the Licensed Work released by Licensor.
+
+You must conspicuously display this License on each original or modified
+copy of the Licensed Work. If you receive the Licensed Work in original
+or modified form from a third party, the terms and conditions set forth
+in this License apply to your use of that work.
+
+Any use of the Licensed Work in violation of this License will
+automatically terminate your rights under this License for the current
+and all other versions of the Licensed Work.
+
+This License does not grant you any right in any trademark or logo of
+Licensor or its affiliates (provided that you may use a trademark or
+logo of Licensor as expressly required by this License).
+
+TO THE EXTENT PERMITTED BY APPLICABLE LAW, THE LICENSED WORK IS PROVIDED
+ON AN "AS IS" BASIS. LICENSOR HEREBY DISCLAIMS ALL WARRANTIES AND
+CONDITIONS, EXPRESS OR IMPLIED, INCLUDING (WITHOUT LIMITATION) WARRANTIES
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-INFRINGEMENT,
+AND TITLE.
