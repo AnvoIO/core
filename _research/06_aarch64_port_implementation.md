@@ -60,7 +60,7 @@ and it avoids the fragility of TPIDR_EL0 save/restore around every intrinsic cal
 
 ### 1. gs_seg_helpers.h → platform_helpers.h
 
-**File:** `libraries/chain/include/anvo/chain/webassembly/eos-vm-oc/gs_seg_helpers.h`
+**File:** `libraries/chain/include/core/chain/webassembly/eos-vm-oc/gs_seg_helpers.h`
 
 **Current (x86_64):**
 ```c
@@ -324,7 +324,7 @@ handler catches it.
 ### 6. memory.cpp / memory.hpp — Memory Layout
 
 **File:** `libraries/chain/webassembly/runtimes/eos-vm-oc/memory.cpp`
-**File:** `libraries/chain/include/anvo/chain/webassembly/eos-vm-oc/memory.hpp`
+**File:** `libraries/chain/include/core/chain/webassembly/eos-vm-oc/memory.hpp`
 
 #### Page Size Issue
 
@@ -406,7 +406,7 @@ resource limits. All POSIX/Linux APIs, not x86_64-specific.
 
 ### 9. memfd_helpers.hpp
 
-**File:** `libraries/chain/include/anvo/chain/webassembly/eos-vm-oc/memfd_helpers.hpp`
+**File:** `libraries/chain/include/core/chain/webassembly/eos-vm-oc/memfd_helpers.hpp`
 
 Uses `memfd_create()` — Linux 3.17+, not architecture-specific.
 

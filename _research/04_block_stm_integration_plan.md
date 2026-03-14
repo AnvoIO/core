@@ -327,16 +327,16 @@ limits manager in order during the commit phase.
 | `libraries/chain/controller.cpp` | Add parallel execution path in block production |
 | `libraries/chain/transaction_context.cpp` | Support shadow state undo sessions |
 | `libraries/chain/apply_context.cpp` | Route db ops through shadow state in parallel mode |
-| `libraries/chain/include/anvo/chain/apply_context.hpp` | Add shadow state member |
+| `libraries/chain/include/core/chain/apply_context.hpp` | Add shadow state member |
 
 ### New Files
 
 | File | Purpose |
 |------|---------|
-| `libraries/chain/include/anvo/chain/block_stm/scheduler.hpp` | Transaction scheduler |
-| `libraries/chain/include/anvo/chain/block_stm/multi_version_store.hpp` | MVS data structure |
-| `libraries/chain/include/anvo/chain/block_stm/shadow_state.hpp` | Per-tx state overlay |
-| `libraries/chain/include/anvo/chain/block_stm/conflict_detector.hpp` | Read/write set validation |
+| `libraries/chain/include/core/chain/block_stm/scheduler.hpp` | Transaction scheduler |
+| `libraries/chain/include/core/chain/block_stm/multi_version_store.hpp` | MVS data structure |
+| `libraries/chain/include/core/chain/block_stm/shadow_state.hpp` | Per-tx state overlay |
+| `libraries/chain/include/core/chain/block_stm/conflict_detector.hpp` | Read/write set validation |
 | `libraries/chain/block_stm/scheduler.cpp` | Scheduler implementation |
 | `libraries/chain/block_stm/multi_version_store.cpp` | MVS implementation |
 

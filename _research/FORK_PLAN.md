@@ -85,9 +85,9 @@ Spring, leap, Leap, and block.one from the codebase. Replace with new project id
 | leap | ~44 | Legacy comments, CMake configs |
 
 **What to rename:**
-- C++ namespace: `eosio::` → `anvo::` (377 declarations, 366 files)
-- Include paths: `#include <eosio/...>` → `#include <anvo/...>` (27 directories, 232 directives)
-- Macro prefix: `EOSIO_*` → `ANVO_*` (307 occurrences)
+- C++ namespace: `eosio::` → `core::` (377 declarations, 366 files)
+- Include paths: `#include <eosio/...>` → `#include <core/...>` (27 directories, 232 directives)
+- Macro prefix: `EOSIO_*` → `CORE_*` (307 occurrences)
 - Executables: nodeos → `cored`, cleos → `core-cli`, keosd → `core-keys`, spring-util → `core-util`
 - Program/doc directories: rename to match new executable names
 - Build system: CMake project name, target names, package names

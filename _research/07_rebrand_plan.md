@@ -10,7 +10,7 @@ Remove all references to:
 - **block.one** / **Block.one** (original company)
 - **nodeos** / **cleos** / **keosd** (executable names)
 
-Replace with the new project identity: **Anvo Network** (`anvo` namespace, `ANVO_` macro prefix, `core` system accounts, `cored`/`core-cli`/`core-keys`/`core-util` executables).
+Replace with the new project identity: **Anvo Network** (`core` namespace, `CORE_` macro prefix, `core` system accounts, `cored`/`core-cli`/`core-keys`/`core-util` executables).
 
 ## Scale of the Effort
 
@@ -54,16 +54,16 @@ namespace eosio { namespace chain { ... } }
 namespace eosio { namespace chain_apis { ... } }
 
 // New
-namespace anvo { namespace chain { ... } }
-namespace anvo { namespace chain_apis { ... } }
+namespace core { namespace chain { ... } }
+namespace core { namespace chain_apis { ... } }
 ```
 
 **Strategy:** Global find-and-replace with verification.
 
-- `namespace eosio` → `namespace anvo`
-- `eosio::` → `anvo::` (qualified name references)
-- `using namespace eosio` → `using namespace anvo`
-- `EOSIO_` macro prefix → `ANVO_` (307 occurrences across 33 files)
+- `namespace eosio` → `namespace core`
+- `eosio::` → `core::` (qualified name references)
+- `using namespace eosio` → `using namespace core`
+- `EOSIO_` macro prefix → `CORE_` (307 occurrences across 33 files)
 
 **Risk:** Low if done mechanically. The compiler will catch any missed references.
 
@@ -84,12 +84,12 @@ plugins/*/include/eosio/
 #include <eosio/chain_plugin/chain_plugin.hpp>
 
 // New
-#include <anvo/chain/controller.hpp>
-#include <anvo/chain_plugin/chain_plugin.hpp>
+#include <core/chain/controller.hpp>
+#include <core/chain_plugin/chain_plugin.hpp>
 ```
 
 **Strategy:**
-1. Rename all `include/eosio/` directories to `include/anvo/`
+1. Rename all `include/eosio/` directories to `include/core/`
 2. Global find-and-replace on all `#include` directives
 3. Update CMakeLists.txt include path declarations
 
@@ -263,7 +263,7 @@ test assertions/logs need manual review.
 **Order matters.** Do these first as they affect file paths:
 
 1. Rename directories:
-   - `include/eosio/` → `include/anvo/` (27 directories)
+   - `include/eosio/` → `include/core/` (27 directories)
    - `programs/nodeos/` → `programs/cored/`
    - `programs/cleos/` → `programs/core-cli/`
    - `programs/keosd/` → `programs/core-keys/`
@@ -273,9 +273,9 @@ test assertions/logs need manual review.
    - `docs/03_keosd/` → `docs/03_core-keys/`
 
 2. Rename files:
-   - `eosio.version.in` → `anvo.version.in`
+   - `eosio.version.in` → `core.version.in`
    - `eos.doxygen.in` → `anvo.doxygen.in`
-   - `CMakeModules/eosio-config.cmake.in` → `CMakeModules/anvo-config.cmake.in`
+   - `CMakeModules/eosio-config.cmake.in` → `CMakeModules/core-config.cmake.in`
    - `CMakeModules/EosioTester*.cmake.in` → `CMakeModules/AnvoTester*.cmake.in`
    - 25 `nodeos_*.py` test files → `cored_*.py`
 
@@ -286,16 +286,16 @@ test assertions/logs need manual review.
 Apply in this order to minimize conflicts:
 
 1. **Namespace replacement** (biggest impact):
-   - `namespace eosio` → `namespace anvo`
-   - `eosio::` → `anvo::`
-   - `using namespace eosio` → `using namespace anvo`
+   - `namespace eosio` → `namespace core`
+   - `eosio::` → `core::`
+   - `using namespace eosio` → `using namespace core`
 
 2. **Include path replacement**:
-   - `#include <eosio/` → `#include <anvo/`
+   - `#include <eosio/` → `#include <core/`
    - `#include "eosio/` → `#include "anvo/`
 
 3. **Macro prefix replacement**:
-   - `EOSIO_` → `ANVO_`
+   - `EOSIO_` → `CORE_`
 
 4. **Executable name replacement**:
    - `nodeos` → new node name (in CMake, scripts, docs)

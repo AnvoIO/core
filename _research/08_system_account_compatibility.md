@@ -12,7 +12,7 @@ backward compatibility for migrating chains.
 
 The system account names are defined in ONE place:
 
-**File:** `libraries/chain/include/anvo/chain/config.hpp` (lines 22-36)
+**File:** `libraries/chain/include/core/chain/config.hpp` (lines 22-36)
 
 ```cpp
 const static name system_account_name    { "eosio"_n };
