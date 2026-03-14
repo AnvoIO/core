@@ -2003,6 +2003,9 @@ struct controller_impl {
       this->check_shutdown = std::move(check_shutdown);
       assert(this->check_shutdown);
 
+      auto prefix = genesis.system_account_prefix.value_or("eosio"_n);
+      config::set_system_accounts(config::system_accounts::from_prefix(prefix));
+
       initialize_blockchain_state(genesis); // sets chain_head to genesis state
 
       if( blog.head() ) {
@@ -2029,6 +2032,9 @@ struct controller_impl {
       EOS_ASSERT(db.revision() == chain_head.block_num(), database_exception,
                  "chain_head block num ${bn} does not match chainbase revision ${r}",
                  ("bn", chain_head.block_num())("r", db.revision()));
+
+      const auto& gpo = db.get<global_property_object>();
+      config::set_system_accounts(config::system_accounts::from_prefix(gpo.system_account_prefix));
 
       init(startup_t::existing_state);
    }
@@ -2453,6 +2459,7 @@ struct controller_impl {
             using v3 = legacy::snapshot_global_property_object_v3;
             using v4 = legacy::snapshot_global_property_object_v4;
             using v5 = legacy::snapshot_global_property_object_v5;
+            using v7 = legacy::snapshot_global_property_object_v7;
 
             if (std::clamp(header.version, v2::minimum_version, v2::maximum_version) == header.version ) {
                std::optional<genesis_state> genesis = extract_legacy_genesis_state(*snapshot, header.version);
@@ -2505,6 +2512,18 @@ struct controller_impl {
                });
                return; // early out to avoid default processing
             }
+
+            if (std::clamp(header.version, v7::minimum_version, v7::maximum_version) == header.version) {
+               snapshot->read_section<global_property_object>([&db = this->db](auto& section) {
+                  v7 legacy_global_properties;
+                  section.read_row(legacy_global_properties, db);
+
+                  db.create<global_property_object>([&legacy_global_properties](auto& gpo) {
+                     gpo.initialize_from(legacy_global_properties);
+                  });
+               });
+               return; // early out to avoid default processing
+            }
          }
 
          snapshot->read_section<value_t>([this,&rows_loaded]( auto& section ) {
@@ -2545,6 +2564,8 @@ struct controller_impl {
                   "chain ID in snapshot (${snapshot_chain_id}) does not match the chain ID that controller was constructed with (${controller_chain_id})",
                   ("snapshot_chain_id", gpo.chain_id)("controller_chain_id", chain_id)
       );
+
+      config::set_system_accounts(config::system_accounts::from_prefix(gpo.system_account_prefix));
 
       return result;
    }
@@ -2628,6 +2649,7 @@ struct controller_impl {
          // TODO: Update this when genesis protocol features are enabled.
          gpo.wasm_configuration = genesis_state::default_initial_wasm_configuration;
          gpo.chain_id = chain_id;
+         gpo.system_account_prefix = genesis.system_account_prefix.value_or("eosio"_n);
       });
 
       db.create<protocol_state_object>([&](auto& pso ){
@@ -6148,6 +6170,7 @@ chain_id_type controller::extract_chain_id(snapshot_reader& snapshot) {
 
    using v4 = legacy::snapshot_global_property_object_v4;
    using v5 = legacy::snapshot_global_property_object_v5;
+   using v7 = legacy::snapshot_global_property_object_v7;
    if (header.version <= v4::maximum_version) {
       snapshot.read_section<global_property_object>([&chain_id]( auto &section ){
          v4 global_properties;
@@ -6158,6 +6181,13 @@ chain_id_type controller::extract_chain_id(snapshot_reader& snapshot) {
    else if (header.version <= v5::maximum_version) {
       snapshot.read_section<global_property_object>([&chain_id]( auto &section ){
          v5 global_properties;
+         section.read_row(global_properties);
+         chain_id = global_properties.chain_id;
+      });
+   }
+   else if (header.version <= v7::maximum_version) {
+      snapshot.read_section<global_property_object>([&chain_id]( auto &section ){
+         v7 global_properties;
          section.read_row(global_properties);
          chain_id = global_properties.chain_id;
       });

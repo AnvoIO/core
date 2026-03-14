@@ -71,6 +71,18 @@ namespace core_net::chain {
          kv_database_config                  kv_configuration;
          wasm_config                         wasm_configuration;
       };
+      struct snapshot_global_property_object_v7 {
+         static constexpr uint32_t minimum_version = 7;
+         static constexpr uint32_t maximum_version = 8;
+         static_assert(chain_snapshot_header::minimum_compatible_version <= maximum_version,
+                       "snapshot_global_property_object_v7 is no longer needed");
+
+         std::optional<block_num_type>       proposed_schedule_block_num;
+         producer_authority_schedule         proposed_schedule;
+         chain_config                        configuration;
+         chain_id_type                       chain_id;
+         wasm_config                         wasm_configuration;
+      };
    }
 
    /**
@@ -90,6 +102,7 @@ namespace core_net::chain {
       chain_config                        configuration;
       chain_id_type                       chain_id;
       wasm_config                         wasm_configuration;
+      name                                system_account_prefix;
 
       // For snapshot_global_property_object_v2 and initialize_from( const T& legacy )
       template<typename T>
@@ -111,6 +124,8 @@ namespace core_net::chain {
          } else {
             wasm_configuration = legacy.wasm_configuration;
          }
+
+         system_account_prefix = "eosio"_n;
       }
 
       // For snapshot_global_property_object v3, v4, and v5
@@ -135,6 +150,7 @@ namespace core_net::chain {
       chain_config                        configuration;
       chain_id_type                       chain_id;
       wasm_config                         wasm_configuration;
+      name                                system_account_prefix;
    };
 
    namespace detail {
@@ -145,7 +161,7 @@ namespace core_net::chain {
 
          static snapshot_global_property_object to_snapshot_row( const global_property_object& value, const chainbase::database& ) {
             return {value.proposed_schedule_block_num, producer_authority_schedule::from_shared(value.proposed_schedule),
-                    value.configuration, value.chain_id, value.wasm_configuration};
+                    value.configuration, value.chain_id, value.wasm_configuration, value.system_account_prefix};
          }
 
          static void from_snapshot_row( snapshot_global_property_object&& row, global_property_object& value, chainbase::database& ) {
@@ -154,6 +170,7 @@ namespace core_net::chain {
             value.configuration = row.configuration;
             value.chain_id = row.chain_id;
             value.wasm_configuration = row.wasm_configuration;
+            value.system_account_prefix = row.system_account_prefix;
          }
       };
    }
@@ -188,7 +205,7 @@ CHAINBASE_SET_INDEX_TYPE(core_net::chain::dynamic_global_property_object,
                          core_net::chain::dynamic_global_property_multi_index)
 
 FC_REFLECT(core_net::chain::global_property_object,
-            (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)(wasm_configuration)
+            (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)(wasm_configuration)(system_account_prefix)
           )
 
 FC_REFLECT(core_net::chain::legacy::snapshot_global_property_object_v2,
@@ -207,8 +224,12 @@ FC_REFLECT(core_net::chain::legacy::snapshot_global_property_object_v5,
             (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)(kv_configuration)(wasm_configuration)
           )
 
-FC_REFLECT(core_net::chain::snapshot_global_property_object,
+FC_REFLECT(core_net::chain::legacy::snapshot_global_property_object_v7,
             (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)(wasm_configuration)
+          )
+
+FC_REFLECT(core_net::chain::snapshot_global_property_object,
+            (proposed_schedule_block_num)(proposed_schedule)(configuration)(chain_id)(wasm_configuration)(system_account_prefix)
           )
 
 FC_REFLECT(core_net::chain::dynamic_global_property_object,
