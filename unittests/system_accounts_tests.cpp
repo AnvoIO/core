@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE( genesis_system_account_prefix )
 
 } FC_LOG_AND_RETHROW() }
 
-// ---- Test 9: set_system_accounts double-call assertion ----
+// ---- Test 9: set_system_accounts idempotent + different-prefix guard ----
 BOOST_AUTO_TEST_CASE( set_system_accounts_double_call )
 { try {
    // Reset so we start clean
@@ -329,13 +329,18 @@ BOOST_AUTO_TEST_CASE( set_system_accounts_double_call )
    // First call should succeed
    config::set_system_accounts( config::system_accounts::from_prefix("core"_n) );
 
-   // Second call WITHOUT reset should throw
+   // Second call with SAME prefix should succeed (idempotent)
+   BOOST_CHECK_NO_THROW(
+      config::set_system_accounts( config::system_accounts::from_prefix("core"_n) )
+   );
+
+   // Call with DIFFERENT prefix should throw
    BOOST_CHECK_THROW(
-      config::set_system_accounts( config::system_accounts::from_prefix("core"_n) ),
+      config::set_system_accounts( config::system_accounts::eosio_defaults() ),
       chain_exception
    );
 
-   // Reset and set again — should succeed
+   // Reset and set to a different prefix — should succeed
    config::reset_system_accounts_for_testing();
    config::set_system_accounts( config::system_accounts::eosio_defaults() );
 
