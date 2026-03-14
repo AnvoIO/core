@@ -379,6 +379,37 @@ find . -type f \( "${SOURCE_FILES[@]}" \) "${EXCLUDES[@]}" \
     ! -path "./libraries/eos-vm/*" \
     -exec sed -i 's/EOS_VM_/CORE_NET_VM_/g' {} +
 
+# Fix double CORE_NET_CORE_NET_ from overlapping EOSIO_→CORE_NET_ and EOS_VM_→CORE_NET_VM_ passes
+find . -type f \( "${SOURCE_FILES[@]}" "${CMAKE_FILES[@]}" \) "${EXCLUDES[@]}" \
+    -exec sed -i 's/CORE_NET_CORE_NET_/CORE_NET_/g' {} +
+
+# Fix CMake runtime list names (so generated macros match CORE_NET_VM_*_RUNTIME_ENABLED)
+sed -i \
+    -e 's/list(APPEND CORE_NET_WASM_RUNTIMES eos-vm-oc)/list(APPEND CORE_NET_WASM_RUNTIMES vm-oc)/g' \
+    -e 's/list(APPEND CORE_NET_WASM_RUNTIMES eos-vm eos-vm-jit)/list(APPEND CORE_NET_WASM_RUNTIMES vm vm-jit)/g' \
+    -e 's/list(APPEND CORE_NET_WASM_RUNTIMES eos-vm)/list(APPEND CORE_NET_WASM_RUNTIMES vm)/g' \
+    CMakeLists.txt
+# Fix IN_LIST checks that reference old runtime names
+find . -type f \( "${CMAKE_FILES[@]}" \) "${EXCLUDES[@]}" \
+    ! -path "./libraries/eos-vm/*" \
+    -exec sed -i \
+        -e 's/"eos-vm-oc" IN_LIST/"vm-oc" IN_LIST/g' \
+        -e 's/"eos-vm-jit" IN_LIST/"vm-jit" IN_LIST/g' \
+        -e 's/"eos-vm" IN_LIST/"vm" IN_LIST/g' \
+        -e 's/STREQUAL "eos-vm-oc"/STREQUAL "vm-oc"/g' \
+    {} +
+
+# Fix prometheus plugin namespace in macro call
+sed -i 's/, eosio, metrics,/, core_net, metrics,/g' \
+    plugins/prometheus_plugin/prometheus_plugin.cpp
+
+# Fix generator script binary path
+sed -i 's|"../../../bin/nodeos"|"../../../bin/core_netd"|g' \
+    tests/PerformanceHarness/CorePluginArgs/generate_core_netd_plugin_args_class_files.py
+
+# Fix genesis_state_root_key.cpp.in (template file may not be caught by earlier passes)
+sed -i 's/eosio_root_key/core_net_root_key/g' libraries/chain/genesis_state_root_key.cpp.in
+
 echo "  CMake fixups done"
 
 # ─────────────────────────────────────────────────
