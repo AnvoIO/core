@@ -17,15 +17,15 @@ namespace core_net { namespace vm {
 #endif
 
 #ifdef CORE_NET_VM_FULL_DEBUG
-   inline constexpr bool eos_vm_debug = true;
+   inline constexpr bool core_net_vm_debug = true;
 #else
-   inline constexpr bool eos_vm_debug = false;
+   inline constexpr bool core_net_vm_debug = false;
 #endif
 
 #ifdef __x86_64__
-   inline constexpr bool eos_vm_amd64 = true;
+   inline constexpr bool core_net_vm_amd64 = true;
 #else
-   inline constexpr bool eos_vm_amd64 = false;
+   inline constexpr bool core_net_vm_amd64 = false;
 #endif
 
 }} // namespace core_net::vm

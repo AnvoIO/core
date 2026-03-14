@@ -247,7 +247,7 @@ namespace core_net { namespace vm {
 
       template <typename... Args>
       inline bool call_indirect(host_t* host, uint32_t func_index, Args&&... args) {
-         if constexpr (eos_vm_debug) {
+         if constexpr (core_net_vm_debug) {
             ctx->execute_func_table(host, debug_visitor(*ctx), func_index, std::forward<Args>(args)...);
          } else {
             ctx->execute_func_table(host, interpret_visitor(*ctx), func_index, std::forward<Args>(args)...);
@@ -257,7 +257,7 @@ namespace core_net { namespace vm {
 
       template <typename... Args>
       inline bool call(host_t* host, uint32_t func_index, Args&&... args) {
-         if constexpr (eos_vm_debug) {
+         if constexpr (core_net_vm_debug) {
             ctx->execute(host, debug_visitor(*ctx), func_index, std::forward<Args>(args)...);
          } else {
             ctx->execute(host, interpret_visitor(*ctx), func_index, std::forward<Args>(args)...);
@@ -267,7 +267,7 @@ namespace core_net { namespace vm {
 
       template <typename... Args>
       inline bool call(host_t& host, const std::string_view& mod, const std::string_view& func, Args&&... args) {
-         if constexpr (eos_vm_debug) {
+         if constexpr (core_net_vm_debug) {
             ctx->execute(&host, debug_visitor(*ctx), func, std::forward<Args>(args)...);
          } else {
             ctx->execute(&host, interpret_visitor(*ctx), func, std::forward<Args>(args)...);
@@ -277,7 +277,7 @@ namespace core_net { namespace vm {
 
       template <typename... Args>
       inline bool call(const std::string_view& mod, const std::string_view& func, Args&&... args) {
-         if constexpr (eos_vm_debug) {
+         if constexpr (core_net_vm_debug) {
             ctx->execute(nullptr, debug_visitor(*ctx), func, std::forward<Args>(args)...);
          } else {
             ctx->execute(nullptr, interpret_visitor(*ctx), func, std::forward<Args>(args)...);
@@ -287,7 +287,7 @@ namespace core_net { namespace vm {
 
       template <typename... Args>
       inline auto call_with_return(host_t& host, const std::string_view& mod, const std::string_view& func, Args&&... args ) {
-         if constexpr (eos_vm_debug) {
+         if constexpr (core_net_vm_debug) {
             return ctx->execute(&host, debug_visitor(*ctx), func, std::forward<Args>(args)...);
          } else {
             return ctx->execute(&host, interpret_visitor(*ctx), func, std::forward<Args>(args)...);
@@ -296,7 +296,7 @@ namespace core_net { namespace vm {
 
       template <typename... Args>
       inline auto call_with_return(const std::string_view& mod, const std::string_view& func, Args&&... args) {
-         if constexpr (eos_vm_debug) {
+         if constexpr (core_net_vm_debug) {
             return ctx->execute(nullptr, debug_visitor(*ctx), func, std::forward<Args>(args)...);
          } else {
             return ctx->execute(nullptr, interpret_visitor(*ctx), func, std::forward<Args>(args)...);

@@ -106,7 +106,7 @@ if(ENABLE_TESTS)
    if (NOT EXISTS ${CMAKE_BINARY_DIR}/wasms AND ENABLE_SPEC_TESTS)
       include(ExternalProject)
       ExternalProject_Add(
-         eos_vm_test_wasms
+         core_net_vm_test_wasms
          GIT_REPOSITORY "https://github.com/EOSIO/eos-vm-test-wasms.git"
          SOURCE_DIR ${CMAKE_BINARY_DIR}/wasms
          BINARY_DIR ${CMAKE_BINARY_DIR}/wasms
