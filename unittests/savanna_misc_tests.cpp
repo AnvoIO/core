@@ -3,8 +3,8 @@
 
 #include <fc/io/fstream.hpp> // for read_file_contents
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 BOOST_AUTO_TEST_SUITE(savanna_misc_tests)
 
@@ -339,7 +339,7 @@ BOOST_FIXTURE_TEST_CASE(gh_534_liveness_issue, savanna_cluster::cluster_t) try {
 // Let's say a node operator decided to take a snapshot on B3. After their node receives B6, B4 becomes final and the
 // snapshot on B3 becomes available.
 //
-// Then the operator shuts down nodeos and decides to restart from the snapshot on B3.
+// Then the operator shuts down core_netd and decides to restart from the snapshot on B3.
 //
 // After starting up from the snapshot, their node receives block B4 from the P2P network. Since B4 advances the QC
 // claim relative to its parent (from a strong QC claimed on B1 to a strong QC claimed on B2), it must include a QC
@@ -388,7 +388,7 @@ BOOST_FIXTURE_TEST_CASE(validate_qc_after_restart_from_snapshot, savanna_cluster
    BOOST_REQUIRE_EQUAL(qc_s(qc(b6)), strong_qc(b5));    // b6 claims a strong QC on b5. (b6 makes b4 final.)
    BOOST_REQUIRE_EQUAL(A.lib_number, b4->block_num());
 
-   // Then the operator shuts down nodeos and decides to restart from the snapshot on B3.
+   // Then the operator shuts down core_netd and decides to restart from the snapshot on B3.
    A.close();
    A.remove_state();
    A.remove_reversible_data_and_blocks_log();
@@ -454,7 +454,7 @@ BOOST_FIXTURE_TEST_CASE(validate_qc_after_restart_from_snapshot, savanna_cluster
 // The node operator decided to take a snapshot on B6. After their node receives B9, B6 becomes
 // final and the snapshot on B6 becomes available to the node operator as a valid snapshot.
 //
-// Then the operator shuts down nodeos and decides to restart from the snapshot on B6.
+// Then the operator shuts down core_netd and decides to restart from the snapshot on B6.
 //
 // After starting up from the snapshot, their node receives block B7 from the P2P network.
 // Since B7 advances the QC claim relative to its parent (from a strong QC claimed on B4 to a
@@ -646,7 +646,7 @@ static std::unique_ptr<tester> replay_reference_blockchain(const std::filesystem
    // --------------------------------------------------------------------
    auto config = tester::default_config(temp_dir).first;
 
-   auto genesis = eosio::chain::block_log::extract_genesis_state(ref_blockchain_path);
+   auto genesis = core_net::chain::block_log::extract_genesis_state(ref_blockchain_path);
    BOOST_REQUIRE(genesis);
 
    std::filesystem::create_directories(config.blocks_dir);
@@ -750,7 +750,7 @@ BOOST_FIXTURE_TEST_CASE(verify_block_compatibitity, savanna_cluster::cluster_t) 
    set_partition({&A});                                 // and don't vote on it
 
    // push action so that the block is not empty
-   A.push_action(config::system_account_name, updateauth::get_name(), tester_account,
+   A.push_action(config::system_account_name(), updateauth::get_name(), tester_account,
                  fc::mutable_variant_object()("account", "tester")("permission", "first")("parent", "active")(
                     "auth", authority(A.get_public_key(tester_account, "first"))));
 

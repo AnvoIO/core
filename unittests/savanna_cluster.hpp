@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/chain/finalizer_authority.hpp>
-#include <eosio/chain/finalizer.hpp>
+#include <core_net/chain/finalizer_authority.hpp>
+#include <core_net/chain/finalizer.hpp>
 #include <fc/crypto/bls_private_key.hpp>
 
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 #include <ranges>
 
 #include <boost/unordered/unordered_flat_map.hpp>
@@ -14,16 +14,16 @@
 namespace savanna_cluster {
    namespace ranges = std::ranges;
 
-   using vote_message_ptr = eosio::chain::vote_message_ptr;
-   using vote_result_t    = eosio::chain::vote_result_t;
-   using signed_block_ptr = eosio::chain::signed_block_ptr;
-   using account_name     = eosio::chain::account_name;
-   using finalizer_policy = eosio::chain::finalizer_policy;
-   using digest_type      = eosio::chain::digest_type;
-   using block_header     = eosio::chain::block_header;
-   using tester           = eosio::testing::tester;
-   using setup_policy     = eosio::testing::setup_policy;
-   using fsi_t            = eosio::chain::finalizer_safety_information;
+   using vote_message_ptr = core_net::chain::vote_message_ptr;
+   using vote_result_t    = core_net::chain::vote_result_t;
+   using signed_block_ptr = core_net::chain::signed_block_ptr;
+   using account_name     = core_net::chain::account_name;
+   using finalizer_policy = core_net::chain::finalizer_policy;
+   using digest_type      = core_net::chain::digest_type;
+   using block_header     = core_net::chain::block_header;
+   using tester           = core_net::testing::tester;
+   using setup_policy     = core_net::testing::setup_policy;
+   using fsi_t            = core_net::chain::finalizer_safety_information;
 
    class cluster_t;
 
@@ -574,7 +574,7 @@ namespace savanna_cluster {
       bool                 _debug_mode{false};
 
       static constexpr fc::microseconds _block_interval_us =
-         fc::milliseconds(eosio::chain::config::block_interval_ms);
+         fc::milliseconds(core_net::chain::config::block_interval_ms);
 
    private:
       peers_t    _peers;

@@ -62,7 +62,7 @@ try:
 
     Print("Stand up cluster")
     specificExtraNodeosArgs={}
-    specificExtraNodeosArgs[0]="--plugin eosio::net_api_plugin --plugin eosio::producer_api_plugin "
+    specificExtraNodeosArgs[0]="--plugin core_net::net_api_plugin --plugin core_net::producer_api_plugin "
 
     if cluster.launch(pnodes=pnodes, totalNodes=total_nodes, totalProducers=pnodes, specificExtraNodeosArgs=specificExtraNodeosArgs,
                       topo="./tests/disaster_recovery_2_test_shape.json", delay=delay, loadSystemContract=False,

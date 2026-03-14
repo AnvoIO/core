@@ -4,7 +4,7 @@
 
 #include <benchmark.hpp>
 
-namespace eosio::benchmark {
+namespace core_net::benchmark {
 
 using bytes = std::vector<char>;
 using g1g2_pair = std::vector<std::string>;

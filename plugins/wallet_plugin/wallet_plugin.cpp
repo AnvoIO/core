@@ -1,13 +1,13 @@
-#include <eosio/wallet_plugin/wallet_plugin.hpp>
-#include <eosio/wallet_plugin/wallet_manager.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/wallet_plugin/wallet_plugin.hpp>
+#include <core_net/wallet_plugin/wallet_manager.hpp>
+#include <core_net/chain/exceptions.hpp>
 #include <chrono>
 
 #include <fc/io/json.hpp>
 
 namespace fc { class variant; }
 
-namespace eosio {
+namespace core_net {
 
 static auto _wallet_plugin = application::register_plugin<wallet_plugin>();
 
@@ -50,4 +50,4 @@ void wallet_plugin::plugin_initialize(const variables_map& options) {
    } FC_LOG_AND_RETHROW()
 }
 
-} // namespace eosio
+} // namespace core_net

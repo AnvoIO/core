@@ -1,6 +1,6 @@
-#include <eosio/chain/genesis_intrinsics.hpp>
+#include <core_net/chain/genesis_intrinsics.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
 const std::vector<const char*> genesis_intrinsics = {
    "__ashrti3",
@@ -133,6 +133,12 @@ const std::vector<const char*> genesis_intrinsics = {
    "current_time",
    "publication_time",
    "abort",
+   "core_net_assert",
+   "core_net_assert_message",
+   "core_net_assert_code",
+   "core_net_exit",
+   // Legacy WASM import names — existing compiled contracts use these.
+   // Both old and new names must be whitelisted for backward compatibility.
    "eosio_assert",
    "eosio_assert_message",
    "eosio_assert_code",
@@ -173,4 +179,4 @@ const std::vector<const char*> genesis_intrinsics = {
    "memset"
 };
 
-} } // namespace eosio::chain
+} } // namespace core_net::chain

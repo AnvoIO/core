@@ -1,11 +1,11 @@
-#include <eosio/chain/webassembly/eos-vm-oc/code_cache.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/config.hpp>
-#include <eosio/chain/webassembly/common.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/memory.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/eos-vm-oc.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/intrinsic.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/compile_monitor.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/code_cache.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/config.hpp>
+#include <core_net/chain/webassembly/common.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/memory.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/eos-vm-oc.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/intrinsic.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/compile_monitor.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #include <fc/log/logger_config.hpp> //set_thread_name
 
@@ -13,7 +13,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-namespace eosio { namespace chain { namespace eosvmoc {
+namespace core_net { namespace chain { namespace eosvmoc {
 
 static constexpr size_t header_offset = 512u;
 static constexpr size_t header_size = 512u;

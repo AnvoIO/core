@@ -1,10 +1,10 @@
-#include <eosio/chain/incremental_merkle.hpp>
-#include <eosio/chain/incremental_merkle_legacy.hpp>
+#include <core_net/chain/incremental_merkle.hpp>
+#include <core_net/chain/incremental_merkle_legacy.hpp>
 #include <boost/test/unit_test.hpp>
 #include <fc/crypto/sha256.hpp>
 
-using namespace eosio::chain;
-using eosio::chain::detail::make_legacy_digest_pair;
+using namespace core_net::chain;
+using core_net::chain::detail::make_legacy_digest_pair;
 
 std::vector<digest_type> create_test_digests(size_t n) {
    std::vector<digest_type> v;
@@ -14,7 +14,7 @@ std::vector<digest_type> create_test_digests(size_t n) {
    return v;
 }
 
-constexpr auto hash = eosio::chain::detail::hash_combine;
+constexpr auto hash = core_net::chain::detail::hash_combine;
 
 inline digest_type hash_l(const digest_type& a, const digest_type& b) {
    return fc::sha256::hash(make_legacy_digest_pair(a, b));

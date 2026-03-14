@@ -1,11 +1,11 @@
 #include <benchmark.hpp>
-#include <eosio/chain/incremental_merkle.hpp>
-#include <eosio/chain/incremental_merkle_legacy.hpp>
+#include <core_net/chain/incremental_merkle.hpp>
+#include <core_net/chain/incremental_merkle_legacy.hpp>
 #include <random>
 
-namespace eosio::benchmark {
+namespace core_net::benchmark {
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 std::vector<digest_type> create_test_digests(size_t n) {
    std::vector<digest_type> v;

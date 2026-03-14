@@ -1,11 +1,11 @@
 #include <boost/test/unit_test.hpp>
-#include <eosio/producer_plugin/production_pause_vote_tracker.hpp>
+#include <core_net/producer_plugin/production_pause_vote_tracker.hpp>
 
 BOOST_AUTO_TEST_SUITE(production_pause_vote_tracker_tests)
 
 BOOST_AUTO_TEST_CASE(test_production_pause) {
    // Setup production pause vote tracker:
-   eosio::production_pause_vote_tracker vt{fc::milliseconds(250)}; // Use block acceptance threshold of 250 milliseconds.
+   core_net::production_pause_vote_tracker vt{fc::milliseconds(250)}; // Use block acceptance threshold of 250 milliseconds.
    vt.set_vote_timeout(fc::milliseconds(6000));
 
    // Setup infrastructure for tracking current time:

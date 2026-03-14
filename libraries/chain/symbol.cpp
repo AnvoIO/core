@@ -1,7 +1,7 @@
-#include <eosio/chain/symbol.hpp>
+#include <core_net/chain/symbol.hpp>
 #include <boost/algorithm/string.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
    
    symbol symbol::from_string(const string& from)
 {
@@ -18,4 +18,4 @@ namespace eosio::chain {
    } FC_CAPTURE_LOG_AND_RETHROW((from));
 }
    
-} // namespace eosio::chain
+} // namespace core_net::chain

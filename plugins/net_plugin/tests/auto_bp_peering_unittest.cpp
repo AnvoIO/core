@@ -1,7 +1,7 @@
 #include <boost/test/unit_test.hpp>
-#include <eosio/net_plugin/auto_bp_peering.hpp>
+#include <core_net/net_plugin/auto_bp_peering.hpp>
 
-using namespace eosio::net_utils;
+using namespace core_net::net_utils;
 
 struct mock_connection {
    enum class bp_connection_type { non_bp, bp_config, bp_gossip };
@@ -19,7 +19,7 @@ struct mock_connection {
    bool incoming_and_handshake_received() const { return handshake_received; }
 };
 
-using namespace eosio::chain::literals;
+using namespace core_net::chain::literals;
 using namespace std::literals::string_literals;
 
 struct mock_connections_manager {
@@ -40,7 +40,7 @@ struct mock_connections_manager {
    }
 };
 
-struct mock_net_plugin : eosio::auto_bp_peering::bp_connection_manager<mock_net_plugin, mock_connection> {
+struct mock_net_plugin : core_net::auto_bp_peering::bp_connection_manager<mock_net_plugin, mock_connection> {
 
    bool                         lib_catchup = true;
    mock_connections_manager     connections;
@@ -75,8 +75,8 @@ const std::vector<std::string> peer_addresses{
 BOOST_AUTO_TEST_CASE(test_set_bp_peers) {
 
    mock_net_plugin plugin;
-   BOOST_CHECK_THROW(plugin.set_configured_bp_peers({ "producer17,127.0.0.1:8888"s }, {}), eosio::chain::plugin_config_exception);
-   BOOST_CHECK_THROW(plugin.set_configured_bp_peers({ "producer1"s }, {}), eosio::chain::plugin_config_exception);
+   BOOST_CHECK_THROW(plugin.set_configured_bp_peers({ "producer17,127.0.0.1:8888"s }, {}), core_net::chain::plugin_config_exception);
+   BOOST_CHECK_THROW(plugin.set_configured_bp_peers({ "producer1"s }, {}), core_net::chain::plugin_config_exception);
 
    plugin.set_configured_bp_peers({
          "producer1,127.0.0.1:8888:blk"s,
@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(test_set_bp_peers) {
    BOOST_CHECK_EQUAL(plugin.config.auto_bp_accounts[endpoint("127.0.0.1", "8891")], "producer4"_n);
 }
 
-bool operator==(const eosio::chain::name_set_t& a, const eosio::chain::name_set_t& b) {
+bool operator==(const core_net::chain::name_set_t& a, const core_net::chain::name_set_t& b) {
    return std::equal(a.begin(), a.end(), b.begin(), b.end());
 }
 
@@ -104,7 +104,7 @@ bool operator==(const std::vector<std::string>& a, const std::vector<std::string
 }
 
 namespace boost::container {
-std::ostream& boost_test_print_type(std::ostream& os, const eosio::chain::name_set_t& accounts) {
+std::ostream& boost_test_print_type(std::ostream& os, const core_net::chain::name_set_t& accounts) {
    os << "{";
    const char* sep = "";
    for (auto e : accounts) {
@@ -129,7 +129,7 @@ std::ostream& boost_test_print_type(std::ostream& os, const std::vector<std::str
 }
 } // namespace std
 
-const eosio::chain::producer_authority_schedule test_schedule1{
+const core_net::chain::producer_authority_schedule test_schedule1{
    1,
    { { "proda"_n, {} }, { "prodb"_n, {} }, { "prodc"_n, {} }, { "prodd"_n, {} }, { "prode"_n, {} }, { "prodf"_n, {} },
      { "prodg"_n, {} }, { "prodh"_n, {} }, { "prodi"_n, {} }, { "prodj"_n, {} }, { "prodk"_n, {} }, { "prodl"_n, {} },
@@ -139,7 +139,7 @@ const eosio::chain::producer_authority_schedule test_schedule1{
      { "produ"_n, {} } }
 };
 
-const eosio::chain::producer_authority_schedule test_schedule2{
+const core_net::chain::producer_authority_schedule test_schedule2{
    2,
    { { "proda"_n, {} }, { "prode"_n, {} }, { "prodi"_n, {} }, { "prodm"_n, {} }, { "prodp"_n, {} }, { "prods"_n, {} },
      { "prodb"_n, {} }, { "prodf"_n, {} }, { "prodj"_n, {} }, { "prodn"_n, {} }, { "prodq"_n, {} },
@@ -148,7 +148,7 @@ const eosio::chain::producer_authority_schedule test_schedule2{
      { "prodd"_n, {} }, { "prodh"_n, {} }, { "prodl"_n, {} } }
 };
 
-const eosio::chain::name_set_t producers_minus_prodkt{
+const core_net::chain::name_set_t producers_minus_prodkt{
    "proda"_n, "prodb"_n, "prodc"_n, "prodd"_n, "prode"_n, "prodf"_n,
    "prodg"_n, "prodh"_n, "prodi"_n, "prodj"_n,
    // "prodk"_n, not part of the peer addresses
@@ -158,7 +158,7 @@ const eosio::chain::name_set_t producers_minus_prodkt{
    // "prodt"_n, not part of the schedules, see above
    "produ"_n };
 
-const eosio::chain::producer_authority_schedule reset_schedule1{ 1, {} };
+const core_net::chain::producer_authority_schedule reset_schedule1{ 1, {} };
 
 BOOST_AUTO_TEST_CASE(test_on_pending_schedule) {
 
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(test_on_pending_schedule) {
    plugin.on_pending_schedule(test_schedule1);
 
    BOOST_CHECK_EQUAL(connected_hosts, (std::vector<std::string>{}));
-   BOOST_TEST(plugin.pending_bps == (eosio::chain::name_set_t{ "prodj"_n, "prodm"_n }));
+   BOOST_TEST(plugin.pending_bps == (core_net::chain::name_set_t{ "prodj"_n, "prodm"_n }));
    BOOST_CHECK_EQUAL(plugin.pending_schedule_version, 0u);
 
    // when it is in sync and on_pending_schedule is called
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(test_on_pending_schedule) {
    BOOST_CHECK_EQUAL(connected_hosts, (std::vector<std::string>{}));
 
    plugin.on_pending_schedule(reset_schedule1);
-   BOOST_TEST(plugin.pending_bps == eosio::chain::name_set_t{});
+   BOOST_TEST(plugin.pending_bps == core_net::chain::name_set_t{});
 }
 
 BOOST_AUTO_TEST_CASE(test_on_active_schedule1) {
@@ -219,7 +219,7 @@ BOOST_AUTO_TEST_CASE(test_on_active_schedule1) {
    plugin.on_active_schedule(test_schedule1);
 
    BOOST_CHECK_EQUAL(disconnected_hosts, (std::vector<std::string>{}));
-   BOOST_TEST(plugin.get_active_bps() == (eosio::chain::name_set_t{ "proda"_n, "prodh"_n, "prodn"_n, "prodt"_n }));
+   BOOST_TEST(plugin.get_active_bps() == (core_net::chain::name_set_t{ "proda"_n, "prodh"_n, "prodn"_n, "prodt"_n }));
    BOOST_CHECK_EQUAL(plugin.active_schedule_version, 0u);
 
    // when it is in sync and on_active_schedule is called
@@ -285,31 +285,31 @@ BOOST_AUTO_TEST_CASE(test_exceeding_connection_limit) {
    BOOST_CHECK(!plugin.exceeding_connection_limit(plugin.connections.connections[7]));
 }
 
-struct bp_peer_info_v2 : eosio::gossip_bp_peers_message::bp_peer_info_v1 {
+struct bp_peer_info_v2 : core_net::gossip_bp_peers_message::bp_peer_info_v1 {
    std::string extra;
 };
 
-FC_REFLECT_DERIVED(bp_peer_info_v2, (eosio::gossip_bp_peers_message::bp_peer_info_v1), (extra))
+FC_REFLECT_DERIVED(bp_peer_info_v2, (core_net::gossip_bp_peers_message::bp_peer_info_v1), (extra))
 
 BOOST_AUTO_TEST_CASE(test_bp_peer_info_v2) {
 
-   const eosio::chain_id_type chain_id = eosio::chain_id_type::empty_chain_id();
+   const core_net::chain_id_type chain_id = core_net::chain_id_type::empty_chain_id();
    fc::crypto::private_key pk = fc::crypto::private_key::generate();
    auto public_key = pk.get_public_key();
 
-   bp_peer_info_v2 v2{{"hostname.com", "127.0.0.1", eosio::block_timestamp_type{7}}, "extra"};
+   bp_peer_info_v2 v2{{"hostname.com", "127.0.0.1", core_net::block_timestamp_type{7}}, "extra"};
 
    std::vector<char> packed_msg;
    {
-      eosio::gossip_bp_peers_message msg;
-      eosio::gossip_bp_peers_message::signed_bp_peer peer{{.version = 2, .producer_name = eosio::name("producer")}};
+      core_net::gossip_bp_peers_message msg;
+      core_net::gossip_bp_peers_message::signed_bp_peer peer{{.version = 2, .producer_name = core_net::name("producer")}};
       peer.bp_peer_info = fc::raw::pack(v2);
       peer.sig = pk.sign(peer.digest(chain_id));
       msg.peers.emplace_back(peer);
       packed_msg = fc::raw::pack(msg);
    }
 
-   auto msg = fc::raw::unpack<eosio::gossip_bp_peers_message>(packed_msg);
+   auto msg = fc::raw::unpack<core_net::gossip_bp_peers_message>(packed_msg);
 
    auto& peer = msg.peers[0];
 
@@ -317,13 +317,13 @@ BOOST_AUTO_TEST_CASE(test_bp_peer_info_v2) {
    fc::crypto::public_key v1k(peer.sig, peer.digest(chain_id));
    BOOST_TEST(v1k == public_key);
    BOOST_TEST(peer.version.value == 2u);
-   BOOST_TEST(peer.producer_name == eosio::name("producer"));
+   BOOST_TEST(peer.producer_name == core_net::name("producer"));
 
    // verify can unpack v1
-   eosio::gossip_bp_peers_message::bp_peer_info_v1 v1 = fc::raw::unpack<eosio::gossip_bp_peers_message::bp_peer_info_v1>(peer.bp_peer_info);
+   core_net::gossip_bp_peers_message::bp_peer_info_v1 v1 = fc::raw::unpack<core_net::gossip_bp_peers_message::bp_peer_info_v1>(peer.bp_peer_info);
    BOOST_TEST(v1.server_endpoint == "hostname.com");
    BOOST_TEST(v1.outbound_ip_address == "127.0.0.1");
-   BOOST_TEST(v1.expiration == eosio::block_timestamp_type{7});
+   BOOST_TEST(v1.expiration == core_net::block_timestamp_type{7});
 
    // verify v2 can process data
    fc::crypto::public_key v2k(peer.sig, peer.digest(chain_id));
@@ -332,7 +332,7 @@ BOOST_AUTO_TEST_CASE(test_bp_peer_info_v2) {
    bp_peer_info_v2 v2b = fc::raw::unpack<bp_peer_info_v2>(peer.bp_peer_info);
    BOOST_TEST(v2b.server_endpoint == "hostname.com");
    BOOST_TEST(v2b.outbound_ip_address == "127.0.0.1");
-   BOOST_TEST(v2b.expiration == eosio::block_timestamp_type{7});
-   BOOST_TEST(v2b.expiration == eosio::block_timestamp_type{7});
+   BOOST_TEST(v2b.expiration == core_net::block_timestamp_type{7});
+   BOOST_TEST(v2b.expiration == core_net::block_timestamp_type{7});
    BOOST_TEST(v2b.extra == "extra");
 }

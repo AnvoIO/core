@@ -1,11 +1,11 @@
-#include <eosio/chain_plugin/trx_finality_status_processing.hpp>
-#include <eosio/chain_plugin/finality_status_object.hpp>
+#include <core_net/chain_plugin/trx_finality_status_processing.hpp>
+#include <core_net/chain_plugin/finality_status_object.hpp>
 
 
-using namespace eosio;
-using namespace eosio::finality_status;
+using namespace core_net;
+using namespace core_net::finality_status;
 
-namespace eosio::chain_apis {
+namespace core_net::chain_apis {
 
    struct trx_finality_status_processing_impl {
       trx_finality_status_processing_impl( uint64_t max_storage, const fc::microseconds& success_duration, const fc::microseconds& failure_duration )

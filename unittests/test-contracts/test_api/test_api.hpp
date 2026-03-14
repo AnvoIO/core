@@ -4,7 +4,7 @@
 #include "../capi/eosio/types.h"
 #include "test_api_common.hpp"
 
-namespace eosio { class transaction; }
+namespace core_net { class transaction; }
 
 // NOTE: including eosiolib/transaction.hpp here causes !"unresolvable": env._ZNKSt3__120__vector_base_commonILb1EE20__throw_length_errorEv
 //       errors in api_tests/memory_tests
@@ -32,10 +32,10 @@ extern "C" {
     void set_action_return_value(const char*, size_t);
 
     __attribute__((eosio_wasm_import))
-    void  eosio_assert( uint32_t test, const char* msg );
+    void  core_net_assert( uint32_t test, const char* msg );
 
     __attribute__((eosio_wasm_import))
-    void  eosio_assert_code( uint32_t test, uint64_t code );
+    void  core_net_assert_code( uint32_t test, uint64_t code );
 
     __attribute__((eosio_wasm_import))
     uint64_t  current_time();
@@ -212,7 +212,7 @@ struct test_transaction {
    static void send_transaction(uint64_t receiver, uint64_t code, uint64_t action);
    static void send_transaction_empty(uint64_t receiver, uint64_t code, uint64_t action);
    static void send_transaction_trigger_error_handler(uint64_t receiver, uint64_t code, uint64_t action);
-   static void assert_false_error_handler(const eosio::transaction&);
+   static void assert_false_error_handler(const core_net::transaction&);
    static void send_transaction_max();
    static void send_transaction_large(uint64_t receiver, uint64_t code, uint64_t action);
    static void send_action_sender(uint64_t receiver, uint64_t code, uint64_t action);

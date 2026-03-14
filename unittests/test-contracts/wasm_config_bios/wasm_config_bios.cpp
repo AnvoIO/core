@@ -1,7 +1,7 @@
-#include <eosio/contract.hpp>
+#include <core_net/contract.hpp>
 
 extern "C" __attribute__((eosio_wasm_import)) void set_wasm_parameters_packed(const void*, std::size_t);
-#if defined(USE_EOSIO_CDT_1_7_X) || defined(USE_EOSIO_CDT_1_8_X)
+#if defined(USE_CORE_NET_CDT_1_7_X) || defined(USE_CORE_NET_CDT_1_8_X)
 extern "C" __attribute__((eosio_wasm_import)) uint32_t read_action_data( void* msg, uint32_t len );
 extern "C" __attribute__((eosio_wasm_import))    uint32_t action_data_size();
 #endif
@@ -25,10 +25,10 @@ struct internal_config {
    wasm_config config;
 };
 
-class [[eosio::contract]] wasm_config_bios : public eosio::contract {
+class [[core_net::contract]] wasm_config_bios : public core_net::contract {
  public:
    using contract::contract;
-   [[eosio::action]] void setwparams(const wasm_config& cfg) {
+   [[core_net::action]] void setwparams(const wasm_config& cfg) {
       internal_config config{0, cfg};
       set_wasm_parameters_packed(&config, sizeof(config));
    }

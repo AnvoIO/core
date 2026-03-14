@@ -3,8 +3,8 @@
 #include <boost/beast.hpp>
 #include <boost/program_options.hpp>
 
-#include <eosio/chain/abi_def.hpp>
-#include <eosio/chain/abi_serializer.hpp>
+#include <core_net/chain/abi_def.hpp>
+#include <core_net/chain/abi_serializer.hpp>
 #include <fc/io/json.hpp>
 
 #include <iostream>
@@ -18,13 +18,13 @@ namespace ws = boost::beast::websocket;
 
 namespace bpo = boost::program_options;
 
-static const eosio::chain::abi_serializer::yield_function_t null_yield_function{};
+static const core_net::chain::abi_serializer::yield_function_t null_yield_function{};
 
 int main(int argc, char* argv[]) {
    boost::asio::io_context ctx;
    boost::asio::ip::tcp::resolver resolver(ctx);
    ws::stream<boost::asio::ip::tcp::socket> tcp_stream(ctx);
-   eosio::chain::abi_serializer abi;
+   core_net::chain::abi_serializer abi;
 
    unixs::socket unix_socket(ctx);
    ws::stream<unixs::socket> unix_stream(ctx);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
             std::regex scrub_all_tables(R"(\{ "name": "[^"]+", "type": "[^"]+", "key_names": \[[^\]]*\] \},?)");
             abi_string = std::regex_replace(abi_string, scrub_all_tables, "");
 
-            abi = eosio::chain::abi_serializer(fc::json::from_string(abi_string).as<eosio::chain::abi_def>(), null_yield_function);
+            abi = core_net::chain::abi_serializer(fc::json::from_string(abi_string).as<core_net::chain::abi_def>(), null_yield_function);
          }
          stream.binary(true);
 
@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
          };
 
          while(num_requests--) {
-            const eosio::chain::bytes get_status_bytes = abi.variant_to_binary("request",
+            const core_net::chain::bytes get_status_bytes = abi.variant_to_binary("request",
                fc::variants{request_result_types[num_requests%2].get_status_request, mvo()}, null_yield_function);
             stream.write(boost::asio::buffer(get_status_bytes));
 

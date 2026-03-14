@@ -1,13 +1,13 @@
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include "fork_test_utilities.hpp"
 
-using namespace eosio::testing;
-using namespace eosio::chain;
+using namespace core_net::testing;
+using namespace core_net::chain;
 using mvo = fc::mutable_variant_object;
 
 BOOST_AUTO_TEST_SUITE(producer_schedule_tests)
@@ -33,7 +33,7 @@ BOOST_FIXTURE_TEST_CASE( verify_producer_schedule, legacy_validating_tester ) tr
          if (new_prod_schd == current_schedule) {
             scheduled_changed_to_new = true;
             // verify eosio.prods updated
-            const name usr = config::producers_account_name;
+            const name usr = config::producers_account_name();
             const name active_permission = config::active_name;
             const auto* perm = control->db().template find<permission_object, by_owner>(boost::make_tuple(usr, active_permission));
             for (auto account : perm->auth.accounts) {

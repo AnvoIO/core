@@ -3,7 +3,7 @@
 // ------------------------
 // Test the savanna_cluster
 // ------------------------
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 BOOST_AUTO_TEST_SUITE(savanna_cluster_tests)
 

@@ -1,18 +1,18 @@
 #include <boost/test/unit_test.hpp>
 
-#include <eosio/producer_plugin/producer_plugin.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
 
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 
-#include <eosio/chain/genesis_state.hpp>
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/name.hpp>
+#include <core_net/chain/genesis_state.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/name.hpp>
 
-#include <eosio/chain/application.hpp>
+#include <core_net/chain/application.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
+using namespace core_net;
+using namespace core_net::chain;
 
 BOOST_AUTO_TEST_SUITE(program_options)
 

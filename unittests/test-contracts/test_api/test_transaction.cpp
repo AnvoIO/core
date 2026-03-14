@@ -1,18 +1,18 @@
-#include <eosio/action.hpp>
-#include <eosio/crypto.hpp>
-#include <eosio/transaction.hpp>
+#include <core_net/action.hpp>
+#include <core_net/crypto.hpp>
+#include <core_net/transaction.hpp>
 
 #include "test_api.hpp"
 
 #pragma pack(push, 1)
 template <uint64_t ACCOUNT, uint64_t NAME>
 struct test_action_action {
-   static eosio::name get_account() {
-      return eosio::name{ACCOUNT};
+   static core_net::name get_account() {
+      return core_net::name{ACCOUNT};
    }
 
-   static eosio::name get_name() {
-      return eosio::name{NAME};
+   static core_net::name get_name() {
+      return core_net::name{NAME};
    }
 
    std::vector<char> data;
@@ -28,12 +28,12 @@ struct test_action_action {
 
 template <uint64_t ACCOUNT, uint64_t NAME>
 struct test_dummy_action {
-   static eosio::name get_account() {
-      return eosio::name{ACCOUNT};
+   static core_net::name get_account() {
+      return core_net::name{ACCOUNT};
    }
 
-   static eosio::name get_name() {
-      return eosio::name{NAME};
+   static core_net::name get_name() {
+      return core_net::name{NAME};
    }
    char a;
    unsigned long long b;
@@ -63,7 +63,7 @@ void copy_data( char* data, size_t data_len, std::vector<char>& data_out ) {
 }
 
 void test_transaction::send_action() {
-   using namespace eosio;
+   using namespace core_net;
    test_dummy_action<"testapi"_n.value, WASM_TEST_ACTION( "test_action", "read_action_normal" )> test_action =
       { DUMMY_ACTION_DEFAULT_A, DUMMY_ACTION_DEFAULT_B, DUMMY_ACTION_DEFAULT_C };
 
@@ -74,7 +74,7 @@ void test_transaction::send_action() {
 }
 
 void test_transaction::send_action_empty() {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_action", "assert_true" )> test_action;
 
    std::vector<permission_level> permissions = { {"testapi"_n, "active"_n} };
@@ -87,21 +87,21 @@ void test_transaction::send_action_empty() {
  * cause failure due to a large action payload, larger than max_inline_action_size of 512K
  */
 void test_transaction::send_action_large() {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_action", "read_action" )> test_action;
    test_action.data.resize(512*1024+1);
 
    std::vector<permission_level> permissions = { {"testapi"_n, "active"_n} };
    action act( permissions, name{"testapi"}, name{WASM_TEST_ACTION("test_action", "read_action")}, test_action );
    act.send();
-   eosio_assert( false, "send_message_large() should've thrown an error" );
+   core_net_assert( false, "send_message_large() should've thrown an error" );
 }
 
 /**
  * send an inline action that is 4K
  */
 void test_transaction::send_action_4k() {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_action", "read_action" )> test_action;
    test_action.data.resize(4*1024);
 
@@ -116,7 +116,7 @@ void test_transaction::send_action_4k() {
  * the limit includes the size of the action
  */
 void test_transaction::send_action_512k() {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_action", "read_action" )> test_action;
 
    test_action.data.resize(1);
@@ -131,7 +131,7 @@ void test_transaction::send_action_512k() {
 
    if (pack_size(act) != 512*1024-1) {
       std::string err = "send_action_512k action size is: " + std::to_string(action_size) + " not 512K-1";
-      eosio_assert(false, err.c_str());
+      core_net_assert(false, err.c_str());
    }
 
    act.send();
@@ -142,7 +142,7 @@ void test_transaction::send_action_512k() {
  * the limit includes the size of the action
  */
 void test_transaction::send_many_actions_512k() {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_transaction", "send_action_512k" )> test_action;
 
    test_action.data.resize(1);
@@ -159,9 +159,9 @@ void test_transaction::send_many_actions_512k() {
  * cause failure due recursive loop
  */
 void test_transaction::send_action_recurse() {
-   using namespace eosio;
+   using namespace core_net;
    char buffer[1024];
-   eosio::read_action_data( buffer, 1024 );
+   core_net::read_action_data( buffer, 1024 );
 
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_transaction", "send_action_recurse" )> test_action;
    copy_data( buffer, 1024, test_action.data );
@@ -176,7 +176,7 @@ void test_transaction::send_action_recurse() {
  * cause failure due to inline TX failure
  */
 void test_transaction::send_action_inline_fail() {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_action", "assert_false" )> test_action;
 
    std::vector<permission_level> permissions = { {"testapi"_n, "active"_n} };
@@ -186,40 +186,40 @@ void test_transaction::send_action_inline_fail() {
 }
 
 void test_transaction::test_tapos_block_prefix() {
-   using namespace eosio;
+   using namespace core_net;
    int tbp;
-   eosio::read_action_data( (char*)&tbp, sizeof(int) );
-   eosio_assert( tbp == eosio::tapos_block_prefix(), "tapos_block_prefix does not match" );
+   core_net::read_action_data( (char*)&tbp, sizeof(int) );
+   core_net_assert( tbp == core_net::tapos_block_prefix(), "tapos_block_prefix does not match" );
 }
 
 void test_transaction::test_tapos_block_num() {
-   using namespace eosio;
+   using namespace core_net;
    int tbn;
-   eosio::read_action_data( (char*)&tbn, sizeof(int) );
-   eosio_assert( tbn == eosio::tapos_block_num(), "tapos_block_num does not match" );
+   core_net::read_action_data( (char*)&tbn, sizeof(int) );
+   core_net_assert( tbn == core_net::tapos_block_num(), "tapos_block_num does not match" );
 }
 
 void test_transaction::test_read_transaction() {
-   using namespace eosio;
+   using namespace core_net;
    checksum256 h;
-   auto size = eosio::transaction_size();
+   auto size = core_net::transaction_size();
    char buf[size];
-   uint32_t read = eosio::read_transaction( buf, size );
-   eosio_assert( size == read, "read_transaction failed");
-   h = eosio::sha256(buf, read);
+   uint32_t read = core_net::read_transaction( buf, size );
+   core_net_assert( size == read, "read_transaction failed");
+   h = core_net::sha256(buf, read);
    print(h);
 }
 
 void test_transaction::test_transaction_size() {
-   using namespace eosio;
+   using namespace core_net;
    uint32_t trans_size = 0;
-   eosio::read_action_data( (char*)&trans_size, sizeof(uint32_t) );
-   print( "size: ", eosio::transaction_size() );
-   eosio_assert( trans_size == eosio::transaction_size(), "transaction size does not match" );
+   core_net::read_action_data( (char*)&trans_size, sizeof(uint32_t) );
+   print( "size: ", core_net::transaction_size() );
+   core_net_assert( trans_size == core_net::transaction_size(), "transaction size does not match" );
 }
 
 void test_transaction::send_transaction(uint64_t receiver, uint64_t, uint64_t) {
-   using namespace eosio;
+   using namespace core_net;
    dummy_action payload = { DUMMY_ACTION_DEFAULT_A, DUMMY_ACTION_DEFAULT_B, DUMMY_ACTION_DEFAULT_C };
 
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_action", "read_action_normal" )> test_action;
@@ -233,9 +233,9 @@ void test_transaction::send_transaction(uint64_t receiver, uint64_t, uint64_t) {
 }
 
 void test_transaction::send_action_sender( uint64_t receiver, uint64_t, uint64_t ) {
-   using namespace eosio;
+   using namespace core_net;
    uint64_t cur_send;
-   eosio::read_action_data( &cur_send, sizeof(name) );
+   core_net::read_action_data( &cur_send, sizeof(name) );
 
    auto trx = transaction();
    std::vector<permission_level> permissions = { {"testapi"_n, "active"_n} };
@@ -245,15 +245,15 @@ void test_transaction::send_action_sender( uint64_t receiver, uint64_t, uint64_t
 }
 
 void test_transaction::send_transaction_empty( uint64_t receiver, uint64_t, uint64_t ) {
-   using namespace eosio;
+   using namespace core_net;
    auto trx = transaction();
    trx.send( 0, name{receiver} );
 
-   eosio_assert( false, "send_transaction_empty() should've thrown an error" );
+   core_net_assert( false, "send_transaction_empty() should've thrown an error" );
 }
 
 void test_transaction::send_transaction_trigger_error_handler( uint64_t receiver, uint64_t, uint64_t ) {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_action", "assert_false" )> test_action;
 
    auto trx = transaction();
@@ -263,20 +263,20 @@ void test_transaction::send_transaction_trigger_error_handler( uint64_t receiver
    trx.send(0, name{receiver});
 }
 
-void test_transaction::assert_false_error_handler( const eosio::transaction& dtrx ) {
-   eosio_assert( dtrx.actions.size() == 1, "transaction should only have one action" );
-   eosio_assert( dtrx.actions[0].account == "testapi"_n, "transaction has wrong code" );
-   eosio_assert( dtrx.actions[0].name.value == WASM_TEST_ACTION("test_action", "assert_false"), "transaction has wrong name" );
-   eosio_assert( dtrx.actions[0].authorization.size() == 1, "action should only have one authorization" );
-   eosio_assert( dtrx.actions[0].authorization[0].actor == "testapi"_n, "action's authorization has wrong actor" );
-   eosio_assert( dtrx.actions[0].authorization[0].permission == "active"_n, "action's authorization has wrong permission" );
+void test_transaction::assert_false_error_handler( const core_net::transaction& dtrx ) {
+   core_net_assert( dtrx.actions.size() == 1, "transaction should only have one action" );
+   core_net_assert( dtrx.actions[0].account == "testapi"_n, "transaction has wrong code" );
+   core_net_assert( dtrx.actions[0].name.value == WASM_TEST_ACTION("test_action", "assert_false"), "transaction has wrong name" );
+   core_net_assert( dtrx.actions[0].authorization.size() == 1, "action should only have one authorization" );
+   core_net_assert( dtrx.actions[0].authorization[0].actor == "testapi"_n, "action's authorization has wrong actor" );
+   core_net_assert( dtrx.actions[0].authorization[0].permission == "active"_n, "action's authorization has wrong permission" );
 }
 
 /**
  * cause failure due to a large transaction size
  */
 void test_transaction::send_transaction_large( uint64_t receiver, uint64_t, uint64_t ) {
-   using namespace eosio;
+   using namespace core_net;
    auto trx = transaction();
    std::vector<permission_level> permissions = { {"testapi"_n, "active"_n} };
    for (int i = 0; i < 32; i ++) {
@@ -288,18 +288,18 @@ void test_transaction::send_transaction_large( uint64_t receiver, uint64_t, uint
 
    trx.send( 0, name{receiver} );
 
-   eosio_assert( false, "send_transaction_large() should've thrown an error" );
+   core_net_assert( false, "send_transaction_large() should've thrown an error" );
 }
 
 /**
  * deferred transaction
  */
 void test_transaction::deferred_print() {
-   eosio::print("deferred executed\n");
+   core_net::print("deferred executed\n");
 }
 
 void test_transaction::send_deferred_transaction( uint64_t receiver, uint64_t, uint64_t ) {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_transaction", "deferred_print" )> test_action;
 
    auto trx = transaction();
@@ -311,7 +311,7 @@ void test_transaction::send_deferred_transaction( uint64_t receiver, uint64_t, u
 }
 
 void test_transaction::send_deferred_transaction_4k_action( uint64_t receiver, uint64_t, uint64_t ) {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_transaction", "send_action_4k" )> test_action;
 
    auto trx = transaction();
@@ -323,7 +323,7 @@ void test_transaction::send_deferred_transaction_4k_action( uint64_t receiver, u
 }
 
 void test_transaction::send_deferred_transaction_replace( uint64_t receiver, uint64_t, uint64_t ) {
-   using namespace eosio;
+   using namespace core_net;
    test_action_action<"testapi"_n.value, WASM_TEST_ACTION( "test_transaction", "deferred_print" )> test_action;
 
    auto trx = transaction();
@@ -335,9 +335,9 @@ void test_transaction::send_deferred_transaction_replace( uint64_t receiver, uin
 }
 
 void test_transaction::send_deferred_tx_with_dtt_action() {
-   using namespace eosio;
+   using namespace core_net;
    dtt_action dtt_act;
-   eosio::read_action_data( &dtt_act, eosio::action_data_size() );
+   core_net::read_action_data( &dtt_act, core_net::action_data_size() );
 
    action deferred_act;
    deferred_act.account = name{dtt_act.deferred_account};
@@ -352,49 +352,49 @@ void test_transaction::send_deferred_tx_with_dtt_action() {
 
 
 void test_transaction::cancel_deferred_transaction_success() {
-   using namespace eosio;
-   auto r = eosio::cancel_deferred( 0xffffffffffffffff ); //use the same id (0) as in send_deferred_transaction
-   eosio_assert( (bool)r, "transaction was not found" );
+   using namespace core_net;
+   auto r = core_net::cancel_deferred( 0xffffffffffffffff ); //use the same id (0) as in send_deferred_transaction
+   core_net_assert( (bool)r, "transaction was not found" );
 }
 
 void test_transaction::cancel_deferred_transaction_not_found() {
-   using namespace eosio;
-   auto r = eosio::cancel_deferred( 0xffffffffffffffff ); //use the same id (0) as in send_deferred_transaction
-   eosio_assert( !r, "transaction was canceled, whild should not be found" );
+   using namespace core_net;
+   auto r = core_net::cancel_deferred( 0xffffffffffffffff ); //use the same id (0) as in send_deferred_transaction
+   core_net_assert( !r, "transaction was canceled, whild should not be found" );
 }
 
 void test_transaction::send_cf_action() {
-   using namespace eosio;
+   using namespace core_net;
    action act( std::vector<permission_level>{}, "dummy"_n, "event1"_n, std::vector<char>{} );
    act.send_context_free();
 }
 
 void test_transaction::send_cf_action_fail() {
-   using namespace eosio;
+   using namespace core_net;
    action act( std::vector<permission_level>{{"dummy"_n, "active"_n}}, "dummy"_n, "event1"_n, std::vector<char>{} );
    act.send_context_free();
-   eosio_assert( false, "send_cfa_action_fail() should've thrown an error" );
+   core_net_assert( false, "send_cfa_action_fail() should've thrown an error" );
 }
 
 void test_transaction::stateful_api() {
    char buf[4] = {1};
-   db_store_i64( eosio::name{"testtrans"}.value, eosio::name{"table"}.value, eosio::name{"testtrans"}.value, 0, buf, 4 );
+   db_store_i64( core_net::name{"testtrans"}.value, core_net::name{"table"}.value, core_net::name{"testtrans"}.value, 0, buf, 4 );
 }
 
 void test_transaction::context_free_api() {
    char buf[128] = {0};
-   eosio::get_context_free_data( 0, buf, sizeof(buf) );
+   core_net::get_context_free_data( 0, buf, sizeof(buf) );
 }
 
 void test_transaction::repeat_deferred_transaction( uint64_t receiver, uint64_t code, uint64_t action ) {
-   using namespace eosio;
+   using namespace core_net;
 
    uint128_t sender_id = 0;
 
    uint32_t payload = unpack_action_data<uint32_t>();
    print("repeat_deferred_transaction called: payload = ", payload);
 
-   bool res = eosio::cancel_deferred( sender_id );
+   bool res = core_net::cancel_deferred( sender_id );
 
    print("\nrepeat_deferred_transaction cancelled trx with sender_id = ", sender_id, ", result is ", res);
 
@@ -405,5 +405,5 @@ void test_transaction::repeat_deferred_transaction( uint64_t receiver, uint64_t 
    std::vector<permission_level> permissions = { {name{receiver}, "active"_n} };
 
    trx.actions.emplace_back( permissions, name{code}, name{action}, payload );
-   trx.send( sender_id, eosio::name{receiver} );
+   trx.send( sender_id, core_net::name{receiver} );
 }

@@ -1,7 +1,7 @@
 #include <finality_test_cluster.hpp>
 
-#include <eosio/chain/block_state.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/block_state.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/bls_private_key.hpp>
@@ -9,7 +9,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 using namespace fc::crypto::blslib;
 
 BOOST_AUTO_TEST_SUITE(block_state_tests)
@@ -421,7 +421,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test) try {
       qc_sig_t qc_sig(strong_votes, {}, agg_sig);
       qc_t qc{bsp->block_num(), qc_sig, {}};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, eosio::testing::fc_exception_message_starts_with("strong quorum is not met") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, core_net::testing::fc_exception_message_starts_with("strong quorum is not met") );
    }
 
    {  // weak QC quorum not met
@@ -436,7 +436,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test) try {
       qc_sig_t qc_sig({}, weak_votes, agg_sig);
       qc_t qc{bsp->block_num(), qc_sig, {}};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, eosio::testing::fc_exception_message_starts_with("weak quorum is not met") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, core_net::testing::fc_exception_message_starts_with("weak quorum is not met") );
    }
 
    {  // strong QC bitset size does not match number of finalizers in the policy
@@ -456,7 +456,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test) try {
       qc_sig_t qc_sig(strong_votes, {}, agg_sig);
       qc_t qc{bsp->block_num(), qc_sig, {}};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, eosio::testing::fc_exception_message_starts_with("vote bitset size is not the same as the number of finalizers") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, core_net::testing::fc_exception_message_starts_with("vote bitset size is not the same as the number of finalizers") );
    }
 
    {  // weak QC bitset size does not match number of finalizers in the policy
@@ -476,7 +476,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test) try {
       qc_sig_t qc_sig({}, weak_votes, agg_sig);
       qc_t qc{bsp->block_num(), qc_sig, {}};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, eosio::testing::fc_exception_message_starts_with("vote bitset size is not the same as the number of finalizers") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, core_net::testing::fc_exception_message_starts_with("vote bitset size is not the same as the number of finalizers") );
    }
 
    {  // strong QC with a wrong signing private key
@@ -494,7 +494,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test) try {
       qc_sig_t qc_sig(strong_votes, {}, sig);
       qc_t qc{bsp->block_num(), qc_sig, {}};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, eosio::testing::fc_exception_message_is("qc signature validation failed") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, core_net::testing::fc_exception_message_is("qc signature validation failed") );
    }
 
    {  // strong QC with a wrong digest
@@ -512,7 +512,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test) try {
       qc_sig_t qc_sig(strong_votes, {}, sig);
       qc_t qc{bsp->block_num(), qc_sig, {}};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, eosio::testing::fc_exception_message_is("qc signature validation failed") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, core_net::testing::fc_exception_message_is("qc signature validation failed") );
    }
 
    {  // weak QC with a wrong signing private key
@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test) try {
 
       qc_sig_t qc_sig(strong_votes, weak_votes, sig);
       qc_t qc{bsp->block_num(), qc_sig, {}};
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, eosio::testing::fc_exception_message_is("qc signature validation failed") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, core_net::testing::fc_exception_message_is("qc signature validation failed") );
    }
 
    {  // weak QC with a wrong digest
@@ -548,7 +548,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test) try {
 
       qc_sig_t qc_sig(strong_votes, weak_votes, sig);
       qc_t qc{bsp->block_num(), qc_sig, {}};
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, eosio::testing::fc_exception_message_is("qc signature validation failed") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, core_net::testing::fc_exception_message_is("qc signature validation failed") );
    }
 } FC_LOG_AND_RETHROW();
 
@@ -695,7 +695,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test_with_pending) try {
       qc_sig_t pending_qc_sig(strong_votes, {}, pending_agg_sig);
       qc_t qc{bsp->block_num(), active_qc_sig, pending_qc_sig};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, eosio::testing::fc_exception_message_starts_with("strong quorum is not met") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, core_net::testing::fc_exception_message_starts_with("strong quorum is not met") );
    }
 
    {  // weak QC quorum not met
@@ -712,7 +712,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test_with_pending) try {
       qc_sig_t pending_qc_sig({}, weak_votes, pending_agg_sig);
       qc_t qc{bsp->block_num(), active_qc_sig, pending_qc_sig};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, eosio::testing::fc_exception_message_starts_with("weak quorum is not met") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, core_net::testing::fc_exception_message_starts_with("weak quorum is not met") );
    }
 
    {  // strong QC bitset size does not match number of finalizers in the policy
@@ -734,7 +734,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test_with_pending) try {
       qc_sig_t pending_qc_sig(strong_votes, {}, pending_agg_sig);
       qc_t qc{bsp->block_num(), active_qc_sig, pending_qc_sig};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, eosio::testing::fc_exception_message_starts_with("vote bitset size is not the same as the number of finalizers") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, core_net::testing::fc_exception_message_starts_with("vote bitset size is not the same as the number of finalizers") );
    }
 
    {  // weak QC bitset size does not match number of finalizers in the policy
@@ -756,7 +756,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test_with_pending) try {
       qc_sig_t pending_qc_sig({}, weak_votes, pending_agg_sig);
       qc_t qc{bsp->block_num(), active_qc_sig, pending_qc_sig};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, eosio::testing::fc_exception_message_starts_with("vote bitset size is not the same as the number of finalizers") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, core_net::testing::fc_exception_message_starts_with("vote bitset size is not the same as the number of finalizers") );
    }
 
    {  // strong QC with a wrong signing private key
@@ -776,7 +776,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test_with_pending) try {
       qc_sig_t pending_qc_sig(strong_votes, {}, pending_agg_sig);
       qc_t qc{bsp->block_num(), active_qc_sig, pending_qc_sig};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, eosio::testing::fc_exception_message_is("qc signature validation failed") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, core_net::testing::fc_exception_message_is("qc signature validation failed") );
    }
 
    {  // strong QC with a wrong digest
@@ -796,7 +796,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test_with_pending) try {
       qc_sig_t pending_qc_sig(strong_votes, {}, pending_agg_sig);
       qc_t qc{bsp->block_num(), active_qc_sig, pending_qc_sig};
 
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, eosio::testing::fc_exception_message_is("qc signature validation failed") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, core_net::testing::fc_exception_message_is("qc signature validation failed") );
    }
 
    {  // weak QC with a wrong signing private key
@@ -816,7 +816,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test_with_pending) try {
       qc_sig_t active_qc_sig(strong_votes, weak_votes, active_agg_sig);
       qc_sig_t pending_qc_sig(strong_votes, weak_votes, pending_agg_sig);
       qc_t qc{bsp->block_num(), active_qc_sig, pending_qc_sig};
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, eosio::testing::fc_exception_message_is("qc signature validation failed") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, core_net::testing::fc_exception_message_is("qc signature validation failed") );
    }
 
    {  // weak QC with a wrong digest
@@ -836,7 +836,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_test_with_pending) try {
       qc_sig_t active_qc_sig(strong_votes, weak_votes, active_agg_sig);
       qc_sig_t pending_qc_sig(strong_votes, weak_votes, active_agg_sig);
       qc_t qc{bsp->block_num(), active_qc_sig, pending_qc_sig};
-      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, eosio::testing::fc_exception_message_is("qc signature validation failed") );
+      BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc_signature, core_net::testing::fc_exception_message_is("qc signature validation failed") );
    }
 } FC_LOG_AND_RETHROW();
 
@@ -952,7 +952,7 @@ BOOST_AUTO_TEST_CASE(verify_qc_dual_finalizers) try {
       if (expected_same) {
          BOOST_CHECK_NO_THROW( bsp->verify_qc(qc) );
       } else {
-         BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, eosio::testing::fc_exception_message_contains("does not vote the same on active and pending policies") );
+         BOOST_CHECK_EXCEPTION( bsp->verify_qc(qc), invalid_qc, core_net::testing::fc_exception_message_contains("does not vote the same on active and pending policies") );
       }
    };
 
@@ -997,7 +997,7 @@ BOOST_FIXTURE_TEST_CASE(get_finality_data_test, finality_test_cluster<4>) try {
    finality_data_t finality_data;
 
    // It takes one 2-chain for LIB to advance and 1 LIB proposed finalizer to be promoted to pending.
-   for (size_t i=0; i<eosio::testing::num_chains_to_final; ++i) {
+   for (size_t i=0; i<core_net::testing::num_chains_to_final; ++i) {
       produce_and_push_block();
       process_votes(1, num_nodes - 1); // all non-producing nodes (starting from node1) vote
 

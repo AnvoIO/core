@@ -14,7 +14,7 @@ DEFAULT_ENDPOINT = "127.0.0.1:8000"
 # Create New Key
 def create_key():
     result = subprocess.run(
-        ["cleos", "create", "key", "--r1", "--to-console"],
+        ["core-cli", "create", "key", "--r1", "--to-console"],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True
@@ -38,7 +38,7 @@ def create_key():
 # Check Nodeos has account
 def check_user_exists(account_name, endpoint):
     result = subprocess.run(
-        ["cleos", "--url", endpoint, "get", "account", account_name],
+        ["core-cli", "--url", endpoint, "get", "account", account_name],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -69,7 +69,7 @@ def get_keys_for_user(account_name, user_accounts):
 # Add A Key Pair to the Default Wallet
 def import_key(priv_key):
     import_key_command = [
-        "cleos",
+        "core-cli",
         "wallet", "import", "--private-key",priv_key
     ]
 
@@ -127,7 +127,7 @@ def test_cleos_transfer_currency(
     }
 
     cleos_command = [
-        "cleos",
+        "core-cli",
         "-u", endpoint,
         "push", "action",
         "eosio.token",
@@ -203,7 +203,7 @@ def cleos_newaccount_output(
     import_key(priv)
 
     cleos_command = [
-        "cleos",
+        "core-cli",
         "-u", endpoint,
         "system", "newaccount",
         payer_account,
@@ -254,7 +254,7 @@ def test_cleos_transfer_vaulta_currency(
     }
 
     cleos_command = [
-        "cleos",
+        "core-cli",
         "-u", endpoint,
         "push", "action",
         "eosio.token",

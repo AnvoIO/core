@@ -1,21 +1,21 @@
 #include <boost/test/unit_test.hpp>
 
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/contract_types.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/block.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/contract_types.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/block.hpp>
 
-#include <eosio/trace_api/test_common.hpp>
-#include <eosio/trace_api/chain_extraction.hpp>
+#include <core_net/trace_api/test_common.hpp>
+#include <core_net/trace_api/chain_extraction.hpp>
 
 #include <fc/bitutil.hpp>
 
-using namespace eosio;
-using namespace eosio::trace_api;
-using namespace eosio::trace_api::test_common;
-using eosio::chain::name;
-using eosio::chain::digest_type;
+using namespace core_net;
+using namespace core_net::trace_api;
+using namespace core_net::trace_api::test_common;
+using core_net::chain::name;
+using core_net::chain::digest_type;
 
 namespace {
    chain::transaction_trace_ptr make_transaction_trace( const chain::transaction_id_type& id, uint32_t block_number,

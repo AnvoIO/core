@@ -1,15 +1,15 @@
 #include <boost/test/unit_test.hpp>
-#include <eosio/chain/authority.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/producer_plugin/producer_plugin.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/authority.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/scoped_exit.hpp>
 
 #include <regex>
 
-using namespace eosio;
-using namespace eosio::chain;
+using namespace core_net;
+using namespace core_net::chain;
 
 using snapshot_request_information = snapshot_scheduler::snapshot_request_information;
 using snapshot_request_params = snapshot_scheduler::snapshot_request_params;

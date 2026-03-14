@@ -1,8 +1,8 @@
-#include <eosio/state_history/abi.hpp>
+#include <core_net/state_history/abi.hpp>
 #include <regex>
 
 extern const char* const state_history_plugin_abi = R"({
-    "version": "eosio::abi/1.1",
+    "version": "core_net::abi/1.1",
     "structs": [
         {
             "name": "get_status_request_v0", "fields": []
@@ -742,7 +742,7 @@ extern const char* const state_history_plugin_abi = R"({
     ]
 })";
 
-namespace eosio::state_history {
+namespace core_net::state_history {
 std::string ship_abi_without_tables() {
     std::regex scrub_all_tables(R"(\{ "name": "[^"]+", "type": "[^"]+", "key_names": \[[^\]]*\] \},?)");
     return std::regex_replace(state_history_plugin_abi, scrub_all_tables, "");

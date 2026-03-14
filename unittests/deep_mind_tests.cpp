@@ -1,14 +1,14 @@
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/io/cfile.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/deep_mind.hpp>
 
 #include <boost/test/unit_test.hpp>
 
 #include <deep-mind.hpp>
 
 
-using namespace eosio::testing;
+using namespace core_net::testing;
 
 extern void setup_test_logging();
 
@@ -89,7 +89,7 @@ BOOST_FIXTURE_TEST_CASE(deep_mind, deep_mind_tester)
 {
    // We have already transitioned into Savanna
    create_account( "alice"_n );
-   push_action(config::system_account_name, "updateauth"_n, "alice"_n, fc::mutable_variant_object()
+   push_action(config::system_account_name(), "updateauth"_n, "alice"_n, fc::mutable_variant_object()
                ("account", "alice")
                ("permission", "test1")
                ("parent", "active")

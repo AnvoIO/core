@@ -103,7 +103,7 @@ def startNode(nodeIndex, account):
     run('mkdir -p ' + dir)
     otherOpts = ''.join(list(map(lambda i: '    --p2p-peer-address localhost:' + str(9000 + i), range(nodeIndex))))
     if not nodeIndex: otherOpts += (
-        '    --plugin eosio::trace_api_plugin --trace-no-abis'
+        '    --plugin core_net::trace_api_plugin --trace-no-abis'
     )
     # if SVN blsFinKeys 
     cmd = (
@@ -126,11 +126,11 @@ def startNode(nodeIndex, account):
         '    --enable-stale-production'
         '    --producer-name ' + account['name'] +
         '    --signature-provider ' + account['pub'] + '=KEY:' + account['pvt'] +
-        '    --plugin eosio::http_plugin'
-        '    --plugin eosio::chain_api_plugin'
-        '    --plugin eosio::chain_plugin'
-        '    --plugin eosio::producer_api_plugin'
-        '    --plugin eosio::producer_plugin' +
+        '    --plugin core_net::http_plugin'
+        '    --plugin core_net::chain_api_plugin'
+        '    --plugin core_net::chain_plugin'
+        '    --plugin core_net::producer_api_plugin'
+        '    --plugin core_net::producer_plugin' +
         otherOpts)
         # + blsFinKeys
     with open(dir + 'stderr', mode='w') as f:

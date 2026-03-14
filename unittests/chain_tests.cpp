@@ -1,17 +1,17 @@
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/transaction.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/transaction.hpp>
 #include <boost/test/unit_test.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include "fork_test_utilities.hpp"
 #include "test_cfd_transaction.hpp"
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 BOOST_AUTO_TEST_SUITE(chain_tests)
 
@@ -59,7 +59,7 @@ BOOST_AUTO_TEST_CASE( replace_producer_keys ) try {
 
 BOOST_AUTO_TEST_CASE_TEMPLATE( replace_account_keys, T, validating_testers ) try {
    T tester;
-   const name usr = config::system_account_name;
+   const name usr = config::system_account_name();
    const name active_permission = config::active_name;
    const auto& rlm = tester.control->get_resource_limits_manager();
    const auto* perm = tester.control->db().template find<permission_object, by_owner>(boost::make_tuple(usr, active_permission));
@@ -86,8 +86,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( decompressed_size_over_limit, T, testers ) try {
 
    // build a transaction, add cf data, sign
    cf_action                        cfa;
-   eosio::chain::signed_transaction trx;
-   eosio::chain::action             act({}, cfa);
+   core_net::chain::signed_transaction trx;
+   core_net::chain::action             act({}, cfa);
    trx.context_free_actions.push_back(act);
    // this is a over limit size (4+4)*129*1024 = 1032*1024 > 1M
    for(int i = 0; i < 129*1024; ++i){
@@ -96,8 +96,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( decompressed_size_over_limit, T, testers ) try {
    }
    // add a normal action along with cfa
    dummy_action         da = {DUMMY_ACTION_DEFAULT_A, DUMMY_ACTION_DEFAULT_B, DUMMY_ACTION_DEFAULT_C};
-   eosio::chain::action act1(
-       std::vector<eosio::chain::permission_level>{{"testapi"_n, eosio::chain::config::active_name}}, da);
+   core_net::chain::action act1(
+       std::vector<core_net::chain::permission_level>{{"testapi"_n, core_net::chain::config::active_name}}, da);
    trx.actions.push_back(act1);
    chain.set_transaction_headers(trx);
    auto sig = trx.sign(chain.get_private_key("testapi"_n, "active"), chain.get_chain_id());
@@ -121,8 +121,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( decompressed_size_under_limit, T, testers ) try {
 
    // build a transaction, add cf data, sign
    cf_action                        cfa;
-   eosio::chain::signed_transaction trx;
-   eosio::chain::action             act({}, cfa);
+   core_net::chain::signed_transaction trx;
+   core_net::chain::action             act({}, cfa);
    trx.context_free_actions.push_back(act);
    // this is a under limit size  (4+4)*128*1024 = 1024*1024
    for(int i = 0; i < 100*1024; ++i){
@@ -131,8 +131,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( decompressed_size_under_limit, T, testers ) try {
    }
    // add a normal action along with cfa
    dummy_action         da = {DUMMY_ACTION_DEFAULT_A, DUMMY_ACTION_DEFAULT_B, DUMMY_ACTION_DEFAULT_C};
-   eosio::chain::action act1(
-       std::vector<eosio::chain::permission_level>{{"testapi"_n, eosio::chain::config::active_name}}, da);
+   core_net::chain::action act1(
+       std::vector<core_net::chain::permission_level>{{"testapi"_n, core_net::chain::config::active_name}}, da);
    trx.actions.push_back(act1);
    chain.set_transaction_headers(trx);
    auto sig = trx.sign(chain.get_private_key("testapi"_n, "active"), chain.get_chain_id());

@@ -1,7 +1,7 @@
 #include "savanna_cluster.hpp"
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 BOOST_AUTO_TEST_SUITE(savanna_disaster_recovery_tests)
 

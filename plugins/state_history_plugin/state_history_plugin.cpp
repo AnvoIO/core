@@ -1,14 +1,14 @@
-#include "eosio/chain/block_header.hpp"
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/resource_monitor_plugin/resource_monitor_plugin.hpp>
-#include <eosio/state_history/create_deltas.hpp>
-#include <eosio/state_history/log_config.hpp>
-#include <eosio/state_history/log_catalog.hpp>
-#include <eosio/state_history/serialization.hpp>
-#include <eosio/state_history/trace_converter.hpp>
-#include <eosio/state_history_plugin/session.hpp>
-#include <eosio/state_history_plugin/state_history_plugin.hpp>
+#include "core_net/chain/block_header.hpp"
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/resource_monitor_plugin/resource_monitor_plugin.hpp>
+#include <core_net/state_history/create_deltas.hpp>
+#include <core_net/state_history/log_config.hpp>
+#include <core_net/state_history/log_catalog.hpp>
+#include <core_net/state_history/serialization.hpp>
+#include <core_net/state_history/trace_converter.hpp>
+#include <core_net/state_history_plugin/session.hpp>
+#include <core_net/state_history_plugin/state_history_plugin.hpp>
 
 #include <boost/asio/bind_executor.hpp>
 #include <boost/asio/ip/host_name.hpp>
@@ -21,7 +21,7 @@
 
 #include <fc/network/listener.hpp>
 
-namespace eosio {
+namespace core_net {
 using namespace chain;
 using namespace state_history;
 using boost::signals2::scoped_connection;
@@ -229,7 +229,7 @@ void state_history_plugin::set_program_options(options_description& cli, options
    options("state-history-archive-dir", bpo::value<std::filesystem::path>(),
            "the location of the state history archive directory (absolute path or relative to state-history dir).\n"
            "If the value is empty string, blocks files beyond the retained limit will be deleted.\n"
-           "All files in the archive directory are completely under user's control, i.e. they won't be accessed by nodeos anymore.");
+           "All files in the archive directory are completely under user's control, i.e. they won't be accessed by core_netd anymore.");
    options("state-history-stride", bpo::value<uint32_t>(),
          "split the state history log files when the block number is the multiple of the stride\n"
          "When the stride is reached, the current history log and index will be renamed '*-history-<start num>-<end num>.log/index'\n"
@@ -394,4 +394,4 @@ void state_history_plugin::handle_sighup() {
    fc::logger::update(logger_name, _log);
 }
 
-} // namespace eosio
+} // namespace core_net

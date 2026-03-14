@@ -8,7 +8,7 @@
 #include <vector>
 #include <map>
 
-namespace eosio { namespace chain { namespace eosvmoc {
+namespace core_net { namespace chain { namespace eosvmoc {
 
 namespace LLVMJIT {
    bool getFunctionIndexFromExternalName(const char* externalName,Uptr& outFunctionDefIndex);

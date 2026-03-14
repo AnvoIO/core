@@ -1,5 +1,5 @@
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/variant_object.hpp>
 
@@ -9,12 +9,12 @@
 #include <test_contracts.hpp>
 #include "fork_test_utilities.hpp"
 
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #include "finality_proof.hpp"
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 using mvo = mutable_variant_object;
 
@@ -69,8 +69,8 @@ BOOST_AUTO_TEST_SUITE(svnn_ibc)
 
       // create the ibc account and deploy the ibc contract to it 
       cluster.node0.create_account( "ibc"_n );
-      cluster.node0.set_code( "ibc"_n, eosio::testing::test_contracts::ibc_wasm());
-      cluster.node0.set_abi( "ibc"_n, eosio::testing::test_contracts::ibc_abi());
+      cluster.node0.set_code( "ibc"_n, core_net::testing::test_contracts::ibc_wasm());
+      cluster.node0.set_abi( "ibc"_n, core_net::testing::test_contracts::ibc_abi());
 
       cluster.node0.push_action( "ibc"_n, "setfpolicy"_n, "ibc"_n, mvo()
          ("from_block_num", 1)
@@ -526,7 +526,7 @@ BOOST_AUTO_TEST_SUITE(svnn_ibc)
 
       // verify that this attempt to prove fails, because QC for pending finalizer policy generation is not provided
       try { cluster.node0.push_action("ibc"_n, "checkproof"_n, "ibc"_n, heavy_proof_3); }
-      catch(const eosio_assert_message_exception& e){ last_action_failed = true; }
+      catch(const core_net_assert_message_exception& e){ last_action_failed = true; }
 
       // checkproof action has failed, as expected.
       BOOST_CHECK(last_action_failed); 
@@ -639,7 +639,7 @@ BOOST_AUTO_TEST_SUITE(svnn_ibc)
 
       // since heavy_proof_5 requires finalizer policy generation #2, we cannot prove it yet.
       try { cluster.node0.push_action("ibc"_n, "checkproof"_n, "ibc"_n, heavy_proof_5); }
-      catch(const eosio_assert_message_exception& e){ last_action_failed = true; }
+      catch(const core_net_assert_message_exception& e){ last_action_failed = true; }
 
       // checkproof action has failed, as expected.
       BOOST_CHECK(last_action_failed); 
@@ -673,7 +673,7 @@ BOOST_AUTO_TEST_SUITE(svnn_ibc)
       // Since garbage collection was previously triggered for the merkle root of block #2 which this
       // proof attempts to link to, action will now fail
       try {cluster.node0.push_action("ibc"_n, "checkproof"_n, "ibc"_n, light_proof_1);}
-      catch(const eosio_assert_message_exception& e){last_action_failed = true;}
+      catch(const core_net_assert_message_exception& e){last_action_failed = true;}
 
       // verify action has failed, as expected
       BOOST_CHECK(last_action_failed); 
@@ -685,8 +685,8 @@ BOOST_AUTO_TEST_SUITE(svnn_ibc)
       savanna_tester chain;
 
       chain.create_account( "ibc"_n );
-      chain.set_code( "ibc"_n, eosio::testing::test_contracts::ibc_wasm());
-      chain.set_abi( "ibc"_n, eosio::testing::test_contracts::ibc_abi());
+      chain.set_code( "ibc"_n, core_net::testing::test_contracts::ibc_wasm());
+      chain.set_abi( "ibc"_n, core_net::testing::test_contracts::ibc_abi());
 
       std::string bitset_1 = binary_to_hex("0");
       std::string bitset_2 = binary_to_hex("011");

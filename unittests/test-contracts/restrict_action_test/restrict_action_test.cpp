@@ -1,7 +1,7 @@
 #include "restrict_action_test.hpp"
-#include <eosio/transaction.hpp>
+#include <core_net/transaction.hpp>
 
-using namespace eosio;
+using namespace core_net;
 
 void restrict_action_test::noop( ) {
 

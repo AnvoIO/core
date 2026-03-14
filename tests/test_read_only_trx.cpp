@@ -1,19 +1,19 @@
 #include <boost/test/unit_test.hpp>
 
 #include <test_utils.hpp>
-#include <eosio/producer_plugin/producer_plugin.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/block.hpp>
-#include <eosio/chain/config.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/genesis_state.hpp>
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/transaction_metadata.hpp>
-#include <eosio/chain/trace.hpp>
-#include <eosio/chain/name.hpp>
-#include <eosio/chain/application.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/block.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/genesis_state.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/transaction_metadata.hpp>
+#include <core_net/chain/trace.hpp>
+#include <core_net/chain/name.hpp>
+#include <core_net/chain/application.hpp>
 
 #include <contracts.hpp>
 #include "chain_test_utils.hpp"
@@ -23,14 +23,14 @@
 
 
 namespace {
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::test_utils;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::test_utils;
 
 auto make_unique_trx() {
    static uint64_t nextid = 0;
    ++nextid;
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
    signed_transaction trx;
    trx.expiration = fc::time_point_sec{fc::time_point::now() + fc::seconds( nextid % 50 == 0 ? 0 : 60 )}; // fail some transactions via expired
    if( nextid % 10 == 0 ) {
@@ -135,7 +135,7 @@ void test_trxs_common(std::vector<const char*>& specific_args) {
          for( size_t i = 1; i <= num_pushes; ++i ) {
             auto ptrx = i % 3 == 0 ? make_unique_trx() : make_bios_ro_trx(chain_plug->chain());
             app->executor().post( priority::low, exec_queue::read_only, [&chain_plug=chain_plug, &num_get_account_calls]() {
-               chain_plug->get_read_only_api(fc::seconds(90)).get_account(chain_apis::read_only::get_account_params{.account_name=config::system_account_name}, fc::time_point::now()+fc::seconds(90));
+               chain_plug->get_read_only_api(fc::seconds(90)).get_account(chain_apis::read_only::get_account_params{.account_name=config::system_account_name()}, fc::time_point::now()+fc::seconds(90));
                ++num_get_account_calls;
             });
             app->executor().post( priority::low, exec_queue::read_exclusive, [ptrx, &next_calls, &num_posts, &trace_with_except, &trx_match, &app]() {
@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(with_3_read_only_threads) {
 // test read-only trxs on 3 threads (with --read-only-threads)
 BOOST_AUTO_TEST_CASE(with_3_read_only_threads_no_tierup) {
    std::vector<const char*> specific_args = { "--read-only-threads=3",
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
                                              "--eos-vm-oc-enable=none",
 #endif
                                             };
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(with_8_read_only_threads) {
 // test read-only trxs on 8 separate threads (with --read-only-threads)
 BOOST_AUTO_TEST_CASE(with_8_read_only_threads_no_tierup) {
    std::vector<const char*> specific_args = { "--read-only-threads=8",
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
                                              "--eos-vm-oc-enable=none",
 #endif
                                             };

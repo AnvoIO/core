@@ -1,29 +1,29 @@
-#include <eosio/state_history/serialization.hpp>
-#include <eosio/chain/authorization_manager.hpp>
+#include <core_net/state_history/serialization.hpp>
+#include <core_net/chain/authorization_manager.hpp>
 #include <boost/test/unit_test.hpp>
 #include <contracts.hpp>
 #include <test_contracts.hpp>
-#include <eosio/state_history/abi.hpp>
-#include <eosio/state_history/create_deltas.hpp>
-#include <eosio/state_history/log_catalog.hpp>
-#include <eosio/state_history/trace_converter.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/state_history/abi.hpp>
+#include <core_net/state_history/create_deltas.hpp>
+#include <core_net/state_history/log_catalog.hpp>
+#include <core_net/state_history/trace_converter.hpp>
+#include <core_net/testing/tester.hpp>
 #include <fc/io/json.hpp>
 #include <fc/io/cfile.hpp>
-#include <eosio/chain/global_property_object.hpp>
+#include <core_net/chain/global_property_object.hpp>
 
 #include "test_cfd_transaction.hpp"
 
 #include <boost/iostreams/device/back_inserter.hpp>
 #include <boost/iostreams/copy.hpp>
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace std::literals;
 
 static const abi_serializer::yield_function_t null_yield_function{};
 
-namespace eosio::state_history {
+namespace core_net::state_history {
 
 template <typename ST>
 datastream<ST>& operator>>(datastream<ST>& ds, row_pair& rp) {
@@ -38,7 +38,7 @@ datastream<ST>& operator>>(datastream<ST>& ds, row_pair& rp) {
 }
 
 template <typename ST, typename T>
-datastream<ST>& operator>>(datastream<ST>& ds, eosio::state_history::big_vector_wrapper<T>& obj) {
+datastream<ST>& operator>>(datastream<ST>& ds, core_net::state_history::big_vector_wrapper<T>& obj) {
    fc::unsigned_int sz;
    fc::raw::unpack(ds, sz);
    obj.obj.resize(sz);
@@ -67,10 +67,10 @@ template<typename T>
 class table_deltas_tester : public T {
 public:
    using T::T;
-   using deltas_vector = vector<eosio::state_history::table_delta>;
+   using deltas_vector = vector<core_net::state_history::table_delta>;
 
    pair<bool, deltas_vector::iterator> find_table_delta(const std::string &name, bool full_snapshot = false) {
-      v = eosio::state_history::create_deltas(T::control->db(), full_snapshot);;
+      v = core_net::state_history::create_deltas(T::control->db(), full_snapshot);;
 
       auto find_by_name = [&name](const auto& x) {
          return x.name == name;
@@ -94,7 +94,7 @@ public:
 
 private:
    deltas_vector v;
-   abi_serializer shipabi = abi_serializer(json::from_string(eosio::state_history::ship_abi_without_tables()).as<abi_def>(), null_yield_function);
+   abi_serializer shipabi = abi_serializer(json::from_string(core_net::state_history::ship_abi_without_tables()).as<abi_def>(), null_yield_function);
 };
 
 using table_deltas_testers = boost::mpl::list<table_deltas_tester<legacy_tester>,
@@ -104,7 +104,7 @@ using testers = boost::mpl::list<legacy_tester, savanna_tester>;
 BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_not_empty, T, table_deltas_testers) {
    T chain;
 
-   auto deltas = eosio::state_history::create_deltas(chain.control->db(), false);
+   auto deltas = core_net::state_history::create_deltas(chain.control->db(), false);
 
    for(const auto &delta: deltas) {
       BOOST_REQUIRE(!delta.rows.obj.empty());
@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_global_property_history, T, table_delt
    // Change max_transaction_delay to 60 sec
    auto params = chain.control->get_global_properties().configuration;
    params.max_transaction_delay = 60;
-   chain.push_action( config::system_account_name, "setparams"_n, config::system_account_name,
+   chain.push_action( config::system_account_name(), "setparams"_n, config::system_account_name(),
                              mutable_variant_object()
                              ("params", params) );
 
@@ -380,8 +380,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
 
    chain.produce_block();
 
-   chain.set_code( "eosio.token"_n, test_contracts::eosio_token_wasm() );
-   chain.set_abi( "eosio.token"_n, test_contracts::eosio_token_abi() );
+   chain.set_code( "eosio.token"_n, test_contracts::core_net_token_wasm() );
+   chain.set_abi( "eosio.token"_n, test_contracts::core_net_token_abi() );
 
    chain.produce_block();
 
@@ -398,10 +398,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
 
    chain.produce_block();
 
-   chain.set_code( config::system_account_name, test_contracts::eosio_system_wasm() );
-   chain.set_abi( config::system_account_name, test_contracts::eosio_system_abi() );
+   chain.set_code( config::system_account_name(), test_contracts::core_net_system_wasm() );
+   chain.set_abi( config::system_account_name(), test_contracts::core_net_system_abi() );
 
-   chain.push_action(config::system_account_name, "init"_n, config::system_account_name,
+   chain.push_action(config::system_account_name(), "init"_n, config::system_account_name(),
                         mutable_variant_object()
                         ("version", 0)
                         ("core", symbol(CORE_SYMBOL).to_string()));
@@ -412,36 +412,36 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
    authority owner_auth;
    owner_auth =  authority( chain.get_public_key( "alice"_n, "owner" ) );
 
-   trx.actions.emplace_back( vector<permission_level>{{config::system_account_name,config::active_name}},
+   trx.actions.emplace_back( vector<permission_level>{{config::system_account_name(),config::active_name}},
                                 newaccount{
-                                    .creator  = config::system_account_name,
+                                    .creator  = config::system_account_name(),
                                     .name     =  "alice"_n,
                                     .owner    = owner_auth,
                                     .active   = authority( chain.get_public_key( "alice"_n, "active" ) )});
 
-   trx.actions.emplace_back( chain.get_action( config::system_account_name, "buyram"_n, vector<permission_level>{{config::system_account_name,config::active_name}},
+   trx.actions.emplace_back( chain.get_action( config::system_account_name(), "buyram"_n, vector<permission_level>{{config::system_account_name(),config::active_name}},
                                                   mutable_variant_object()
-                                                      ("payer", config::system_account_name)
+                                                      ("payer", config::system_account_name())
                                                       ("receiver",  "alice"_n)
                                                       ("quant", core_from_string("1.0000"))));
 
-   trx.actions.emplace_back( chain.get_action( config::system_account_name, "delegatebw"_n, vector<permission_level>{{config::system_account_name,config::active_name}},
+   trx.actions.emplace_back( chain.get_action( config::system_account_name(), "delegatebw"_n, vector<permission_level>{{config::system_account_name(),config::active_name}},
                                                   mutable_variant_object()
-                                                      ("from", config::system_account_name)
+                                                      ("from", config::system_account_name())
                                                       ("receiver",  "alice"_n)
                                                       ("stake_net_quantity", core_from_string("10.0000") )
                                                       ("stake_cpu_quantity", core_from_string("10.0000") )
                                                       ("transfer", 0 )));
 
    chain.set_transaction_headers(trx);
-   trx.sign( chain.get_private_key( config::system_account_name, "active" ), chain.get_chain_id()  );
+   trx.sign( chain.get_private_key( config::system_account_name(), "active" ), chain.get_chain_id()  );
    chain.push_transaction( trx );
 }
 
    BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas, T, testers) {
       T main;
 
-      auto v = eosio::state_history::create_deltas(main.control->db(), false);
+      auto v = core_net::state_history::create_deltas(main.control->db(), false);
 
       std::string name="permission";
       auto find_by_name = [&name](const auto& x) {
@@ -457,7 +457,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
 
       main.create_account("newacc"_n);
 
-      v = eosio::state_history::create_deltas(main.control->db(), false);
+      v = core_net::state_history::create_deltas(main.control->db(), false);
 
       name="permission";
       it = std::find_if(v.begin(), v.end(), find_by_name);
@@ -469,7 +469,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
 
       main.produce_block();
 
-      v = eosio::state_history::create_deltas(main.control->db(), false);
+      v = core_net::state_history::create_deltas(main.control->db(), false);
 
       name="permission";
       it = std::find_if(v.begin(), v.end(), find_by_name);
@@ -559,8 +559,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
 
    }
 
-   std::vector<shared_ptr<eosio::state_history::partial_transaction>> get_partial_txns(eosio::state_history::trace_converter& log) {
-      std::vector<shared_ptr<eosio::state_history::partial_transaction>> partial_txns;
+   std::vector<shared_ptr<core_net::state_history::partial_transaction>> get_partial_txns(core_net::state_history::trace_converter& log) {
+      std::vector<shared_ptr<core_net::state_history::partial_transaction>> partial_txns;
 
       for (auto ct : log.cached_traces) {
          partial_txns.push_back(std::get<1>(ct).partial);
@@ -573,7 +573,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
       tester_no_disable_deferred_trx c;
 
       fc::temp_directory state_history_dir;
-      eosio::state_history::trace_converter log;
+      core_net::state_history::trace_converter log;
 
       c.control->applied_transaction().connect(
             [&](std::tuple<const transaction_trace_ptr&, const packed_transaction_ptr&> t) {
@@ -591,7 +591,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
       auto block  = c.produce_block();
       auto partial_txns = get_partial_txns(log);
 
-      auto contains_transaction_extensions = [](shared_ptr<eosio::state_history::partial_transaction> txn) {
+      auto contains_transaction_extensions = [](shared_ptr<core_net::state_history::partial_transaction> txn) {
          return txn->transaction_extensions.size() > 0;
       };
 
@@ -599,18 +599,18 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
    }
 
 struct state_history_tester_logs  {
-   state_history_tester_logs(const std::filesystem::path& dir, const eosio::state_history::state_history_log_config& config)
+   state_history_tester_logs(const std::filesystem::path& dir, const core_net::state_history::state_history_log_config& config)
       : traces_log(dir, config, "trace_history") , chain_state_log(dir, config, "chain_state_history") {}
 
-   eosio::state_history::log_catalog traces_log;
-   eosio::state_history::log_catalog chain_state_log;
-   eosio::state_history::trace_converter trace_converter;
+   core_net::state_history::log_catalog traces_log;
+   core_net::state_history::log_catalog chain_state_log;
+   core_net::state_history::trace_converter trace_converter;
 };
 
 template<typename T>
 struct state_history_tester : state_history_tester_logs, T {
-   state_history_tester(const std::filesystem::path& dir, const eosio::state_history::state_history_log_config& config)
-   : state_history_tester_logs(dir, config), T ([this](eosio::chain::controller& control) {
+   state_history_tester(const std::filesystem::path& dir, const core_net::state_history::state_history_log_config& config)
+   : state_history_tester_logs(dir, config), T ([this](core_net::chain::controller& control) {
       control.applied_transaction().connect(
        [&](std::tuple<const transaction_trace_ptr&, const packed_transaction_ptr&> t) {
           trace_converter.add_transaction(std::get<0>(t), std::get<1>(t));
@@ -624,7 +624,7 @@ struct state_history_tester : state_history_tester_logs, T {
          });
 
          chain_state_log.pack_and_write_entry(id, block->previous, [&control](auto&& buf) {
-            eosio::state_history::pack_deltas(buf, control.db(), true);
+            core_net::state_history::pack_deltas(buf, control.db(), true);
          });
       });
       control.block_start().connect([this](uint32_t block_num) {
@@ -637,8 +637,8 @@ struct state_history_tester : state_history_tester_logs, T {
 using state_history_testers = boost::mpl::list<state_history_tester<legacy_tester>,
                                                state_history_tester<savanna_tester>>;
 
-static std::vector<char> get_decompressed_entry(eosio::state_history::log_catalog& log, block_num_type block_num) {
-   std::optional<eosio::state_history::ship_log_entry> entry = log.get_entry(block_num);
+static std::vector<char> get_decompressed_entry(core_net::state_history::log_catalog& log, block_num_type block_num) {
+   std::optional<core_net::state_history::ship_log_entry> entry = log.get_entry(block_num);
    if(!entry) //existing tests expect failure to find a block returns an empty vector here
       return {};
 
@@ -649,11 +649,11 @@ static std::vector<char> get_decompressed_entry(eosio::state_history::log_catalo
    return bytes;
 }
 
-static variants get_traces(eosio::state_history::log_catalog& log, block_num_type            block_num) {
+static variants get_traces(core_net::state_history::log_catalog& log, block_num_type            block_num) {
    auto     entry = get_decompressed_entry(log, block_num);
 
    if (entry.size()) {
-      abi_serializer shipabi = abi_serializer(json::from_string(eosio::state_history::ship_abi_without_tables()).as<abi_def>(), null_yield_function);
+      abi_serializer shipabi = abi_serializer(json::from_string(core_net::state_history::ship_abi_without_tables()).as<abi_def>(), null_yield_function);
       return shipabi.binary_to_variant("transaction_trace[]", entry, null_yield_function).get_array();
    }
    return variants();
@@ -662,7 +662,7 @@ static variants get_traces(eosio::state_history::log_catalog& log, block_num_typ
 BOOST_AUTO_TEST_CASE_TEMPLATE(test_splitted_log, T, state_history_testers) {
    fc::temp_directory state_history_dir;
 
-   eosio::state_history::partition_config config{
+   core_net::state_history::partition_config config{
       .retained_dir = "retained",
       .archive_dir = "archive",
       .stride  = 20,
@@ -779,7 +779,7 @@ template<typename T>
 bool test_fork(uint32_t stride, uint32_t max_retained_files) {
    fc::temp_directory state_history_dir;
 
-   eosio::state_history::partition_config config{
+   core_net::state_history::partition_config config{
       .retained_dir = "retained",
       .archive_dir = "archive",
       .stride  = stride,
@@ -859,7 +859,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_fork_with_stride2, T, state_history_testers) 
 BOOST_AUTO_TEST_CASE_TEMPLATE(test_corrupted_log_recovery, T, state_history_testers) {
    fc::temp_directory state_history_dir;
 
-   eosio::state_history::partition_config config{
+   core_net::state_history::partition_config config{
       .archive_dir = "archive",
       .stride  = 100,
       .max_retained_files = 5
@@ -891,7 +891,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_corrupted_log_recovery, T, state_history_test
 BOOST_AUTO_TEST_CASE_TEMPLATE(test_no_index_recovery, T, state_history_testers) {
    fc::temp_directory state_history_dir;
 
-   eosio::state_history::partition_config config{};
+   core_net::state_history::partition_config config{};
 
    T chain(state_history_dir.path(), config);
    chain.produce_block();
@@ -910,7 +910,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_no_index_recovery, T, state_history_testers) 
 BOOST_AUTO_TEST_CASE_TEMPLATE(test_curropted_index_recovery, T, state_history_testers) {
    fc::temp_directory state_history_dir;
 
-   eosio::state_history::partition_config config{};
+   core_net::state_history::partition_config config{};
 
    T chain(state_history_dir.path(), config);
    chain.produce_block();
@@ -936,7 +936,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_curropted_index_recovery, T, state_history_te
 BOOST_AUTO_TEST_CASE_TEMPLATE(test_curropted_index_error, T, state_history_testers) {
    fc::temp_directory state_history_dir;
 
-   eosio::state_history::partition_config config{};
+   core_net::state_history::partition_config config{};
 
    T chain(state_history_dir.path(), config);
    chain.produce_block();

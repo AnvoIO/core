@@ -1,10 +1,10 @@
-#include <eosio/chain/name.hpp>
+#include <core_net/chain/name.hpp>
 #include <fc/variant.hpp>
 #include <boost/algorithm/string.hpp>
 #include <fc/exception/exception.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/exceptions.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    void name::set( std::string_view str ) {
       const auto len = str.size();
@@ -32,9 +32,9 @@ namespace eosio::chain {
       return str;
    }
 
-} // eosio::chain
+} // core_net::chain
 
 namespace fc {
-  void to_variant(const eosio::chain::name& c, fc::variant& v) { v = c.to_string(); }
-  void from_variant(const fc::variant& v, eosio::chain::name& check) { check.set( v.get_string() ); }
+  void to_variant(const core_net::chain::name& c, fc::variant& v) { v = c.to_string(); }
+  void from_variant(const fc::variant& v, core_net::chain::name& check) { check.set( v.get_string() ); }
 } // fc

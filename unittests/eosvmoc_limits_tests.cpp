@@ -1,10 +1,10 @@
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 #include <test_contracts.hpp>
 #include <boost/test/unit_test.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using mvo = fc::mutable_variant_object;
 
 BOOST_AUTO_TEST_SUITE(eosvmoc_limits_tests)
@@ -27,18 +27,18 @@ void limit_violated_test(const eosvmoc::config& eosvmoc_config, const std::strin
    name acc = name{account};
 
    chain.create_accounts({acc});
-   chain.set_code(acc, test_contracts::eosio_token_wasm());
-   chain.set_abi(acc, test_contracts::eosio_token_abi());
+   chain.set_code(acc, test_contracts::core_net_token_wasm());
+   chain.set_abi(acc, test_contracts::core_net_token_abi());
 
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
    if (chain.control->is_eos_vm_oc_enabled()) {
       if (expect_exception) {
          BOOST_CHECK_EXCEPTION(
             chain.push_action( acc, "create"_n, acc, mvo()
                ( "issuer", account )
                ( "maximum_supply", "1000000.00 TOK" )),
-            eosio::chain::wasm_execution_error,
-            [](const eosio::chain::wasm_execution_error& e) {
+            core_net::chain::wasm_execution_error,
+            [](const core_net::chain::wasm_execution_error& e) {
                return expect_assert_message(e, "failed to compile wasm");
             }
          );
@@ -72,8 +72,8 @@ void limit_not_violated_test(const eosvmoc::config& eosvmoc_config) {
    );
 
    chain.create_accounts({"eosio.token"_n});
-   chain.set_code("eosio.token"_n, test_contracts::eosio_token_wasm());
-   chain.set_abi("eosio.token"_n, test_contracts::eosio_token_abi());
+   chain.set_code("eosio.token"_n, test_contracts::core_net_token_wasm());
+   chain.set_abi("eosio.token"_n, test_contracts::core_net_token_abi());
 
    chain.push_action( "eosio.token"_n, "create"_n, "eosio.token"_n, mvo()
       ( "issuer", "eosio.token" )
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE( vm_limit ) { try {
    limit_not_violated_test(eosvmoc_config);
 } FC_LOG_AND_RETHROW() }
 
-//make sure vm_limit is populated for a default constructed config (what nodeos will use)
+//make sure vm_limit is populated for a default constructed config (what core_netd will use)
 BOOST_AUTO_TEST_CASE( check_config_default_vm_limit ) { try {
    eosvmoc::config eosvmoc_config;
 

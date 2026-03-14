@@ -1,12 +1,12 @@
 #include <boost/test/unit_test.hpp>
 #include <list>
 
-#include <eosio/trace_api/configuration_utils.hpp>
-#include <eosio/trace_api/test_common.hpp>
+#include <core_net/trace_api/configuration_utils.hpp>
+#include <core_net/trace_api/test_common.hpp>
 #include <fc/io/cfile.hpp>
 
-using namespace eosio;
-using namespace eosio::trace_api::configuration_utils;
+using namespace core_net;
+using namespace core_net::trace_api::configuration_utils;
 
 struct temp_file_fixture {
    std::string create_temp_file( const std::string& contents ) {

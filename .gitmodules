@@ -1,12 +1,3 @@
-[submodule "libraries/appbase"]
-	path = libraries/appbase
-	url = https://github.com/AntelopeIO/appbase
-[submodule "libraries/eos-vm"]
-	path = libraries/eos-vm
-	url = https://github.com/AntelopeIO/eos-vm
-[submodule "libraries/softfloat"]
-	path = libraries/softfloat
-	url = https://github.com/AntelopeIO/berkeley-softfloat-3
 [submodule "libraries/rapidjson"]
 	path = libraries/rapidjson
 	url = https://github.com/Tencent/rapidjson/
@@ -21,13 +12,13 @@
 	url = https://github.com/jupp0r/prometheus-cpp.git
 [submodule "libraries/libfc/libraries/bn256"]
 	path = libraries/libfc/libraries/bn256
-	url = https://github.com/AntelopeIO/bn256
+	url = https://github.com/Anvo-Network/bn256
 [submodule "libraries/cli11/cli11"]
 	path = libraries/cli11/cli11
-	url = https://github.com/AntelopeIO/CLI11.git
+	url = https://github.com/CLIUtils/CLI11.git
 [submodule "libraries/libfc/libraries/bls12-381"]
 	path = libraries/libfc/libraries/bls12-381
-	url = https://github.com/AntelopeIO/bls12-381
+	url = https://github.com/Anvo-Network/bls12-381
 [submodule "libraries/boost"]
 	path = libraries/boost
 	url = https://github.com/boostorg/boost.git

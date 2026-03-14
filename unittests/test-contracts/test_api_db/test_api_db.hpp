@@ -1,42 +1,42 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
-class [[eosio::contract]] test_api_db : public eosio::contract {
+class [[core_net::contract]] test_api_db : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action("pg")]]
+   [[core_net::action("pg")]]
    void primary_i64_general();
 
-   [[eosio::action("pl")]]
+   [[core_net::action("pl")]]
    void primary_i64_lowerbound();
 
-   [[eosio::action("pu")]]
+   [[core_net::action("pu")]]
    void primary_i64_upperbound();
 
-   [[eosio::action("s1g")]]
+   [[core_net::action("s1g")]]
    void idx64_general();
 
-   [[eosio::action("s1l")]]
+   [[core_net::action("s1l")]]
    void idx64_lowerbound();
 
-   [[eosio::action("s1u")]]
+   [[core_net::action("s1u")]]
    void idx64_upperbound();
 
-   [[eosio::action("tia")]]
-   void test_invalid_access( eosio::name code, uint64_t val, uint32_t index, bool store );
+   [[core_net::action("tia")]]
+   void test_invalid_access( core_net::name code, uint64_t val, uint32_t index, bool store );
 
-   [[eosio::action("sdnancreate")]]
+   [[core_net::action("sdnancreate")]]
    void idx_double_nan_create_fail();
 
-   [[eosio::action("sdnanmodify")]]
+   [[core_net::action("sdnanmodify")]]
    void idx_double_nan_modify_fail();
 
-   [[eosio::action("sdnanlookup")]]
+   [[core_net::action("sdnanlookup")]]
    void idx_double_nan_lookup_fail( uint32_t lookup_type );
 
-   [[eosio::action("sk32align")]]
+   [[core_net::action("sk32align")]]
    void misaligned_secondary_key256_tests();
 
 };

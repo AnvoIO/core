@@ -1,12 +1,12 @@
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/asset.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/finality_extension.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/asset.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/finality_extension.hpp>
 #include <fc/io/raw.hpp>
 #include <fc/io/varint.hpp>
 #include <fc/time.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    const size_t abi_serializer::max_recursion_depth;
 
@@ -130,7 +130,11 @@ namespace eosio::chain {
    void abi_serializer::set_abi(abi_def abi, const yield_function_t& yield) {
       impl::abi_traverse_context ctx(yield, fc::microseconds{});
 
-      EOS_ASSERT(abi.version.starts_with("eosio::abi/1."), unsupported_abi_version_exception, "ABI has an unsupported version");
+      // Accept both legacy "eosio::abi/1.x" and current "core_net::abi/1.x" version strings.
+      // Legacy format must be supported permanently for backward compatibility with
+      // existing deployed contracts and ABI files.
+      EOS_ASSERT(abi.version.starts_with("core_net::abi/1.") || abi.version.starts_with("eosio::abi/1."),
+                 unsupported_abi_version_exception, "ABI has an unsupported version");
 
       size_t types_size = abi.types.size();
       size_t structs_size = abi.structs.size();

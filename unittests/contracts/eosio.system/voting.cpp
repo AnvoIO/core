@@ -1,25 +1,25 @@
 #include "eosio.system.hpp"
 
-#include <eosio/eosio.hpp>
-#include <eosio/crypto.hpp>
-#include <eosio/print.hpp>
-#include <eosio/datastream.hpp>
-#include <eosio/serialize.hpp>
-#include <eosio/multi_index.hpp>
-#include <eosio/privileged.hpp>
-#include <eosio/singleton.hpp>
-#include <eosio/transaction.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/crypto.hpp>
+#include <core_net/print.hpp>
+#include <core_net/datastream.hpp>
+#include <core_net/serialize.hpp>
+#include <core_net/multi_index.hpp>
+#include <core_net/privileged.hpp>
+#include <core_net/singleton.hpp>
+#include <core_net/transaction.hpp>
 #include <eosio.token.hpp>
 
 #include <algorithm>
 #include <cmath>
 
 namespace eosiosystem {
-using eosio::indexed_by;
-using eosio::const_mem_fun;
-using eosio::print;
-using eosio::singleton;
-using eosio::transaction;
+using core_net::indexed_by;
+using core_net::const_mem_fun;
+using core_net::print;
+using core_net::singleton;
+using core_net::transaction;
 
 /**
  *  This method will create a producer_config and producer_info object for 'producer'
@@ -29,9 +29,9 @@ using eosio::transaction;
  *  @pre authority of producer to register
  *
  */
-void system_contract::regproducer( const name producer, const eosio::public_key& producer_key, const std::string& url, uint16_t location ) {
+void system_contract::regproducer( const name producer, const core_net::public_key& producer_key, const std::string& url, uint16_t location ) {
    check( url.size() < 512, "url too long" );
-   check( producer_key != eosio::public_key(), "public key should not be the default value" );
+   check( producer_key != core_net::public_key(), "public key should not be the default value" );
    require_auth( producer );
 
    auto prod = _producers.find( producer.value );
@@ -88,11 +88,11 @@ void system_contract::update_elected_producers( block_timestamp block_time ) {
 
    auto idx = _producers.get_index<"prototalvote"_n>();
 
-   std::vector< std::pair<eosio::producer_key,uint16_t> > top_producers;
+   std::vector< std::pair<core_net::producer_key,uint16_t> > top_producers;
    top_producers.reserve(21);
 
    for ( auto it = idx.cbegin(); it != idx.cend() && top_producers.size() < 21 && 0 < it->total_votes && it->active(); ++it ) {
-      top_producers.emplace_back( std::pair<eosio::producer_key,uint16_t>({{it->owner, it->producer_key}, it->location}) );
+      top_producers.emplace_back( std::pair<core_net::producer_key,uint16_t>({{it->owner, it->producer_key}, it->location}) );
    }
 
    if ( top_producers.size() < _gstate.last_producer_schedule_size ) {
@@ -102,7 +102,7 @@ void system_contract::update_elected_producers( block_timestamp block_time ) {
    /// sort by producer name
    std::sort( top_producers.begin(), top_producers.end() );
 
-   std::vector<eosio::producer_key> producers;
+   std::vector<core_net::producer_key> producers;
 
    producers.reserve(top_producers.size());
    for( const auto& item : top_producers )

@@ -2,11 +2,11 @@
 
 #include <fc/bitutil.hpp>
 
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/block.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/block.hpp>
 #include <regex>
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 struct block_log_extract_fixture {
    block_log_extract_fixture() {

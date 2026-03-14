@@ -1,14 +1,14 @@
-#include <eosio/chain/webassembly/eos-vm-oc.hpp>
-#include <eosio/chain/wasm_eosio_constraints.hpp>
-#include <eosio/chain/wasm_eosio_injection.hpp>
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/global_property_object.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc.hpp>
+#include <core_net/chain/wasm_constraints.hpp>
+#include <core_net/chain/wasm_injection.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/global_property_object.hpp>
 
 #include <vector>
 #include <iterator>
 
-namespace eosio { namespace chain { namespace webassembly { namespace eosvmoc {
+namespace core_net { namespace chain { namespace webassembly { namespace eosvmoc {
 
 class eosvmoc_instantiated_module : public wasm_instantiated_module_interface {
    public:
@@ -28,7 +28,7 @@ class eosvmoc_instantiated_module : public wasm_instantiated_module_interface {
       bool is_main_thread() { return _main_thread_id == std::this_thread::get_id(); };
 
       void apply(apply_context& context) override {
-         eosio::chain::eosvmoc::code_cache_sync::mode m;
+         core_net::chain::eosvmoc::code_cache_sync::mode m;
          m.whitelisted = context.is_eos_vm_oc_whitelisted();
          m.write_window = context.control.is_write_window();
          const code_descriptor* const cd = _eosvmoc_runtime.cc.get_descriptor_for_code_sync(m, context.get_receiver(), _code_hash, _vm_version);

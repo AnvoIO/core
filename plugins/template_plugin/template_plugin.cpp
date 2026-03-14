@@ -1,6 +1,6 @@
-#include <eosio/template_plugin/template_plugin.hpp>
+#include <core_net/template_plugin/template_plugin.hpp>
 
-namespace eosio {
+namespace core_net {
    static auto _template_plugin = application::register_plugin<template_plugin>();
 
 class template_plugin_impl {

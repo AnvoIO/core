@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
    uint32_t num_runs = 1;
    std::string feature_name;
 
-   auto features = eosio::benchmark::get_features();
+   auto features = core_net::benchmark::get_features();
 
    options_description cli ("benchmark command line options");
    cli.add_options()
@@ -61,8 +61,8 @@ int main(int argc, char* argv[]) {
       std::cerr << "unknown exception" << std::endl;
    }
 
-   eosio::benchmark::set_num_runs(num_runs);
-   eosio::benchmark::print_header();
+   core_net::benchmark::set_num_runs(num_runs);
+   core_net::benchmark::print_header();
 
    if (feature_name.empty()) {
       for (auto& [name, f]: features) {

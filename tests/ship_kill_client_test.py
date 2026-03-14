@@ -49,7 +49,7 @@ try:
 
     shipNodeNum = 2
     specificExtraNodeosArgs={}
-    specificExtraNodeosArgs[shipNodeNum]="--plugin eosio::state_history_plugin --trace-history --chain-state-history --finality-data-history --state-history-stride 200 --plugin eosio::net_api_plugin --plugin eosio::producer_api_plugin "
+    specificExtraNodeosArgs[shipNodeNum]="--plugin core_net::state_history_plugin --trace-history --chain-state-history --finality-data-history --state-history-stride 200 --plugin core_net::net_api_plugin --plugin core_net::producer_api_plugin "
 
     if cluster.launch(pnodes=totalProducerNodes, loadSystemContract=False,
                       totalNodes=totalNodes, totalProducers=totalProducerNodes, activateIF=True, biosFinalizer=False,

@@ -1,17 +1,17 @@
-#include <eosio/chain/apply_context.hpp>
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/transaction_context.hpp>
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/chain/transaction_object.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/apply_context.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/transaction_context.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/chain/transaction_object.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/deep_mind.hpp>
 
 #include <bit>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
    transaction_checktime_timer::transaction_checktime_timer(platform_timer& timer)
          : _timer(timer) {
@@ -899,4 +899,4 @@ namespace eosio::chain {
       trx_blk_context.proposed_fin_pol = std::move(fin_pol);
    }
 
-} /// eosio::chain
+} /// core_net::chain

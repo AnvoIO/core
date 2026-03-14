@@ -1,9 +1,9 @@
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/block_log_config.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/log_catalog.hpp>
-#include <eosio/chain/log_data_base.hpp>
-#include <eosio/chain/log_index.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/block_log_config.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/log_catalog.hpp>
+#include <core_net/chain/log_data_base.hpp>
+#include <core_net/chain/log_index.hpp>
 #include <fc/bitutil.hpp>
 #include <fc/io/raw.hpp>
 #include <mutex>
@@ -13,7 +13,7 @@
 static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__);
 #endif
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    enum versions {
       initial_version = 1,                  ///< complete block log from genesis
@@ -331,7 +331,7 @@ namespace eosio { namespace chain {
          void construct_index(const std::filesystem::path& index_file_path);
       };
 
-      using block_log_index = eosio::chain::log_index<block_log_exception>;
+      using block_log_index = core_net::chain::log_index<block_log_exception>;
 
       /// Provide the read only view for both blocks.log and blocks.index files
       struct block_log_bundle {
@@ -467,7 +467,7 @@ namespace eosio { namespace chain {
          }
       }
    };
-   using block_log_catalog = eosio::chain::log_catalog<block_log_data, block_log_index, block_log_verifier>;
+   using block_log_catalog = core_net::chain::log_catalog<block_log_data, block_log_index, block_log_verifier>;
 
    namespace detail {
 
@@ -742,10 +742,10 @@ namespace eosio { namespace chain {
                ilog("Log has ${n} blocks", ("n", number_of_blocks));
 
                EOS_ASSERT(index_size || number_of_blocks == 0, block_log_exception,
-                          "${index_file} file is empty, please use spring-util to fix the problem.",
+                          "${index_file} file is empty, please use core-util to fix the problem.",
                           ("index_file", index_file.get_file_path().string()));
                EOS_ASSERT(index_size % sizeof(uint64_t) == 0, block_log_exception,
-                          "${index_file} file is invalid, please use spring-util to reconstruct the index.",
+                          "${index_file} file is invalid, please use core-util to reconstruct the index.",
                           ("index_file", index_file.get_file_path().string()));
 
                if (index_size) {
@@ -756,7 +756,7 @@ namespace eosio { namespace chain {
                   EOS_ASSERT(last_block_pos == last_index_pos, block_log_exception,
                              "The last block position from ${block_file} is at ${block_pos} "
                              "which does not match the last block postion ${index_pos} from ${index_file}, please use "
-                             "spring-util to fix the inconsistency.",
+                             "core-util to fix the inconsistency.",
                              ("block_pos", last_block_pos)("index_pos", last_index_pos)
                              ("block_file", block_file.get_file_path().string())
                              ("index_file", index_file.get_file_path().string()));
@@ -1841,4 +1841,4 @@ namespace eosio { namespace chain {
       }
    }
 
-}} // namespace eosio::chain
+}} // namespace core_net::chain

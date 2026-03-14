@@ -1,11 +1,11 @@
 #include "finality_test_cluster.hpp"
-#include <eosio/chain/block_header_state.hpp>
+#include <core_net/chain/block_header_state.hpp>
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 // Function to be tested. Implemented in block_header_state.cpp`
-namespace eosio::chain {
+namespace core_net::chain {
    void evaluate_finalizer_policies_for_promotion(const block_header_state& prev,
                                                   block_header_state& next_header_state);
 }

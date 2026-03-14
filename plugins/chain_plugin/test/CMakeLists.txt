@@ -5,5 +5,5 @@ add_executable( test_chain_plugin
         plugin_config_test.cpp
         main.cpp
         )
-target_link_libraries( test_chain_plugin chain_plugin eosio_testing eosio_chain_wrap )
+target_link_libraries( test_chain_plugin chain_plugin core_net_testing core_net_chain_wrap )
 add_p_test(NAME test_chain_plugin COMMAND plugins/chain_plugin/test/test_chain_plugin)

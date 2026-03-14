@@ -1,10 +1,10 @@
 #pragma once
 
 #include "native.hpp"
-#include <eosio/asset.hpp>
-#include <eosio/time.hpp>
-#include <eosio/privileged.hpp>
-#include <eosio/singleton.hpp>
+#include <core_net/asset.hpp>
+#include <core_net/time.hpp>
+#include <core_net/privileged.hpp>
+#include <core_net/singleton.hpp>
 #include "exchange_state.hpp"
 
 #include <string>
@@ -20,21 +20,21 @@
 
 namespace eosiosystem {
 
-using eosio::name;
-using eosio::asset;
-using eosio::symbol;
-using eosio::symbol_code;
-using eosio::indexed_by;
-using eosio::const_mem_fun;
-using eosio::block_timestamp;
-using eosio::time_point;
-using eosio::time_point_sec;
-using eosio::microseconds;
-using eosio::datastream;
-using eosio::check;
-using eosio::unsigned_int;
+using core_net::name;
+using core_net::asset;
+using core_net::symbol;
+using core_net::symbol_code;
+using core_net::indexed_by;
+using core_net::const_mem_fun;
+using core_net::block_timestamp;
+using core_net::time_point;
+using core_net::time_point_sec;
+using core_net::microseconds;
+using core_net::datastream;
+using core_net::check;
+using core_net::unsigned_int;
 
-struct [[eosio::table, eosio::contract("eosio.system")]] name_bid {
+struct [[core_net::table, core_net::contract("eosio.system")]] name_bid {
    name            newname;
    name            high_bidder;
    int64_t         high_bid = 0; ///< negative high_bid == closed auction waiting to be claimed
@@ -44,20 +44,20 @@ struct [[eosio::table, eosio::contract("eosio.system")]] name_bid {
    uint64_t by_high_bid()const { return static_cast<uint64_t>(-high_bid); }
 };
 
-struct [[eosio::table, eosio::contract("eosio.system")]] bid_refund {
+struct [[core_net::table, core_net::contract("eosio.system")]] bid_refund {
    name         bidder;
    asset        amount;
 
    uint64_t primary_key()const { return bidder.value; }
 };
 
-typedef eosio::multi_index< "namebids"_n, name_bid,
+typedef core_net::multi_index< "namebids"_n, name_bid,
       indexed_by<"highbid"_n, const_mem_fun<name_bid, uint64_t, &name_bid::by_high_bid>  >
 > name_bid_table;
 
-typedef eosio::multi_index< "bidrefunds"_n, bid_refund > bid_refund_table;
+typedef core_net::multi_index< "bidrefunds"_n, bid_refund > bid_refund_table;
 
-struct [[eosio::table("global"), eosio::contract("eosio.system")]] eosio_global_state : eosio::blockchain_parameters {
+struct [[core_net::table("global"), core_net::contract("eosio.system")]] eosio_global_state : core_net::blockchain_parameters {
    uint64_t free_ram()const { return max_ram_size - total_ram_bytes_reserved; }
 
    uint64_t             max_ram_size = 64ll*1024 * 1024 * 1024;
@@ -76,7 +76,7 @@ struct [[eosio::table("global"), eosio::contract("eosio.system")]] eosio_global_
    block_timestamp      last_name_close;
 
    // explicit serialization macro is not necessary, used here only to improve compilation time
-   EOSLIB_SERIALIZE_DERIVED( eosio_global_state, eosio::blockchain_parameters,
+   EOSLIB_SERIALIZE_DERIVED( eosio_global_state, core_net::blockchain_parameters,
    (max_ram_size)(total_ram_bytes_reserved)(total_ram_stake)
          (last_producer_schedule_update)(last_pervote_bucket_fill)
          (pervote_bucket)(perblock_bucket)(total_unpaid_blocks)(total_activated_stake)(thresh_activated_stake_time)
@@ -86,7 +86,7 @@ struct [[eosio::table("global"), eosio::contract("eosio.system")]] eosio_global_
 /**
  * Defines new global state parameters added after version 1.0
  */
-struct [[eosio::table("global2"), eosio::contract("eosio.system")]] eosio_global_state2 {
+struct [[core_net::table("global2"), core_net::contract("eosio.system")]] eosio_global_state2 {
    eosio_global_state2(){}
 
    uint16_t          new_ram_per_block = 0;
@@ -99,7 +99,7 @@ struct [[eosio::table("global2"), eosio::contract("eosio.system")]] eosio_global
          (total_producer_votepay_share)(revision) )
 };
 
-struct [[eosio::table("global3"), eosio::contract("eosio.system")]] eosio_global_state3 {
+struct [[core_net::table("global3"), core_net::contract("eosio.system")]] eosio_global_state3 {
    eosio_global_state3() { }
    time_point        last_vpay_state_update;
    double            total_vpay_share_change_rate = 0;
@@ -107,10 +107,10 @@ struct [[eosio::table("global3"), eosio::contract("eosio.system")]] eosio_global
    EOSLIB_SERIALIZE( eosio_global_state3, (last_vpay_state_update)(total_vpay_share_change_rate) )
 };
 
-struct [[eosio::table, eosio::contract("eosio.system")]] producer_info {
+struct [[core_net::table, core_net::contract("eosio.system")]] producer_info {
    name                  owner;
    double                total_votes = 0;
-   eosio::public_key     producer_key; /// a packed public key object
+   core_net::public_key     producer_key; /// a packed public key object
    bool                  is_active = true;
    std::string           url;
    uint32_t              unpaid_blocks = 0;
@@ -127,7 +127,7 @@ struct [[eosio::table, eosio::contract("eosio.system")]] producer_info {
          (unpaid_blocks)(last_claim_time)(location) )
 };
 
-struct [[eosio::table, eosio::contract("eosio.system")]] producer_info2 {
+struct [[core_net::table, core_net::contract("eosio.system")]] producer_info2 {
    name            owner;
    double          votepay_share = 0;
    time_point      last_votepay_share_update;
@@ -138,7 +138,7 @@ struct [[eosio::table, eosio::contract("eosio.system")]] producer_info2 {
    EOSLIB_SERIALIZE( producer_info2, (owner)(votepay_share)(last_votepay_share_update) )
 };
 
-struct [[eosio::table, eosio::contract("eosio.system")]] voter_info {
+struct [[core_net::table, core_net::contract("eosio.system")]] voter_info {
    name                owner;     /// the voter
    name                proxy;     /// the proxy set by the voter, if any
    std::vector<name>   producers; /// the producers approved by this voter if no proxy set
@@ -161,7 +161,7 @@ struct [[eosio::table, eosio::contract("eosio.system")]] voter_info {
 
    uint32_t            reserved1 = 0;
    uint32_t            reserved2 = 0;
-   eosio::asset        reserved3;
+   core_net::asset        reserved3;
 
    uint64_t primary_key()const { return owner.value; }
 
@@ -169,21 +169,21 @@ struct [[eosio::table, eosio::contract("eosio.system")]] voter_info {
    EOSLIB_SERIALIZE( voter_info, (owner)(proxy)(producers)(staked)(last_vote_weight)(proxied_vote_weight)(is_proxy)(reserved1)(reserved2)(reserved3) )
 };
 
-typedef eosio::multi_index< "voters"_n, voter_info >  voters_table;
+typedef core_net::multi_index< "voters"_n, voter_info >  voters_table;
 
 
-typedef eosio::multi_index< "producers"_n, producer_info,
+typedef core_net::multi_index< "producers"_n, producer_info,
       indexed_by<"prototalvote"_n, const_mem_fun<producer_info, double, &producer_info::by_votes>  >
 > producers_table;
-typedef eosio::multi_index< "producers2"_n, producer_info2 > producers_table2;
+typedef core_net::multi_index< "producers2"_n, producer_info2 > producers_table2;
 
-typedef eosio::singleton< "global"_n, eosio_global_state >   global_state_singleton;
-typedef eosio::singleton< "global2"_n, eosio_global_state2 > global_state2_singleton;
-typedef eosio::singleton< "global3"_n, eosio_global_state3 > global_state3_singleton;
+typedef core_net::singleton< "global"_n, eosio_global_state >   global_state_singleton;
+typedef core_net::singleton< "global2"_n, eosio_global_state2 > global_state2_singleton;
+typedef core_net::singleton< "global3"_n, eosio_global_state3 > global_state3_singleton;
 
 static constexpr uint32_t     seconds_per_day = 24 * 3600;
 
-struct [[eosio::table,eosio::contract("eosio.system")]] rex_pool {
+struct [[core_net::table,core_net::contract("eosio.system")]] rex_pool {
    uint8_t    version = 0;
    asset      total_lent; /// total amount of CORE_SYMBOL in open rex_loans
    asset      total_unlent; /// total amount of CORE_SYMBOL available to be lent (connector)
@@ -196,9 +196,9 @@ struct [[eosio::table,eosio::contract("eosio.system")]] rex_pool {
    uint64_t primary_key()const { return 0; }
 };
 
-typedef eosio::multi_index< "rexpool"_n, rex_pool > rex_pool_table;
+typedef core_net::multi_index< "rexpool"_n, rex_pool > rex_pool_table;
 
-struct [[eosio::table,eosio::contract("eosio.system")]] rex_fund {
+struct [[core_net::table,core_net::contract("eosio.system")]] rex_fund {
    uint8_t version = 0;
    name    owner;
    asset   balance;
@@ -206,9 +206,9 @@ struct [[eosio::table,eosio::contract("eosio.system")]] rex_fund {
    uint64_t primary_key()const { return owner.value; }
 };
 
-typedef eosio::multi_index< "rexfund"_n, rex_fund > rex_fund_table;
+typedef core_net::multi_index< "rexfund"_n, rex_fund > rex_fund_table;
 
-struct [[eosio::table,eosio::contract("eosio.system")]] rex_balance {
+struct [[core_net::table,core_net::contract("eosio.system")]] rex_balance {
    uint8_t version = 0;
    name    owner;
    asset   vote_stake; /// the amount of CORE_SYMBOL currently included in owner's vote
@@ -219,9 +219,9 @@ struct [[eosio::table,eosio::contract("eosio.system")]] rex_balance {
    uint64_t primary_key()const { return owner.value; }
 };
 
-typedef eosio::multi_index< "rexbal"_n, rex_balance > rex_balance_table;
+typedef core_net::multi_index< "rexbal"_n, rex_balance > rex_balance_table;
 
-struct [[eosio::table,eosio::contract("eosio.system")]] rex_loan {
+struct [[core_net::table,core_net::contract("eosio.system")]] rex_loan {
    uint8_t             version = 0;
    name                from;
    name                receiver;
@@ -229,30 +229,30 @@ struct [[eosio::table,eosio::contract("eosio.system")]] rex_loan {
    asset               balance;
    asset               total_staked;
    uint64_t            loan_num;
-   eosio::time_point   expiration;
+   core_net::time_point   expiration;
 
    uint64_t primary_key()const { return loan_num;                   }
    uint64_t by_expr()const     { return expiration.elapsed.count(); }
    uint64_t by_owner()const    { return from.value;                 }
 };
 
-typedef eosio::multi_index< "cpuloan"_n, rex_loan,
+typedef core_net::multi_index< "cpuloan"_n, rex_loan,
       indexed_by<"byexpr"_n,  const_mem_fun<rex_loan, uint64_t, &rex_loan::by_expr>>,
 indexed_by<"byowner"_n, const_mem_fun<rex_loan, uint64_t, &rex_loan::by_owner>>
 > rex_cpu_loan_table;
 
-typedef eosio::multi_index< "netloan"_n, rex_loan,
+typedef core_net::multi_index< "netloan"_n, rex_loan,
       indexed_by<"byexpr"_n,  const_mem_fun<rex_loan, uint64_t, &rex_loan::by_expr>>,
 indexed_by<"byowner"_n, const_mem_fun<rex_loan, uint64_t, &rex_loan::by_owner>>
 > rex_net_loan_table;
 
-struct [[eosio::table,eosio::contract("eosio.system")]] rex_order {
+struct [[core_net::table,core_net::contract("eosio.system")]] rex_order {
    uint8_t             version = 0;
    name                owner;
    asset               rex_requested;
    asset               proceeds;
    asset               stake_change;
-   eosio::time_point   order_time;
+   core_net::time_point   order_time;
    bool                is_open = true;
 
    void close()                { is_open = false;    }
@@ -260,7 +260,7 @@ struct [[eosio::table,eosio::contract("eosio.system")]] rex_order {
    uint64_t by_time()const     { return is_open ? order_time.elapsed.count() : std::numeric_limits<uint64_t>::max(); }
 };
 
-typedef eosio::multi_index< "rexqueue"_n, rex_order,
+typedef core_net::multi_index< "rexqueue"_n, rex_order,
       indexed_by<"bytime"_n, const_mem_fun<rex_order, uint64_t, &rex_order::by_time>>> rex_order_table;
 
 struct rex_order_outcome {
@@ -269,7 +269,7 @@ struct rex_order_outcome {
    asset stake_change;
 };
 
-class [[eosio::contract("eosio.system")]] system_contract : public native {
+class [[core_net::contract("eosio.system")]] system_contract : public native {
 
 private:
    voters_table            _voters;
@@ -288,16 +288,16 @@ private:
    rex_order_table         _rexorders;
 
 public:
-   static constexpr eosio::name active_permission{"active"_n};
-   static constexpr eosio::name token_account{"eosio.token"_n};
-   static constexpr eosio::name ram_account{"eosio.ram"_n};
-   static constexpr eosio::name ramfee_account{"eosio.ramfee"_n};
-   static constexpr eosio::name stake_account{"eosio.stake"_n};
-   static constexpr eosio::name bpay_account{"eosio.bpay"_n};
-   static constexpr eosio::name vpay_account{"eosio.vpay"_n};
-   static constexpr eosio::name names_account{"eosio.names"_n};
-   static constexpr eosio::name saving_account{"eosio.saving"_n};
-   static constexpr eosio::name rex_account{"eosio.rex"_n};
+   static constexpr core_net::name active_permission{"active"_n};
+   static constexpr core_net::name token_account{"eosio.token"_n};
+   static constexpr core_net::name ram_account{"eosio.ram"_n};
+   static constexpr core_net::name ramfee_account{"eosio.ramfee"_n};
+   static constexpr core_net::name stake_account{"eosio.stake"_n};
+   static constexpr core_net::name bpay_account{"eosio.bpay"_n};
+   static constexpr core_net::name vpay_account{"eosio.vpay"_n};
+   static constexpr core_net::name names_account{"eosio.names"_n};
+   static constexpr core_net::name saving_account{"eosio.saving"_n};
+   static constexpr core_net::name rex_account{"eosio.rex"_n};
    static constexpr symbol ramcore_symbol = symbol(symbol_code("RAMCORE"), 4);
    static constexpr symbol ram_symbol     = symbol(symbol_code("RAM"), 0);
    static constexpr symbol rex_symbol     = symbol(symbol_code("REX"), 4);
@@ -312,12 +312,12 @@ public:
    }
 
    // Actions:
-   [[eosio::action]]
+   [[core_net::action]]
    void init( unsigned_int version, symbol core );
-   [[eosio::action]]
+   [[core_net::action]]
    void onblock( ignore<block_header> header );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void setalimits( name account, int64_t ram_bytes, int64_t net_weight, int64_t cpu_weight );
    // functions defined in delegate_bandwidth.cpp
 
@@ -326,7 +326,7 @@ public:
     *  If transfer == true, then 'receiver' can unstake to their account
     *  Else 'from' can unstake at any time.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void delegatebw( name from, name receiver,
                     asset stake_net_quantity, asset stake_cpu_quantity, bool transfer );
 
@@ -334,14 +334,14 @@ public:
     * Deposits core tokens to user REX fund. All proceeds and expenses related to REX are added to
     * or taken out of this fund. Inline token transfer from user balance is executed.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void deposit( const name& owner, const asset& amount );
 
    /**
     * Withdraws core tokens from user REX fund. Inline token transfer to user balance is
     * executed.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void withdraw( const name& owner, const asset& amount );
 
    /**
@@ -349,7 +349,7 @@ public:
     * A voting requirement must be satisfied before action can be executed.
     * User votes are updated following this action.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void buyrex( const name& from, const asset& amount );
 
    /**
@@ -357,7 +357,7 @@ public:
     * A voting requirement must be satisfied before action can be executed.
     * User votes are updated following this action.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void unstaketorex( const name& owner, const name& receiver, const asset& from_net, const asset& from_cpu );
 
    /**
@@ -365,13 +365,13 @@ public:
     * processed, it gets queued until there is enough in REX pool to fill order.
     * If successful, user votes are updated.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void sellrex( const name& from, const asset& rex );
 
    /**
     * Cancels queued sellrex order. Order cannot be cancelled once it's been filled.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void cnclrexorder( const name& owner );
 
    /**
@@ -386,51 +386,51 @@ public:
     *
     * All loan expenses and refunds come out of or are added to owner's REX fund.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void rentcpu( const name& from, const name& receiver, const asset& loan_payment, const asset& loan_fund );
-   [[eosio::action]]
+   [[core_net::action]]
    void rentnet( const name& from, const name& receiver, const asset& loan_payment, const asset& loan_fund );
 
    /**
     * Loan owner funds a given CPU or NET loan.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void fundcpuloan( const name& from, uint64_t loan_num, const asset& payment );
-   [[eosio::action]]
+   [[core_net::action]]
    void fundnetloan( const name& from, uint64_t loan_num, const asset& payment );
    /**
     * Loan owner defunds a given CPU or NET loan.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void defcpuloan( const name& from, uint64_t loan_num, const asset& amount );
-   [[eosio::action]]
+   [[core_net::action]]
    void defnetloan( const name& from, uint64_t loan_num, const asset& amount );
 
    /**
     * Updates REX vote stake of owner to its current value.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void updaterex( const name& owner );
 
    /**
     * Processes max CPU loans, max NET loans, and max queued sellrex orders.
     * Action does not execute anything related to a specific user.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void rexexec( const name& user, uint16_t max );
 
    /**
     * Consolidate REX maturity buckets into one that can be sold only 4 days
     * from the end of today.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void consolidate( const name& owner );
 
    /**
     * Deletes owner records from REX tables and frees used RAM.
     * Owner must not have an outstanding REX balance.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void closerex( const name& owner );
 
    /**
@@ -449,7 +449,7 @@ public:
     *  The 'from' account loses voting power as a result of this call and
     *  all producer tallies are updated.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void undelegatebw( name from, name receiver,
                       asset unstake_net_quantity, asset unstake_cpu_quantity );
 
@@ -459,64 +459,64 @@ public:
     * tokens provided. An inline transfer from receiver to system contract of
     * tokens will be executed.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void buyram( name payer, name receiver, asset quant );
-   [[eosio::action]]
+   [[core_net::action]]
    void buyrambytes( name payer, name receiver, uint32_t bytes );
 
    /**
     *  Reduces quota my bytes and then performs an inline transfer of tokens
     *  to receiver based upon the average purchase price of the original quota.
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void sellram( name account, int64_t bytes );
 
    /**
     *  This action is called after the delegation-period to claim all pending
     *  unstaked tokens belonging to owner
     */
-   [[eosio::action]]
+   [[core_net::action]]
    void refund( name owner );
 
    // functions defined in voting.cpp
 
-   [[eosio::action]]
+   [[core_net::action]]
    void regproducer( const name producer, const public_key& producer_key, const std::string& url, uint16_t location );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void unregprod( const name producer );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void setram( uint64_t max_ram_size );
-   [[eosio::action]]
+   [[core_net::action]]
    void setramrate( uint16_t bytes_per_block );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void voteproducer( const name voter, const name proxy, const std::vector<name>& producers );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void regproxy( const name proxy, bool isproxy );
 
-   [[eosio::action]]
-   void setparams( const eosio::blockchain_parameters& params );
+   [[core_net::action]]
+   void setparams( const core_net::blockchain_parameters& params );
 
    // functions defined in producer_pay.cpp
-   [[eosio::action]]
+   [[core_net::action]]
    void claimrewards( const name owner );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void setpriv( name account, uint8_t is_priv );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void rmvproducer( name producer );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void updtrevision( uint8_t revision );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void bidname( name bidder, name newname, asset bid );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void bidrefund( name bidder, name newname );
 
 private:

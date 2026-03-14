@@ -125,7 +125,7 @@ The system contract's `onblock` handler:
 **Create a new contract repository** (separate from the node repo):
 
 ```
-anvo-contracts/
+core-contracts/
 ├── contracts/
 │   ├── system/           ← fork of eosio.system (gas, deposits, baseline)
 │   ├── token/            ← fork of eosio.token (minimal changes)

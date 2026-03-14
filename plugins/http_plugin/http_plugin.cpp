@@ -1,8 +1,8 @@
 
-#include <eosio/http_plugin/http_plugin.hpp>
-#include <eosio/http_plugin/common.hpp>
-#include <eosio/http_plugin/beast_http_session.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/http_plugin/http_plugin.hpp>
+#include <core_net/http_plugin/common.hpp>
+#include <core_net/http_plugin/beast_http_session.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #include <fc/log/logger_config.hpp>
 #include <fc/reflect/variant.hpp>
@@ -13,7 +13,7 @@
 #include <memory>
 #include <regex>
 
-namespace eosio {
+namespace core_net {
 
    namespace {
       inline fc::logger& logger() {
@@ -78,20 +78,20 @@ namespace eosio {
 
    std::string category_plugin_name(api_category category) {
       if (category == api_category::db_size)
-         return "eosio::db_size_api_plugin";
+         return "core_net::db_size_api_plugin";
       if (category == api_category::trace_api)
-         return "eosio::trace_api_plugin";
+         return "core_net::trace_api_plugin";
       if (category == api_category::prometheus)
-         return "eosio::prometheus_plugin";
+         return "core_net::prometheus_plugin";
       if (category == api_category::test_control)
-         return "eosio::test_control_plugin";
+         return "core_net::test_control_plugin";
       if (api_category_set({api_category::chain_ro, api_category::chain_rw}).contains(category))
-         return "eosio::chain_api_plugin";
+         return "core_net::chain_api_plugin";
       if (api_category_set({api_category::net_ro, api_category::net_rw}).contains(category))
-         return "eosio::net_api_plugin";
+         return "core_net::net_api_plugin";
       if (api_category_set({api_category::producer_ro, api_category::producer_rw, api_category::snapshot})
               .contains(category))
-         return "eosio::producer_api_plugin";
+         return "core_net::producer_api_plugin";
       // It's a programming error when the control flow reaches this point, 
       // please make sure all the plugin names are returned from above statements.
       assert(false && "No correspding plugin for the category value");

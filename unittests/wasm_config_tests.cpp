@@ -1,6 +1,6 @@
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/wast_to_wasm.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/wast_to_wasm.hpp>
 
 #include <fc/string.hpp>
 #include <fc/variant_object.hpp>
@@ -14,9 +14,9 @@
 #include <contracts.hpp>
 #include <test_contracts.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace fc;
 namespace data = boost::unit_test::data;
 
@@ -24,9 +24,9 @@ namespace {
 template<typename T>
 struct wasm_config_tester : T {
    wasm_config_tester() {
-      T::set_abi(config::system_account_name, test_contracts::wasm_config_bios_abi());
-      T::set_code(config::system_account_name, test_contracts::wasm_config_bios_wasm());
-      bios_abi_ser = *T::get_resolver()(config::system_account_name);
+      T::set_abi(config::system_account_name(), test_contracts::wasm_config_bios_abi());
+      T::set_code(config::system_account_name(), test_contracts::wasm_config_bios_wasm());
+      bios_abi_ser = *T::get_resolver()(config::system_account_name());
    }
    void set_wasm_params(const wasm_config& params) {
       signed_transaction trx;
@@ -92,13 +92,13 @@ void test_max_mutable_global_bytes(T& chain, int32_t n_globals, int32_t oversize
    std::string code = [&] {
       std::ostringstream ss;
       ss << "(module ";
-      ss << " (func $eosio_assert (import \"env\" \"eosio_assert\") (param i32 i32))";
+      ss << " (func $core_net_assert (import \"env\" \"core_net_assert\") (param i32 i32))";
       ss << " (memory 1)";
       for(int i = 0; i < n_globals + oversize; i += 4)
          ss << "(global (mut i32) (i32.const " << i << "))";
       ss << " (func (export \"apply\") (param i64 i64 i64)";
       for(int i = 0; i < n_globals + oversize; i += 4)
-         ss << "(call $eosio_assert (i32.eq (get_global " << i/4 << ") (i32.const " << i << ")) (i32.const 0))";
+         ss << "(call $core_net_assert (i32.eq (get_global " << i/4 << ") (i32.const " << i << ")) (i32.const 0))";
       ss << " )";
       ss << ")";
       return ss.str();
@@ -352,11 +352,11 @@ BOOST_DATA_TEST_CASE_F(wasm_config_tester<savanna_validating_tester>, max_sectio
 
 static const char max_linear_memory_wast[] = R"=====(
 (module
-  (import "env" "eosio_assert" (func $$eosio_assert (param i32 i32)))
+  (import "env" "core_net_assert" (func $$core_net_assert (param i32 i32)))
   (memory 4)
   (data (i32.const ${OFFSET}) "\11\22\33\44")
   (func (export "apply") (param i64 i64 i64)
-    (call $$eosio_assert (i32.eq (i32.load (i32.const ${OFFSET})) (i32.const 0x44332211)) (i32.const 0))
+    (call $$core_net_assert (i32.eq (i32.load (i32.const ${OFFSET})) (i32.const 0x44332211)) (i32.const 0))
   )
 )
 )=====";
@@ -937,7 +937,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( max_pages, T, wasm_config_testers ) try {
 
          chain.set_transaction_headers(trx);
          trx.sign(chain.get_private_key( "accessmem"_n, "active" ), chain.get_chain_id());
-         BOOST_CHECK_THROW(chain.push_transaction(trx), eosio::chain::wasm_exception);
+         BOOST_CHECK_THROW(chain.push_transaction(trx), core_net::chain::wasm_exception);
       };
 
 
@@ -952,7 +952,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( max_pages, T, wasm_config_testers ) try {
 
          chain.set_transaction_headers(trx);
          trx.sign(chain.get_private_key( "intrinsicmem"_n, "active" ), chain.get_chain_id());
-         BOOST_CHECK_THROW(chain.push_transaction(trx), eosio::chain::wasm_exception);
+         BOOST_CHECK_THROW(chain.push_transaction(trx), core_net::chain::wasm_exception);
       };
 
       pushit(1);
@@ -977,13 +977,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( max_pages, T, wasm_config_testers ) try {
       --params.max_pages;
       chain.set_wasm_params(params);
       chain.produce_block();
-      BOOST_CHECK_THROW(pushit(0), eosio::chain::wasm_exception);
+      BOOST_CHECK_THROW(pushit(0), core_net::chain::wasm_exception);
 
       params.max_pages = max_pages;
       chain.set_wasm_params(params);
       string too_big_memory_wast_f = fc::format_string(too_big_memory_wast, fc::mutable_variant_object(
                                                        "MAX_WASM_PAGES_PLUS_ONE", params.max_pages+1));
-      BOOST_CHECK_THROW(chain.set_code("bigmem"_n, too_big_memory_wast_f.c_str()), eosio::chain::wasm_exception);
+      BOOST_CHECK_THROW(chain.set_code("bigmem"_n, too_big_memory_wast_f.c_str()), core_net::chain::wasm_exception);
 
       // Check that the max memory defined by the contract is respected
       string memory_over_max_wast = fc::format_string(max_memory_wast, fc::mutable_variant_object()
@@ -1142,7 +1142,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( reset_chain_tests, T, wasm_config_testers ) {
       };
       trx.actions.push_back({ { { "eosio"_n, config::active_name} }, make_setcode(wast_to_wasm(min_set_parameters_wast)) });
       trx.actions.push_back({ { { "eosio"_n, config::active_name} }, "eosio"_n, ""_n, fc::raw::pack(genesis_state::default_initial_wasm_configuration) });
-      trx.actions.push_back({ { { "eosio"_n, config::active_name} }, make_setcode(contracts::eosio_bios_wasm()) });
+      trx.actions.push_back({ { { "eosio"_n, config::active_name} }, make_setcode(contracts::core_net_bios_wasm()) });
       chain.set_transaction_headers(trx);
       trx.sign(chain.get_private_key("eosio"_n, "active"), chain.get_chain_id());
       chain.push_transaction(trx);
@@ -1162,7 +1162,7 @@ static const char check_get_wasm_parameters_wast[] = R"======(
   (import "env" "memcmp" (func $memcmp (param i32 i32 i32) (result i32)))
   (import "env" "memset" (func $memset (param i32 i32 i32) (result i32)))
   (import "env" "printhex" (func $printhex (param i32 i32)))
-  (import "env" "eosio_assert" (func $eosio_assert (param i32 i32)))
+  (import "env" "core_net_assert" (func $core_net_assert (param i32 i32)))
   (memory 1)
   (func (export "apply") (param i64 i64 i64)
      (drop (call $read_action_data (i32.const 0) (call $action_data_size)))
@@ -1171,7 +1171,7 @@ static const char check_get_wasm_parameters_wast[] = R"======(
      (if (call $memcmp (i32.const 0) (i32.const 256) (call $action_data_size))
         (then
           (call $printhex (i32.const 256) (call $action_data_size))
-          (call $eosio_assert (i32.const 0) (i32.const 512))
+          (call $core_net_assert (i32.const 0) (i32.const 512))
         )
      )
   )
@@ -1216,7 +1216,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( get_wasm_parameters_test, T, validating_testers )
 
    BOOST_CHECK_THROW(check_wasm_params(fc::raw::pack(uint32_t{0}, wasm_config(original_params))), unaccessible_api);
 
-   chain.push_action( config::system_account_name, "setpriv"_n, config::system_account_name,
+   chain.push_action( config::system_account_name(), "setpriv"_n, config::system_account_name(),
                 fc::mutable_variant_object()("account", "test"_n)("is_priv", true) );
 
    check_wasm_params(fc::raw::pack(uint32_t{0}, wasm_config(original_params)));

@@ -1,4 +1,4 @@
-if(EOSIO_COMPILE_TEST_CONTRACTS)
+if(CORE_NET_COMPILE_TEST_CONTRACTS)
    add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/jumborow.wasm"
                       COMMAND "${CDT_ROOT}/bin/eosio-wast2wasm" "${CMAKE_CURRENT_SOURCE_DIR}/jumborow.wast" -o "${CMAKE_CURRENT_BINARY_DIR}/jumborow.wasm"
                       DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/jumborow.wast")

@@ -3,11 +3,11 @@
     #include <boost/test/unit_test.hpp>
 #pragma GCC diagnostic pop
 
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 
-using namespace eosio::chain::literals;
-using namespace eosio::testing;
-using namespace eosio::chain;
+using namespace core_net::chain::literals;
+using namespace core_net::testing;
+using namespace core_net::chain;
 
 
 /*

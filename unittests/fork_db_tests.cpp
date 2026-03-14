@@ -1,11 +1,11 @@
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/fork_database.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/fork_database.hpp>
+#include <core_net/testing/tester.hpp>
 #include <fc/bitutil.hpp>
 #include <boost/test/unit_test.hpp>
 
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 uint32_t nonce = 0;
 
@@ -51,9 +51,9 @@ struct test_block_state_accessor {
    }
 };
 
-} // namespace eosio::chain
+} // namespace core_net::chain
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 struct generate_fork_db_state {
    generate_fork_db_state() {

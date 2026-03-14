@@ -1,7 +1,7 @@
-#include <eosio/state_history/serialization.hpp>
-#include <eosio/state_history/trace_converter.hpp>
+#include <core_net/state_history/serialization.hpp>
+#include <core_net/state_history/trace_converter.hpp>
 
-namespace eosio {
+namespace core_net {
 namespace state_history {
 
 void trace_converter::add_transaction(const transaction_trace_ptr& trace, const chain::packed_transaction_ptr& transaction) {
@@ -38,4 +38,4 @@ void trace_converter::pack(boost::iostreams::filtering_ostreambuf& obuf, bool tr
 }
 
 } // namespace state_history
-} // namespace eosio
+} // namespace core_net

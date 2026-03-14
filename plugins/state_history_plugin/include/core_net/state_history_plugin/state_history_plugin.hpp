@@ -1,0 +1,29 @@
+#pragma once
+#include <core_net/chain/application.hpp>
+
+#include <core_net/chain_plugin/chain_plugin.hpp>
+#include <core_net/state_history/types.hpp>
+#include <core_net/state_history/log.hpp>
+
+namespace core_net {
+
+class state_history_plugin : public plugin<state_history_plugin> {
+ public:
+   APPBASE_PLUGIN_REQUIRES((chain_plugin))
+
+   state_history_plugin();
+   virtual ~state_history_plugin();
+
+   virtual void set_program_options(options_description& cli, options_description& cfg) override;
+
+   void plugin_initialize(const variables_map& options);
+   void plugin_startup();
+   void plugin_shutdown();
+
+   void handle_sighup() override;
+
+ private:
+   unique_ptr<struct state_history_plugin_impl> my;
+};
+
+} // namespace core_net

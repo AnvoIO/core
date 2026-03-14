@@ -1,42 +1,42 @@
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/transaction_context.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/transaction_context.hpp>
 
-#include <eosio/chain/block_log.hpp>
-#include <eosio/chain/fork_database.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/block_log.hpp>
+#include <core_net/chain/fork_database.hpp>
+#include <core_net/chain/exceptions.hpp>
 
-#include <eosio/chain/account_object.hpp>
-#include <eosio/chain/code_object.hpp>
-#include <eosio/chain/block_summary_object.hpp>
-#include <eosio/chain/eosio_contract.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/protocol_state_object.hpp>
-#include <eosio/chain/contract_table_objects.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/chain/transaction_object.hpp>
-#include <eosio/chain/genesis_intrinsics.hpp>
-#include <eosio/chain/whitelisted_intrinsics.hpp>
-#include <eosio/chain/database_header_object.hpp>
+#include <core_net/chain/account_object.hpp>
+#include <core_net/chain/code_object.hpp>
+#include <core_net/chain/block_summary_object.hpp>
+#include <core_net/chain/system_contract.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/protocol_state_object.hpp>
+#include <core_net/chain/contract_table_objects.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/chain/transaction_object.hpp>
+#include <core_net/chain/genesis_intrinsics.hpp>
+#include <core_net/chain/whitelisted_intrinsics.hpp>
+#include <core_net/chain/database_header_object.hpp>
 
-#include <eosio/chain/protocol_feature_manager.hpp>
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/subjective_billing.hpp>
-#include <eosio/chain/chain_snapshot.hpp>
-#include <eosio/chain/snapshot_detail.hpp>
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/chain/platform_timer.hpp>
-#include <eosio/chain/block_header_state_utils.hpp>
-#include <eosio/chain/deep_mind.hpp>
-#include <eosio/chain/finalizer.hpp>
-#include <eosio/chain/finalizer_policy.hpp>
-#include <eosio/chain/qc.hpp>
-#include <eosio/chain/vote_message.hpp>
-#include <eosio/chain/vote_processor.hpp>
-#include <eosio/chain/peer_keys_db.hpp>
+#include <core_net/chain/protocol_feature_manager.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/subjective_billing.hpp>
+#include <core_net/chain/chain_snapshot.hpp>
+#include <core_net/chain/snapshot_detail.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/chain/platform_timer.hpp>
+#include <core_net/chain/block_header_state_utils.hpp>
+#include <core_net/chain/deep_mind.hpp>
+#include <core_net/chain/finalizer.hpp>
+#include <core_net/chain/finalizer_policy.hpp>
+#include <core_net/chain/qc.hpp>
+#include <core_net/chain/vote_message.hpp>
+#include <core_net/chain/vote_processor.hpp>
+#include <core_net/chain/peer_keys_db.hpp>
 
 #include <chainbase/chainbase.hpp>
-#include <eosio/vm/allocator.hpp>
+#include <core_net/vm/allocator.hpp>
 #include <fc/io/json.hpp>
 #include <fc/log/logger_config.hpp>
 #include <fc/scoped_exit.hpp>
@@ -48,7 +48,7 @@
 #include <shared_mutex>
 #include <utility>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 using resource_limits::resource_limits_manager;
 
@@ -1013,7 +1013,7 @@ struct controller_impl {
    peer_keys_db_t                  peer_keys_db;
 
    thread_local static platform_timer timer; // a copy for main thread and each read-only thread
-#if defined(EOSIO_EOS_VM_RUNTIME_ENABLED) || defined(EOSIO_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_VM_RUNTIME_ENABLED) || defined(CORE_NET_VM_JIT_RUNTIME_ENABLED)
    thread_local static vm::wasm_allocator wasm_alloc; // a copy for main thread and each read-only thread
 #endif
    wasm_interface wasmif;
@@ -1290,7 +1290,7 @@ struct controller_impl {
       try {
          auto get_getpeerkeys_transaction = [&]() {
             auto perms = vector<permission_level>{};
-            action act(perms, config::system_account_name, "getpeerkeys"_n, {});
+            action act(perms, config::system_account_name(), "getpeerkeys"_n, {});
             signed_transaction trx;
 
             trx.actions.emplace_back(std::move(act));
@@ -1375,19 +1375,21 @@ struct controller_impl {
          vote_processor.notify_lib(block->block_num());
       });
 
-#define SET_APP_HANDLER( receiver, contract, action) \
-   set_apply_handler( account_name(#receiver), account_name(#contract), action_name(#action), \
-                      &BOOST_PP_CAT(apply_, BOOST_PP_CAT(contract, BOOST_PP_CAT(_,action) ) ) )
+   }
 
-   SET_APP_HANDLER( eosio, eosio, newaccount );
-   SET_APP_HANDLER( eosio, eosio, setcode );
-   SET_APP_HANDLER( eosio, eosio, setabi );
-   SET_APP_HANDLER( eosio, eosio, updateauth );
-   SET_APP_HANDLER( eosio, eosio, deleteauth );
-   SET_APP_HANDLER( eosio, eosio, linkauth );
-   SET_APP_HANDLER( eosio, eosio, unlinkauth );
-
-   SET_APP_HANDLER( eosio, eosio, canceldelay );
+   // Register native action handlers for the system account.
+   // Must be called after config::set_system_accounts() so that
+   // config::system_account_name() returns the correct value.
+   void register_native_action_handlers() {
+      auto sys = config::system_account_name();
+      set_apply_handler(sys, sys, "newaccount"_n,  &apply_eosio_newaccount);
+      set_apply_handler(sys, sys, "setcode"_n,     &apply_eosio_setcode);
+      set_apply_handler(sys, sys, "setabi"_n,      &apply_eosio_setabi);
+      set_apply_handler(sys, sys, "updateauth"_n,  &apply_eosio_updateauth);
+      set_apply_handler(sys, sys, "deleteauth"_n,  &apply_eosio_deleteauth);
+      set_apply_handler(sys, sys, "linkauth"_n,    &apply_eosio_linkauth);
+      set_apply_handler(sys, sys, "unlinkauth"_n,  &apply_eosio_unlinkauth);
+      set_apply_handler(sys, sys, "canceldelay"_n, &apply_eosio_canceldelay);
    }
 
    void open_fork_db() {
@@ -1686,8 +1688,8 @@ struct controller_impl {
       ilog( "Initializing new blockchain with genesis state" );
 
       // genesis state starts in legacy mode
-      producer_authority_schedule initial_schedule = { 0, { producer_authority{config::system_account_name, block_signing_authority_v0{ 1, {{genesis.initial_key, 1}} } } } };
-      legacy::producer_schedule_type initial_legacy_schedule{ 0, {{config::system_account_name, genesis.initial_key}} };
+      producer_authority_schedule initial_schedule = { 0, { producer_authority{config::system_account_name(), block_signing_authority_v0{ 1, {{genesis.initial_key, 1}} } } } };
+      legacy::producer_schedule_type initial_legacy_schedule{ 0, {{config::system_account_name(), genesis.initial_key}} };
 
       block_header_state_legacy genheader;
       genheader.active_schedule                = initial_schedule;
@@ -2007,6 +2009,10 @@ struct controller_impl {
       this->check_shutdown = std::move(check_shutdown);
       assert(this->check_shutdown);
 
+      auto prefix = genesis.system_account_prefix.value_or("eosio"_n);
+      config::set_system_accounts(config::system_accounts::from_prefix(prefix));
+      register_native_action_handlers();
+
       initialize_blockchain_state(genesis); // sets chain_head to genesis state
 
       if( blog.head() ) {
@@ -2033,6 +2039,10 @@ struct controller_impl {
       EOS_ASSERT(db.revision() == chain_head.block_num(), database_exception,
                  "chain_head block num ${bn} does not match chainbase revision ${r}",
                  ("bn", chain_head.block_num())("r", db.revision()));
+
+      const auto& gpo = db.get<global_property_object>();
+      config::set_system_accounts(config::system_accounts::from_prefix(gpo.system_account_prefix));
+      register_native_action_handlers();
 
       init(startup_t::existing_state);
    }
@@ -2315,7 +2325,7 @@ struct controller_impl {
          section.add_row(chain_snapshot_header(), db);
       });
 
-      snapshot->write_section("eosio::chain::block_state", [&]( auto& section ) {
+      snapshot->write_section("core_net::chain::block_state", [&]( auto& section ) {
          section.add_row(snapshot_detail::snapshot_block_state_data_v8(get_block_state_to_snapshot()), db);
       });
 
@@ -2372,7 +2382,7 @@ struct controller_impl {
          // loading a snapshot saved by Spring 1.0.1 and above.
          // ---------------------------------------------------
          if (std::clamp(header.version, v8::minimum_version, v8::maximum_version) == header.version ) {
-            snapshot->read_section("eosio::chain::block_state", [this, &result]( auto &section ){
+            snapshot->read_section("core_net::chain::block_state", [this, &result]( auto &section ){
                v8 block_state_data;
                section.read_row(block_state_data, db);
                assert(block_state_data.bs_l || block_state_data.bs);
@@ -2408,13 +2418,13 @@ struct controller_impl {
          using v3 = snapshot_block_header_state_legacy_v3;
 
          if (std::clamp(header.version, v2::minimum_version, v2::maximum_version) == header.version ) {
-            snapshot->read_section("eosio::chain::block_state", [this, &head_header_state]( auto &section ) {
+            snapshot->read_section("core_net::chain::block_state", [this, &head_header_state]( auto &section ) {
                v2 legacy_header_state;
                section.read_row(legacy_header_state, db);
                static_cast<block_header_state_legacy&>(*head_header_state) = block_header_state_legacy(std::move(legacy_header_state));
             });
          } else if (std::clamp(header.version, v3::minimum_version, v3::maximum_version) == header.version ) {
-            snapshot->read_section("eosio::chain::block_state", [this,&head_header_state]( auto &section ){
+            snapshot->read_section("core_net::chain::block_state", [this,&head_header_state]( auto &section ){
                v3 legacy_header_state;
                section.read_row(legacy_header_state, db);
                static_cast<block_header_state_legacy&>(*head_header_state) = block_header_state_legacy(std::move(legacy_header_state));
@@ -2457,6 +2467,7 @@ struct controller_impl {
             using v3 = legacy::snapshot_global_property_object_v3;
             using v4 = legacy::snapshot_global_property_object_v4;
             using v5 = legacy::snapshot_global_property_object_v5;
+            using v7 = legacy::snapshot_global_property_object_v7;
 
             if (std::clamp(header.version, v2::minimum_version, v2::maximum_version) == header.version ) {
                std::optional<genesis_state> genesis = extract_legacy_genesis_state(*snapshot, header.version);
@@ -2509,6 +2520,18 @@ struct controller_impl {
                });
                return; // early out to avoid default processing
             }
+
+            if (std::clamp(header.version, v7::minimum_version, v7::maximum_version) == header.version) {
+               snapshot->read_section<global_property_object>([&db = this->db](auto& section) {
+                  v7 legacy_global_properties;
+                  section.read_row(legacy_global_properties, db);
+
+                  db.create<global_property_object>([&legacy_global_properties](auto& gpo) {
+                     gpo.initialize_from(legacy_global_properties);
+                  });
+               });
+               return; // early out to avoid default processing
+            }
          }
 
          snapshot->read_section<value_t>([this,&rows_loaded]( auto& section ) {
@@ -2550,6 +2573,9 @@ struct controller_impl {
                   ("snapshot_chain_id", gpo.chain_id)("controller_chain_id", chain_id)
       );
 
+      config::set_system_accounts(config::system_accounts::from_prefix(gpo.system_account_prefix));
+      register_native_action_handlers();
+
       return result;
    }
 
@@ -2579,7 +2605,7 @@ struct controller_impl {
          a.name = name;
          a.creation_date = initial_timestamp;
 
-         if( name == config::system_account_name ) {
+         if( name == config::system_account_name() ) {
             // The initial eosio ABI value affects consensus; see  https://github.com/EOSIO/eos/issues/7794
             // TODO: This doesn't charge RAM; a fix requires a consensus upgrade.
             a.abi.assign(eosio_abi_bin, sizeof(eosio_abi_bin));
@@ -2632,6 +2658,7 @@ struct controller_impl {
          // TODO: Update this when genesis protocol features are enabled.
          gpo.wasm_configuration = genesis_state::default_initial_wasm_configuration;
          gpo.chain_id = chain_id;
+         gpo.system_account_prefix = genesis.system_account_prefix.value_or("eosio"_n);
       });
 
       db.create<protocol_state_object>([&](auto& pso ){
@@ -2647,22 +2674,22 @@ struct controller_impl {
       resource_limits.initialize_database();
 
       authority system_auth(genesis.initial_key);
-      create_native_account( genesis.initial_timestamp, config::system_account_name, system_auth, system_auth, true );
+      create_native_account( genesis.initial_timestamp, config::system_account_name(), system_auth, system_auth, true );
 
       auto empty_authority = authority(1, {}, {});
       auto active_producers_authority = authority(1, {}, {});
-      active_producers_authority.accounts.push_back({{config::system_account_name, config::active_name}, 1});
+      active_producers_authority.accounts.push_back({{config::system_account_name(), config::active_name}, 1});
 
-      create_native_account( genesis.initial_timestamp, config::null_account_name, empty_authority, empty_authority );
-      create_native_account( genesis.initial_timestamp, config::producers_account_name, empty_authority, active_producers_authority );
-      const auto& active_permission       = authorization.get_permission({config::producers_account_name, config::active_name});
-      const auto& majority_permission     = authorization.create_permission( config::producers_account_name,
+      create_native_account( genesis.initial_timestamp, config::null_account_name(), empty_authority, empty_authority );
+      create_native_account( genesis.initial_timestamp, config::producers_account_name(), empty_authority, active_producers_authority );
+      const auto& active_permission       = authorization.get_permission({config::producers_account_name(), config::active_name});
+      const auto& majority_permission     = authorization.create_permission( config::producers_account_name(),
                                                                              config::majority_producers_permission_name,
                                                                              active_permission.id,
                                                                              active_producers_authority,
                                                                              false,
                                                                              genesis.initial_timestamp );
-                                            authorization.create_permission( config::producers_account_name,
+                                            authorization.create_permission( config::producers_account_name(),
                                                                              config::minority_producers_permission_name,
                                                                              majority_permission.id,
                                                                              active_producers_authority,
@@ -4707,15 +4734,15 @@ struct controller_impl {
          return ((num_producers * numerator) / denominator) + 1;
       };
 
-      update_permission(authorization.get_permission({config::producers_account_name, config::active_name}),
+      update_permission(authorization.get_permission({config::producers_account_name(), config::active_name}),
                         calculate_threshold(2, 3) /* more than two-thirds */);
 
       update_permission(
-         authorization.get_permission({config::producers_account_name, config::majority_producers_permission_name}),
+         authorization.get_permission({config::producers_account_name(), config::majority_producers_permission_name}),
          calculate_threshold(1, 2) /* more than one-half */);
 
       update_permission(
-         authorization.get_permission({config::producers_account_name, config::minority_producers_permission_name}),
+         authorization.get_permission({config::producers_account_name(), config::minority_producers_permission_name}),
          calculate_threshold(1, 3) /* more than one-third */);
    }
 
@@ -4884,9 +4911,9 @@ struct controller_impl {
    signed_transaction get_on_block_transaction()
    {
       action on_block_act;
-      on_block_act.account = config::system_account_name;
+      on_block_act.account = config::system_account_name();
       on_block_act.name = "onblock"_n;
-      on_block_act.authorization = vector<permission_level>{{config::system_account_name, config::active_name}};
+      on_block_act.authorization = vector<permission_level>{{config::system_account_name(), config::active_name}};
       on_block_act.data = fc::raw::pack(chain_head.header());
 
       signed_transaction trx;
@@ -5017,7 +5044,7 @@ struct controller_impl {
       return app_window == app_window_type::write;
    }
 
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
    bool is_eos_vm_oc_enabled() const {
       return wasmif.is_eos_vm_oc_enabled();
    }
@@ -5026,7 +5053,7 @@ struct controller_impl {
    // Only called from read-only trx execution threads when producer_plugin
    // starts them. Only OC requires initialize thread specific data.
    void init_thread_local_data() {
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       if ( is_eos_vm_oc_enabled() ) {
          wasmif.init_thread_local_data();
       }
@@ -5181,8 +5208,8 @@ struct controller_impl {
 }; /// controller_impl
 
 thread_local platform_timer controller_impl::timer;
-#if defined(EOSIO_EOS_VM_RUNTIME_ENABLED) || defined(EOSIO_EOS_VM_JIT_RUNTIME_ENABLED)
-thread_local eosio::vm::wasm_allocator controller_impl::wasm_alloc;
+#if defined(CORE_NET_VM_RUNTIME_ENABLED) || defined(CORE_NET_VM_JIT_RUNTIME_ENABLED)
+thread_local core_net::vm::wasm_allocator controller_impl::wasm_alloc;
 #endif
 
 const resource_limits_manager&   controller::get_resource_limits_manager()const
@@ -5310,7 +5337,7 @@ void controller::preactivate_feature( const digest_type& feature_digest, bool is
    // But it is still possible for a producer to retire a deferred transaction that deals with this subjective
    // information. If they recognized the feature, they would retire it successfully, but a validator that
    // does not recognize the feature should reject the entire block (not just fail the deferred transaction).
-   // Even if they don't recognize the feature, the producer could change their nodeos code to treat it like an
+   // Even if they don't recognize the feature, the producer could change their core_netd code to treat it like an
    // objective failure thus leading the deferred transaction to retire with soft_fail or hard_fail.
    // In this case, validators that don't recognize the feature would reject the whole block immediately, and
    // validators that do recognize the feature would likely lead to a different retire status which would
@@ -6106,12 +6133,12 @@ void controller::enable_deep_mind(deep_mind_handler* logger) {
 uint32_t controller::earliest_available_block_num() const{
    return my->earliest_available_block_num();
 }
-#if defined(EOSIO_EOS_VM_RUNTIME_ENABLED) || defined(EOSIO_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_VM_RUNTIME_ENABLED) || defined(CORE_NET_VM_JIT_RUNTIME_ENABLED)
 vm::wasm_allocator& controller::get_wasm_allocator() {
    return my->wasm_alloc;
 }
 #endif
-#ifdef EOSIO_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
 bool controller::is_eos_vm_oc_enabled() const {
    return my->is_eos_vm_oc_enabled();
 }
@@ -6152,6 +6179,7 @@ chain_id_type controller::extract_chain_id(snapshot_reader& snapshot) {
 
    using v4 = legacy::snapshot_global_property_object_v4;
    using v5 = legacy::snapshot_global_property_object_v5;
+   using v7 = legacy::snapshot_global_property_object_v7;
    if (header.version <= v4::maximum_version) {
       snapshot.read_section<global_property_object>([&chain_id]( auto &section ){
          v4 global_properties;
@@ -6162,6 +6190,13 @@ chain_id_type controller::extract_chain_id(snapshot_reader& snapshot) {
    else if (header.version <= v5::maximum_version) {
       snapshot.read_section<global_property_object>([&chain_id]( auto &section ){
          v5 global_properties;
+         section.read_row(global_properties);
+         chain_id = global_properties.chain_id;
+      });
+   }
+   else if (header.version <= v7::maximum_version) {
+      snapshot.read_section<global_property_object>([&chain_id]( auto &section ){
+         v7 global_properties;
          section.read_row(global_properties);
          chain_id = global_properties.chain_id;
       });
@@ -6436,4 +6471,4 @@ void controller_impl::on_activation<builtin_protocol_feature_t::savanna>() {
 
 /// End of protocol feature activation handlers
 
-} /// eosio::chain
+} /// core_net::chain

@@ -65,11 +65,11 @@ try:
 
     shipNodeNum = 3
     specificExtraNodeosArgs={}
-    specificExtraNodeosArgs[shipNodeNum]="--plugin eosio::state_history_plugin --trace-history --chain-state-history --state-history-stride 200 --plugin eosio::net_api_plugin --plugin eosio::producer_api_plugin "
+    specificExtraNodeosArgs[shipNodeNum]="--plugin core_net::state_history_plugin --trace-history --chain-state-history --state-history-stride 200 --plugin core_net::net_api_plugin --plugin core_net::producer_api_plugin "
     if args.finality_data_history:
         specificExtraNodeosArgs[shipNodeNum]+=" --finality-data-history"
     # producer nodes will be mapped to 0 through totalProducerNodes-1, so the number totalProducerNodes will be the non-producing node
-    specificExtraNodeosArgs[totalProducerNodes]="--plugin eosio::test_control_api_plugin  "
+    specificExtraNodeosArgs[totalProducerNodes]="--plugin core_net::test_control_api_plugin  "
     # test wants to generate a long fork
     extraNodeosArgs=" --production-pause-vote-timeout-ms 0 "
 

@@ -1,7 +1,7 @@
-#include <eosio/test_control_plugin/test_control_plugin.hpp>
-#include <eosio/chain/fork_database.hpp>
+#include <core_net/test_control_plugin/test_control_plugin.hpp>
+#include <core_net/chain/fork_database.hpp>
 
-namespace eosio {
+namespace core_net {
 
    static auto _test_control_plugin = application::register_plugin<test_control_plugin>();
 
@@ -315,4 +315,4 @@ empty read_write::swap_action(const read_write::swap_action_params& params) cons
 }
 
 } // namespace test_control_apis
-} // namespace eosio
+} // namespace core_net

@@ -56,78 +56,135 @@ testnet T2 (Month 2-3) depends on them.
 #### 1A. Fork, License & Rebrand (~2-3 weeks)
 **Goal:** Fork under BSL, remove all legacy branding, establish new project identity.
 
-**License: Business Source License 1.1**
+**Status: COMPLETE** (branch `rebrand/core_net`, `make all` passes 100%)
+
+**License: Business Source License 1.1** ✓ DONE
 - Source-available from day one. Converts to Apache 2.0 after 3 years per version.
 - Permitted: running nodes, building dApps, migrating EOSIO chains, private chains,
   research, education — everything except launching a competing public L1.
-- Protects our engineering work (Block-STM, gas model, AArch64 port, indexer, identity)
-  while allowing full ecosystem use.
-- Contributors sign off via DCO (Developer Certificate of Origin).
 - Legal basis: Spring is MIT-licensed (Nov 2025), MIT permits sublicensing under BSL.
 - **Detailed plan:** [18_licensing.md](18_licensing.md)
 
-**Rebrand:** Remove all references to eosio, EOSIO, EOS, antelope, AntelopeIO, spring,
-Spring, leap, Leap, and block.one from the codebase. Replace with new project identity.
+**Naming convention (finalized):**
 
-**Scale:** ~11,000+ occurrences across ~500+ files, 35 directories to rename.
+| Layer | Name |
+|-------|------|
+| C++ namespace | `core_net::` |
+| C++ identifier prefix | `core_net_` |
+| Macro prefix | `CORE_NET_` |
+| Include paths | `#include <core_net/chain/...>` |
+| Node daemon | `core_netd` |
+| CLI | `core-cli` |
+| Wallet | `core-wallet` |
+| Utility | `core-util` |
+| CMake project | `anvo-core` |
+| CMake targets | `core_net_chain`, `core_net_testing` |
+| System accounts (new chains) | `core`, `core.token`, `core.bios`, etc. |
+| System accounts (migrating) | `eosio`, `eosio.token`, etc. (genesis-configurable) |
+| WASM intrinsics | `core_net_assert`, `core_net_exit` |
+| WASM injection | `core_net_injection.*` |
 
-**Terms to replace:**
+**Why `core_net::` instead of `core::`:** `core::` collides with `boost::core::`.
 
-| Term | Occurrences | Primary Location |
-|------|------------|------------------|
-| eosio (all forms) | ~7,693 | Namespaces, includes, macros, everywhere |
-| nodeos | ~1,939 | Test scripts, docs, program dirs |
-| cleos | ~560 | Docs, test scripts, bash completion |
-| spring | ~314 | CMake, docs, version strings |
-| antelope/AntelopeIO | ~271 | GitHub URLs, docs, workflows |
-| keosd | ~186 | Docs, test scripts |
-| eos_vm/EOS_VM | ~70 | WASM runtime internals |
-| leap | ~44 | Legacy comments, CMake configs |
+**Rebrand:** ✓ DONE — ~11,000+ occurrences across ~870 files renamed.
 
-**What to rename:**
-- C++ namespace: `eosio::` → `anvo::` (377 declarations, 366 files)
-- Include paths: `#include <eosio/...>` → `#include <anvo/...>` (27 directories, 232 directives)
-- Macro prefix: `EOSIO_*` → `ANVO_*` (307 occurrences)
-- Executables: nodeos → `cored`, cleos → `core-cli`, keosd → `core-keys`, spring-util → `core-util`
-- Program/doc directories: rename to match new executable names
-- Build system: CMake project name, target names, package names
-- Test files: 25 `nodeos_*.py` files → `cored_*.py`
-- CI/CD: workflow files, runner labels, artifact names
+**Submodule strategy:**
 
-**What MUST NOT be renamed (protocol compatibility):**
-- ABI type identifiers containing "eosio" (consensus-level serialization)
-- Protocol feature activation names (consensus compatibility)
-- `fc::` namespace (generic foundation library, not branded)
-- `eos-vm` internal library (optional — implementation detail, not user-facing)
+| Submodule | Origin | Action | Status |
+|-----------|--------|--------|--------|
+| `libraries/eos-vm` | AntelopeIO/eos-vm | **Absorbed** into repo, renamed `core_net::vm::` | ✓ DONE |
+| `libraries/appbase` | AntelopeIO/appbase | **Absorbed** into repo | ✓ DONE |
+| `libraries/softfloat` | AntelopeIO/berkeley-softfloat-3 | **Absorbed** into repo | ✓ DONE |
+| `libraries/cli11/cli11` | AntelopeIO/CLI11 | **Forked to Anvo-Network**, rebase onto upstream v2.6.2 pending | ✓ Forked |
+| `libraries/libfc/libraries/bls12-381` | AntelopeIO/bls12-381 | **Forked to Anvo-Network** | ✓ Forked |
+| `libraries/libfc/libraries/bn256` | AntelopeIO/bn256 | **Forked to Anvo-Network** | ✓ Forked |
+| `libraries/boost` | boostorg/boost | Keep as-is (upstream, 643MB) | ✓ No action |
+| `libraries/libfc/libraries/boringssl/bssl` | boringssl.googlesource.com | Keep as-is (upstream) | ✓ No action |
+| `libraries/prometheus/prometheus-cpp` | jupp0r/prometheus-cpp | Keep as-is (upstream) | ✓ No action |
+| `libraries/rapidjson` | Tencent/rapidjson | Keep as-is (upstream) | ✓ No action |
+| `libraries/libfc/secp256k1/secp256k1` | bitcoin-core/secp256k1 | Keep as-is (upstream) | ✓ No action |
 
-**System account names (`eosio`, `eosio.token`, etc.):**
-- These are NOT hardcoded throughout — they're centralized in `config.hpp`
-- A **genesis-configurable compatibility switch** will allow:
-  - Migrating EOSIO chains: keep `eosio.*` account names (default)
-  - New chains: use custom account names (e.g., `core.*`)
-- Same binary, same protocol, different genesis configuration
-- See [08_system_account_compatibility.md](08_system_account_compatibility.md) for details
-- **Effort: ~1-2 weeks additional** on top of the rebrand
+**What was done (rebrand branch `rebrand/core_net`):**
+1. ✓ Absorbed submodules: eos-vm, appbase, softfloat
+2. ✓ Directory renames: 28 include/eosio/ → include/core_net/, program dirs, test files
+3. ✓ Namespace: eosio:: → core_net:: across 870+ files
+4. ✓ Include paths: eosio/ → core_net/
+5. ✓ Macros: EOSIO_ → CORE_NET_, EOS_VM_ → CORE_NET_VM_
+6. ✓ CMake: project, targets, executable names, runtime list names
+7. ✓ C++ identifiers: eosio_* → core_net_*, keosd_ → core_wallet_*
+8. ✓ WASM intrinsics: eosio_assert → core_net_assert, 61 injection functions
+9. ✓ eos-vm internals: eosio::vm → core_net::vm, all macros/identifiers
+10. ✓ Python tests, shell scripts, plugin strings, config paths
+11. ✓ Full build passes: core_netd, core-cli, core-wallet, core-util, unit_test, plugin_test
 
-**Strategy:** Script ~90% of the work, manual review for protocol-sensitive boundaries.
-Do this FIRST after forking, before any feature branches diverge.
+**Rebrand script:** `_research/tools/rebrand.sh` — captures all fixes, repeatable from clean main.
 
-**Execution order:**
-1. Choose new names (project, executables, namespace, system account prefix) — 1 day
-2. Rebrand codebase (~11K references, scripted) — 1-2 weeks
-   - [07_rebrand_plan.md](07_rebrand_plan.md)
-3. Implement system account compatibility switch — 1-2 weeks
-   - Make `config::system_account_name` genesis-configurable
-   - Refactor `SET_APP_HANDLER` macro to use config constants
-   - Make `"eosio."` prefix restriction configurable
-   - Default: `eosio.*` (backward compatible for migrating chains)
-   - Configurable: `core.*` (for fresh chains)
-   - [08_system_account_compatibility.md](08_system_account_compatibility.md)
+**What was done (genesis accounts branch `feature/genesis-accounts`):**
+12. ✓ Forked CLI11/bls12-381/bn256 to Anvo-Network org, updated .gitmodules
+13. ✓ Genesis-configurable system accounts — ALL 7 steps complete:
+    - system_accounts struct + global accessors (config.hpp/config.cpp)
+    - 432+ call sites converted to function calls
+    - SET_APP_HANDLER macro refactored to use config::system_account_name()
+    - "eosio." prefix checks made configurable
+    - Genesis JSON support (optional system_account_prefix field)
+    - Persistence in global_property_object (snapshot v9, all 3 startup paths wired)
+    - Test suite: 4 tests covering default/custom prefix, reserved names, factory methods
+    - Bug fix: native handler registration moved after set_system_accounts()
 
-**Also required:**
+**What was done (CLI11 upgrade):**
+16. ✓ Switched CLI11 submodule from AntelopeIO fork (v2.2.0) to upstream CLIUtils/CLI11 (v2.6.2)
+17. ✓ Created CoreNetFormatter in our own codebase (libraries/cli11/include/core_net/cli/formatter.hpp)
+    — no CLI11 fork needed, custom formatter lives outside the submodule
+18. ✓ Anvo-Network/CLI11 GitHub fork is orphaned (can be deleted)
+
+**Submodule final state:**
+- Absorbed into repo: eos-vm, appbase, softfloat
+- Anvo-Network forks (shared crypto libs): bls12-381, bn256
+- Upstream: boost, boringssl, prometheus-cpp, rapidjson, secp256k1, CLI11
+
+**Phase 1A status: COMPLETE.** All code work done. Remaining items are non-code:
+- Documentation (see below)
+- CI/CD workflows
 - New genesis configuration
-- Establish CI/CD pipeline
-- New project repository and organization
+
+**Documentation requirements:**
+
+1. **Genesis configuration guide** — How to create a genesis.json for a new Anvo Network
+   chain. Must cover:
+   - The `system_account_prefix` field: what it does, when it's read (first boot only),
+     how it becomes permanent chain state
+   - Default behavior when omitted (eosio.* for migrating chains)
+   - Example genesis.json with `"system_account_prefix": "core"` for new chains
+   - Example genesis.json without the field for EOSIO chain migration
+   - What system accounts are created (`<prefix>`, `<prefix>.null`, `<prefix>.prods`)
+   - How the reserved prefix works (non-privileged accounts cannot create `<prefix>.*` names)
+
+2. **Migration guide** — How existing EOSIO chains (EOS, Telos, WAX) import a snapshot
+   and boot with their existing `eosio.*` accounts preserved. Covers:
+   - Snapshot compatibility (v2-v8 snapshots auto-default to "eosio")
+   - What changes vs. what stays the same
+
+3. **Node operator guide** — Updated for new executable names (`core_netd`, `core-cli`,
+   `core-wallet`, `core-util`), config directory (`etc/core_net/`), plugin names
+   (`core_net::producer_plugin`, etc.)
+
+4. **Developer guide** — Updated namespace (`core_net::`), include paths
+   (`#include <core_net/...>`), macro prefix (`CORE_NET_`), API endpoint paths
+
+5. **WASM ABI compatibility guide** — Critical documentation for contract developers:
+   - **Dual-name intrinsics:** Legacy WASM intrinsic names (`eosio_assert`,
+     `eosio_exit`, etc.) are permanently supported for backward compatibility.
+     New names (`core_net_assert`, `core_net_exit`) are also registered.
+     Both resolve to the same implementation.
+   - **New intrinsics:** Any new WASM intrinsics added to the platform will be
+     registered ONLY under `core_net_*` names. No `eosio_*` aliases for new functions.
+   - **Existing contracts:** All contracts compiled against EOSIO CDT work unmodified.
+     No recompilation needed.
+   - **New contracts:** Should use `core_net_*` intrinsic names via the updated SDK/CDT.
+   - **Injection functions:** Internal softfloat injection names (`_core_net_f32_add`,
+     etc.) are purely runtime-internal — contracts never import them directly.
+
+6. **README.md** — Project overview for Anvo Network, build instructions, quick start
 
 #### 1B. System Contracts
 **Goal:** Fork and modify the bundled system contracts for the new chain.

@@ -1,4 +1,4 @@
-#include <eosio/wallet_plugin/wallet.hpp>
+#include <core_net/wallet_plugin/wallet.hpp>
 
 #include <algorithm>
 #include <cctype>
@@ -21,11 +21,11 @@
 #ifndef WIN32
 # include <sys/types.h>
 # include <sys/stat.h>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #endif
 
-namespace eosio { namespace wallet {
+namespace core_net { namespace wallet {
 
 namespace detail {
 
@@ -144,7 +144,7 @@ public:
    bool import_key(string wif_key)
    {
       private_key_type priv(wif_key);
-      eosio::chain::public_key_type wif_pub_key = priv.get_public_key();
+      core_net::chain::public_key_type wif_pub_key = priv.get_public_key();
 
       auto itr = _keys.find(wif_pub_key);
       if( itr == _keys.end() ) {
@@ -256,11 +256,11 @@ public:
    const string _default_key_type = "K1";
 };
 
-} } } // eosio::wallet::detail
+} } } // core_net::wallet::detail
 
 
 
-namespace eosio { namespace wallet {
+namespace core_net { namespace wallet {
 
 soft_wallet::soft_wallet(const wallet_data& initial_data)
    : my(new detail::soft_wallet_impl(*this, initial_data))
@@ -412,4 +412,4 @@ void soft_wallet::set_wallet_filename(string wallet_filename)
    my->_wallet_filename = wallet_filename;
 }
 
-} } // eosio::wallet
+} } // core_net::wallet

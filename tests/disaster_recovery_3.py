@@ -54,7 +54,7 @@ try:
     Print(f'producing nodes: {pnodes}, delay between nodes launch: {delay} second{"s" if delay != 1 else ""}')
 
     Print("Stand up cluster")
-    extraNodeosArgs = " --plugin eosio::producer_api_plugin "
+    extraNodeosArgs = " --plugin core_net::producer_api_plugin "
     if cluster.launch(pnodes=pnodes, totalNodes=total_nodes, totalProducers=pnodes, delay=delay, loadSystemContract=False,
                       extraNodeosArgs=extraNodeosArgs, activateIF=True, biosFinalizer=False) is False:
         errorExit("Failed to stand up eos cluster.")

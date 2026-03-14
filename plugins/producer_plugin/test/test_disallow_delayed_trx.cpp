@@ -1,16 +1,16 @@
-#include <eosio/producer_plugin/producer_plugin.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
+#include <core_net/testing/tester.hpp>
 #include <boost/test/unit_test.hpp>
 
-namespace eosio::test::detail {
-using namespace eosio::chain::literals;
+namespace core_net::test::detail {
+using namespace core_net::chain::literals;
 struct testit {
    uint64_t id;
 
    testit( uint64_t id = 0 ) :id(id){}
 
    static account_name get_account() {
-      return chain::config::system_account_name;
+      return chain::config::system_account_name();
    }
 
    static action_name get_name() {
@@ -18,16 +18,16 @@ struct testit {
    }
 };
 }
-FC_REFLECT( eosio::test::detail::testit, (id) )
+FC_REFLECT( core_net::test::detail::testit, (id) )
 
 namespace {
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::test::detail;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::test::detail;
 
 auto make_delayed_trx( const chain_id_type& chain_id ) {
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
 
    signed_transaction trx;
    trx.actions.emplace_back( vector<permission_level>{{creator, config::active_name}}, testit{0} );
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(delayed_trx) {
             }
          ),
          fc::exception,
-         eosio::testing::fc_exception_message_starts_with("transaction cannot be delayed")
+         core_net::testing::fc_exception_message_starts_with("transaction cannot be delayed")
       );
    });
 

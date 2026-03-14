@@ -1,10 +1,10 @@
 #pragma once
 
-#include <eosio/asset.hpp>
+#include <core_net/asset.hpp>
 
 namespace eosiosystem {
-using eosio::asset;
-using eosio::symbol;
+using core_net::asset;
+using core_net::symbol;
 
 typedef double real_type;
 
@@ -13,7 +13,7 @@ typedef double real_type;
  *  bancor exchange is entirely contained within this struct. There are no external
  *  side effects associated with using this API.
  */
-struct [[eosio::table, eosio::contract("eosio.system")]] exchange_state {
+struct [[core_net::table, core_net::contract("eosio.system")]] exchange_state {
    asset    supply;
 
    struct connector {
@@ -35,6 +35,6 @@ struct [[eosio::table, eosio::contract("eosio.system")]] exchange_state {
    EOSLIB_SERIALIZE( exchange_state, (supply)(base)(quote) )
 };
 
-typedef eosio::multi_index< "rammarket"_n, exchange_state > rammarket;
+typedef core_net::multi_index< "rammarket"_n, exchange_state > rammarket;
 
 } /// namespace eosiosystem

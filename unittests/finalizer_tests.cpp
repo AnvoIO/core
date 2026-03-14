@@ -1,15 +1,15 @@
-#include <eosio/chain/finalizer.hpp>
+#include <core_net/chain/finalizer.hpp>
 
 #include <boost/test/unit_test.hpp>
-#include <eosio/testing/tester.hpp>
-#include <eosio/testing/bls_utils.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/testing/bls_utils.hpp>
 #include <fc/io/cfile.hpp>
 #include <fc/io/fstream.hpp>
 #include <test-data.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace std::string_literals;
 
 using tstamp  = block_timestamp_type;
@@ -24,7 +24,7 @@ struct bls_keys_t {
 
    bls_keys_t(name n) {
       bls_signature pop;
-      std::tie(privkey, pubkey, pop)    = eosio::testing::get_bls_key(n);
+      std::tie(privkey, pubkey, pop)    = core_net::testing::get_bls_key(n);
       std::tie(privkey_str, pubkey_str) = std::pair{ privkey.to_string(), pubkey.to_string() };
    }
 };
@@ -340,7 +340,7 @@ BOOST_AUTO_TEST_CASE( finalizer_safety_file_serialization_unchanged ) try {
 
 
 // Verify that the current version of safety.dat file committed to the repo can be loaded on
-// nodeos startup (it is not saved until we actually vote, and voting would change the fsi).
+// core_netd startup (it is not saved until we actually vote, and voting would change the fsi).
 // -----------------------------------------------------------------------------------------
 BOOST_AUTO_TEST_CASE( finalizer_safety_file_serialization_io ) try {
    fc::temp_directory tempdir;

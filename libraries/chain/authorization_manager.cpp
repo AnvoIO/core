@@ -1,19 +1,19 @@
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/chain/permission_link_object.hpp>
-#include <eosio/chain/authority_checker.hpp>
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/contract_types.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/chain/permission_link_object.hpp>
+#include <core_net/chain/authority_checker.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/contract_types.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
 #include <boost/tuple/tuple_io.hpp>
-#include <eosio/chain/database_utils.hpp>
-#include <eosio/chain/protocol_state_object.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/database_utils.hpp>
+#include <core_net/chain/protocol_state_object.hpp>
+#include <core_net/chain/deep_mind.hpp>
 
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    using authorization_index_set = index_set<
       permission_index,
@@ -304,7 +304,7 @@ namespace eosio { namespace chain {
                                                                                   )const
    {
       // Special case native actions cannot be linked to a minimum permission, so there is no need to check.
-      if( scope == config::system_account_name ) {
+      if( scope == config::system_account_name() ) {
           EOS_ASSERT( act_name != updateauth::get_name() &&
                      act_name != deleteauth::get_name() &&
                      act_name != linkauth::get_name() &&
@@ -319,7 +319,7 @@ namespace eosio { namespace chain {
          if( !linked_permission )
             return config::active_name;
 
-         if( *linked_permission == config::eosio_any_name )
+         if( *linked_permission == config::any_name() )
             return std::optional<permission_name>();
 
          return linked_permission;
@@ -377,19 +377,19 @@ namespace eosio { namespace chain {
       EOS_ASSERT( auth.actor == link.account, irrelevant_auth_exception,
                   "the owner of the linked permission needs to be the actor of the declared authorization" );
 
-      if( link.code == config::system_account_name
+      if( link.code == config::system_account_name()
             || !_control.is_builtin_activated( builtin_protocol_feature_t::fix_linkauth_restriction ) ) 
       {
          EOS_ASSERT( link.type != updateauth::get_name(),  action_validate_exception,
-                     "Cannot link eosio::updateauth to a minimum permission" );
+                     "Cannot link core_net::updateauth to a minimum permission" );
          EOS_ASSERT( link.type != deleteauth::get_name(),  action_validate_exception,
-                     "Cannot link eosio::deleteauth to a minimum permission" );
+                     "Cannot link core_net::deleteauth to a minimum permission" );
          EOS_ASSERT( link.type != linkauth::get_name(),    action_validate_exception,
-                     "Cannot link eosio::linkauth to a minimum permission" );
+                     "Cannot link core_net::linkauth to a minimum permission" );
          EOS_ASSERT( link.type != unlinkauth::get_name(),  action_validate_exception,
-                     "Cannot link eosio::unlinkauth to a minimum permission" );
+                     "Cannot link core_net::unlinkauth to a minimum permission" );
          EOS_ASSERT( link.type != canceldelay::get_name(), action_validate_exception,
-                     "Cannot link eosio::canceldelay to a minimum permission" );
+                     "Cannot link core_net::canceldelay to a minimum permission" );
       }
 
       const auto linked_permission_name = lookup_minimum_permission(link.account, link.code, link.type);
@@ -419,7 +419,7 @@ namespace eosio { namespace chain {
                   "cannot unlink non-existent permission link of account '${account}' for actions matching '${code}::${action}'",
                   ("account", unlink.account)("code", unlink.code)("action", unlink.type) );
 
-      if( *unlinked_permission_name == config::eosio_any_name )
+      if( *unlinked_permission_name == config::any_name() )
          return;
 
       EOS_ASSERT( get_permission(auth).satisfies( get_permission({unlink.account, *unlinked_permission_name}),
@@ -511,7 +511,7 @@ namespace eosio { namespace chain {
          bool special_case = false;
          fc::microseconds delay = effective_provided_delay;
 
-         if( act.account == config::system_account_name ) {
+         if( act.account == config::system_account_name() ) {
             special_case = true;
 
             if( act.name == updateauth::get_name() ) {
@@ -658,4 +658,4 @@ namespace eosio { namespace chain {
       return checker.used_keys();
    }
 
-} } /// namespace eosio::chain
+} } /// namespace core_net::chain

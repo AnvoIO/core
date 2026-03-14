@@ -16,14 +16,14 @@
       return s;                                                                             \
    }
 
-namespace eosio {
+namespace core_net {
    namespace testing {
       struct test_contracts {
          // Contracts in `unittests/contracts' directory
-         MAKE_READ_WASM_ABI(eosio_msig,   eosio.msig, contracts)
-         MAKE_READ_WASM_ABI(eosio_system, eosio.system, contracts)
-         MAKE_READ_WASM_ABI(eosio_token,  eosio.token, contracts)
-         MAKE_READ_WASM_ABI(eosio_wrap,   eosio.wrap,   contracts)
+         MAKE_READ_WASM_ABI(core_net_msig,   eosio.msig, contracts)
+         MAKE_READ_WASM_ABI(core_net_system, eosio.system, contracts)
+         MAKE_READ_WASM_ABI(core_net_token,  eosio.token, contracts)
+         MAKE_READ_WASM_ABI(core_net_wrap,   eosio.wrap,   contracts)
 
          // Contracts in `unittests/unittests/test-contracts' directory
          MAKE_READ_WASM_ABI(asserter,              asserter,              test-contracts)
@@ -54,5 +54,5 @@ namespace eosio {
          MAKE_READ_WASM_ABI(ibc,                   ibc,                   test-contracts/savanna)
 
       };
-   } /// eosio::testing
+   } /// core_net::testing
 }  /// eosio

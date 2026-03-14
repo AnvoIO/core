@@ -1,5 +1,5 @@
 #include "eosio.bios.hpp"
-#include <eosio/instant_finality.hpp>
+#include <core_net/instant_finality.hpp>
 #include <unordered_set>
 
 namespace eosiobios {
@@ -10,11 +10,11 @@ void bios::setabi( name account, const std::vector<char>& abi ) {
    if( itr == table.end() ) {
       table.emplace( account, [&]( auto& row ) {
          row.owner = account;
-         row.hash  = eosio::sha256(const_cast<char*>(abi.data()), abi.size());
+         row.hash  = core_net::sha256(const_cast<char*>(abi.data()), abi.size());
       });
    } else {
-      table.modify( itr, eosio::same_payer, [&]( auto& row ) {
-         row.hash = eosio::sha256(const_cast<char*>(abi.data()), abi.size());
+      table.modify( itr, core_net::same_payer, [&]( auto& row ) {
+         row.hash = core_net::sha256(const_cast<char*>(abi.data()), abi.size());
       });
    }
 }
@@ -28,7 +28,7 @@ void bios::setfinalizer( const finalizer_policy& finalizer_policy ) {
    check(finalizer_policy.finalizers.size() <= max_finalizers, "number of finalizers exceeds the maximum allowed");
    check(finalizer_policy.finalizers.size() > 0, "require at least one finalizer");
 
-   eosio::finalizer_policy fin_policy;
+   core_net::finalizer_policy fin_policy;
    fin_policy.threshold = finalizer_policy.threshold;
    fin_policy.finalizers.reserve(finalizer_policy.finalizers.size());
 
@@ -37,17 +37,17 @@ void bios::setfinalizer( const finalizer_policy& finalizer_policy ) {
 
    // use raw affine format (bls_g1 is std::array<char, 96>) for uniqueness check
    struct g1_hash {
-      std::size_t operator()(const eosio::bls_g1& g1) const {
+      std::size_t operator()(const core_net::bls_g1& g1) const {
          std::hash<const char*> hash_func;
          return hash_func(g1.data());
       }
    };
    struct g1_equal {
-      bool operator()(const eosio::bls_g1& lhs, const eosio::bls_g1& rhs) const {
+      bool operator()(const core_net::bls_g1& lhs, const core_net::bls_g1& rhs) const {
          return std::memcmp(lhs.data(), rhs.data(), lhs.size()) == 0;
       }
    };
-   std::unordered_set<eosio::bls_g1, g1_hash, g1_equal> unique_finalizer_keys;
+   std::unordered_set<core_net::bls_g1, g1_hash, g1_equal> unique_finalizer_keys;
 
    uint64_t weight_sum = 0;
 
@@ -64,17 +64,17 @@ void bios::setfinalizer( const finalizer_policy& finalizer_policy ) {
 
       // decode_bls_public_key_to_g1 will fail ("check" function fails)
       // if the key is invalid
-      const auto pk = eosio::decode_bls_public_key_to_g1(f.public_key);
+      const auto pk = core_net::decode_bls_public_key_to_g1(f.public_key);
       // duplicate key check
       check(unique_finalizer_keys.insert(pk).second, "duplicate public key");
 
-      const auto signature = eosio::decode_bls_signature_to_g2(f.pop);
+      const auto signature = core_net::decode_bls_signature_to_g2(f.pop);
 
       // proof of possession of private key check
-      check(eosio::bls_pop_verify(pk, signature), "proof of possession failed");
+      check(core_net::bls_pop_verify(pk, signature), "proof of possession failed");
 
       std::vector<char> pk_vector(pk.begin(), pk.end());
-      fin_policy.finalizers.emplace_back(eosio::finalizer_authority{f.description, f.weight, std::move(pk_vector)});
+      fin_policy.finalizers.emplace_back(core_net::finalizer_authority{f.description, f.weight, std::move(pk_vector)});
    }
 
    check(finalizer_policy.threshold > weight_sum / 2, "finalizer policy threshold must be greater than half of the sum of the weights");
@@ -96,12 +96,12 @@ void bios::setalimits( name account, int64_t ram_bytes, int64_t net_weight, int6
    set_resource_limits( account, ram_bytes, net_weight, cpu_weight );
 }
 
-void bios::setprods( const std::vector<eosio::producer_authority>& schedule ) {
+void bios::setprods( const std::vector<core_net::producer_authority>& schedule ) {
    require_auth( get_self() );
    set_proposed_producers( schedule );
 }
 
-void bios::setparams( const eosio::blockchain_parameters& params ) {
+void bios::setparams( const core_net::blockchain_parameters& params ) {
    require_auth( get_self() );
    set_blockchain_parameters( params );
 }
@@ -110,13 +110,13 @@ void bios::reqauth( name from ) {
    require_auth( from );
 }
 
-void bios::activate( const eosio::checksum256& feature_digest ) {
+void bios::activate( const core_net::checksum256& feature_digest ) {
    require_auth( get_self() );
    preactivate_feature( feature_digest );
    print( "feature digest activated: ", feature_digest, "\n" );
 }
 
-void bios::reqactivated( const eosio::checksum256& feature_digest ) {
+void bios::reqactivated( const core_net::checksum256& feature_digest ) {
    check( is_feature_activated( feature_digest ), "protocol feature is not activated" );
 }
 

@@ -1,17 +1,17 @@
-#include <eosio/producer_plugin/producer_plugin.hpp>
-#include <eosio/producer_plugin/block_timing_util.hpp>
-#include <eosio/producer_plugin/production_pause_vote_tracker.hpp>
-#include <eosio/chain/plugin_interface.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/chain/snapshot.hpp>
-#include <eosio/chain/snapshot_scheduler.hpp>
-#include <eosio/chain/subjective_billing.hpp>
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/chain/unapplied_transaction_queue.hpp>
-#include <eosio/chain/fork_database.hpp>
-#include <eosio/chain/platform_timer.hpp>
-#include <eosio/resource_monitor_plugin/resource_monitor_plugin.hpp>
+#include <core_net/producer_plugin/producer_plugin.hpp>
+#include <core_net/producer_plugin/block_timing_util.hpp>
+#include <core_net/producer_plugin/production_pause_vote_tracker.hpp>
+#include <core_net/chain/plugin_interface.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/chain/snapshot.hpp>
+#include <core_net/chain/snapshot_scheduler.hpp>
+#include <core_net/chain/subjective_billing.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/chain/unapplied_transaction_queue.hpp>
+#include <core_net/chain/fork_database.hpp>
+#include <core_net/chain/platform_timer.hpp>
+#include <core_net/resource_monitor_plugin/resource_monitor_plugin.hpp>
 
 #include <fc/io/json.hpp>
 #include <fc/log/logger_config.hpp>
@@ -81,12 +81,12 @@ fc::logger        _transient_trx_successful_trace_log;
 const std::string transient_trx_failed_trace_logger_name("transient_trx_failure_tracing");
 fc::logger        _transient_trx_failed_trace_log;
 
-namespace eosio {
+namespace core_net {
 
 static auto _producer_plugin = application::register_plugin<producer_plugin>();
 
-using namespace eosio::chain;
-using namespace eosio::chain::plugin_interface;
+using namespace core_net::chain;
+using namespace core_net::chain::plugin_interface;
 
 namespace {
 bool exception_is_exhausted(const fc::exception& e) {
@@ -137,7 +137,7 @@ public:
 
    fc::time_point next_reset_timepoint(uint32_t current_block_num, fc::time_point current_block_time) const {
       auto num_blocks_to_reset = reset_window_size_in_num_blocks - (current_block_num % reset_window_size_in_num_blocks);
-      return current_block_time + fc::milliseconds(num_blocks_to_reset * eosio::chain::config::block_interval_ms);
+      return current_block_time + fc::milliseconds(num_blocks_to_reset * core_net::chain::config::block_interval_ms);
    }
 
 private:
@@ -153,7 +153,7 @@ private:
                   reason += ", ";
                reason += "tx_cpu_usage";
             }
-            if (e.second.is_eosio_assert()) {
+            if (e.second.is_core_net_assert()) {
                if (!reason.empty())
                   reason += ", ";
                reason += "assert";
@@ -172,7 +172,7 @@ private:
       enum class ex_fields : uint8_t {
          ex_deadline_exception     = 1,
          ex_tx_cpu_usage_exceeded  = 2,
-         ex_eosio_assert_exception = 4,
+         ex_core_net_assert_exception = 4,
          ex_other_exception        = 8
       };
 
@@ -182,9 +182,9 @@ private:
             ex_flags = set_field(ex_flags, ex_fields::ex_tx_cpu_usage_exceeded);
          } else if (exception_code == deadline_exception::code_value) {
             ex_flags = set_field(ex_flags, ex_fields::ex_deadline_exception);
-         } else if (exception_code == eosio_assert_message_exception::code_value ||
-                    exception_code == eosio_assert_code_exception::code_value) {
-            ex_flags = set_field(ex_flags, ex_fields::ex_eosio_assert_exception);
+         } else if (exception_code == core_net_assert_message_exception::code_value ||
+                    exception_code == core_net_assert_code_exception::code_value) {
+            ex_flags = set_field(ex_flags, ex_fields::ex_core_net_assert_exception);
          } else {
             ex_flags = set_field(ex_flags, ex_fields::ex_other_exception);
             fc_dlog(_log, "Failed trx, account: ${a}, reason: ${r}, except: ${e}", ("a", n)("r", exception_code)("e", e));
@@ -193,7 +193,7 @@ private:
 
       bool is_deadline() const { return has_field(ex_flags, ex_fields::ex_deadline_exception); }
       bool is_tx_cpu_usage() const { return has_field(ex_flags, ex_fields::ex_tx_cpu_usage_exceeded); }
-      bool is_eosio_assert() const { return has_field(ex_flags, ex_fields::ex_eosio_assert_exception); }
+      bool is_core_net_assert() const { return has_field(ex_flags, ex_fields::ex_core_net_assert_exception); }
       bool is_other() const { return has_field(ex_flags, ex_fields::ex_other_exception); }
 
       uint32_t num_failures = 0;
@@ -565,7 +565,7 @@ struct implicit_production_pause_vote_tracker {
       // quick conversion without full checks
       if (n.size() > 12)
          return {}; // producer names (account_name) are limited to 12 chars, tables and other names can be 13
-      return eosio::chain::string_to_name(n); // n with invalid chars are encoded as 0 without throwing exception
+      return core_net::chain::string_to_name(n); // n with invalid chars are encoded as 0 without throwing exception
    }
 
 private:
@@ -705,7 +705,7 @@ public:
    bool                                  _production_enabled = false;
    bool                                  _pause_production   = false;
 
-   eosio::chain::named_thread_pool<struct prod>      _timer_thread;
+   core_net::chain::named_thread_pool<struct prod>      _timer_thread;
    boost::asio::deadline_timer                       _timer{_timer_thread.get_executor()};
 
    using signature_provider_type = signature_provider_plugin::signature_provider_type;
@@ -1255,7 +1255,7 @@ public:
    }
 };
 
-void new_chain_banner(const eosio::chain::controller& db)
+void new_chain_banner(const core_net::chain::controller& db)
 {
    std::cerr << "\n"
       "*******************************\n"
@@ -1367,7 +1367,7 @@ T dejsonify(const string& s) {
 if( options.count(op_name) ) { \
    const std::vector<std::string>& ops = options[op_name].as<std::vector<std::string>>(); \
    for( const auto& v : ops ) { \
-      container.emplace( eosio::chain::name( v ) ); \
+      container.emplace( core_net::chain::name( v ) ); \
    } \
 }
 
@@ -1494,7 +1494,7 @@ void producer_plugin_impl::plugin_initialize(const boost::program_options::varia
       // To avoid setting up a dependency of producer_plugin on chain_api_plugin, search for the plugin in options instead.
       if (options.count("plugin")) {
          const auto& v = options.at("plugin").as<std::vector<std::string>>();
-         auto i = std::find_if(v.cbegin(), v.cend(), [](const std::string& p) { return p.find("eosio::chain_api_plugin") != std::string::npos; });
+         auto i = std::find_if(v.cbegin(), v.cend(), [](const std::string& p) { return p.find("core_net::chain_api_plugin") != std::string::npos; });
          if (i != v.cend()) {
             // default to 3 threads for non producer nodes running chain_api_plugin if not specified
             _ro_thread_pool_size = _ro_default_threads_nonproducer;
@@ -3275,4 +3275,4 @@ void producer_plugin::register_update_speculative_block_metrics(std::function<vo
    my->_update_speculative_block_metrics = std::move(fun);
 }
 
-} // namespace eosio
+} // namespace core_net

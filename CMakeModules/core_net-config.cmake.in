@@ -1,0 +1,9 @@
+if(NOT CORE_NET_ROOT)
+   list(APPEND CMAKE_MODULE_PATH @EOS_ROOT_DIR@/cmake/eosio)
+else()
+   # legacy behavior for anyone configuring with -DCORE_NET_ROOT=/foo or such
+   list(APPEND CMAKE_MODULE_PATH ${CORE_NET_ROOT}/lib/cmake/eosio)
+   list(APPEND CMAKE_MODULE_PATH ${CORE_NET_ROOT}/lib64/cmake/eosio)
+endif()
+include(EosioTester)
+include(EosioCheckVersion)

@@ -93,3 +93,4 @@ package-lock.json
 
 snapshots
 !unittests/snapshots
+_tmp/

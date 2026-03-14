@@ -1,6 +1,6 @@
-#include <eosio/chain/application.hpp>
-#include <eosio/http_plugin/http_plugin.hpp>
-#include <eosio/http_plugin/common.hpp>
+#include <core_net/chain/application.hpp>
+#include <core_net/http_plugin/http_plugin.hpp>
+#include <core_net/http_plugin/common.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/beast/core.hpp>
@@ -24,7 +24,7 @@ namespace bu = boost::unit_test;
 using std::string;
 
 using namespace appbase;
-using namespace eosio;
+using namespace core_net;
 
 namespace beast = boost::beast;     // from <boost/beast.hpp>
 namespace http  = beast::http;      // from <boost/beast/http.hpp>
@@ -225,7 +225,7 @@ void run_test(Protocol& p, size_t max_body_size)
    }
 }
 
-namespace eosio {
+namespace core_net {
 class chain_api_plugin : public appbase::plugin<chain_api_plugin> {
  public:
    APPBASE_PLUGIN_REQUIRES();
@@ -256,7 +256,7 @@ class producer_api_plugin : public appbase::plugin<producer_api_plugin> {
 static auto _chain_api_plugin    = application::register_plugin<chain_api_plugin>();
 static auto _net_api_plugin      = application::register_plugin<net_api_plugin>();
 static auto _producer_api_plugin = application::register_plugin<producer_api_plugin>();
-} // namespace eosio
+} // namespace core_net
 
 struct http_plugin_test_fixture {
    appbase::scoped_app app;
@@ -304,7 +304,7 @@ BOOST_FIXTURE_TEST_CASE(http_plugin_unit_tests, http_plugin_test_fixture) {
    http_plugin::set_defaults({.default_unix_socket_path = "", .default_http_port = default_port, .server_header = "/"});
 
    auto http_plugin =
-       init({bu::framework::current_test_case().p_name->c_str(), "--plugin", "eosio::http_plugin",
+       init({bu::framework::current_test_case().p_name->c_str(), "--plugin", "core_net::http_plugin",
              "--http-validate-host", "false", "--http-threads", "4", "--http-max-response-time-ms", "50"});
 
    BOOST_REQUIRE(http_plugin);
@@ -395,24 +395,24 @@ BOOST_AUTO_TEST_CASE(invalid_category_addresses) {
 
    const char* test_name = bu::framework::current_test_case().p_name->c_str();
 
-   BOOST_TEST(app_log({test_name, "--plugin=eosio::http_plugin", "--http-server-address",
+   BOOST_TEST(app_log({test_name, "--plugin=core_net::http_plugin", "--http-server-address",
                                  "http-category-address", "--http-category-address", "chain_ro,localhost:8889"})
-                  .contains("--plugin=eosio::chain_api_plugin is required"));
+                  .contains("--plugin=core_net::chain_api_plugin is required"));
 
-   BOOST_TEST(app_log({test_name, "--plugin=eosio::chain_api_plugin", "--http-category-address",
+   BOOST_TEST(app_log({test_name, "--plugin=core_net::chain_api_plugin", "--http-category-address",
                                  "chain_ro,localhost:8889"})
                   .contains("http-server-address must be set as `http-category-address`"));
 
-   BOOST_TEST(app_log({test_name, "--plugin=eosio::chain_api_plugin", "--http-server-address",
+   BOOST_TEST(app_log({test_name, "--plugin=core_net::chain_api_plugin", "--http-server-address",
                                  "http-category-address", "--unix-socket-path", "/tmp/tmp.sock",
                                  "--http-category-address", "chain_ro,localhost:8889"})
                   .contains("`unix-socket-path` must be left unspecified"));
 
-   BOOST_TEST(app_log({test_name, "--plugin=eosio::chain_api_plugin", "--http-server-address",
+   BOOST_TEST(app_log({test_name, "--plugin=core_net::chain_api_plugin", "--http-server-address",
                                  "http-category-address", "--http-category-address", "node,localhost:8889"})
                   .contains("invalid category name"));
 
-   BOOST_TEST(app_log({test_name, "--plugin=eosio::chain_api_plugin", "--http-server-address",
+   BOOST_TEST(app_log({test_name, "--plugin=core_net::chain_api_plugin", "--http-server-address",
                                  "http-category-address", "--http-category-address", "chain_ro,127.0.0.1:8889",
                                  "--http-category-address", "chain_rw,localhost:8889"})
                   .contains("unable to listen to port 8889"));
@@ -467,9 +467,9 @@ BOOST_FIXTURE_TEST_CASE(valid_category_addresses, http_plugin_test_fixture) {
    // clang-format off
    auto http_plugin = init({bu::framework::current_test_case().p_name->c_str(),
                       "--data-dir", data_dir.c_str(),
-                      "--plugin=eosio::chain_api_plugin",
-                      "--plugin=eosio::net_api_plugin",
-                      "--plugin=eosio::producer_api_plugin",
+                      "--plugin=core_net::chain_api_plugin",
+                      "--plugin=core_net::net_api_plugin",
+                      "--plugin=core_net::producer_api_plugin",
                       "--http-server-address", "http-category-address",
                       "--http-category-address", "chain_ro,127.0.0.1:8890",
                       "--http-category-address", "chain_rw,:8889",
@@ -567,15 +567,15 @@ bool on_loopback(std::initializer_list<const char*> args){
 }
 
 BOOST_AUTO_TEST_CASE(test_on_loopback) {
-   BOOST_CHECK(on_loopback({"test", "--plugin=eosio::http_plugin", "--http-server-address", "", "--unix-socket-path=a"}));
-   BOOST_CHECK(on_loopback({"test", "--plugin=eosio::http_plugin", "--http-server-address", "127.0.0.1:8888"}));
-   BOOST_CHECK(on_loopback({"test", "--plugin=eosio::http_plugin", "--http-server-address", "localhost:8888"}));
-   BOOST_CHECK(!on_loopback({"test", "--plugin=eosio::http_plugin", "--http-server-address", ":8888"}));
-   BOOST_CHECK(!on_loopback({"test", "--plugin=eosio::http_plugin", "--http-server-address", "example.com:8888"}));
+   BOOST_CHECK(on_loopback({"test", "--plugin=core_net::http_plugin", "--http-server-address", "", "--unix-socket-path=a"}));
+   BOOST_CHECK(on_loopback({"test", "--plugin=core_net::http_plugin", "--http-server-address", "127.0.0.1:8888"}));
+   BOOST_CHECK(on_loopback({"test", "--plugin=core_net::http_plugin", "--http-server-address", "localhost:8888"}));
+   BOOST_CHECK(!on_loopback({"test", "--plugin=core_net::http_plugin", "--http-server-address", ":8888"}));
+   BOOST_CHECK(!on_loopback({"test", "--plugin=core_net::http_plugin", "--http-server-address", "example.com:8888"}));
 }
 
 BOOST_FIXTURE_TEST_CASE(bytes_in_flight, http_plugin_test_fixture) {
-   http_plugin* http_plugin = init({"--plugin=eosio::http_plugin",
+   http_plugin* http_plugin = init({"--plugin=core_net::http_plugin",
                                     "--http-server-address=127.0.0.1:8891",
                                     "--http-max-bytes-in-flight-mb=64"});
    BOOST_REQUIRE(http_plugin);
@@ -673,7 +673,7 @@ BOOST_FIXTURE_TEST_CASE(bytes_in_flight, http_plugin_test_fixture) {
 }
 
 BOOST_FIXTURE_TEST_CASE(requests_in_flight, http_plugin_test_fixture) {
-   http_plugin* http_plugin = init({"--plugin=eosio::http_plugin",
+   http_plugin* http_plugin = init({"--plugin=core_net::http_plugin",
                                     "--http-server-address=127.0.0.1:8892",
                                     "--http-max-in-flight-requests=16"});
    BOOST_REQUIRE(http_plugin);

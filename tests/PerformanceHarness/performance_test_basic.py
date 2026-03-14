@@ -127,7 +127,7 @@ class PerformanceTestBasic:
                 validationNodeSpecificNodeosStr += '--p2p-accept-transactions false '
                 #If prodsEnableTraceApi, then Cluster configures all nodes with trace_api_plugin so no need to duplicate here
                 if not self.prodsEnableTraceApi:
-                    validationNodeSpecificNodeosStr += "--plugin eosio::trace_api_plugin "
+                    validationNodeSpecificNodeosStr += "--plugin core_net::trace_api_plugin "
                 if self.nonProdsEosVmOcEnable:
                     validationNodeSpecificNodeosStr += "--eos-vm-oc-enable all "
                 if validationNodeSpecificNodeosStr:
@@ -136,8 +136,8 @@ class PerformanceTestBasic:
             def configureApiNodes():
                 apiNodeSpecificNodeosStr = ""
                 apiNodeSpecificNodeosStr += "--p2p-accept-transactions false "
-                apiNodeSpecificNodeosStr += "--plugin eosio::chain_api_plugin "
-                apiNodeSpecificNodeosStr += "--plugin eosio::net_api_plugin "
+                apiNodeSpecificNodeosStr += "--plugin core_net::chain_api_plugin "
+                apiNodeSpecificNodeosStr += "--plugin core_net::net_api_plugin "
                 apiNodeSpecificNodeosStr += f"--read-only-threads {self.apiNodesReadOnlyThreadCount} "
                 if apiNodeSpecificNodeosStr:
                     self.specificExtraNodeosArgs.update({f"{nodeId}" : apiNodeSpecificNodeosStr for nodeId in self._apiNodeIds})
@@ -719,7 +719,7 @@ class PtbArgumentsHandler(object):
         ptbBaseParserGroup.add_argument("--del-report", help=argparse.SUPPRESS if suppressHelp else "Whether to delete overarching performance run report.", action='store_true')
         ptbBaseParserGroup.add_argument("--save-state", help=argparse.SUPPRESS if suppressHelp else "Whether to save node state. (Warning: large disk usage)", action='store_true')
         ptbBaseParserGroup.add_argument("--quiet", help=argparse.SUPPRESS if suppressHelp else "Whether to quiet printing intermediate results and reports to stdout", action='store_true')
-        ptbBaseParserGroup.add_argument("--prods-enable-trace-api", help=argparse.SUPPRESS if suppressHelp else "Determines whether producer nodes should have eosio::trace_api_plugin enabled", action='store_true')
+        ptbBaseParserGroup.add_argument("--prods-enable-trace-api", help=argparse.SUPPRESS if suppressHelp else "Determines whether producer nodes should have core_net::trace_api_plugin enabled", action='store_true')
         ptbBaseParserGroup.add_argument("--print-missing-transactions", type=bool, help=argparse.SUPPRESS if suppressHelp else "Print missing transactions upon test completion.", default=True)
         ptbBaseParserGroup.add_argument("--account-name", type=str, help=argparse.SUPPRESS if suppressHelp else "Name of the account to create and assign a contract to", default="eosio")
         ptbBaseParserGroup.add_argument("--contract-dir", type=str, help=argparse.SUPPRESS if suppressHelp else "Path to contract dir", default="unittests/contracts/eosio.system")

@@ -1,9 +1,9 @@
-#include <eosio/chain/qc.hpp>
-#include <eosio/chain/vote_message.hpp>
-#include <eosio/chain/block_header_state.hpp>
+#include <core_net/chain/qc.hpp>
+#include <core_net/chain/vote_message.hpp>
+#include <core_net/chain/block_header_state.hpp>
 #include <fc/crypto/bls_utils.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 inline std::string bitset_to_string(const vote_bitset_t& bs) {
    std::string r;
@@ -616,4 +616,4 @@ qc_vote_metrics_t::fin_auth_set_t aggregating_qc_t::missing_votes(const qc_t& qc
    return not_voted;
 }
 
-} // namespace eosio::chain
+} // namespace core_net::chain

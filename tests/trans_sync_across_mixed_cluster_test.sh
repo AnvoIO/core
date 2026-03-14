@@ -71,7 +71,7 @@ killAll()
 
 cleanup()
 {
-    rm -rf etc/eosio/node_*
+    rm -rf etc/core_net/node_*
     rm -rf var/lib/node_*
 }
 
@@ -113,8 +113,8 @@ cleanup
 
 # stand up nodeos cluster
 launcherOpts="-p $pnodes -n $total_nodes -s $topo -d $delay"
-echo Launcher options: --nodeos \"--plugin eosio::wallet_api_plugin\" $launcherOpts
-programs/eosio-launcher/eosio-launcher --nodeos "--plugin eosio::wallet_api_plugin" $launcherOpts
+echo Launcher options: --nodeos \"--plugin core_net::wallet_api_plugin\" $launcherOpts
+programs/eosio-launcher/eosio-launcher --nodeos "--plugin core_net::wallet_api_plugin" $launcherOpts
 sleep 7
 
 startPort=8888

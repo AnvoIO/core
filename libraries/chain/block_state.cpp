@@ -1,13 +1,13 @@
-#include <eosio/chain/block_state.hpp>
-#include <eosio/chain/block_header_state_utils.hpp>
-#include <eosio/chain/block_state_legacy.hpp>
-#include <eosio/chain/finalizer.hpp>
-#include <eosio/chain/snapshot_detail.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/block_state.hpp>
+#include <core_net/chain/block_header_state_utils.hpp>
+#include <core_net/chain/block_state_legacy.hpp>
+#include <core_net/chain/finalizer.hpp>
+#include <core_net/chain/snapshot_detail.hpp>
+#include <core_net/chain/exceptions.hpp>
 
 #include <fc/crypto/bls_utils.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 namespace detail {
 
@@ -83,7 +83,7 @@ namespace detail {
 
 } // namespace detail
 
-using namespace eosio::chain::detail;
+using namespace core_net::chain::detail;
 
 // ASSUMPTION FROM controller_impl::apply_block = all untrusted blocks will have their signatures pre-validated here
 block_state::block_state(const block_header_state& prev, signed_block_ptr b, const protocol_feature_set& pfs,
@@ -389,4 +389,4 @@ finality_data_t block_state::get_finality_data() {
    };
 }
 
-} /// eosio::chain
+} /// core_net::chain

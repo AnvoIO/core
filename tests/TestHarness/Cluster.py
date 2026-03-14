@@ -183,7 +183,7 @@ class Cluster(object):
         dontBootstrap: When true, don't do any bootstrapping at all. (even bios is not uploaded)
         extraNodeosArgs: string of arguments to pass through to each nodeos instance (via --nodeos flag on launcher)
         specificExtraNodeosArgs: dictionary of arguments to pass to a specific node (via --specific-num and
-                                 --specific-nodeos flags on launcher), example: { "5" : "--plugin eosio::test_control_api_plugin" }
+                                 --specific-nodeos flags on launcher), example: { "5" : "--plugin core_net::test_control_api_plugin" }
         specificNodeosInstances: dictionary of paths to launch specific nodeos binaries (via --spcfc-inst-num and
                                  --spcfc_inst_nodeos flags to launcher), example: { "4" : "bin/nodeos"}
         onlySetProds: Stop the bootstrap process after setting the producers
@@ -197,7 +197,7 @@ class Cluster(object):
         genesisPath: set the path to a specific genesis.json to use
         maximumP2pPerHost:  Maximum number of client nodes from any single IP address. Defaults to totalNodes if not set.
         maximumClients: Maximum number of clients from which connections are accepted, use 0 for no limit. Defaults to 25.
-        prodsEnableTraceApi: Determines whether producer nodes should have eosio::trace_api_plugin enabled. Defaults to True.
+        prodsEnableTraceApi: Determines whether producer nodes should have core_net::trace_api_plugin enabled. Defaults to True.
         """
         assert(isinstance(topo, str))
         assert PFSetupPolicy.isValid(pfSetupPolicy)
@@ -275,9 +275,9 @@ class Cluster(object):
         if Utils.Debug and "--contracts-console" not in extraNodeosArgs:
             nodeosArgs += " --contracts-console"
         if PFSetupPolicy.hasPreactivateFeature(pfSetupPolicy):
-            nodeosArgs += " --plugin eosio::producer_api_plugin"
+            nodeosArgs += " --plugin core_net::producer_api_plugin"
         if prodsEnableTraceApi:
-            nodeosArgs += " --plugin eosio::trace_api_plugin "
+            nodeosArgs += " --plugin core_net::trace_api_plugin "
         if extraNodeosArgs.find("--trace-rpc-abi") == -1:
             nodeosArgs += " --trace-no-abis "
         httpMaxResponseTimeSet = False

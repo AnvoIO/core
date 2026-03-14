@@ -1,20 +1,20 @@
 ### Build contracts with cdt if available ###
 include(ExternalProject)
 
-if( EOSIO_COMPILE_TEST_CONTRACTS )
-   set(EOSIO_WASM_OLD_BEHAVIOR "Off")
-   if( USE_EOSIO_CDT_1_7_X OR USE_EOSIO_CDT_1_8_X )
+if( CORE_NET_COMPILE_TEST_CONTRACTS )
+   set(CORE_NET_WASM_OLD_BEHAVIOR "Off")
+   if( USE_CORE_NET_CDT_1_7_X OR USE_CORE_NET_CDT_1_8_X )
       find_package( eosio.cdt REQUIRED )
-      set(CMAKE_ARGS_VAL -DCMAKE_TOOLCHAIN_FILE=${EOSIO_CDT_ROOT}/lib/cmake/eosio.cdt/EosioWasmToolchain.cmake -DEOSIO_COMPILE_TEST_CONTRACTS=${EOSIO_COMPILE_TEST_CONTRACTS} )
+      set(CMAKE_ARGS_VAL -DCMAKE_TOOLCHAIN_FILE=${CORE_NET_CDT_ROOT}/lib/cmake/eosio.cdt/EosioWasmToolchain.cmake -DCORE_NET_COMPILE_TEST_CONTRACTS=${CORE_NET_COMPILE_TEST_CONTRACTS} )
    else()
       find_package( cdt REQUIRED )
-      set(CMAKE_ARGS_VAL -DCMAKE_TOOLCHAIN_FILE=${CDT_ROOT}/lib/cmake/cdt/CDTWasmToolchain.cmake -DEOSIO_COMPILE_TEST_CONTRACTS=${EOSIO_COMPILE_TEST_CONTRACTS} )
+      set(CMAKE_ARGS_VAL -DCMAKE_TOOLCHAIN_FILE=${CDT_ROOT}/lib/cmake/cdt/CDTWasmToolchain.cmake -DCORE_NET_COMPILE_TEST_CONTRACTS=${CORE_NET_COMPILE_TEST_CONTRACTS} )
    endif()
 
-   if( USE_EOSIO_CDT_1_7_X )
-      list(APPEND CMAKE_ARGS_VAL -DUSE_EOSIO_CDT_1_7_X=${USE_EOSIO_CDT_1_7_X})
-   elseif( USE_EOSIO_CDT_1_8_X )
-      list(APPEND CMAKE_ARGS_VAL -DUSE_EOSIO_CDT_1_8_X=${USE_EOSIO_CDT_1_8_X})
+   if( USE_CORE_NET_CDT_1_7_X )
+      list(APPEND CMAKE_ARGS_VAL -DUSE_CORE_NET_CDT_1_7_X=${USE_CORE_NET_CDT_1_7_X})
+   elseif( USE_CORE_NET_CDT_1_8_X )
+      list(APPEND CMAKE_ARGS_VAL -DUSE_CORE_NET_CDT_1_8_X=${USE_CORE_NET_CDT_1_8_X})
    endif()
 
    message( STATUS "Building contracts in directory `./unittests/contracts/`" )
@@ -73,7 +73,7 @@ add_custom_command(
 file(GLOB UNIT_TESTS "*.cpp") # find all unit test suites
 add_executable( unit_test ${UNIT_TESTS} protocol_feature_digest_tests.cpp) # build unit tests as one executable
 
-target_link_libraries( unit_test eosio_chain_wrap state_history chainbase eosio_testing fc custom_appbase ${PLATFORM_SPECIFIC_LIBS} )
+target_link_libraries( unit_test core_net_chain_wrap state_history chainbase core_net_testing fc custom_appbase ${PLATFORM_SPECIFIC_LIBS} )
 
 target_compile_options(unit_test PUBLIC -DDISABLE_EOSLIB_SERIALIZE)
 target_include_directories( unit_test PUBLIC
@@ -95,10 +95,10 @@ foreach(TEST_SUITE ${UNIT_TESTS}) # create an independent target for each test s
     if (NOT "" STREQUAL "${SUITE_NAME}") # ignore empty lines
       execute_process(COMMAND sh -c "echo ${SUITE_NAME} | sed -e 's/s$//' | sed -e 's/_test$//'" OUTPUT_VARIABLE TRIMMED_SUITE_NAME OUTPUT_STRIP_TRAILING_WHITESPACE) # trim "_test" or "_tests" from the end of ${SUITE_NAME}
       # to run unit_test with all log from blockchain displayed, put "--verbose" after "--", i.e. "unit_test -- --verbose"
-      foreach(RUNTIME ${EOSIO_WASM_RUNTIMES})
+      foreach(RUNTIME ${CORE_NET_WASM_RUNTIMES})
         add_p_test(NAME ${TRIMMED_SUITE_NAME}_unit_test_${RUNTIME} COMMAND unit_test --run_test=${SUITE_NAME} --report_level=detailed --log_level=all --color_output -- --${RUNTIME})
         # add a duplicate test to run without fsgsbase instructions for a limited number of OC wasm tests
-        if(RUNTIME STREQUAL "eos-vm-oc" AND TRIMMED_SUITE_NAME MATCHES "^wasm_part")
+        if(RUNTIME STREQUAL "vm-oc" AND TRIMMED_SUITE_NAME MATCHES "^wasm_part")
            add_p_test(NAME ${TRIMMED_SUITE_NAME}_unit_test_${RUNTIME}-nofsgs COMMAND unit_test --run_test=${SUITE_NAME} --report_level=detailed --log_level=all --color_output -- --${RUNTIME} COST 5000)
            set_tests_properties(${TRIMMED_SUITE_NAME}_unit_test_${RUNTIME}-nofsgs PROPERTIES ENVIRONMENT "SPRING_DISABLE_FSGSBASE=1")
         endif()
@@ -115,7 +115,7 @@ set(ctest_tests "'${ctest_tests}' -j8") # surround test list string in apostroph
 
 # The following tests are known to take the longest, bump up their cost (priority) so that they'll run first
 # even on fresh first time test runs before ctest auto-detects costs
-foreach(RUNTIME ${EOSIO_WASM_RUNTIMES})
+foreach(RUNTIME ${CORE_NET_WASM_RUNTIMES})
    set_tests_properties(api_part1_unit_test_${RUNTIME} PROPERTIES COST 5000)
    set_tests_properties(api_part2_unit_test_${RUNTIME} PROPERTIES COST 5000)
    set_tests_properties(api_part3_unit_test_${RUNTIME} PROPERTIES COST 5000)

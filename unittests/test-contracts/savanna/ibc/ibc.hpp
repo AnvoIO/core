@@ -1,12 +1,12 @@
-#include <eosio/eosio.hpp>
-#include <eosio/crypto.hpp>
-#include <eosio/crypto_bls_ext.hpp>
-#include <eosio/system.hpp>
-#include <eosio/transaction.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/crypto.hpp>
+#include <core_net/crypto_bls_ext.hpp>
+#include <core_net/system.hpp>
+#include <core_net/transaction.hpp>
 
 #include "../common/savanna.hpp"
 
-using namespace eosio;
+using namespace core_net;
 using namespace savanna;
 
 CONTRACT ibc : public contract {
@@ -44,10 +44,10 @@ CONTRACT ibc : public contract {
 
       };
 
-      typedef eosio::multi_index< "policies"_n, storedpolicy,
+      typedef core_net::multi_index< "policies"_n, storedpolicy,
           indexed_by<"expiry"_n, const_mem_fun<storedpolicy, uint64_t, &storedpolicy::by_cache_expiry>>> policies_table;
 
-      typedef eosio::multi_index< "lastproofs"_n, lastproof,
+      typedef core_net::multi_index< "lastproofs"_n, lastproof,
           indexed_by<"merkleroot"_n, const_mem_fun<lastproof, checksum256, &lastproof::by_merkle_root>>,
           indexed_by<"expiry"_n, const_mem_fun<lastproof, uint64_t, &lastproof::by_cache_expiry>>> proofs_table;
 

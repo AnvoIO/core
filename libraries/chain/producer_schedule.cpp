@@ -1,6 +1,6 @@
-#include <eosio/chain/producer_schedule.hpp>
+#include <core_net/chain/producer_schedule.hpp>
 
-namespace eosio::chain {
+namespace core_net::chain {
 
 fc::variant producer_authority::get_abi_variant() const {
       auto authority_variant = std::visit([](const auto& a){
@@ -56,4 +56,4 @@ shared_producer_authority_schedule& shared_producer_authority_schedule::operator
    return *this;
 }
 
-} /// eosio::chain
+} /// core_net::chain

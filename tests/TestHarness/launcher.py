@@ -172,7 +172,7 @@ class cluster_generator:
         parser.add_argument('--bounce', type=comma_separated, help='comma-separated list of node numbers that will be restarted', default=[])
         parser.add_argument('--roll', type=comma_separated, help='comma-separated list of host names where the nodes will be rolled to a new version')
         parser.add_argument('-b', '--base_dir', type=Path, help='base directory where configuration and data files will be written', default=Path('.'))
-        parser.add_argument('--config-dir', type=Path, help='directory containing configuration files such as config.ini', default=Path('etc') / 'eosio')
+        parser.add_argument('--config-dir', type=Path, help='directory containing configuration files such as config.ini', default=Path('etc') / 'core_net')
         parser.add_argument('--data-dir', type=Path, help='name of subdirectory under base-dir where node data will be written', default=Path('var') / 'lib')
         parser.add_argument('-c', '--config', type=Path, help='configuration file name relative to config-dir', default='config.ini')
         parser.add_argument('-v', '--version', action='version', version='%(prog)s 1.0')
@@ -521,7 +521,7 @@ class cluster_generator:
         peers = list(sum([('--p2p-peer-address', self.network.nodes[p].p2p_endpoint) for p in instance.peers], ()))
         eosdcmd.extend(peers)
         if len(instance.producers) > 0:
-            a(a(eosdcmd, '--plugin'), 'eosio::producer_plugin')
+            a(a(eosdcmd, '--plugin'), 'core_net::producer_plugin')
             producer_keys = list(sum([('--signature-provider', f'{key.pubkey}=KEY:{key.privkey}') for key in instance.keys], ()))
             eosdcmd.extend(producer_keys)
             finalizer_keys = list(sum([('--signature-provider', f'{key.blspubkey}=KEY:{key.blsprivkey}') for key in instance.keys if key.blspubkey is not None], ()))
@@ -534,8 +534,8 @@ class cluster_generator:
                 finalizer_keys = list(sum([('--signature-provider', f'{key.blspubkey}=KEY:{key.blsprivkey}') for key in instance.keys if key.blspubkey is not None], ()))
                 if finalizer_keys:
                     eosdcmd.extend(finalizer_keys)
-        a(a(eosdcmd, '--plugin'), 'eosio::net_plugin')
-        a(a(eosdcmd, '--plugin'), 'eosio::chain_api_plugin')
+        a(a(eosdcmd, '--plugin'), 'core_net::net_plugin')
+        a(a(eosdcmd, '--plugin'), 'core_net::chain_api_plugin')
 
         if self.args.skip_signature:
             a(eosdcmd, '--skip-transaction-signatures')
@@ -587,7 +587,7 @@ class cluster_generator:
 
         # Always enable a history query plugin on the bios node
         if is_bios:
-            a(a(eosdcmd, '--plugin'), 'eosio::trace_api_plugin')
+            a(a(eosdcmd, '--plugin'), 'core_net::trace_api_plugin')
 
         return eosdcmd
 

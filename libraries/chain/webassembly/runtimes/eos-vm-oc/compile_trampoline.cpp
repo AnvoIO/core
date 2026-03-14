@@ -1,8 +1,8 @@
-#include <eosio/chain/webassembly/eos-vm-oc/ipc_helpers.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/ipc_protocol.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/memory.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/intrinsic.hpp>
-#include <eosio/chain/wasm_eosio_injection.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/ipc_helpers.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/ipc_protocol.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/memory.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/intrinsic.hpp>
+#include <core_net/chain/wasm_injection.hpp>
 
 #include <sys/prctl.h>
 #include <signal.h>
@@ -15,7 +15,7 @@
 
 using namespace IR;
 
-namespace eosio { namespace chain { namespace eosvmoc {
+namespace core_net { namespace chain { namespace eosvmoc {
 
 void run_compile(wrapped_fd&& response_sock, wrapped_fd&& wasm_code, uint64_t stack_size_limit, size_t generated_code_size_limit,
                  fc::log_level log_level, account_name receiver, fc::time_point queued_time) noexcept {  //noexcept; we'll just blow up if anything tries to cross this boundry

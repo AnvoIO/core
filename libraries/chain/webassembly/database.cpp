@@ -1,7 +1,7 @@
-#include <eosio/chain/webassembly/interface.hpp>
-#include <eosio/chain/apply_context.hpp>
+#include <core_net/chain/webassembly/interface.hpp>
+#include <core_net/chain/apply_context.hpp>
 
-namespace eosio { namespace chain { namespace webassembly {
+namespace core_net { namespace chain { namespace webassembly {
    /**
     * interface for primary index
     */
@@ -261,4 +261,4 @@ namespace eosio { namespace chain { namespace webassembly {
    int32_t interface::db_idx_long_double_previous( int32_t iterator, legacy_ptr<uint64_t> primary ) {
       return context.idx_long_double.previous_secondary(iterator, *primary);
    }
-}}} // ns eosio::chain::webassembly
+}}} // ns core_net::chain::webassembly

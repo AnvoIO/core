@@ -1,15 +1,15 @@
 #include <boost/test/unit_test.hpp>
-#include <eosio/chain/snapshot.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/snapshot.hpp>
+#include <core_net/testing/tester.hpp>
 #include "snapshot_suites.hpp"
-#include <eosio/chain/snapshot_scheduler.hpp>
-#include <eosio/chain/pending_snapshot.hpp>
+#include <core_net/chain/snapshot_scheduler.hpp>
+#include <core_net/chain/pending_snapshot.hpp>
 #include <test_contracts.hpp>
 #include <snapshots.hpp>
 
-using namespace eosio;
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace boost::system;
 
 namespace {

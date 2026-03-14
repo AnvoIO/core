@@ -1,4 +1,4 @@
-if( EOSIO_COMPILE_TEST_CONTRACTS )
+if( CORE_NET_COMPILE_TEST_CONTRACTS )
    add_contract( eosmechanics eosmechanics eosmechanics.cpp )
 else()
    configure_file( ${CMAKE_CURRENT_SOURCE_DIR}/eosmechanics.wasm ${CMAKE_CURRENT_BINARY_DIR}/eosmechanics.wasm COPYONLY )

@@ -1,8 +1,8 @@
-#include <eosio/chain/abi_serializer.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/generated_transaction_object.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/abi_serializer.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/generated_transaction_object.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/variant_object.hpp>
 
@@ -13,8 +13,8 @@
 
 #include "fork_test_utilities.hpp"
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 using namespace std::literals;
 
 BOOST_AUTO_TEST_SUITE(protocol_feature_tests)
@@ -26,13 +26,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(activate_preactivate_feature, T, testers) try {
    c.produce_block();
 
    // Cannot set latest bios contract since it requires intrinsics that have not yet been whitelisted.
-   BOOST_CHECK_EXCEPTION( c.set_code( config::system_account_name, contracts::eosio_bios_wasm() ),
+   BOOST_CHECK_EXCEPTION( c.set_code( config::system_account_name(), contracts::core_net_bios_wasm() ),
                           wasm_exception, fc_exception_message_contains("unresolveable")
    );
 
    // But the old bios contract can still be set.
-   c.set_code( config::system_account_name, contracts::before_preactivate_eosio_bios_wasm() );
-   c.set_abi( config::system_account_name, contracts::before_preactivate_eosio_bios_abi() );
+   c.set_code( config::system_account_name(), contracts::before_preactivate_core_net_bios_wasm() );
+   c.set_abi( config::system_account_name(), contracts::before_preactivate_core_net_bios_abi() );
 
    auto t = c.control->pending_block_time();
    c.control->abort_block();
@@ -53,13 +53,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(activate_preactivate_feature, T, testers) try {
 
    c.produce_block();
 
-   BOOST_CHECK_EXCEPTION( c.push_action( config::system_account_name, "reqactivated"_n, config::system_account_name,
+   BOOST_CHECK_EXCEPTION( c.push_action( config::system_account_name(), "reqactivated"_n, config::system_account_name(),
                                           mutable_variant_object()("feature_digest",  digest_type()) ),
-                           eosio_assert_message_exception,
-                           eosio_assert_message_is( "protocol feature is not activated" )
+                           core_net_assert_message_exception,
+                           core_net_assert_message_is( "protocol feature is not activated" )
    );
 
-   c.push_action( config::system_account_name, "reqactivated"_n, config::system_account_name, mutable_variant_object()
+   c.push_action( config::system_account_name(), "reqactivated"_n, config::system_account_name(), mutable_variant_object()
       ("feature_digest",  *d )
    );
 
@@ -107,7 +107,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(double_preactivation, T, testers) try {
    auto d = pfm.get_builtin_digest( builtin_protocol_feature_t::only_link_to_existing_permission );
    BOOST_REQUIRE( d );
 
-   c.push_action( config::system_account_name, "activate"_n, config::system_account_name,
+   c.push_action( config::system_account_name(), "activate"_n, config::system_account_name(),
                   fc::mutable_variant_object()("feature_digest", *d), 10 );
 
    std::string expected_error_msg("protocol feature with digest '");
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(double_preactivation, T, testers) try {
       expected_error_msg += "' is already pre-activated";
    }
 
-   BOOST_CHECK_EXCEPTION(  c.push_action( config::system_account_name, "activate"_n, config::system_account_name,
+   BOOST_CHECK_EXCEPTION(  c.push_action( config::system_account_name(), "activate"_n, config::system_account_name(),
                                           fc::mutable_variant_object()("feature_digest", *d), 20 ),
                            protocol_feature_exception,
                            fc_exception_message_is( expected_error_msg )
@@ -211,25 +211,25 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(only_link_to_existing_permission_test, T, testers)
 
    c.create_accounts( {"alice"_n, "bob"_n, "charlie"_n} );
 
-   BOOST_CHECK_EXCEPTION(  c.push_action( config::system_account_name, "linkauth"_n, "bob"_n, fc::mutable_variant_object()
+   BOOST_CHECK_EXCEPTION(  c.push_action( config::system_account_name(), "linkauth"_n, "bob"_n, fc::mutable_variant_object()
                               ("account", "bob")
-                              ("code", name(config::system_account_name))
+                              ("code", name(config::system_account_name()))
                               ("type", "")
                               ("requirement", "test" )
                            ), permission_query_exception,
                            fc_exception_message_is( "Failed to retrieve permission: test" )
    );
 
-   BOOST_CHECK_EXCEPTION(  c.push_action( config::system_account_name, "linkauth"_n, "charlie"_n, fc::mutable_variant_object()
+   BOOST_CHECK_EXCEPTION(  c.push_action( config::system_account_name(), "linkauth"_n, "charlie"_n, fc::mutable_variant_object()
                               ("account", "charlie")
-                              ("code", name(config::system_account_name))
+                              ("code", name(config::system_account_name()))
                               ("type", "")
                               ("requirement", "test" )
                            ), permission_query_exception,
                            fc_exception_message_is( "Failed to retrieve permission: test" )
    );
 
-   c.push_action( config::system_account_name, "updateauth"_n, "alice"_n, fc::mutable_variant_object()
+   c.push_action( config::system_account_name(), "updateauth"_n, "alice"_n, fc::mutable_variant_object()
       ("account", "alice")
       ("permission", "test")
       ("parent", "active")
@@ -239,9 +239,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(only_link_to_existing_permission_test, T, testers)
    c.produce_block();
 
    // Verify the incorrect behavior prior to ONLY_LINK_TO_EXISTING_PERMISSION activation.
-   c.push_action( config::system_account_name, "linkauth"_n, "bob"_n, fc::mutable_variant_object()
+   c.push_action( config::system_account_name(), "linkauth"_n, "bob"_n, fc::mutable_variant_object()
       ("account", "bob")
-      ("code", name(config::system_account_name))
+      ("code", name(config::system_account_name()))
       ("type", "")
       ("requirement", "test" )
    );
@@ -250,9 +250,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(only_link_to_existing_permission_test, T, testers)
    c.produce_block();
 
    // Verify the correct behavior after ONLY_LINK_TO_EXISTING_PERMISSION activation.
-   BOOST_CHECK_EXCEPTION(  c.push_action( config::system_account_name, "linkauth"_n, "charlie"_n, fc::mutable_variant_object()
+   BOOST_CHECK_EXCEPTION(  c.push_action( config::system_account_name(), "linkauth"_n, "charlie"_n, fc::mutable_variant_object()
                               ("account", "charlie")
-                              ("code", name(config::system_account_name))
+                              ("code", name(config::system_account_name()))
                               ("type", "")
                               ("requirement", "test" )
                            ), permission_query_exception,
@@ -416,7 +416,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(replace_deferred_test, T, testers) try {
    transaction_trace_ptr trace;
    auto h = c.control->applied_transaction().connect( [&](std::tuple<const transaction_trace_ptr&, const packed_transaction_ptr&> x) {
       auto& t = std::get<0>(x);
-      if( t && !eosio::chain::is_onblock(*t)) {
+      if( t && !core_net::chain::is_onblock(*t)) {
          trace = t;
       }
    } );
@@ -611,7 +611,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(no_duplicate_deferred_id_test, T, testers) try {
 
    trace1 = nullptr;
 
-   // Retire the delayed eosio::reqauth transaction.
+   // Retire the delayed core_net::reqauth transaction.
    c.produce_blocks(4, true);
    c.produce_block();
    BOOST_REQUIRE( trace1 );
@@ -705,7 +705,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(fix_linkauth_restriction, T, testers) { try {
    chain.create_account(tester_account);
    chain.produce_block();
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", name(tester_account).to_string())
            ("permission", "first")
            ("parent", "active")
@@ -714,13 +714,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(fix_linkauth_restriction, T, testers) { try {
 
    auto validate_disallow = [&] (const char *code, const char *type) {
       BOOST_REQUIRE_EXCEPTION(
-         chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+         chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
                ("account", name(tester_account).to_string())
                ("code", code)
                ("type", type)
                ("requirement", "first")),
          action_validate_exception,
-         fc_exception_message_is(std::string("Cannot link eosio::") + std::string(type) + std::string(" to a minimum permission"))
+         fc_exception_message_is(std::string("Cannot link core_net::") + std::string(type) + std::string(" to a minimum permission"))
       );
    };
 
@@ -744,7 +744,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(fix_linkauth_restriction, T, testers) { try {
    chain.produce_block();
 
    auto validate_allowed = [&] (const char *code, const char *type) {
-     chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+     chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
             ("account", name(tester_account).to_string())
             ("code", code)
             ("type", type)
@@ -862,13 +862,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(only_bill_to_first_authorizer, T, testers) { try {
    chain.create_account(tester_account);
    chain.create_account(tester_account2);
 
-   chain.push_action(config::system_account_name, "setalimits"_n, config::system_account_name, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), "setalimits"_n, config::system_account_name(), fc::mutable_variant_object()
       ("account", name(tester_account).to_string())
       ("ram_bytes", 10000)
       ("net_weight", 1000)
       ("cpu_weight", 1000));
 
-   chain.push_action(config::system_account_name, "setalimits"_n, config::system_account_name, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), "setalimits"_n, config::system_account_name(), fc::mutable_variant_object()
       ("account", name(tester_account2).to_string())
       ("ram_bytes", 10000)
       ("net_weight", 1000)
@@ -967,9 +967,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward_setcode_test, T, testers) { try {
    c.create_accounts( {tester1_account, tester2_account} );
 
    // Deploy contract that rejects all actions dispatched to it with the following exceptions:
-   //   * eosio::setcode to set code on the eosio is allowed (unless the rejectall account exists)
-   //   * eosio::newaccount is allowed only if it creates the rejectall account.
-   c.set_code( config::system_account_name, test_contracts::reject_all_wasm() );
+   //   * core_net::setcode to set code on the eosio is allowed (unless the rejectall account exists)
+   //   * core_net::newaccount is allowed only if it creates the rejectall account.
+   c.set_code( config::system_account_name(), test_contracts::reject_all_wasm() );
    c.produce_block();
 
    // Before activation, deploying a contract should work since setcode won't be forwarded to the WASM on eosio.
@@ -982,14 +982,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward_setcode_test, T, testers) { try {
    c.set_before_producer_authority_bios_contract();
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
-   c.set_code( config::system_account_name, test_contracts::reject_all_wasm() );
+   c.set_code( config::system_account_name(), test_contracts::reject_all_wasm() );
    c.produce_block();
 
    // After activation, deploying a contract causes setcode to be dispatched to the WASM on eosio,
    // and in this case the contract is configured to reject the setcode action.
    BOOST_REQUIRE_EXCEPTION( c.set_code( tester2_account, test_contracts::noop_wasm() ),
-                            eosio_assert_message_exception,
-                            eosio_assert_message_is( "rejecting all actions" ) );
+                            core_net_assert_message_exception,
+                            core_net_assert_message_is( "rejecting all actions" ) );
 
 
    tester c2(setup_policy::none);
@@ -1002,9 +1002,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward_setcode_test, T, testers) { try {
 
    // It will now not be possible to deploy the reject_all contract to the eosio account,
    // because after it is set by the native function, it is called immediately after which will reject the transaction.
-   BOOST_REQUIRE_EXCEPTION( c.set_code( config::system_account_name, test_contracts::reject_all_wasm() ),
-                            eosio_assert_message_exception,
-                            eosio_assert_message_is( "rejecting all actions" ) );
+   BOOST_REQUIRE_EXCEPTION( c.set_code( config::system_account_name(), test_contracts::reject_all_wasm() ),
+                            core_net_assert_message_exception,
+                            core_net_assert_message_is( "rejecting all actions" ) );
 
 
    // Going back to the backup chain, we can create the rejectall account while the reject_all contract is
@@ -1047,8 +1047,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(get_sender_test, T, testers) { try {
    BOOST_CHECK_EXCEPTION(  c.push_action( tester1_account, "sendinline"_n, tester1_account, mutable_variant_object()
                                              ("to", tester2_account.to_string())
                                              ("expected_sender", account_name{}) ),
-                           eosio_assert_message_exception,
-                           eosio_assert_message_is( "sender did not match" ) );
+                           core_net_assert_message_exception,
+                           core_net_assert_message_is( "sender did not match" ) );
 
    c.push_action( tester1_account, "sendinline"_n, tester1_account, mutable_variant_object()
       ("to", tester2_account.to_string())
@@ -1351,14 +1351,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_producer, T, testers) { try {
    vector<legacy::producer_key> waprodsched = {{"waprod"_n, public_key_type("PUB_WA_WdCPfafVNxVMiW5ybdNs83oWjenQXvSt1F49fg9mv7qrCiRwHj5b38U3ponCFWxQTkDsMC"s)}};
 
    BOOST_CHECK_THROW(
-      c.push_action(config::system_account_name, "setprods"_n, config::system_account_name, fc::mutable_variant_object()("schedule", waprodsched)),
-      eosio::chain::unactivated_key_type
+      c.push_action(config::system_account_name(), "setprods"_n, config::system_account_name(), fc::mutable_variant_object()("schedule", waprodsched)),
+      core_net::chain::unactivated_key_type
    );
 
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
 
-   c.push_action(config::system_account_name, "setprods"_n, config::system_account_name, fc::mutable_variant_object()("schedule", waprodsched));
+   c.push_action(config::system_account_name(), "setprods"_n, config::system_account_name(), fc::mutable_variant_object()("schedule", waprodsched));
 } FC_LOG_AND_RETHROW() }
 
 BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_create_account, T, testers) { try {
@@ -1372,17 +1372,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_create_account, T, testers) { try {
    c.set_transaction_headers(trx);
    authority auth = authority(public_key_type("PUB_WA_WdCPfafVNxVMiW5ybdNs83oWjenQXvSt1F49fg9mv7qrCiRwHj5b38U3ponCFWxQTkDsMC"s));
 
-   trx.actions.emplace_back(vector<permission_level>{{config::system_account_name,config::active_name}},
+   trx.actions.emplace_back(vector<permission_level>{{config::system_account_name(),config::active_name}},
                               newaccount{
-                                 .creator  = config::system_account_name,
+                                 .creator  = config::system_account_name(),
                                  .name     = "waaccount"_n,
                                  .owner    = auth,
                                  .active   = auth,
                               });
 
    c.set_transaction_headers(trx);
-   trx.sign(get_private_key(config::system_account_name, "active"), c.get_chain_id());
-   BOOST_CHECK_THROW(c.push_transaction(trx), eosio::chain::unactivated_key_type);
+   trx.sign(get_private_key(config::system_account_name(), "active"), c.get_chain_id());
+   BOOST_CHECK_THROW(c.push_transaction(trx), core_net::chain::unactivated_key_type);
 
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
@@ -1401,7 +1401,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_update_account_auth, T, testers) { try {
 
    BOOST_CHECK_THROW(c.set_authority("billy"_n, config::active_name,
                         authority(public_key_type("PUB_WA_WdCPfafVNxVMiW5ybdNs83oWjenQXvSt1F49fg9mv7qrCiRwHj5b38U3ponCFWxQTkDsMC"s))),
-                     eosio::chain::unactivated_key_type);
+                     core_net::chain::unactivated_key_type);
 
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
@@ -1460,7 +1460,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_recover_key, T, testers) { try {
 
    c.set_transaction_headers(trx);
    trx.sign(c.get_private_key( "bob"_n, "active" ), c.get_chain_id());
-   BOOST_CHECK_THROW(c.push_transaction(trx), eosio::chain::unactivated_signature_type);
+   BOOST_CHECK_THROW(c.push_transaction(trx), core_net::chain::unactivated_signature_type);
 
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
@@ -1508,7 +1508,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(webauthn_assert_recover_key, T, testers) { try {
 
    c.set_transaction_headers(trx);
    trx.sign(c.get_private_key( "bob"_n, "active" ), c.get_chain_id());
-   BOOST_CHECK_THROW(c.push_transaction(trx), eosio::chain::unactivated_signature_type);
+   BOOST_CHECK_THROW(c.push_transaction(trx), core_net::chain::unactivated_signature_type);
 
    c.preactivate_protocol_features( {*d} );
    c.produce_block();
@@ -1561,7 +1561,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(set_proposed_producers_ex_test, T, testers) { try 
            "alice does not have permission to call this API"
    );
 
-   c.push_action(config::system_account_name, "setpriv"_n, config::system_account_name,  fc::mutable_variant_object()("account", alice_account)("is_priv", 1));
+   c.push_action(config::system_account_name(), "setpriv"_n, config::system_account_name(),  fc::mutable_variant_object()("account", alice_account)("is_priv", 1));
 
    //ensure it can be called w/ privilege
    BOOST_REQUIRE_EQUAL(c.push_action(action({{ alice_account, permission_name("active") }}, alice_account, action_name(), {} ), alice_account.to_uint64_t()), c.success());
@@ -1690,7 +1690,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(wtmsig_block_signing_inflight_legacy_test, T, test
    // activate the feature, and start an in-flight producer schedule change with the legacy format
    c.preactivate_protocol_features( {*d} );
    vector<legacy::producer_key> sched = {{"eosio"_n, c.get_public_key("eosio"_n, "bsk")}};
-   c.push_action(config::system_account_name, "setprods"_n, config::system_account_name, fc::mutable_variant_object()("schedule", sched));
+   c.push_action(config::system_account_name(), "setprods"_n, config::system_account_name(), fc::mutable_variant_object()("schedule", sched));
    c.produce_block();
 
    // ensure the last legacy block contains a new_producers
@@ -1724,7 +1724,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(wtmsig_block_signing_inflight_extension_test, T, t
 
    // start an in-flight producer schedule change before the activation is availble to header only validators
    vector<legacy::producer_key> sched = {{"eosio"_n, c.get_public_key("eosio"_n, "bsk")}};
-   c.push_action(config::system_account_name, "setprods"_n, config::system_account_name, fc::mutable_variant_object()("schedule", sched));
+   c.push_action(config::system_account_name(), "setprods"_n, config::system_account_name(), fc::mutable_variant_object()("schedule", sched));
    c.produce_block();
 
    // ensure the first possible new block contains a producer_schedule_change_extension
@@ -1813,7 +1813,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(get_parameters_packed_test, T, testers) { try {
    const auto& d = pfm.get_builtin_digest(builtin_protocol_feature_t::blockchain_parameters);
    BOOST_REQUIRE(d);
 
-   BOOST_CHECK_EXCEPTION(  c.set_code( config::system_account_name, import_get_parameters_packed_wast ),
+   BOOST_CHECK_EXCEPTION(  c.set_code( config::system_account_name(), import_get_parameters_packed_wast ),
                            wasm_exception,
                            fc_exception_message_is( "env.get_parameters_packed unresolveable" ) );
 
@@ -1821,17 +1821,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(get_parameters_packed_test, T, testers) { try {
    c.produce_block();
 
    // ensure it now resolves
-   c.set_code( config::system_account_name, import_get_parameters_packed_wast );
+   c.set_code( config::system_account_name(), import_get_parameters_packed_wast );
    
    // ensure it can be called
    auto action_priv = action( {//vector of permission_level
-                                 { config::system_account_name, 
+                                 { config::system_account_name(), 
                                     permission_name("active") }
                               },
-                              config::system_account_name, 
+                              config::system_account_name(), 
                               action_name(), 
                               {} );
-   BOOST_REQUIRE_EQUAL(c.push_action(std::move(action_priv), config::system_account_name.to_uint64_t()), c.success());
+   BOOST_REQUIRE_EQUAL(c.push_action(std::move(action_priv), config::system_account_name().to_uint64_t()), c.success());
 
    c.produce_block();
 
@@ -1875,7 +1875,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(set_parameters_packed_test, T, testers) { try {
    const auto& d = pfm.get_builtin_digest(builtin_protocol_feature_t::blockchain_parameters);
    BOOST_REQUIRE(d);
 
-   BOOST_CHECK_EXCEPTION(  c.set_code( config::system_account_name, import_set_parameters_packed_wast ),
+   BOOST_CHECK_EXCEPTION(  c.set_code( config::system_account_name(), import_set_parameters_packed_wast ),
                            wasm_exception,
                            fc_exception_message_is( "env.set_parameters_packed unresolveable" ) );
 
@@ -1883,17 +1883,17 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(set_parameters_packed_test, T, testers) { try {
    c.produce_block();
 
    // ensure it now resolves
-   c.set_code( config::system_account_name, import_set_parameters_packed_wast );
+   c.set_code( config::system_account_name(), import_set_parameters_packed_wast );
    
    // ensure it can be called
    auto action_priv = action( {//vector of permission_level
-                                 { config::system_account_name, 
+                                 { config::system_account_name(), 
                                     permission_name("active") }
                               },
-                              config::system_account_name, 
+                              config::system_account_name(), 
                               action_name(), 
                               {} );
-   BOOST_REQUIRE_EQUAL(c.push_action(std::move(action_priv), config::system_account_name.to_uint64_t()), c.success());
+   BOOST_REQUIRE_EQUAL(c.push_action(std::move(action_priv), config::system_account_name().to_uint64_t()), c.success());
 
    c.produce_block();
 
@@ -2007,8 +2007,8 @@ BOOST_AUTO_TEST_CASE( disable_deferred_trxs_stage_1_no_op_test ) { try {
    BOOST_REQUIRE_EXCEPTION(
       c.push_action( "test"_n, "cancelcall"_n, "alice"_n, fc::mutable_variant_object()
          ("sender_id", 1)),
-      eosio_assert_message_exception,
-      eosio_assert_message_is( "cancel_deferred failed" ) );
+      core_net_assert_message_exception,
+      core_net_assert_message_is( "cancel_deferred failed" ) );
    gen_size = c.control->db().template get_index<generated_transaction_multi_index,by_trx_id>().size();
    BOOST_REQUIRE_EQUAL(2u, gen_size);
    // verify alice's deferred trx is not removed
@@ -2225,7 +2225,7 @@ BOOST_AUTO_TEST_CASE( block_validation_after_stage_1_test ) { try {
    signed_tx.delay_sec = 120;
    // Re-sign the transaction
    signed_tx.signatures.clear();
-   signed_tx.sign(tester1.get_private_key(config::system_account_name, "active"), tester1.get_chain_id());
+   signed_tx.sign(tester1.get_private_key(config::system_account_name(), "active"), tester1.get_chain_id());
    // Replace the original transaction with the delayed  transaction
    auto delayed_tx = packed_transaction(signed_tx);
    copy_b->transactions.back().trx = std::move(delayed_tx);
@@ -2240,7 +2240,7 @@ BOOST_AUTO_TEST_CASE( block_validation_after_stage_1_test ) { try {
    // Re-sign the block
    auto header_bmroot = digest_type::hash( std::make_pair( copy_b->digest(), tester1.control->head_block_state_legacy()->blockroot_merkle.get_root() ) );
    auto sig_digest = digest_type::hash( std::make_pair(header_bmroot, tester1.control->head_block_state_legacy()->pending_schedule.schedule_hash) );
-   copy_b->producer_signature = tester1.get_private_key(config::system_account_name, "active").sign(sig_digest);
+   copy_b->producer_signature = tester1.get_private_key(config::system_account_name(), "active").sign(sig_digest);
 
    // Create the second chain
    tester_no_disable_deferred_trx tester2;
@@ -2286,7 +2286,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(set_finalizers_test, T, testers) { try {
    c.create_accounts( {alice_account} );
    c.produce_block();
 
-   BOOST_CHECK_EXCEPTION(  c.set_code( config::system_account_name, import_set_finalizers_wast ),
+   BOOST_CHECK_EXCEPTION(  c.set_code( config::system_account_name(), import_set_finalizers_wast ),
                            wasm_exception,
                            fc_exception_message_is( "env.set_finalizers unresolveable" ) );
 
@@ -2295,7 +2295,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(set_finalizers_test, T, testers) { try {
 
    // ensure it now resolves, forward setcode enabled so will call automatically
    // if able to call then will get error on unpacking field `threshold`, top message of: 'read datastream of length 4 over by -3'
-   BOOST_CHECK_EXCEPTION( c.set_code( config::system_account_name, import_set_finalizers_wast ),
+   BOOST_CHECK_EXCEPTION( c.set_code( config::system_account_name(), import_set_finalizers_wast ),
                           fc::out_of_range_exception,
                           fc_exception_message_contains( "read datastream of length 4 over by -3" ) );
 

@@ -1,14 +1,14 @@
-#include <eosio/chain/controller.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/permission_object.hpp>
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/controller.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/permission_object.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <vector>
 
-using namespace eosio;
+using namespace core_net;
 using namespace chain;
-using namespace eosio::testing;
+using namespace core_net::testing;
 
 BOOST_AUTO_TEST_SUITE(special_account_tests)
 
@@ -20,24 +20,24 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( accounts_exists, T, testers )
       chain::controller *control = test.control.get();
       const chain::database& chain1_db = control->db();
 
-      auto nobody = chain1_db.find<account_object, by_name>(config::null_account_name);
+      auto nobody = chain1_db.find<account_object, by_name>(config::null_account_name());
       BOOST_CHECK(nobody != nullptr);
-      const auto& nobody_active_authority = chain1_db.get<permission_object, by_owner>(boost::make_tuple(config::null_account_name, config::active_name));
+      const auto& nobody_active_authority = chain1_db.get<permission_object, by_owner>(boost::make_tuple(config::null_account_name(), config::active_name));
       BOOST_CHECK_EQUAL(nobody_active_authority.auth.threshold, 1u);
       BOOST_CHECK_EQUAL(nobody_active_authority.auth.accounts.size(), 0u);
       BOOST_CHECK_EQUAL(nobody_active_authority.auth.keys.size(), 0u);
 
-      const auto& nobody_owner_authority = chain1_db.get<permission_object, by_owner>(boost::make_tuple(config::null_account_name, config::owner_name));
+      const auto& nobody_owner_authority = chain1_db.get<permission_object, by_owner>(boost::make_tuple(config::null_account_name(), config::owner_name));
       BOOST_CHECK_EQUAL(nobody_owner_authority.auth.threshold, 1u);
       BOOST_CHECK_EQUAL(nobody_owner_authority.auth.accounts.size(), 0u);
       BOOST_CHECK_EQUAL(nobody_owner_authority.auth.keys.size(), 0u);
 
-      auto producers = chain1_db.find<account_object, by_name>(config::producers_account_name);
+      auto producers = chain1_db.find<account_object, by_name>(config::producers_account_name());
       BOOST_CHECK(producers != nullptr);
 
       const auto& active_producers = control->active_producers();
 
-      const auto& producers_active_authority = chain1_db.get<permission_object, by_owner>(boost::make_tuple(config::producers_account_name, config::active_name));
+      const auto& producers_active_authority = chain1_db.get<permission_object, by_owner>(boost::make_tuple(config::producers_account_name(), config::active_name));
       auto expected_threshold = (active_producers.producers.size() * 2)/3 + 1;
       BOOST_CHECK_EQUAL(producers_active_authority.auth.threshold, expected_threshold);
       BOOST_CHECK_EQUAL(producers_active_authority.auth.accounts.size(), active_producers.producers.size());
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( accounts_exists, T, testers )
 
       BOOST_CHECK_EQUAL(diff.size(), 0u);
 
-      const auto& producers_owner_authority = chain1_db.get<permission_object, by_owner>(boost::make_tuple(config::producers_account_name, config::owner_name));
+      const auto& producers_owner_authority = chain1_db.get<permission_object, by_owner>(boost::make_tuple(config::producers_account_name(), config::owner_name));
       BOOST_CHECK_EQUAL(producers_owner_authority.auth.threshold, 1u);
       BOOST_CHECK_EQUAL(producers_owner_authority.auth.accounts.size(), 0u);
       BOOST_CHECK_EQUAL(producers_owner_authority.auth.keys.size(), 0u);

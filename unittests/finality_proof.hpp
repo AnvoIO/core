@@ -4,7 +4,7 @@
 
 using mvo = mutable_variant_object;
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 namespace finality_proof {
 
@@ -160,7 +160,7 @@ namespace finality_proof {
          return {finality_leaves.begin(), finality_leaves.begin() + cutoff + 1};
       }
 
-      ibc_block_data_t process_result(eosio::testing::produce_block_result_t result){
+      ibc_block_data_t process_result(core_net::testing::produce_block_result_t result){
 
          signed_block_ptr block = result.block;
 
@@ -179,12 +179,12 @@ namespace finality_proof {
             for (const auto& p : blocks_since_proposed_policy){
 
                //under the happy path with strong QCs in every block, a policy becomes active 4 blocks after being proposed
-               if (p.second.blocks_since_proposed == 2 * eosio::testing::num_chains_to_final && p.first != active_finalizer_policy_digest){
+               if (p.second.blocks_since_proposed == 2 * core_net::testing::num_chains_to_final && p.first != active_finalizer_policy_digest){
                   active_finalizer_policy = p.second.policy;
                   active_finalizer_policy_digest = p.first;
                }
                //under the happy path with strong QCs in every block, a policy becomes pending 2 blocks after being proposed
-               else if (p.second.blocks_since_proposed == eosio::testing::num_chains_to_final && p.first != last_pending_finalizer_policy_digest){
+               else if (p.second.blocks_since_proposed == core_net::testing::num_chains_to_final && p.first != last_pending_finalizer_policy_digest){
 
                   last_pending_finalizer_policy = p.second.policy;
                   last_pending_finalizer_policy_digest = p.first;
@@ -200,7 +200,7 @@ namespace finality_proof {
          if (has_finalizer_policy_diffs(block)){
             if (is_genesis) {
                // if block is genesis, the initial policy is the last proposed, last pending and currently active
-               last_proposed_finalizer_policy        = update_finalizer_policy(block, eosio::chain::finalizer_policy());
+               last_proposed_finalizer_policy        = update_finalizer_policy(block, core_net::chain::finalizer_policy());
                last_proposed_finalizer_policy_digest = fc::sha256::hash(last_proposed_finalizer_policy);
                last_pending_finalizer_policy         = last_proposed_finalizer_policy;
                last_pending_finalizer_policy_digest  = last_proposed_finalizer_policy_digest;
@@ -299,7 +299,7 @@ namespace finality_proof {
 
       // produce and propagate a block, update internal state as needed, and returns relevant IBC data 
       ibc_block_data_t produce_block(){
-         eosio::testing::produce_block_result_t result = this->produce_and_push_block_ex();
+         core_net::testing::produce_block_result_t result = this->produce_and_push_block_ex();
          return(process_result(result));
       }
 

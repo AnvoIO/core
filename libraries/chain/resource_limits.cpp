@@ -1,14 +1,14 @@
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/chain/resource_limits_private.hpp>
-#include <eosio/chain/transaction_metadata.hpp>
-#include <eosio/chain/transaction.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/chain/resource_limits_private.hpp>
+#include <core_net/chain/transaction_metadata.hpp>
+#include <core_net/chain/transaction.hpp>
+#include <core_net/chain/deep_mind.hpp>
 #include <boost/tuple/tuple_io.hpp>
-#include <eosio/chain/database_utils.hpp>
+#include <core_net/chain/database_utils.hpp>
 #include <algorithm>
 
-namespace eosio { namespace chain { namespace resource_limits {
+namespace core_net { namespace chain { namespace resource_limits {
 
 using resource_index_set = index_set<
    resource_limits_index,
@@ -555,4 +555,4 @@ resource_limits_manager::get_account_net_limit_ex( const account_name& name, uin
    return {arl, greylisted};
 }
 
-} } } /// eosio::chain::resource_limits
+} } } /// core_net::chain::resource_limits

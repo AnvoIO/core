@@ -17,7 +17,7 @@ const int64_t  useconds_per_day      = 24 * 3600 * int64_t(1000000);
 const int64_t  useconds_per_year     = seconds_per_year*1000000ll;
 
 void system_contract::onblock( ignore<block_header> ) {
-   using namespace eosio;
+   using namespace core_net;
 
    require_auth(_self);
 
@@ -74,7 +74,7 @@ void system_contract::onblock( ignore<block_header> ) {
    }
 }
 
-using namespace eosio;
+using namespace core_net;
 void system_contract::claimrewards( const name owner ) {
    require_auth( owner );
 
@@ -88,7 +88,7 @@ void system_contract::claimrewards( const name owner ) {
 
    check( ct - prod.last_claim_time > microseconds(useconds_per_day), "already claimed rewards within past day" );
 
-   const asset token_supply   = eosio::token::get_supply(token_account, core_symbol().code() );
+   const asset token_supply   = core_net::token::get_supply(token_account, core_symbol().code() );
    const auto usecs_since_last_fill = (ct - _gstate.last_pervote_bucket_fill).count();
 
    if( usecs_since_last_fill > 0 && _gstate.last_pervote_bucket_fill > time_point() ) {
@@ -99,22 +99,22 @@ void system_contract::claimrewards( const name owner ) {
       auto to_per_block_pay = to_producers / 4;
       auto to_per_vote_pay  = to_producers - to_per_block_pay;
 
-      INLINE_ACTION_SENDER(eosio::token, issue)(
+      INLINE_ACTION_SENDER(core_net::token, issue)(
             token_account, { {_self, active_permission} },
             { _self, asset(new_tokens, core_symbol()), std::string("issue tokens for producer pay and savings") }
       );
 
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
+      INLINE_ACTION_SENDER(core_net::token, transfer)(
             token_account, { {_self, active_permission} },
             { _self, saving_account, asset(to_savings, core_symbol()), std::string("unallocated inflation") }
       );
 
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
+      INLINE_ACTION_SENDER(core_net::token, transfer)(
             token_account, { {_self, active_permission} },
             { _self, bpay_account, asset(to_per_block_pay, core_symbol()), std::string("fund per-block bucket") }
       );
 
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
+      INLINE_ACTION_SENDER(core_net::token, transfer)(
             token_account, { {_self, active_permission} },
             { _self, vpay_account, asset(to_per_vote_pay, core_symbol()), std::string("fund per-vote bucket") }
       );
@@ -187,13 +187,13 @@ void system_contract::claimrewards( const name owner ) {
    });
 
    if( producer_per_block_pay > 0 ) {
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
+      INLINE_ACTION_SENDER(core_net::token, transfer)(
             token_account, { {bpay_account, active_permission}, {owner, active_permission} },
             { bpay_account, owner, asset(producer_per_block_pay, core_symbol()), std::string("producer block pay") }
       );
    }
    if( producer_per_vote_pay > 0 ) {
-      INLINE_ACTION_SENDER(eosio::token, transfer)(
+      INLINE_ACTION_SENDER(core_net::token, transfer)(
             token_account, { {vpay_account, active_permission}, {owner, active_permission} },
             { vpay_account, owner, asset(producer_per_vote_pay, core_symbol()), std::string("producer vote pay") }
       );

@@ -103,7 +103,7 @@ def startCluster():
     # set up read-only options for API node
     specificExtraNodeosArgs={}
     # producer nodes will be mapped to 0 through pnodes-1, so the number pnodes is the no-producing API node
-    specificExtraNodeosArgs[pnodes]=" --plugin eosio::net_api_plugin"
+    specificExtraNodeosArgs[pnodes]=" --plugin core_net::net_api_plugin"
     specificExtraNodeosArgs[pnodes]+=" --contracts-console "
     specificExtraNodeosArgs[pnodes]+=" --read-only-write-window-time-us "
     specificExtraNodeosArgs[pnodes]+=" 10000 "

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <eosio/asset.hpp>
-#include <eosio/eosio.hpp>
+#include <core_net/asset.hpp>
+#include <core_net/eosio.hpp>
 
 #include <string>
 
@@ -9,34 +9,34 @@ namespace eosiosystem {
 class system_contract;
 }
 
-namespace eosio {
+namespace core_net {
 
 using std::string;
 
-class [[eosio::contract("eosio.token")]] token : public contract {
+class [[core_net::contract("eosio.token")]] token : public contract {
 public:
    using contract::contract;
 
-   [[eosio::action]]
+   [[core_net::action]]
    void create( name   issuer,
                 asset  maximum_supply);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void issue( name to, asset quantity, string memo );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void retire( asset quantity, string memo );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void transfer( name    from,
                   name    to,
                   asset   quantity,
                   string  memo );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void open( name owner, const symbol& symbol, name ram_payer );
 
-   [[eosio::action]]
+   [[core_net::action]]
    void close( name owner, const symbol& symbol );
 
    static asset get_supply( name token_contract_account, symbol_code sym_code )
@@ -54,13 +54,13 @@ public:
    }
 
 private:
-   struct [[eosio::table]] account {
+   struct [[core_net::table]] account {
       asset    balance;
 
       uint64_t primary_key()const { return balance.symbol.code().raw(); }
    };
 
-   struct [[eosio::table]] currency_stats {
+   struct [[core_net::table]] currency_stats {
       asset    supply;
       asset    max_supply;
       name     issuer;
@@ -68,11 +68,11 @@ private:
       uint64_t primary_key()const { return supply.symbol.code().raw(); }
    };
 
-   typedef eosio::multi_index< "accounts"_n, account > accounts;
-   typedef eosio::multi_index< "stat"_n, currency_stats > stats;
+   typedef core_net::multi_index< "accounts"_n, account > accounts;
+   typedef core_net::multi_index< "stat"_n, currency_stats > stats;
 
    void sub_balance( name owner, asset value );
    void add_balance( name owner, asset value, name ram_payer );
 };
 
-} /// namespace eosio
+} /// namespace core_net

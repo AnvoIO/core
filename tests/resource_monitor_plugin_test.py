@@ -77,7 +77,7 @@ def prepareDirectories():
 def runNodeos(extraNodeosArgs, myTimeout):
     """Startup nodeos, wait for timeout (before forced shutdown) and collect output."""
     if debug: Print("Launching nodeos process.")
-    cmd="programs/nodeos/nodeos --config-dir rsmStaging/etc -e -p eosio --plugin eosio::chain_api_plugin --data-dir " + dataDir + " "
+    cmd="programs/nodeos/nodeos --config-dir rsmStaging/etc -e -p eosio --plugin core_net::chain_api_plugin --data-dir " + dataDir + " "
 
     cmd=cmd + extraNodeosArgs
     if debug: Print("cmd: %s" % (cmd))
@@ -170,25 +170,25 @@ def testInterval(title, extraNodeosArgs, interval, expectedMsgs, warningThreshol
             errorExit ("Log containing \"%s\" should be output every %d seconds" % (msg, interval))
 
 def testAll():
-    testCommon("Resmon enabled: all arguments", "--plugin  eosio::resource_monitor_plugin --resource-monitor-space-threshold=85 --resource-monitor-interval-seconds=5 --resource-monitor-not-shutdown-on-threshold-exceeded", ["threshold set to 85", "interval set to 5", "Shutdown flag when threshold exceeded set to false"])
+    testCommon("Resmon enabled: all arguments", "--plugin  core_net::resource_monitor_plugin --resource-monitor-space-threshold=85 --resource-monitor-interval-seconds=5 --resource-monitor-not-shutdown-on-threshold-exceeded", ["threshold set to 85", "interval set to 5", "Shutdown flag when threshold exceeded set to false"])
 
     # default arguments and default directories to be monitored
     testCommon("Resmon not enabled: no arguments", "", ["interval set to 2", "threshold set to 90", "Shutdown flag when threshold exceeded set to true", "snapshots's file system to be monitored", "blocks's file system to be monitored", "state's file system to be monitored"])
     
     # default arguments with registered directories
-    testCommon("Resmon not enabled: Producer, Chain, State History and Trace Api", "--plugin eosio::state_history_plugin --state-history-dir=/tmp/state-history --disable-replay-opts --plugin eosio::trace_api_plugin --trace-dir=/tmp/trace --trace-no-abis", ["interval set to 2", "threshold set to 90", "Shutdown flag when threshold exceeded set to true", "snapshots's file system to be monitored", "blocks's file system to be monitored", "state's file system to be monitored", "state-history's file system to be monitored", "trace's file system to be monitored"])
+    testCommon("Resmon not enabled: Producer, Chain, State History and Trace Api", "--plugin core_net::state_history_plugin --state-history-dir=/tmp/state-history --disable-replay-opts --plugin core_net::trace_api_plugin --trace-dir=/tmp/trace --trace-no-abis", ["interval set to 2", "threshold set to 90", "Shutdown flag when threshold exceeded set to true", "snapshots's file system to be monitored", "blocks's file system to be monitored", "state's file system to be monitored", "state-history's file system to be monitored", "trace's file system to be monitored"])
 
-    testCommon("Resmon enabled: Producer, Chain, State History and Trace Api", "--plugin  eosio::resource_monitor_plugin --plugin eosio::state_history_plugin --state-history-dir=/tmp/state-history --disable-replay-opts --plugin eosio::trace_api_plugin --trace-dir=/tmp/trace --trace-no-abis --resource-monitor-space-threshold=80 --resource-monitor-interval-seconds=3", ["snapshots's file system to be monitored", "blocks's file system to be monitored", "state's file system to be monitored", "state-history's file system to be monitored", "trace's file system to be monitored", "threshold set to 80", "interval set to 3", "Shutdown flag when threshold exceeded set to true"])
+    testCommon("Resmon enabled: Producer, Chain, State History and Trace Api", "--plugin  core_net::resource_monitor_plugin --plugin core_net::state_history_plugin --state-history-dir=/tmp/state-history --disable-replay-opts --plugin core_net::trace_api_plugin --trace-dir=/tmp/trace --trace-no-abis --resource-monitor-space-threshold=80 --resource-monitor-interval-seconds=3", ["snapshots's file system to be monitored", "blocks's file system to be monitored", "state's file system to be monitored", "state-history's file system to be monitored", "trace's file system to be monitored", "threshold set to 80", "interval set to 3", "Shutdown flag when threshold exceeded set to true"])
 
     # Only test minimum warning threshold (i.e. 6) to trigger warning as much as possible
     testInterval("Resmon enabled: set warning interval", 
-        "--plugin eosio::resource_monitor_plugin --resource-monitor-space-threshold=6 --resource-monitor-warning-interval=5 --resource-monitor-not-shutdown-on-threshold-exceeded", 
+        "--plugin core_net::resource_monitor_plugin --resource-monitor-space-threshold=6 --resource-monitor-warning-interval=5 --resource-monitor-not-shutdown-on-threshold-exceeded", 
         2 * 5, # Default monitor interval is 2 sec
         ["Space usage warning"],
         6)
 
     testInterval("Resmon enabled: default warning interval", 
-        "--plugin eosio::resource_monitor_plugin --resource-monitor-space-threshold=6 --resource-monitor-interval-seconds=1 --resource-monitor-not-shutdown-on-threshold-exceeded", 
+        "--plugin core_net::resource_monitor_plugin --resource-monitor-space-threshold=6 --resource-monitor-interval-seconds=1 --resource-monitor-not-shutdown-on-threshold-exceeded", 
         1 * 30, # Default warning interval is 30
         ["Space usage warning"],
         6)

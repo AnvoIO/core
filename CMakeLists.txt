@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.16 )
 
-project( antelope-spring )
+project( anvo-core )
 include(CTest)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
@@ -30,10 +30,10 @@ option(ENABLE_WERROR "Enable `-Werror` compilation flag." Off)
 option(ENABLE_WEXTRA "Enable `-Wextra` compilation flag." Off)
 
 
-set( CLI_CLIENT_EXECUTABLE_NAME cleos )
-set( NODE_EXECUTABLE_NAME nodeos )
-set( KEY_STORE_EXECUTABLE_NAME keosd )
-set( SPRING_UTIL_EXECUTABLE_NAME spring-util )
+set( CLI_CLIENT_EXECUTABLE_NAME core-cli )
+set( NODE_EXECUTABLE_NAME core_netd )
+set( KEY_STORE_EXECUTABLE_NAME core-wallet )
+set( CORE_NET_UTIL_EXECUTABLE_NAME core-util )
 
 # http://stackoverflow.com/a/18369825
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
@@ -52,30 +52,30 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 set(BUILD_DOXYGEN FALSE CACHE BOOL "Build doxygen documentation on every make")
-set(ENABLE_MULTIVERSION_PROTOCOL_TEST FALSE CACHE BOOL "Enable nodeos multiversion protocol test")
+set(ENABLE_MULTIVERSION_PROTOCOL_TEST FALSE CACHE BOOL "Enable core_netd multiversion protocol test")
 
 option(ENABLE_OC "Enable eosvm-oc on supported platforms" ON)
 
 # WASM runtimes to enable. Each runtime in this list will have:
-#  * definition EOSIO_<RUNTIME>_RUNTIME_ENABLED defined in public libchain interface
+#  * definition CORE_NET_<RUNTIME>_RUNTIME_ENABLED defined in public libchain interface
 #  * ctest entries with --runtime
 if(ENABLE_OC AND CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)
    if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-      list(APPEND EOSIO_WASM_RUNTIMES eos-vm-oc)
-      # EOS VM OC requires LLVM, but move the check up here to a central location so that the EosioTester.cmakes
+      list(APPEND CORE_NET_WASM_RUNTIMES vm-oc)
+      # VM OC requires LLVM, but move the check up here to a central location so that the Tester.cmakes
       # can be created with the exact version found
       find_package(LLVM REQUIRED CONFIG)
       if(LLVM_VERSION_MAJOR VERSION_LESS 7 OR LLVM_VERSION_MAJOR VERSION_GREATER_EQUAL 12)
-	      message(FATAL_ERROR "Spring requires an LLVM version 7 through 11")
+	      message(FATAL_ERROR "Requires an LLVM version 7 through 11")
       endif()
    endif()
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)
    if(CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL amd64)
-      list(APPEND EOSIO_WASM_RUNTIMES eos-vm eos-vm-jit)
+      list(APPEND CORE_NET_WASM_RUNTIMES vm vm-jit)
    else()
-      list(APPEND EOSIO_WASM_RUNTIMES eos-vm)
+      list(APPEND CORE_NET_WASM_RUNTIMES vm)
    endif()
 endif()
 
@@ -129,7 +129,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_
   set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wthread-safety" )
 endif()
 
-option(EOSIO_ENABLE_DEVELOPER_OPTIONS "enable developer options for Spring" OFF)
+option(CORE_NET_ENABLE_DEVELOPER_OPTIONS "enable developer options for Spring" OFF)
 
 # based on http://www.delorie.com/gnu/docs/gdb/gdb_70.html
 # uncomment this line to tell GDB about macros (slows compile times)
@@ -159,11 +159,11 @@ endif()
 
 message( STATUS "Using '${CORE_SYMBOL_NAME}' as CORE symbol name" )
 
-if ("${EOSIO_ROOT_KEY}" STREQUAL "")
-   set(EOSIO_ROOT_KEY "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
+if ("${CORE_NET_ROOT_KEY}" STREQUAL "")
+   set(CORE_NET_ROOT_KEY "EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
 endif()
 
-message( STATUS "Using '${EOSIO_ROOT_KEY}' as public key for 'eosio' account" )
+message( STATUS "Using '${CORE_NET_ROOT_KEY}' as public key for 'eosio' account" )
 
 option(ENABLE_TCMALLOC "use tcmalloc (requires gperftools)" OFF)
 if( ENABLE_TCMALLOC )
@@ -200,63 +200,63 @@ add_subdirectory( benchmark )
 
 option(DISABLE_WASM_SPEC_TESTS "disable building of wasm spec unit tests" OFF)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/eosio.version.in ${CMAKE_CURRENT_BINARY_DIR}/eosio.version.hpp)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/eosio.version.hpp DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR} COMPONENT dev EXCLUDE_FROM_ALL)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/core_net.version.in ${CMAKE_CURRENT_BINARY_DIR}/core_net.version.hpp)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/core_net.version.hpp DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR} COMPONENT dev EXCLUDE_FROM_ALL)
 
 set(EOS_ROOT_DIR "${CMAKE_BINARY_DIR}/lib")
 # legacy eosio CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/eosio-config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/eosio/eosio-config.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/eosio/EosioTester.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake ${CMAKE_BINARY_DIR}/lib/cmake/eosio/EosioCheckVersion.cmake COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/core_net-config.cmake @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioTester.cmake @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioCheckVersion.cmake COPYONLY)
 # legacy leap CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/leap-config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/leap/leap-config.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/leap/EosioTester.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake ${CMAKE_BINARY_DIR}/lib/cmake/leap/EosioCheckVersion.cmake COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/core_net-config.cmake @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioTester.cmake @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioCheckVersion.cmake COPYONLY)
 # spring CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/spring-config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/spring/spring-config.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/spring/EosioTester.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake ${CMAKE_BINARY_DIR}/lib/cmake/spring/EosioCheckVersion.cmake COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/core_net-config.cmake @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioTester.cmake @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioCheckVersion.cmake COPYONLY)
 
 set(EOS_ROOT_DIR "${CMAKE_INSTALL_FULL_LIBDIR}")
 configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTester.cmake.in ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake @ONLY)
 # legacy eosio CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/eosio-config.cmake.in ${CMAKE_BINARY_DIR}/modules/eosio-config.cmake @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/modules/eosio-config.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/eosio COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/eosio COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/eosio COMPONENT dev EXCLUDE_FROM_ALL)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
+install(FILES ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
+install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
 # legacy leap CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/leap-config.cmake.in ${CMAKE_BINARY_DIR}/modules/leap-config.cmake @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/modules/leap-config.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/leap COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/leap COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/leap COMPONENT dev EXCLUDE_FROM_ALL)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
+install(FILES ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
+install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
 # spring CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/spring-config.cmake.in ${CMAKE_BINARY_DIR}/modules/spring-config.cmake @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/modules/spring-config.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/spring COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/spring COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/spring COMPONENT dev EXCLUDE_FROM_ALL)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
+install(FILES ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
+install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
 
-configure_file(LICENSE                                                     licenses/spring/LICENSE           COPYONLY)
-configure_file(libraries/softfloat/COPYING.txt                             licenses/spring/LICENSE.softfloat COPYONLY)
-configure_file(libraries/wasm-jit/LICENSE                                  licenses/spring/LICENSE.wavm      COPYONLY)
-configure_file(libraries/libfc/secp256k1/secp256k1/COPYING                 licenses/spring/LICENSE.secp256k1 COPYONLY)
-configure_file(libraries/libfc/include/fc/crypto/webauthn_json/license.txt licenses/spring/LICENSE.rapidjson COPYONLY)
-configure_file(libraries/eos-vm/LICENSE                                    licenses/spring/LICENSE.eos-vm    COPYONLY)
-configure_file(libraries/prometheus/prometheus-cpp/LICENSE                 licenses/spring/LICENSE.prom      COPYONLY)
-configure_file(programs/cleos/LICENSE.CLI11                                licenses/spring/LICENSE.CLI11     COPYONLY)
-configure_file(libraries/libfc/libraries/bls12-381/LICENSE                 licenses/spring/LICENSE.bls12-381 COPYONLY)
-configure_file(libraries/libfc/libraries/boringssl/bssl/LICENSE            licenses/spring/LICENSE.boringssl COPYONLY)
+configure_file(LICENSE                                                     licenses/core/LICENSE           COPYONLY)
+configure_file(libraries/softfloat/COPYING.txt                             licenses/core/LICENSE.softfloat COPYONLY)
+configure_file(libraries/wasm-jit/LICENSE                                  licenses/core/LICENSE.wavm      COPYONLY)
+configure_file(libraries/libfc/secp256k1/secp256k1/COPYING                 licenses/core/LICENSE.secp256k1 COPYONLY)
+configure_file(libraries/libfc/include/fc/crypto/webauthn_json/license.txt licenses/core/LICENSE.rapidjson COPYONLY)
+configure_file(libraries/eos-vm/LICENSE                                    licenses/core/LICENSE.eos-vm    COPYONLY)
+configure_file(libraries/prometheus/prometheus-cpp/LICENSE                 licenses/core/LICENSE.prom      COPYONLY)
+configure_file(programs/core-cli/LICENSE.CLI11                             licenses/core/LICENSE.CLI11     COPYONLY)
+configure_file(libraries/libfc/libraries/bls12-381/LICENSE                 licenses/core/LICENSE.bls12-381 COPYONLY)
+configure_file(libraries/libfc/libraries/boringssl/bssl/LICENSE            licenses/core/LICENSE.boringssl COPYONLY)
 
-install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/licenses/spring" DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/licenses/" COMPONENT base)
+install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/licenses/core" DESTINATION "${CMAKE_INSTALL_FULL_DATAROOTDIR}/licenses/" COMPONENT base)
 
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libraries/testing/contracts DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/spring_testing/libraries/testing COMPONENT dev EXCLUDE_FROM_ALL
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/libraries/testing/contracts DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/core_net_testing/libraries/testing COMPONENT dev EXCLUDE_FROM_ALL
         PATTERN "CMakeFiles" EXCLUDE
         PATTERN "*.cmake" EXCLUDE
         PATTERN "Makefile" EXCLUDE)
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/unittests/contracts DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/spring_testing/unittests COMPONENT dev EXCLUDE_FROM_ALL
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/unittests/contracts DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/core_net_testing/unittests COMPONENT dev EXCLUDE_FROM_ALL
         PATTERN "CMakeFiles" EXCLUDE
         PATTERN "*.cmake" EXCLUDE
         PATTERN "Makefile" EXCLUDE)
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/TestHarness DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/spring_testing/tests COMPONENT dev EXCLUDE_FROM_ALL
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests/TestHarness DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/core_net_testing/tests COMPONENT dev EXCLUDE_FROM_ALL
         FILES_MATCHING
         PATTERN "*.py"
         PATTERN "*.json"
@@ -271,12 +271,12 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.21)
 
    add_custom_target(link_target ALL
       COMMAND ${CMAKE_COMMAND} -E make_directory lib/python3/dist-packages
-      COMMAND ${CMAKE_COMMAND} -E create_symlink ../../../share/spring_testing/tests/TestHarness lib/python3/dist-packages/TestHarness
-      COMMAND ${CMAKE_COMMAND} -E make_directory share/spring_testing
-      COMMAND ${CMAKE_COMMAND} -E create_symlink ../../bin share/spring_testing/bin)
+      COMMAND ${CMAKE_COMMAND} -E create_symlink ../../../share/core_net_testing/tests/TestHarness lib/python3/dist-packages/TestHarness
+      COMMAND ${CMAKE_COMMAND} -E make_directory share/core_net_testing
+      COMMAND ${CMAKE_COMMAND} -E create_symlink ../../bin share/core_net_testing/bin)
 
    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/lib/python3/dist-packages/TestHarness DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/python3/dist-packages COMPONENT dev EXCLUDE_FROM_ALL)
-   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/spring_testing/bin DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/spring_testing COMPONENT dev EXCLUDE_FROM_ALL)
+   install(FILES ${CMAKE_CURRENT_BINARY_DIR}/share/core_net_testing/bin DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/core_net_testing COMPONENT dev EXCLUDE_FROM_ALL)
 else()
    # The following install(SCRIPT ...) steps are necessary for `make dev-install` to work on cmake versions < 3.21.
    install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/scripts/install_testharness_symlinks.cmake COMPONENT dev EXCLUDE_FROM_ALL)
@@ -284,13 +284,13 @@ else()
    # The `make package` installation of symlinks happens via the `postinst` script installed in cmake.package via the line below
 endif()
 
-configure_file(${CMAKE_SOURCE_DIR}/libraries/cli11/bash-completion/completions/spring-util
-               ${CMAKE_BINARY_DIR}/programs/spring-util/bash-completion/completions/spring-util COPYONLY)
-configure_file(${CMAKE_SOURCE_DIR}/libraries/cli11/bash-completion/completions/cleos
-               ${CMAKE_BINARY_DIR}/programs/cleos/bash-completion/completions/cleos COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/libraries/cli11/bash-completion/completions/core-util
+               ${CMAKE_BINARY_DIR}/programs/core-util/bash-completion/completions/core-util COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/libraries/cli11/bash-completion/completions/core-cli
+               ${CMAKE_BINARY_DIR}/programs/core-cli/bash-completion/completions/core-cli COPYONLY)
 
-install(FILES libraries/cli11/bash-completion/completions/spring-util DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bash-completion/completions COMPONENT base)
-install(FILES libraries/cli11/bash-completion/completions/cleos DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bash-completion/completions COMPONENT base)
+install(FILES libraries/cli11/bash-completion/completions/core-util DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bash-completion/completions COMPONENT base)
+install(FILES libraries/cli11/bash-completion/completions/core-cli DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bash-completion/completions COMPONENT base)
 
 # Add the boost submodule we used to build to our install package, so headers can be found for libtester
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/libraries/boost/"

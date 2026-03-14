@@ -4,8 +4,8 @@
 #include <boost/iostreams/device/file.hpp>
 #include <snapshots.hpp>
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 struct variant_snapshot_suite {
    using writer_t = variant_snapshot_writer;

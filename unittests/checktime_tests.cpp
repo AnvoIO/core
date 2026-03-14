@@ -3,10 +3,10 @@
 #include <boost/test/unit_test.hpp>
 #pragma GCC diagnostic pop
 
-#include <eosio/testing/tester.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/wasm_interface.hpp>
-#include <eosio/chain/resource_limits.hpp>
+#include <core_net/testing/tester.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/wasm_interface.hpp>
+#include <core_net/chain/resource_limits.hpp>
 
 #include <test_contracts.hpp>
 #include <test_utils.hpp>
@@ -16,10 +16,10 @@
 #include <iterator>
 #include <string>
 
-using namespace eosio;
-using namespace eosio::chain::literals;
-using namespace eosio::testing;
-using namespace eosio::test_utils;
+using namespace core_net;
+using namespace core_net::chain::literals;
+using namespace core_net::testing;
+using namespace core_net::test_utils;
 using namespace fc;
 
 BOOST_AUTO_TEST_SUITE(checktime_tests)
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE( checktime_interrupt_test) { try {
       trx_digests.emplace_back( a.digest() );
    copy_b->transaction_mroot = calculate_merkle( std::move(trx_digests) );
    // Re-sign the block
-   copy_b->producer_signature = t.get_private_key(config::system_account_name, "active").sign(copy_b->calculate_id());
+   copy_b->producer_signature = t.get_private_key(config::system_account_name(), "active").sign(copy_b->calculate_id());
 
    std::promise<bool> block_start_promise;
    std::future<bool> block_start_future = block_start_promise.get_future();
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( checktime_pause_max_trx_cpu_extended_test, T, tes
    if( t.get_config().wasm_runtime == wasm_interface::vm_type::eos_vm_oc ) {
       // eos_vm_oc wasm_runtime does not tier-up and completes compile before continuing execution.
       // A completely different test with different constraints would be needed to test with eos_vm_oc.
-      // Since non-tier-up is not a normal valid nodeos runtime, just skip this test for eos_vm_oc.
+      // Since non-tier-up is not a normal valid core_netd runtime, just skip this test for eos_vm_oc.
       return;
    }
    t.execute_setup_policy( setup_policy::full );
@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( checktime_pause_max_trx_extended_test, T, testers
    if( t.get_config().wasm_runtime == wasm_interface::vm_type::eos_vm_oc ) {
       // eos_vm_oc wasm_runtime does not tier-up and completes compile before continuing execution.
       // A completely different test with different constraints would be needed to test with eos_vm_oc.
-      // Since non-tier-up is not a normal valid nodeos runtime, just skip this test for eos_vm_oc.
+      // Since non-tier-up is not a normal valid core_netd runtime, just skip this test for eos_vm_oc.
       return;
    }
    t.execute_setup_policy( setup_policy::full );
@@ -329,7 +329,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( checktime_pause_block_deadline_not_extended_test,
    if( t.get_config().wasm_runtime == wasm_interface::vm_type::eos_vm_oc ) {
       // eos_vm_oc wasm_runtime does not tier-up and completes compile before continuing execution.
       // A completely different test with different constraints would be needed to test with eos_vm_oc.
-      // Since non-tier-up is not a normal valid nodeos runtime, just skip this test for eos_vm_oc.
+      // Since non-tier-up is not a normal valid core_netd runtime, just skip this test for eos_vm_oc.
       return;
    }
    t.execute_setup_policy( setup_policy::full );
@@ -376,7 +376,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( checktime_pause_block_deadline_not_extended_while
    if( t.get_config().wasm_runtime == wasm_interface::vm_type::eos_vm_oc ) {
       // eos_vm_oc wasm_runtime does not tier-up and completes compile before continuing execution.
       // A completely different test with different constraints would be needed to test with eos_vm_oc.
-      // Since non-tier-up is not a normal valid nodeos runtime, just skip this test for eos_vm_oc.
+      // Since non-tier-up is not a normal valid core_netd runtime, just skip this test for eos_vm_oc.
       return;
    }
    t.execute_setup_policy( setup_policy::full );

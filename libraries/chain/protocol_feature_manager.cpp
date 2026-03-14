@@ -1,7 +1,7 @@
-#include <eosio/chain/protocol_feature_manager.hpp>
-#include <eosio/chain/protocol_state_object.hpp>
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/deep_mind.hpp>
+#include <core_net/chain/protocol_feature_manager.hpp>
+#include <core_net/chain/protocol_state_object.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/deep_mind.hpp>
 
 #include <fc/scoped_exit.hpp>
 #include <fc/io/json.hpp>
@@ -9,7 +9,7 @@
 #include <algorithm>
 #include <boost/assign/list_of.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
    const std::unordered_map<builtin_protocol_feature_t, builtin_protocol_feature_spec, enum_hash<builtin_protocol_feature_t>>
    builtin_protocol_feature_codenames =
@@ -70,7 +70,7 @@ Also allows a contract to send a deferred transaction in a manner that enables t
 /*
 Builtin protocol feature: FIX_LINKAUTH_RESTRICTION
 
-Removes the restriction on eosio::linkauth for non-native actions named one of the five special action names:
+Removes the restriction on core_net::linkauth for non-native actions named one of the five special action names:
 updateauth, deleteauth, linkauth, unlinkauth, or canceldelay.
 */
             {}
@@ -117,7 +117,7 @@ Adds CPU and network bandwidth usage to only the first authorizer of a transacti
 /*
 Builtin protocol feature: FORWARD_SETCODE
 
-Forward eosio::setcode actions to the WebAssembly code deployed on the eosio account.
+Forward core_net::setcode actions to the WebAssembly code deployed on the eosio account.
 */
             {}
          } )
@@ -1081,4 +1081,4 @@ host function call will trigger a transition to the Savanna consensus algorithm.
    }
 
 
-} }  // eosio::chain
+} }  // core_net::chain

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
+#include <core_net/eosio.hpp>
 
 using bls_scalar_large = uint8_t[64];
 using bls_scalar = uint8_t[32];
@@ -10,7 +10,7 @@ using bls_g1 = uint8_t[96];
 using bls_g2 = uint8_t[192];
 using bls_gt = uint8_t[576];
 
-namespace eosio {
+namespace core_net {
     namespace internal_use_do_not_use {
         extern "C" {
             __attribute__((eosio_wasm_import))
@@ -46,37 +46,37 @@ namespace eosio {
     }
 }
 
-class [[eosio::contract]] bls_primitives_test : public eosio::contract {
+class [[core_net::contract]] bls_primitives_test : public core_net::contract {
 public:
-   using eosio::contract::contract;
+   using core_net::contract::contract;
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testg1add(const std::vector<uint8_t>& op1, const std::vector<uint8_t>& op2, const std::vector<uint8_t>& res, int32_t expected_error);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testg2add(const std::vector<uint8_t>& op1, const std::vector<uint8_t>& op2, const std::vector<uint8_t>& res, int32_t expected_error);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testg1wsum(const std::vector<uint8_t>& points, const std::vector<uint8_t>& scalars, const uint32_t num, const std::vector<uint8_t>& res, int32_t expected_error);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testg2wsum(const std::vector<uint8_t>& points, const std::vector<uint8_t>& scalars, const uint32_t num, const std::vector<uint8_t>& res, int32_t expected_error);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testpairing(const std::vector<uint8_t>& g1_points, const std::vector<uint8_t>& g2_points, const uint32_t num, const std::vector<uint8_t>& res, int32_t expected_error);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testg1map(const std::vector<uint8_t>& e, const std::vector<uint8_t>& res, int32_t expected_error);
          
-   [[eosio::action]]
+   [[core_net::action]]
    void testg2map(const std::vector<uint8_t>& e, const std::vector<uint8_t>& res, int32_t expected_error);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testfpmul(const std::vector<uint8_t>& op1, const std::vector<uint8_t>& op2, const std::vector<uint8_t>& res, int32_t expected_error);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testfpexp(const std::vector<uint8_t>& base, const std::vector<uint8_t>& exp, const std::vector<uint8_t>& res, int32_t expected_error);
 
-   [[eosio::action]]
+   [[core_net::action]]
    void testfpmod(const std::vector<uint8_t>& s, const std::vector<uint8_t>& res, int32_t expected_error);
 };

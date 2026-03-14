@@ -1,4 +1,4 @@
-#include <eosio/testing/tester.hpp>
+#include <core_net/testing/tester.hpp>
 #include <boost/test/unit_test.hpp>
 
 // Test scenarios
@@ -9,11 +9,11 @@
 
 BOOST_AUTO_TEST_SUITE(blocks_log_replay_tests)
 
-using namespace eosio::testing;
-using namespace eosio::chain;
+using namespace core_net::testing;
+using namespace core_net::chain;
 
 struct blog_replay_fixture {
-   eosio::testing::tester chain;
+   core_net::testing::tester chain;
    uint32_t               last_head_block_num {0}; // head_block_num at stopping
    uint32_t               last_irreversible_block_num {0}; // LIB at stopping
 
@@ -52,7 +52,7 @@ struct blog_replay_fixture {
       remove_existing_states(copied_config.state_dir);
 
       // Create a replay chain without starting it
-      eosio::testing::tester replay_chain(copied_config, *genesis, call_startup_t::no);
+      core_net::testing::tester replay_chain(copied_config, *genesis, call_startup_t::no);
 
       // Simulate shutdown by CTRL-C
       bool is_quiting = false;
@@ -85,7 +85,7 @@ struct blog_replay_fixture {
       controller::config copied_config_1 = replay_chain.get_config();
 
       // Resume replay
-      eosio::testing::tester replay_chain_1(copied_config_1, *genesis, call_startup_t::no);
+      core_net::testing::tester replay_chain_1(copied_config_1, *genesis, call_startup_t::no);
       replay_chain_1.control->startup( [](){}, []()->bool{ return false; } );
       replay_chain_1.apply_blocks();
 
@@ -112,14 +112,14 @@ struct blog_replay_fixture {
 
 // Test replay through blocks log and reversible blocks
 BOOST_FIXTURE_TEST_CASE(replay_through, blog_replay_fixture) try {
-   eosio::chain::controller::config copied_config = chain.get_config();
+   core_net::chain::controller::config copied_config = chain.get_config();
 
-   auto genesis = eosio::chain::block_log::extract_genesis_state(copied_config.blocks_dir); 
+   auto genesis = core_net::chain::block_log::extract_genesis_state(copied_config.blocks_dir); 
    BOOST_REQUIRE(genesis);
 
    // remove the state files to make sure we are starting from block log
    remove_existing_states(copied_config.state_dir);
-   eosio::testing::tester replay_chain(copied_config, *genesis);
+   core_net::testing::tester replay_chain(copied_config, *genesis);
 
    // Make sure new chain contain the account created by original chain
    BOOST_REQUIRE_NO_THROW(replay_chain.get_account("replay1"_n));
@@ -181,9 +181,9 @@ void currupt_blocks_log(path block_dir, block_num_type block_num) {
 BOOST_FIXTURE_TEST_CASE(replay_exception, blog_replay_fixture) try {
    fc::temp_directory tmp_dir;
 
-   eosio::chain::controller::config copied_config = chain.get_config();
+   core_net::chain::controller::config copied_config = chain.get_config();
 
-   auto genesis = eosio::chain::block_log::extract_genesis_state(copied_config.blocks_dir);
+   auto genesis = core_net::chain::block_log::extract_genesis_state(copied_config.blocks_dir);
    BOOST_REQUIRE(genesis);
 
    // remove the state files to make sure we are starting from block log
@@ -196,7 +196,7 @@ BOOST_FIXTURE_TEST_CASE(replay_exception, blog_replay_fixture) try {
 
    bool exception_thrown = false;
    try {
-      eosio::testing::tester replay_chain(copied_config, *genesis);
+      core_net::testing::tester replay_chain(copied_config, *genesis);
    } catch (std::exception& e) {
       exception_thrown = true;
    }
@@ -208,7 +208,7 @@ BOOST_FIXTURE_TEST_CASE(replay_exception, blog_replay_fixture) try {
    std::filesystem::copy(tmp_dir.path() / "blocks.index", copied_config.blocks_dir / "blocks.index", std::filesystem::copy_options::overwrite_existing);
 
    // verify can restart and it will work
-   eosio::testing::tester replay_chain(copied_config);
+   core_net::testing::tester replay_chain(copied_config);
 
    // Make sure replayed irreversible_block_num and head_block_num match
    // with last_irreversible_block_num and last_head_block_num

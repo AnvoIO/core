@@ -1,11 +1,11 @@
-#include <eosio/chain/global_property_object.hpp>
-#include <eosio/chain/authorization_manager.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/global_property_object.hpp>
+#include <core_net/chain/authorization_manager.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <boost/test/unit_test.hpp>
 
-using namespace eosio::testing;
-using namespace eosio::chain;
+using namespace core_net::testing;
+using namespace core_net::chain;
 using mvo = fc::mutable_variant_object;
 
 BOOST_AUTO_TEST_SUITE(producer_schedule_savanna_tests)
@@ -35,7 +35,7 @@ BOOST_FIXTURE_TEST_CASE( verify_producer_schedule_after_savanna_activation, lega
                BOOST_TEST(head().block_num() == expected_block_num);
 
             // verify eosio.prods updated
-            const name usr = config::producers_account_name;
+            const name usr = config::producers_account_name();
             const name active_permission = config::active_name;
             const auto* perm = control->db().template find<permission_object, by_owner>(boost::make_tuple(usr, active_permission));
             for (auto account : perm->auth.accounts) {
@@ -133,7 +133,7 @@ BOOST_FIXTURE_TEST_CASE( proposer_policy_progression_test, legacy_validating_tes
       for( const auto& e: schedule ) {
          schedule_variant.emplace_back(e.get_abi_variant());
       }
-      push_action( config::system_account_name, "setprods"_n, config::system_account_name,
+      push_action( config::system_account_name(), "setprods"_n, config::system_account_name(),
                   fc::mutable_variant_object()("schedule", schedule_variant), DEFAULT_EXPIRATION_DELTA + (++unique));
    };
 

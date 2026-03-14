@@ -1,7 +1,7 @@
-#include <eosio/chain/genesis_state.hpp>
+#include <core_net/chain/genesis_state.hpp>
 
-namespace eosio { namespace chain {
+namespace core_net { namespace chain {
 
-const string genesis_state::eosio_root_key = "${EOSIO_ROOT_KEY}";
+const string genesis_state::core_net_root_key = "${CORE_NET_ROOT_KEY}";
 
-} } // namespace eosio::chain
+} } // namespace core_net::chain

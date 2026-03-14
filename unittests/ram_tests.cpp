@@ -3,18 +3,18 @@
 #include <boost/test/unit_test.hpp>
 #pragma GCC diagnostic pop
 
-#include <eosio/chain/exceptions.hpp>
-#include <eosio/chain/resource_limits.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/exceptions.hpp>
+#include <core_net/chain/resource_limits.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/variant_object.hpp>
 
 #include <contracts.hpp>
 
-#include "eosio_system_tester.hpp"
+#include "system_tester.hpp"
 
-using namespace eosio_system;
+using namespace core_net_system;
 
 /*
  * register test suite `ram_tests`
@@ -24,16 +24,16 @@ BOOST_AUTO_TEST_SUITE(ram_tests)
 /*************************************************************************************
  * ram_tests test case
  *************************************************************************************/
-BOOST_AUTO_TEST_CASE_TEMPLATE( ram_tests, T, eosio_system_testers ) { try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( ram_tests, T, core_net_system_testers ) { try {
    T chain;
    auto init_request_bytes = 80000 + 7110; // `7110' is for table token row
    const auto increment_contract_bytes = 10000;
    const auto table_allocation_bytes = 12000;
    BOOST_REQUIRE_MESSAGE(table_allocation_bytes > increment_contract_bytes, "increment_contract_bytes must be less than table_allocation_bytes for this test setup to work");
-   chain.buyrambytes(config::system_account_name, config::system_account_name, 70000);
+   chain.buyrambytes(config::system_account_name(), config::system_account_name(), 70000);
    chain.produce_block();
-   chain.create_account_with_resources("testram11111"_n,config::system_account_name, init_request_bytes + 40);
-   chain.create_account_with_resources("testram22222"_n,config::system_account_name, init_request_bytes + 1190);
+   chain.create_account_with_resources("testram11111"_n,config::system_account_name(), init_request_bytes + 40);
+   chain.create_account_with_resources("testram22222"_n,config::system_account_name(), init_request_bytes + 1190);
    chain.produce_block();
    BOOST_REQUIRE_EQUAL( chain.success(), chain.stake( name("eosio.stake"), name("testram11111"), core_from_string("10.0000"), core_from_string("5.0000") ) );
    chain.produce_block();
@@ -44,8 +44,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( ram_tests, T, eosio_system_testers ) { try {
          break;
       } catch (const ram_usage_exceeded&) {
          init_request_bytes += increment_contract_bytes;
-         chain.buyrambytes(config::system_account_name, "testram11111"_n, increment_contract_bytes);
-         chain.buyrambytes(config::system_account_name, "testram22222"_n, increment_contract_bytes);
+         chain.buyrambytes(config::system_account_name(), "testram11111"_n, increment_contract_bytes);
+         chain.buyrambytes(config::system_account_name(), "testram22222"_n, increment_contract_bytes);
       }
    }
    chain.produce_block();
@@ -56,8 +56,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( ram_tests, T, eosio_system_testers ) { try {
          break;
       } catch (const ram_usage_exceeded&) {
          init_request_bytes += increment_contract_bytes;
-         chain.buyrambytes(config::system_account_name, "testram11111"_n, increment_contract_bytes);
-         chain.buyrambytes(config::system_account_name, "testram22222"_n, increment_contract_bytes);
+         chain.buyrambytes(config::system_account_name(), "testram11111"_n, increment_contract_bytes);
+         chain.buyrambytes(config::system_account_name(), "testram22222"_n, increment_contract_bytes);
       }
    }
    chain.produce_block();
@@ -75,8 +75,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( ram_tests, T, eosio_system_testers ) { try {
    auto more_ram = table_allocation_bytes + init_bytes - init_request_bytes;
    BOOST_REQUIRE_MESSAGE(more_ram >= 0, "Underlying understanding changed, need to reduce size of init_request_bytes");
    wdump((init_bytes)(initial_ram_usage)(init_request_bytes)(more_ram) );
-   chain.buyrambytes(config::system_account_name, "testram11111"_n, more_ram);
-   chain.buyrambytes(config::system_account_name, "testram22222"_n, more_ram);
+   chain.buyrambytes(config::system_account_name(), "testram11111"_n, more_ram);
+   chain.buyrambytes(config::system_account_name(), "testram22222"_n, more_ram);
 
    validating_tester* tester = &chain;
    // allocate just under the allocated bytes

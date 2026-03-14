@@ -1,9 +1,9 @@
-#include <eosio/chain/asset.hpp>
-#include <eosio/chain/authority.hpp>
-#include <eosio/chain/authority_checker.hpp>
-#include <eosio/chain/types.hpp>
-#include <eosio/chain/thread_utils.hpp>
-#include <eosio/testing/tester.hpp>
+#include <core_net/chain/asset.hpp>
+#include <core_net/chain/authority.hpp>
+#include <core_net/chain/authority_checker.hpp>
+#include <core_net/chain/types.hpp>
+#include <core_net/chain/thread_utils.hpp>
+#include <core_net/testing/tester.hpp>
 
 #include <fc/io/json.hpp>
 #include <fc/log/logger_config.hpp>
@@ -14,8 +14,8 @@
 
 #include <boost/test/unit_test.hpp>
 
-using namespace eosio::chain;
-using namespace eosio::testing;
+using namespace core_net::chain;
+using namespace core_net::testing;
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
@@ -74,7 +74,7 @@ FC_REFLECT( base_reflect, (bv) )
 FC_REFLECT_DERIVED( derived_reflect, (base_reflect), (dv) )
 FC_REFLECT_DERIVED( final_reflect, (derived_reflect), (fv) )
 
-namespace eosio {
+namespace core_net {
 using namespace chain;
 using namespace std;
 
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(name_prefix_tests)
 
    BOOST_CHECK_EQUAL("eosio.any"_n.prefix(), "eosio"_n);
    BOOST_CHECK_EQUAL("eosio"_n.prefix(), "eosio"_n);
-   BOOST_CHECK_EQUAL("eosio"_n.prefix(), config::system_account_name);
+   BOOST_CHECK_EQUAL("eosio"_n.prefix(), config::system_account_name());
    BOOST_CHECK_EQUAL("eosio."_n.prefix(), "eosio"_n);
    BOOST_CHECK_EQUAL("eosio.evm"_n.prefix(), "eosio"_n);
    BOOST_CHECK_EQUAL(".eosio"_n.prefix(), ""_n);
@@ -744,9 +744,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( transaction_test, T, validating_testers ) { try {
    trx.expiration = fc::time_point_sec{fc::time_point::now()};
    trx.validate();
    BOOST_CHECK_EQUAL(0u, trx.signatures.size());
-   ((const signed_transaction &)trx).sign( test.get_private_key( config::system_account_name, "active" ), test.get_chain_id());
+   ((const signed_transaction &)trx).sign( test.get_private_key( config::system_account_name(), "active" ), test.get_chain_id());
    BOOST_CHECK_EQUAL(0u, trx.signatures.size());
-   auto private_key = test.get_private_key( config::system_account_name, "active" );
+   auto private_key = test.get_private_key( config::system_account_name(), "active" );
    auto public_key = private_key.get_public_key();
    trx.sign( private_key, test.get_chain_id()  );
    BOOST_CHECK_EQUAL(1u, trx.signatures.size());
@@ -906,7 +906,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( transaction_metadata_test, T, validating_testers 
       test.set_transaction_headers(trx);
       trx.expiration = fc::time_point_sec{fc::time_point::now()};
 
-      auto private_key = test.get_private_key( config::system_account_name, "active" );
+      auto private_key = test.get_private_key( config::system_account_name(), "active" );
       auto public_key = private_key.get_public_key();
       trx.sign( private_key, test.get_chain_id()  );
       BOOST_CHECK_EQUAL(1u, trx.signatures.size());
@@ -1294,4 +1294,4 @@ BOOST_AUTO_TEST_CASE(public_key_from_hash) {
 
 BOOST_AUTO_TEST_SUITE_END()
 
-} // namespace eosio
+} // namespace core_net

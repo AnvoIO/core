@@ -1,9 +1,9 @@
-#include <eosio/chain/finality_core.hpp>
+#include <core_net/chain/finality_core.hpp>
 #include <fc/crypto/sha256.hpp>
 #include <fc/bitutil.hpp>
 #include <boost/test/unit_test.hpp>
 
-using namespace eosio::chain;
+using namespace core_net::chain;
 
 // ---------------------------------------------------------------------------------------
 inline block_id_type calc_id(block_id_type id, uint32_t block_number) {

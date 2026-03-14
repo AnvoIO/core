@@ -1,19 +1,19 @@
-#include <eosio/chain/genesis_state.hpp>
-#include <eosio/wallet_plugin/wallet.hpp>
-#include <eosio/wallet_plugin/wallet_manager.hpp>
+#include <core_net/chain/genesis_state.hpp>
+#include <core_net/wallet_plugin/wallet.hpp>
+#include <core_net/wallet_plugin/wallet_manager.hpp>
 
 #include <boost/test/unit_test.hpp>
-#include <eosio/chain/authority.hpp>
-#include <eosio/chain/exceptions.hpp>
+#include <core_net/chain/authority.hpp>
+#include <core_net/chain/exceptions.hpp>
 
-namespace eosio {
+namespace core_net {
 
 BOOST_AUTO_TEST_SUITE(wallet_tests)
 
 /// Test creating the wallet
 BOOST_AUTO_TEST_CASE(wallet_test)
 { try {
-   using namespace eosio::wallet;
+   using namespace core_net::wallet;
 
    wallet_data d;
    soft_wallet wallet(d);
@@ -65,7 +65,7 @@ BOOST_AUTO_TEST_CASE(wallet_test)
 /// Test wallet manager
 BOOST_AUTO_TEST_CASE(wallet_manager_test)
 { try {
-   using namespace eosio::wallet;
+   using namespace core_net::wallet;
 
    if (std::filesystem::exists("test.wallet")) std::filesystem::remove("test.wallet");
    if (std::filesystem::exists("test2.wallet")) std::filesystem::remove("test2.wallet");
@@ -215,7 +215,7 @@ BOOST_AUTO_TEST_CASE(wallet_manager_test)
 /// Test wallet manager
 BOOST_AUTO_TEST_CASE(wallet_manager_create_test) {
    try {
-      using namespace eosio::wallet;
+      using namespace core_net::wallet;
 
       if (std::filesystem::exists("test.wallet")) std::filesystem::remove("test.wallet");
 

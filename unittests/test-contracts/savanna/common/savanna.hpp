@@ -1,14 +1,14 @@
 #pragma once
 
-#include <eosio/eosio.hpp>
-#include <eosio/crypto.hpp>
-#include <eosio/crypto_bls_ext.hpp>
-#include <eosio/system.hpp>
-#include <eosio/transaction.hpp>
+#include <core_net/eosio.hpp>
+#include <core_net/crypto.hpp>
+#include <core_net/crypto_bls_ext.hpp>
+#include <core_net/system.hpp>
+#include <core_net/transaction.hpp>
 
 #include "bitset.hpp"
 
-using namespace eosio;
+using namespace core_net;
 
 namespace savanna {
 
@@ -72,7 +72,7 @@ namespace savanna {
    }
 
    checksum256 hash_pair(const std::pair<checksum256, checksum256> p){
-      auto result = eosio::pack(p);
+      auto result = core_net::pack(p);
       return sha256(result.data(), result.size());
    }
 
@@ -218,7 +218,7 @@ namespace savanna {
       }
 
       checksum256 digest() const {
-         auto result = eosio::pack(*this);
+         auto result = core_net::pack(*this);
          checksum256 hash = sha256(result.data(), result.size());
          return hash;
       };
@@ -325,7 +325,7 @@ namespace savanna {
 
             checksum256 policy_digest = pending_finalizer_policy.value().digest();
             
-            auto l2_packed = eosio::pack(level_2_commitments_t{
+            auto l2_packed = core_net::pack(level_2_commitments_t{
                .last_pending_fin_pol_digest  = policy_digest, 
                .last_pending_fin_pol_start_timestamp =  last_pending_finalizer_policy_start_timestamp.value(),
                .l3_commitments_digest = witness_hash
@@ -355,7 +355,7 @@ namespace savanna {
       }
 
       checksum256 finality_digest() const {
-         auto result = eosio::pack(*this);
+         auto result = core_net::pack(*this);
          checksum256 hash = sha256(result.data(), result.size());
          return hash;
       }
@@ -393,7 +393,7 @@ namespace savanna {
       }
 
       checksum256 finality_leaf() const {
-         auto result = eosio::pack(*this);
+         auto result = core_net::pack(*this);
          checksum256 hash = sha256(result.data(), result.size());
          return hash;
       }
@@ -431,7 +431,7 @@ namespace savanna {
       }
 
       checksum256 finality_leaf() const {
-         auto result = eosio::pack(*this);
+         auto result = core_net::pack(*this);
          checksum256 hash = sha256(result.data(), result.size());
          return hash;
       }

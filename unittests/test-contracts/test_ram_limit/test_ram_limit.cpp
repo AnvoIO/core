@@ -9,7 +9,7 @@
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 #pragma clang diagnostic ignored "-Wsign-compare"
 
-using namespace eosio;
+using namespace core_net;
 
 CONTRACT test_ram_limit : public contract {
    public:
@@ -19,7 +19,7 @@ CONTRACT test_ram_limit : public contract {
 
       ACTION setentry( name payer, uint64_t from, uint64_t to, uint64_t size ) {
          const auto self = get_self();
-         eosio::print("test_ram_limit::setentry ", eosio::name{self}, "\n");
+         core_net::print("test_ram_limit::setentry ", core_net::name{self}, "\n");
          test_table table( self, self.value );
          for ( int key = from; key <=to; ++key ) {
             auto itr = table.find(key);
@@ -38,24 +38,24 @@ CONTRACT test_ram_limit : public contract {
 
       ACTION rmentry( uint64_t from, uint64_t to ) {
          const auto self = get_self();
-         eosio::print("test_ram_limit::rmentry ", eosio::name{self}, "\n");
+         core_net::print("test_ram_limit::rmentry ", core_net::name{self}, "\n");
          test_table table( self, self.value );
          for ( int key = from; key <=to; ++key ) {
             auto itr = table.find(key);
-            eosio_assert ( itr != table.end(), "could not find test_table entry" );
+            core_net_assert ( itr != table.end(), "could not find test_table entry" );
             table.erase(itr);
          }
       }
 
       ACTION printentry( uint64_t from, uint64_t to ) {
          const auto self = get_self();
-         eosio::print("test_ram_limit::printout ", eosio::name{self}, ":");
+         core_net::print("test_ram_limit::printout ", core_net::name{self}, ":");
          test_table table( self, self.value );
          for ( int key = from; key <= to; ++key ) {
             auto itr = table.find(key);
-            eosio::print("\nkey=", key);
-            eosio_assert ( itr != table.end(), "could not find test_table entry" );
-            eosio::print(" size=", itr->data.size());
+            core_net::print("\nkey=", key);
+            core_net_assert ( itr != table.end(), "could not find test_table entry" );
+            core_net::print(" size=", itr->data.size());
          }
       }
 
@@ -68,9 +68,9 @@ CONTRACT test_ram_limit : public contract {
 
          EOSLIB_SERIALIZE( test, (key)(data) )
       };
-      typedef eosio::multi_index< "test.table"_n, test> test_table;
+      typedef core_net::multi_index< "test.table"_n, test> test_table;
 };
 
 #pragma clang diagnostic pop
 
-EOSIO_DISPATCH( test_ram_limit, (setentry)(rmentry)(printentry) )
+CORE_NET_DISPATCH( test_ram_limit, (setentry)(rmentry)(printentry) )

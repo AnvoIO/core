@@ -1,6 +1,6 @@
 set( IBC_CONTRACT "ibc" )
 
-if( EOSIO_COMPILE_TEST_CONTRACTS )
+if( CORE_NET_COMPILE_TEST_CONTRACTS )
    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common)
    add_contract( ${IBC_CONTRACT} ${IBC_CONTRACT} ${IBC_CONTRACT}.cpp )
 else()

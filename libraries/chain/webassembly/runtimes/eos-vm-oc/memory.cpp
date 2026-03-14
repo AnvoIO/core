@@ -1,14 +1,14 @@
-#include <eosio/chain/webassembly/eos-vm-oc/memory.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/intrinsic.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/intrinsic_mapping.hpp>
-#include <eosio/chain/webassembly/eos-vm-oc/memfd_helpers.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/memory.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/intrinsic.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/intrinsic_mapping.hpp>
+#include <core_net/chain/webassembly/eos-vm-oc/memfd_helpers.hpp>
 
 #include <fc/scoped_exit.hpp>
 
 #include <unistd.h>
 #include <sys/mman.h>
 
-namespace eosio { namespace chain { namespace eosvmoc {
+namespace core_net { namespace chain { namespace eosvmoc {
 
 memory::memory(uint64_t sliced_pages) {
    uint64_t number_slices = sliced_pages + 1;

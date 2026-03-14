@@ -1,10 +1,10 @@
-#include <eosio/action.hpp>
-#include <eosio/crypto.hpp>
-#include <eosio/permission.hpp>
+#include <core_net/action.hpp>
+#include <core_net/crypto.hpp>
+#include <core_net/permission.hpp>
 
 #include "eosio.msig.hpp"
 
-namespace eosio {
+namespace core_net {
 
 transaction_header get_trx_header(const char* ptr, size_t sz);
 bool trx_is_authorized(const std::vector<permission_level>& approvals, const std::vector<char>& packed_trx);
@@ -53,7 +53,7 @@ void multisig::propose( name proposer,
    transaction_header trx_header;
    std::vector<action> context_free_actions;
    ds >> trx_header;
-   check( trx_header.expiration >= eosio::time_point_sec(current_time_point()), "transaction expired" );
+   check( trx_header.expiration >= core_net::time_point_sec(current_time_point()), "transaction expired" );
    ds >> context_free_actions;
    check( context_free_actions.empty(), "not allowed to `propose` a transaction with context-free actions" );
 
@@ -90,7 +90,7 @@ void multisig::propose( name proposer,
 }
 
 void multisig::approve( name proposer, name proposal_name, permission_level level,
-                        const eosio::binary_extension<eosio::checksum256>& proposal_hash )
+                        const core_net::binary_extension<core_net::checksum256>& proposal_hash )
 {
    require_auth( level );
 
@@ -131,7 +131,7 @@ void multisig::approve( name proposer, name proposal_name, permission_level leve
          auto table_op = [](auto&&, auto&&){};
          if( trx_is_authorized(get_approvals_and_adjust_table(get_self(), proposer, proposal_name, table_op), prop.packed_transaction) ) {
             proptable.modify( prop, proposer, [&]( auto& p ) {
-               p.earliest_exec_time.emplace(time_point{ current_time_point() + eosio::seconds(trx_header.delay_sec.value)});
+               p.earliest_exec_time.emplace(time_point{ current_time_point() + core_net::seconds(trx_header.delay_sec.value)});
             });
          }
       }
@@ -188,7 +188,7 @@ void multisig::cancel( name proposer, name proposal_name, name canceler ) {
    auto& prop = proptable.get( proposal_name.value, "proposal not found" );
 
    if( canceler != proposer ) {
-      check( unpack<transaction_header>( prop.packed_transaction ).expiration < eosio::time_point_sec(current_time_point()), "cannot cancel until expiration" );
+      check( unpack<transaction_header>( prop.packed_transaction ).expiration < core_net::time_point_sec(current_time_point()), "cannot cancel until expiration" );
    }
    proptable.erase(prop);
 
@@ -215,7 +215,7 @@ void multisig::exec( name proposer, name proposal_name, name executer ) {
    std::vector<action> actions;
    datastream<const char*> ds( prop.packed_transaction.data(), prop.packed_transaction.size() );
    ds >> trx_header;
-   check( trx_header.expiration >= eosio::time_point_sec(current_time_point()), "transaction expired" );
+   check( trx_header.expiration >= core_net::time_point_sec(current_time_point()), "transaction expired" );
    ds >> context_free_actions;
    check( context_free_actions.empty(), "not allowed to `exec` a transaction with context-free actions" );
    ds >> actions;
@@ -269,4 +269,4 @@ bool trx_is_authorized(const std::vector<permission_level>& approvals, const std
    );
 }
 
-} /// namespace eosio
+} /// namespace core_net
