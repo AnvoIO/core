@@ -10,7 +10,7 @@ The Anvo Network codebase has been rebranded from `eosio::` to `core_net::`, but
 
 ## Implementation Steps
 
-**Status:** Steps 1-5 COMPLETE, build passes 100%. Steps 6-7 remaining.
+**Status:** Steps 1-6 COMPLETE, build passes 100%. Step 7 (tests) remaining.
 
 ### Step 1: system_accounts struct + global accessors ✓ DONE
 **Files:** `config.hpp`, new `config.cpp`, `CMakeLists.txt`
@@ -46,10 +46,14 @@ Replace hardcoded `name_str.find("eosio.") != 0` with `name::prefix() != config:
 
 Add `std::optional<name> system_account_prefix` — NOT in FC_REFLECT (preserves binary block log format). Custom `to_variant`/`from_variant` for JSON genesis files. Missing field defaults to `"eosio"_n`.
 
-### Step 6: Persistence in global_property_object
-**Files:** `global_property_object.hpp`, `chain_snapshot.hpp`, `controller.cpp`
+### Step 6: Persistence in global_property_object ✓ DONE
+**Files:** `global_property_object.hpp`, `chain_snapshot.hpp`, `chain_id_type.hpp`, `snapshot_detail.hpp`, `snapshot.cpp`, `controller.cpp`
 
-Store `system_account_prefix` in `global_property_object`. Bump snapshot version (8 → 9). Legacy snapshots (v2-v8) default to `"eosio"_n`. Wire startup to read prefix from genesis/snapshot/existing-state and call `config::set_system_accounts()`.
+- Added `system_account_prefix` to `global_property_object` and `snapshot_global_property_object`
+- Created `legacy::snapshot_global_property_object_v7` for v7/v8 snapshots (defaults to "eosio"_n)
+- Bumped snapshot version 8 → 9
+- Wired all 3 startup paths: genesis (stores prefix in GPO), snapshot (reads from GPO), existing state (reads from GPO)
+- Updated `extract_chain_id` and `snapshot_info` for v7/v8 handling
 
 ### Step 7: Tests
 **New file:** `unittests/system_accounts_tests.cpp`
