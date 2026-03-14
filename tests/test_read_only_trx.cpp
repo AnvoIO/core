@@ -197,7 +197,7 @@ BOOST_AUTO_TEST_CASE(with_3_read_only_threads) {
 // test read-only trxs on 3 threads (with --read-only-threads)
 BOOST_AUTO_TEST_CASE(with_3_read_only_threads_no_tierup) {
    std::vector<const char*> specific_args = { "--read-only-threads=3",
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
                                              "--eos-vm-oc-enable=none",
 #endif
                                             };
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE(with_8_read_only_threads) {
 // test read-only trxs on 8 separate threads (with --read-only-threads)
 BOOST_AUTO_TEST_CASE(with_8_read_only_threads_no_tierup) {
    std::vector<const char*> specific_args = { "--read-only-threads=8",
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
                                              "--eos-vm-oc-enable=none",
 #endif
                                             };

@@ -17,7 +17,7 @@ else()
    endif()
 endif()
 
-if("eos-vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
+if("vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
    enable_language(ASM)
    set(CHAIN_EOSVMOC_SOURCES webassembly/runtimes/eos-vm-oc/code_cache.cpp
                              webassembly/runtimes/eos-vm-oc/executor.cpp
@@ -43,7 +43,7 @@ if("eos-vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
    add_definitions(${LLVM_DEFINITIONS})
 endif()
 
-if("eos-vm" IN_LIST CORE_NET_WASM_RUNTIMES OR "eos-vm-jit" IN_LIST CORE_NET_WASM_RUNTIMES)
+if("vm" IN_LIST CORE_NET_WASM_RUNTIMES OR "vm-jit" IN_LIST CORE_NET_WASM_RUNTIMES)
    set(CHAIN_EOSVM_SOURCES "webassembly/runtimes/eos-vm.cpp")
    set(CHAIN_EOSVM_LIBRARIES eos-vm)
 endif()
@@ -90,9 +90,9 @@ add_library( core_net_chain
              resource_limits.cpp
              block_log.cpp
              transaction_context.cpp
-             eosio_contract.cpp
-             eosio_contract_abi.cpp
-             eosio_contract_abi_bin.cpp
+             system_contract.cpp
+             system_contract_abi.cpp
+             system_contract_abi_bin.cpp
              chain_config.cpp
              chain_id_type.cpp
              genesis_state.cpp
@@ -100,8 +100,8 @@ add_library( core_net_chain
 
               wast_to_wasm.cpp
               wasm_interface.cpp
-              wasm_eosio_validation.cpp
-              wasm_eosio_injection.cpp
+              wasm_validation.cpp
+              wasm_injection.cpp
               wasm_config.cpp
               apply_context.cpp
               abi_serializer.cpp
@@ -153,7 +153,7 @@ target_include_directories( core_net_chain
 add_library(core_net_chain_wrap INTERFACE )
 target_link_libraries(core_net_chain_wrap INTERFACE core_net_chain)
 
-if("eos-vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
+if("vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
    target_link_libraries(core_net_chain_wrap INTERFACE "-Wl,-wrap=main")
 endif()
 

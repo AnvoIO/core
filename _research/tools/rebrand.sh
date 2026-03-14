@@ -93,7 +93,7 @@ echo ""
 echo "--- Phase 2: File renames ---"
 
 # Build/infra files
-git mv CMakeModules/core_net-config.cmake.in CMakeModules/core_net-config.cmake.in
+git mv CMakeModules/eosio-config.cmake.in CMakeModules/core_net-config.cmake.in
 git mv CMakeModules/leap-config.cmake.in CMakeModules/leap-config.cmake.in.legacy
 git mv CMakeModules/spring-config.cmake.in CMakeModules/spring-config.cmake.in.legacy
 git mv eosio.version.in core_net.version.in
@@ -311,7 +311,7 @@ sed -i 's|cmake/eosio|cmake/core_net|g' CMakeLists.txt
 sed -i 's|cmake/leap|cmake/core_net|g' CMakeLists.txt
 sed -i 's|cmake/spring|cmake/core_net|g' CMakeLists.txt
 sed -i 's|licenses/spring|licenses/core|g' CMakeLists.txt
-sed -i 's|spring_testing|core_testing|g' CMakeLists.txt
+sed -i 's|spring_testing|core_net_testing|g' CMakeLists.txt
 
 # Remove legacy config install targets (eosio/leap configs no longer exist)
 # TODO: Clean up CMakeLists.txt to remove duplicate configure_file calls
@@ -321,6 +321,65 @@ sed -i 's/spring_util_bls_test/core_util_bls_test/g' tests/CMakeLists.txt
 sed -i 's/spring_util_snapshot_info_test/core_util_snapshot_info_test/g' tests/CMakeLists.txt
 
 echo "  CMake project and executable names: done"
+
+# ─────────────────────────────────────────────────
+# PHASE 8a: CMake fixups discovered during build
+# ─────────────────────────────────────────────────
+echo ""
+echo "--- Phase 8a: CMake fixups ---"
+
+# Fix bash-completion references in root CMakeLists.txt
+sed -i \
+    -e 's|completions/spring-util|completions/core-util|g' \
+    -e 's|completions/cleos|completions/core-cli|g' \
+    -e 's|programs/spring-util/|programs/core-util/|g' \
+    -e 's|programs/cleos/|programs/core-cli/|g' \
+    -e 's|programs/keosd/|programs/core-wallet/|g' \
+    -e 's|programs/nodeos/|programs/core_netd/|g' \
+    CMakeLists.txt
+
+# Fix chain library CMake source file references (files were renamed in Phase 1)
+sed -i \
+    -e 's/eosio_contract\.cpp/system_contract.cpp/g' \
+    -e 's/eosio_contract_abi\.cpp/system_contract_abi.cpp/g' \
+    -e 's/eosio_contract_abi_bin\.cpp/system_contract_abi_bin.cpp/g' \
+    -e 's/wasm_eosio_validation\.cpp/wasm_validation.cpp/g' \
+    -e 's/wasm_eosio_injection\.cpp/wasm_injection.cpp/g' \
+    -e 's/wasm_eosio_binary_ops\.cpp/wasm_binary_ops.cpp/g' \
+    libraries/chain/CMakeLists.txt
+
+# Fix nodeos_/keosd_ test file references in tests/CMakeLists.txt
+sed -i \
+    -e 's/nodeos_/core_netd_/g' \
+    -e 's/keosd_auto_launch/core-wallet_auto_launch/g' \
+    tests/CMakeLists.txt
+
+# Fix programs/CMakeLists.txt subdirectory references
+sed -i \
+    -e 's/add_subdirectory( nodeos )/add_subdirectory( core_netd )/g' \
+    -e 's/add_subdirectory( cleos )/add_subdirectory( core-cli )/g' \
+    -e 's/add_subdirectory( keosd )/add_subdirectory( core-wallet )/g' \
+    programs/CMakeLists.txt
+
+# Fix additionalPlugins.cmake
+sed -i 's/target_link_libraries( nodeos/target_link_libraries( core_netd/g' \
+    CMakeModules/additionalPlugins.cmake
+
+# Fix PerformanceHarness CMakeLists
+sed -i 's/generate_nodeos_plugin_args/generate_core_netd_plugin_args/g' \
+    tests/PerformanceHarness/CorePluginArgs/CMakeLists.txt
+
+# Fix wasm-jit relative paths to chain include directory
+sed -i 's|include/eosio/chain/wasm_constraints\.hpp|include/core_net/chain/wasm_constraints.hpp|g' \
+    libraries/wasm-jit/Include/Inline/Serialization.h \
+    libraries/wasm-jit/Source/WASM/WASMSerialization.cpp
+
+# Replace EOS_VM_ macros outside eos-vm (eos-vm internal rename handles its own)
+find . -type f \( "${SOURCE_FILES[@]}" \) "${EXCLUDES[@]}" \
+    ! -path "./libraries/eos-vm/*" \
+    -exec sed -i 's/EOS_VM_/CORE_NET_VM_/g' {} +
+
+echo "  CMake fixups done"
 
 # ─────────────────────────────────────────────────
 # PHASE 8b: Test code identifier renames

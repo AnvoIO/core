@@ -52,7 +52,7 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 set(BUILD_DOXYGEN FALSE CACHE BOOL "Build doxygen documentation on every make")
-set(ENABLE_MULTIVERSION_PROTOCOL_TEST FALSE CACHE BOOL "Enable nodeos multiversion protocol test")
+set(ENABLE_MULTIVERSION_PROTOCOL_TEST FALSE CACHE BOOL "Enable core_netd multiversion protocol test")
 
 option(ENABLE_OC "Enable eosvm-oc on supported platforms" ON)
 
@@ -61,21 +61,21 @@ option(ENABLE_OC "Enable eosvm-oc on supported platforms" ON)
 #  * ctest entries with --runtime
 if(ENABLE_OC AND CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)
    if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
-      list(APPEND CORE_NET_WASM_RUNTIMES eos-vm-oc)
-      # EOS VM OC requires LLVM, but move the check up here to a central location so that the EosioTester.cmakes
+      list(APPEND CORE_NET_WASM_RUNTIMES vm-oc)
+      # VM OC requires LLVM, but move the check up here to a central location so that the Tester.cmakes
       # can be created with the exact version found
       find_package(LLVM REQUIRED CONFIG)
       if(LLVM_VERSION_MAJOR VERSION_LESS 7 OR LLVM_VERSION_MAJOR VERSION_GREATER_EQUAL 12)
-	      message(FATAL_ERROR "Spring requires an LLVM version 7 through 11")
+	      message(FATAL_ERROR "Requires an LLVM version 7 through 11")
       endif()
    endif()
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)
    if(CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL amd64)
-      list(APPEND CORE_NET_WASM_RUNTIMES eos-vm eos-vm-jit)
+      list(APPEND CORE_NET_WASM_RUNTIMES vm vm-jit)
    else()
-      list(APPEND CORE_NET_WASM_RUNTIMES eos-vm)
+      list(APPEND CORE_NET_WASM_RUNTIMES vm)
    endif()
 endif()
 
@@ -242,7 +242,7 @@ configure_file(libraries/libfc/secp256k1/secp256k1/COPYING                 licen
 configure_file(libraries/libfc/include/fc/crypto/webauthn_json/license.txt licenses/core/LICENSE.rapidjson COPYONLY)
 configure_file(libraries/eos-vm/LICENSE                                    licenses/core/LICENSE.eos-vm    COPYONLY)
 configure_file(libraries/prometheus/prometheus-cpp/LICENSE                 licenses/core/LICENSE.prom      COPYONLY)
-configure_file(programs/cleos/LICENSE.CLI11                                licenses/core/LICENSE.CLI11     COPYONLY)
+configure_file(programs/core-cli/LICENSE.CLI11                             licenses/core/LICENSE.CLI11     COPYONLY)
 configure_file(libraries/libfc/libraries/bls12-381/LICENSE                 licenses/core/LICENSE.bls12-381 COPYONLY)
 configure_file(libraries/libfc/libraries/boringssl/bssl/LICENSE            licenses/core/LICENSE.boringssl COPYONLY)
 
@@ -284,13 +284,13 @@ else()
    # The `make package` installation of symlinks happens via the `postinst` script installed in cmake.package via the line below
 endif()
 
-configure_file(${CMAKE_SOURCE_DIR}/libraries/cli11/bash-completion/completions/spring-util
-               ${CMAKE_BINARY_DIR}/programs/spring-util/bash-completion/completions/spring-util COPYONLY)
-configure_file(${CMAKE_SOURCE_DIR}/libraries/cli11/bash-completion/completions/cleos
-               ${CMAKE_BINARY_DIR}/programs/cleos/bash-completion/completions/cleos COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/libraries/cli11/bash-completion/completions/core-util
+               ${CMAKE_BINARY_DIR}/programs/core-util/bash-completion/completions/core-util COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/libraries/cli11/bash-completion/completions/core-cli
+               ${CMAKE_BINARY_DIR}/programs/core-cli/bash-completion/completions/core-cli COPYONLY)
 
-install(FILES libraries/cli11/bash-completion/completions/spring-util DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bash-completion/completions COMPONENT base)
-install(FILES libraries/cli11/bash-completion/completions/cleos DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bash-completion/completions COMPONENT base)
+install(FILES libraries/cli11/bash-completion/completions/core-util DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bash-completion/completions COMPONENT base)
+install(FILES libraries/cli11/bash-completion/completions/core-cli DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/bash-completion/completions COMPONENT base)
 
 # Add the boost submodule we used to build to our install package, so headers can be found for libtester
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/libraries/boost/"

@@ -50,7 +50,7 @@ namespace core_net { namespace chain {
          wasm_interface(vm_type vm, vm_oc_enable eosvmoc_tierup, const chainbase::database& d, platform_timer& main_thread_timer, const std::filesystem::path data_dir, const eosvmoc::config& eosvmoc_config, bool profile);
          ~wasm_interface();
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          // initialize exec per thread
          void init_thread_local_data();
 

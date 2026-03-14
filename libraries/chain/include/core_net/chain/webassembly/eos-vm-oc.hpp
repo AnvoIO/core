@@ -214,22 +214,22 @@ struct eos_vm_oc_type_converter : public core_net::vm::type_converter<webassembl
    using base_type::as_result;
    using base_type::get_host;
 
-   EOS_VM_FROM_WASM(bool, (uint32_t value)) { return value ? 1 : 0; }
+   CORE_NET_VM_FROM_WASM(bool, (uint32_t value)) { return value ? 1 : 0; }
 
-   EOS_VM_FROM_WASM(memcpy_params, (vm::wasm_ptr_t dst, vm::wasm_ptr_t src, vm::wasm_size_t size)) {
+   CORE_NET_VM_FROM_WASM(memcpy_params, (vm::wasm_ptr_t dst, vm::wasm_ptr_t src, vm::wasm_size_t size)) {
       auto d = array_ptr_impl<char>(dst, size);
       auto s = array_ptr_impl<char>(src, size);
       array_ptr_impl<char>(dst, 1);
       return { d, s, size };
    }
 
-   EOS_VM_FROM_WASM(memcmp_params, (vm::wasm_ptr_t lhs, vm::wasm_ptr_t rhs, vm::wasm_size_t size)) {
+   CORE_NET_VM_FROM_WASM(memcmp_params, (vm::wasm_ptr_t lhs, vm::wasm_ptr_t rhs, vm::wasm_size_t size)) {
      auto l = array_ptr_impl<char>(lhs, size);
      auto r = array_ptr_impl<char>(rhs, size);
      return { l, r, size };
    }
 
-   EOS_VM_FROM_WASM(memset_params, (vm::wasm_ptr_t dst, int32_t val, vm::wasm_size_t size)) {
+   CORE_NET_VM_FROM_WASM(memset_params, (vm::wasm_ptr_t dst, int32_t val, vm::wasm_size_t size)) {
      auto d = array_ptr_impl<char>(dst, size);
      array_ptr_impl<char>(dst, 1);
      return { d, val, size };
@@ -269,17 +269,17 @@ struct eos_vm_oc_type_converter : public core_net::vm::type_converter<webassembl
       return {p};
    }
 
-   EOS_VM_FROM_WASM(null_terminated_ptr, (vm::wasm_ptr_t ptr)) {
+   CORE_NET_VM_FROM_WASM(null_terminated_ptr, (vm::wasm_ptr_t ptr)) {
       auto p = null_terminated_ptr_impl(ptr);
       return {static_cast<const char*>(p)};
    }
-   EOS_VM_FROM_WASM(name, (uint64_t e)) { return name{e}; }
+   CORE_NET_VM_FROM_WASM(name, (uint64_t e)) { return name{e}; }
    uint64_t to_wasm(name&& n) { return n.to_uint64_t(); }
    vm::wasm_ptr_t to_wasm(void*&& ptr) {
       return convert_native_to_wasm(static_cast<char*>(ptr));
    }
-   EOS_VM_FROM_WASM(float32_t, (float f)) { return ::to_softfloat32(f); }
-   EOS_VM_FROM_WASM(float64_t, (double f)) { return ::to_softfloat64(f); }
+   CORE_NET_VM_FROM_WASM(float32_t, (float f)) { return ::to_softfloat32(f); }
+   CORE_NET_VM_FROM_WASM(float64_t, (double f)) { return ::to_softfloat64(f); }
 
    template<typename T>
    inline decltype(auto) as_value(const vm::native_value& val) const {

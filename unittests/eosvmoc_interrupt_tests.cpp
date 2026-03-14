@@ -12,7 +12,7 @@ using mvo = fc::mutable_variant_object;
 BOOST_AUTO_TEST_SUITE(eosvmoc_interrupt_tests)
 
 BOOST_AUTO_TEST_CASE( wasm_interrupt_test ) { try {
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
    fc::temp_directory tempdir;
    constexpr bool use_genesis = true;
    savanna_validating_tester t(

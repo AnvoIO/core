@@ -56,7 +56,7 @@ namespace core_net {
 
       prometheus_api_handle handle{my.get()};
       app().get_plugin<http_plugin>().add_async_api({
-        CALL_ASYNC_WITH_400(prometheus, prometheus, handle, eosio, metrics, std::string, 200, http_params_types::no_params)}
+        CALL_ASYNC_WITH_400(prometheus, prometheus, handle, core_net, metrics, std::string, 200, http_params_types::no_params)}
         , http_content_type::plaintext);
    }
 

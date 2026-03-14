@@ -1013,7 +1013,7 @@ struct controller_impl {
    peer_keys_db_t                  peer_keys_db;
 
    thread_local static platform_timer timer; // a copy for main thread and each read-only thread
-#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_VM_RUNTIME_ENABLED) || defined(CORE_NET_VM_JIT_RUNTIME_ENABLED)
    thread_local static vm::wasm_allocator wasm_alloc; // a copy for main thread and each read-only thread
 #endif
    wasm_interface wasmif;
@@ -5017,7 +5017,7 @@ struct controller_impl {
       return app_window == app_window_type::write;
    }
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
    bool is_eos_vm_oc_enabled() const {
       return wasmif.is_eos_vm_oc_enabled();
    }
@@ -5026,7 +5026,7 @@ struct controller_impl {
    // Only called from read-only trx execution threads when producer_plugin
    // starts them. Only OC requires initialize thread specific data.
    void init_thread_local_data() {
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       if ( is_eos_vm_oc_enabled() ) {
          wasmif.init_thread_local_data();
       }
@@ -5181,7 +5181,7 @@ struct controller_impl {
 }; /// controller_impl
 
 thread_local platform_timer controller_impl::timer;
-#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_VM_RUNTIME_ENABLED) || defined(CORE_NET_VM_JIT_RUNTIME_ENABLED)
 thread_local core_net::vm::wasm_allocator controller_impl::wasm_alloc;
 #endif
 
@@ -6106,12 +6106,12 @@ void controller::enable_deep_mind(deep_mind_handler* logger) {
 uint32_t controller::earliest_available_block_num() const{
    return my->earliest_available_block_num();
 }
-#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_VM_RUNTIME_ENABLED) || defined(CORE_NET_VM_JIT_RUNTIME_ENABLED)
 vm::wasm_allocator& controller::get_wasm_allocator() {
    return my->wasm_alloc;
 }
 #endif
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
 bool controller::is_eos_vm_oc_enabled() const {
    return my->is_eos_vm_oc_enabled();
 }

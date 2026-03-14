@@ -463,10 +463,10 @@ namespace core_net::chain {
          void enable_deep_mind( deep_mind_handler* logger );
          uint32_t earliest_available_block_num() const;
 
-#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_VM_RUNTIME_ENABLED) || defined(CORE_NET_VM_JIT_RUNTIME_ENABLED)
          vm::wasm_allocator&  get_wasm_allocator();
 #endif
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          bool is_eos_vm_oc_enabled() const;
 #endif
 

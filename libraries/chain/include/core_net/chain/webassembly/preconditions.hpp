@@ -102,18 +102,18 @@ namespace core_net { namespace chain { namespace webassembly {
       return f128_is_nan( f );
    }
 
-   EOS_VM_PRECONDITION(context_free_check,
-         EOS_VM_INVOKE_ONCE([&](auto&&...) {
+   CORE_NET_VM_PRECONDITION(context_free_check,
+         CORE_NET_VM_INVOKE_ONCE([&](auto&&...) {
             EOS_ASSERT(ctx.get_host().get_context().is_context_free(), unaccessible_api, "this API may only be called from context_free apply");
          }));
 
-   EOS_VM_PRECONDITION(context_aware_check,
-         EOS_VM_INVOKE_ONCE([&](auto&&...) {
+   CORE_NET_VM_PRECONDITION(context_aware_check,
+         CORE_NET_VM_INVOKE_ONCE([&](auto&&...) {
             EOS_ASSERT(!ctx.get_host().get_context().is_context_free(), unaccessible_api, "only context free api's can be used in this context");
          }));
 
-   EOS_VM_PRECONDITION(privileged_check,
-         EOS_VM_INVOKE_ONCE([&](auto&&...) {
+   CORE_NET_VM_PRECONDITION(privileged_check,
+         CORE_NET_VM_INVOKE_ONCE([&](auto&&...) {
             EOS_ASSERT(ctx.get_host().get_context().is_privileged(), unaccessible_api,
                        "${code} does not have permission to call this API", ("code", ctx.get_host().get_context().get_receiver()));
          }));
@@ -128,8 +128,8 @@ namespace core_net { namespace chain { namespace webassembly {
       vm::span<T> to_span(const vm::span<T>& val) { return val; }
    }
 
-   EOS_VM_PRECONDITION(core_precondition,
-         EOS_VM_INVOKE_ON_ALL(([&](auto&& arg, auto&&... rest) {
+   CORE_NET_VM_PRECONDITION(core_precondition,
+         CORE_NET_VM_INVOKE_ON_ALL(([&](auto&& arg, auto&&... rest) {
             using namespace core_net::vm;
             using arg_t = std::decay_t<decltype(arg)>;
             static_assert( is_whitelisted_type_v<arg_t>, "whitelisted type violation");
@@ -155,15 +155,15 @@ namespace core_net { namespace chain { namespace webassembly {
       using type = T;
    };
 
-   EOS_VM_PRECONDITION(is_nan_check,
-         EOS_VM_INVOKE_ON_ALL([&](auto&& arg, auto&&... rest) {
+   CORE_NET_VM_PRECONDITION(is_nan_check,
+         CORE_NET_VM_INVOKE_ON_ALL([&](auto&& arg, auto&&... rest) {
             if constexpr (should_check_nan_v<std::remove_cv_t<typename remove_argument_proxy<std::decay_t<decltype(arg)>>::type>>) {
                EOS_ASSERT(!webassembly::is_nan(*arg), transaction_exception, "NaN is not an allowed value for a secondary key");
             }
          }));
 
-   EOS_VM_PRECONDITION(legacy_static_check_wl_args,
-         EOS_VM_INVOKE_ONCE([&](auto&&... args) {
+   CORE_NET_VM_PRECONDITION(legacy_static_check_wl_args,
+         CORE_NET_VM_INVOKE_ONCE([&](auto&&... args) {
             static_assert( are_whitelisted_legacy_types_v<std::decay_t<decltype(args)>...>, "legacy whitelisted type violation");
          }));
 

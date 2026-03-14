@@ -1,7 +1,7 @@
 #pragma once
 
 #include <core_net/chain/wasm_interface.hpp>
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
 #include <core_net/chain/webassembly/eos-vm-oc.hpp>
 #else
 #define _REGISTER_EOSVMOC_INTRINSIC(CLS, MOD, METHOD, WASM_SIG, NAME, SIG)
@@ -46,7 +46,7 @@ namespace core_net { namespace chain {
       struct by_hash;
       struct by_last_block_num;
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
 struct eosvmoc_tier {
    // Called from main thread
    eosvmoc_tier(const std::filesystem::path& d, const eosvmoc::config& c, const chainbase::database& db,
@@ -79,11 +79,11 @@ struct eosvmoc_tier {
          , wasm_runtime_time(vm)
          , eosvmoc_tierup(eosvmoc_tierup)
       {
-#ifdef CORE_NET_EOS_VM_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_RUNTIME_ENABLED
          if(vm == wasm_interface::vm_type::eos_vm)
             runtime_interface = std::make_unique<webassembly::eos_vm_runtime::eos_vm_runtime<core_net::vm::interpreter>>();
 #endif
-#ifdef CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_JIT_RUNTIME_ENABLED
          if(vm == wasm_interface::vm_type::eos_vm_jit && profile) {
             core_net::vm::set_profile_interval_us(200);
             runtime_interface = std::make_unique<webassembly::eos_vm_runtime::eos_vm_profile_runtime>();
@@ -91,14 +91,14 @@ struct eosvmoc_tier {
          if(vm == wasm_interface::vm_type::eos_vm_jit && !profile)
             runtime_interface = std::make_unique<webassembly::eos_vm_runtime::eos_vm_runtime<core_net::vm::jit>>();
 #endif
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          if(vm == wasm_interface::vm_type::eos_vm_oc)
             runtime_interface = std::make_unique<webassembly::eosvmoc::eosvmoc_runtime>(data_dir, eosvmoc_config, d);
 #endif
          if(!runtime_interface)
             EOS_THROW(wasm_exception, "${r} wasm runtime not supported on this platform and/or configuration", ("r", vm));
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          if(eosvmoc_tierup != wasm_interface::vm_oc_enable::oc_none) {
             EOS_ASSERT(vm != wasm_interface::vm_type::eos_vm_oc, wasm_exception, "You can't use EOS VM OC as the base runtime when tier up is activated");
             eosvmoc = std::make_unique<eosvmoc_tier>(data_dir, eosvmoc_config, d, [this](boost::asio::io_context& ctx, const digest_type& code_id, fc::time_point queued_time) {
@@ -110,7 +110,7 @@ struct eosvmoc_tier {
 
       ~wasm_interface_impl() = default;
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       // called from async thread
       void async_compile_complete(boost::asio::io_context& ctx, const digest_type& code_id, fc::time_point queued_time) {
          if (executing_code_hash.load() == code_id) { // is action still executing?
@@ -133,7 +133,7 @@ struct eosvmoc_tier {
 
       void apply( const digest_type& code_hash, const uint8_t& vm_type, const uint8_t& vm_version, apply_context& context ) {
          bool attempt_tierup = false;
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          attempt_tierup = eosvmoc && (eosvmoc_tierup == wasm_interface::vm_oc_enable::oc_all || context.should_use_eos_vm_oc());
          if (attempt_tierup) {
             const chain::eosvmoc::code_descriptor* cd = nullptr;
@@ -228,7 +228,7 @@ struct eosvmoc_tier {
             }
          }
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          // see comment above
          if (first_used_block_num == block_num_last_used && eosvmoc)
             eosvmoc->cc.free_code(code_hash, vm_version);
@@ -243,14 +243,14 @@ struct eosvmoc_tier {
          // Anything last used before or on the LIB can be evicted.
          const auto first_it = wasm_instantiation_cache.get<by_last_block_num>().begin();
          const auto last_it  = wasm_instantiation_cache.get<by_last_block_num>().upper_bound(lib);
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          if(eosvmoc) for(auto it = first_it; it != last_it; it++)
             eosvmoc->cc.free_code(it->code_hash, it->vm_version);
 #endif
          wasm_instantiation_cache.get<by_last_block_num>().erase(first_it, last_it);
       }
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       bool is_eos_vm_oc_enabled() const {
          return (eosvmoc || wasm_runtime_time == wasm_interface::vm_type::eos_vm_oc);
       }
@@ -331,7 +331,7 @@ struct eosvmoc_tier {
       std::atomic<bool> eos_vm_oc_compile_interrupt{false};
       uint32_t eos_vm_oc_compile_interrupt_count{0}; // for testing
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       std::unique_ptr<struct eosvmoc_tier> eosvmoc{nullptr}; // used by all threads
 #endif
    };

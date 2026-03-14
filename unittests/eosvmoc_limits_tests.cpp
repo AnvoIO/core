@@ -30,7 +30,7 @@ void limit_violated_test(const eosvmoc::config& eosvmoc_config, const std::strin
    chain.set_code(acc, test_contracts::core_net_token_wasm());
    chain.set_abi(acc, test_contracts::core_net_token_abi());
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
    if (chain.control->is_eos_vm_oc_enabled()) {
       if (expect_exception) {
          BOOST_CHECK_EXCEPTION(

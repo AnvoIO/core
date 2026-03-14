@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( get_producers, T, testers ) { try {
    } FC_LOG_AND_RETHROW() }
 
 // this test verifies the normal case of get_producer, where the contents of the system contract's producers table is used
-BOOST_AUTO_TEST_CASE_TEMPLATE( get_producers_from_table, T, eosio_system::core_net_system_testers ) { try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( get_producers_from_table, T, core_net_system::core_net_system_testers ) { try {
       T chain;
 
       // ensure that enough voting is occurring so that producer1111 is elected as the producer

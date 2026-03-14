@@ -2,6 +2,6 @@
 
 namespace core_net { namespace chain {
 
-const string genesis_state::eosio_root_key = "${CORE_NET_ROOT_KEY}";
+const string genesis_state::core_net_root_key = "${CORE_NET_ROOT_KEY}";
 
 } } // namespace core_net::chain

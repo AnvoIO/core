@@ -242,13 +242,13 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
    std::string wasm_runtime_opt = "Override default WASM runtime (";
    std::string wasm_runtime_desc;
    std::string delim;
-#ifdef CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_JIT_RUNTIME_ENABLED
    wasm_runtime_opt += " \"eos-vm-jit\"";
    wasm_runtime_desc += "\"eos-vm-jit\" : A WebAssembly runtime that compiles WebAssembly code to native x86 code prior to execution.\n";
    delim = ", ";
 #endif
 
-#ifdef CORE_NET_EOS_VM_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_RUNTIME_ENABLED
    wasm_runtime_opt += delim + "\"eos-vm\"";
    wasm_runtime_desc += "\"eos-vm\" : A WebAssembly interpreter.\n";
    delim = ", ";
@@ -351,7 +351,7 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
 #endif
          )
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          ("eos-vm-oc-cache-size-mb", bpo::value<uint64_t>()->default_value(eosvmoc::config().cache_size / (1024u*1024u)), "Maximum size (in MiB) of the EOS VM OC code cache")
          ("eos-vm-oc-compile-threads", bpo::value<uint64_t>()->default_value(1u)->notifier([](const auto t) {
                if(t == 0) {
@@ -965,7 +965,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
 
       chain_config->db_map_mode = options.at("database-map-mode").as<pinnable_mapped_file::map_mode>();
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       if( options.count("eos-vm-oc-cache-size-mb") )
          chain_config->eosvmoc_config.cache_size = options.at( "eos-vm-oc-cache-size-mb" ).as<uint64_t>() * 1024u * 1024u;
       if( options.count("eos-vm-oc-compile-threads") )

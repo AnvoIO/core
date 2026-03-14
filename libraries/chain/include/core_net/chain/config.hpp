@@ -117,7 +117,7 @@ const static uint32_t   setcode_ram_bytes_multiplier       = 10;     ///< multip
 
 const static uint32_t   hashing_checktime_block_size       = 10*1024;  /// call checktime from hashing intrinsic once per this number of bytes
 
-#ifdef CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_JIT_RUNTIME_ENABLED
 const static core_net::chain::wasm_interface::vm_type default_wasm_runtime = core_net::chain::wasm_interface::vm_type::eos_vm_jit;
 #else
 const static core_net::chain::wasm_interface::vm_type default_wasm_runtime = core_net::chain::wasm_interface::vm_type::eos_vm;

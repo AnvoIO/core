@@ -26,7 +26,7 @@
 #include <fstream>
 #include <string.h>
 
-#if defined(CORE_NET_EOS_VM_RUNTIME_ENABLED) || defined(CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED)
+#if defined(CORE_NET_VM_RUNTIME_ENABLED) || defined(CORE_NET_VM_JIT_RUNTIME_ENABLED)
 #include <core_net/vm/allocator.hpp>
 #endif
 
@@ -38,7 +38,7 @@ namespace core_net { namespace chain {
 
    wasm_interface::~wasm_interface() {}
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
    void wasm_interface::init_thread_local_data() {
       // OC tierup and OC runtime are mutually exclusive
       if (my->eosvmoc) {
@@ -97,7 +97,7 @@ namespace core_net { namespace chain {
       return my->is_code_cached(code_hash, vm_type, vm_version);
    }
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
    bool wasm_interface::is_eos_vm_oc_enabled() const {
       return my->is_eos_vm_oc_enabled();
    }
@@ -110,7 +110,7 @@ namespace core_net { namespace chain {
    wasm_instantiated_module_interface::~wasm_instantiated_module_interface() = default;
    wasm_runtime_interface::~wasm_runtime_interface() = default;
 
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
    thread_local std::unique_ptr<eosvmoc::executor> wasm_interface_impl::eosvmoc_tier::exec{};
    thread_local std::unique_ptr<eosvmoc::memory>   wasm_interface_impl::eosvmoc_tier::mem{};
 #endif

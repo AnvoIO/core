@@ -8,7 +8,7 @@
 //eos-vm includes
 #include <core_net/vm/backend.hpp>
 #include <core_net/chain/webassembly/preconditions.hpp>
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
 #include <core_net/chain/webassembly/eos-vm-oc.hpp>
 #endif
 #include <boost/hana/string.hpp>
@@ -251,7 +251,7 @@ std::unique_ptr<wasm_instantiated_module_interface> eos_vm_runtime<Impl>::instan
       apply_options options = { .max_pages = 65536,
                                 .max_call_depth = 0 };
       std::unique_ptr<backend_t> bkend = nullptr;
-#ifdef CORE_NET_EOS_VM_JIT_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_JIT_RUNTIME_ENABLED
       if constexpr (std::is_same_v<Impl, core_net::vm::jit>)
          bkend = std::make_unique<backend_t>(code, code_size, nullptr, options, true, false); // true, false <--> single parsing, backend does not own execution context (execution context is reused per thread)
       else
@@ -299,7 +299,7 @@ struct host_function_registrator {
    constexpr host_function_registrator(Mod mod_name, Name fn_name) {
       using rhf_t = eos_vm_host_functions_t;
       rhf_t::add<HostFunction, Preconditions...>(mod_name.c_str(), fn_name.c_str());
-#ifdef CORE_NET_EOS_VM_OC_RUNTIME_ENABLED
+#ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       constexpr bool is_injected = (Mod() == BOOST_HANA_STRING(CORE_NET_INJECTED_MODULE_NAME));
       eosvmoc::register_eosvm_oc<HostFunction, is_injected, std::tuple<Preconditions...>>(
           mod_name + BOOST_HANA_STRING(".") + fn_name);

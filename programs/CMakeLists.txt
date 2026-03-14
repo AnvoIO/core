@@ -1,4 +1,4 @@
-add_subdirectory( nodeos )
-add_subdirectory( cleos )
-add_subdirectory( keosd )
+add_subdirectory( core_netd )
+add_subdirectory( core-cli )
+add_subdirectory( core-wallet )
 add_subdirectory( core-util )
