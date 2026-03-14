@@ -71,58 +71,8 @@ Spring, leap, Leap, and block.one from the codebase. Replace with new project id
 
 **Scale:** ~11,000+ occurrences across ~500+ files, 35 directories to rename.
 
-**Terms to replace:**
-
-| Term | Occurrences | Primary Location |
-|------|------------|------------------|
-| eosio (all forms) | ~7,693 | Namespaces, includes, macros, everywhere |
-| nodeos | ~1,939 | Test scripts, docs, program dirs |
-| cleos | ~560 | Docs, test scripts, bash completion |
-| spring | ~314 | CMake, docs, version strings |
-| antelope/AntelopeIO | ~271 | GitHub URLs, docs, workflows |
-| keosd | ~186 | Docs, test scripts |
-| eos_vm/EOS_VM | ~70 | WASM runtime internals |
-| leap | ~44 | Legacy comments, CMake configs |
-
-**What to rename:**
-- C++ namespace: `eosio::` → `core::` (377 declarations, 366 files)
-- Include paths: `#include <eosio/...>` → `#include <core/...>` (27 directories, 232 directives)
-- Macro prefix: `EOSIO_*` → `CORE_*` (307 occurrences)
-- Executables: nodeos → `cored`, cleos → `core-cli`, keosd → `core-keys`, spring-util → `core-util`
-- Program/doc directories: rename to match new executable names
-- Build system: CMake project name, target names, package names
-- Test files: 25 `nodeos_*.py` files → `cored_*.py`
-- CI/CD: workflow files, runner labels, artifact names
-
-**What MUST NOT be renamed (protocol compatibility):**
-- ABI type identifiers containing "eosio" (consensus-level serialization)
-- Protocol feature activation names (consensus compatibility)
-- `fc::` namespace (generic foundation library, not branded)
-- `eos-vm` internal library (optional — implementation detail, not user-facing)
-
-**System account names (`eosio`, `eosio.token`, etc.):**
-- These are NOT hardcoded throughout — they're centralized in `config.hpp`
-- A **genesis-configurable compatibility switch** will allow:
-  - Migrating EOSIO chains: keep `eosio.*` account names (default)
-  - New chains: use custom account names (e.g., `core.*`)
-- Same binary, same protocol, different genesis configuration
-- See [08_system_account_compatibility.md](08_system_account_compatibility.md) for details
-- **Effort: ~1-2 weeks additional** on top of the rebrand
-
-**Strategy:** Script ~90% of the work, manual review for protocol-sensitive boundaries.
-Do this FIRST after forking, before any feature branches diverge.
-
-**Execution order:**
-1. Choose new names (project, executables, namespace, system account prefix) — 1 day
-2. Rebrand codebase (~11K references, scripted) — 1-2 weeks
-   - [07_rebrand_plan.md](07_rebrand_plan.md)
-3. Implement system account compatibility switch — 1-2 weeks
-   - Make `config::system_account_name` genesis-configurable
-   - Refactor `SET_APP_HANDLER` macro to use config constants
-   - Make `"eosio."` prefix restriction configurable
-   - Default: `eosio.*` (backward compatible for migrating chains)
-   - Configurable: `core.*` (for fresh chains)
-   - [08_system_account_compatibility.md](08_system_account_compatibility.md)
+**Strategy:** Absorb key submodules first (eliminates cross-boundary issues),
+then rebrand in one scripted pass. See naming table and submodule strategy above.
 
 **Also required:**
 - New genesis configuration

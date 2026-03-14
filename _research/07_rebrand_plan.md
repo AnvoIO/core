@@ -10,7 +10,33 @@ Remove all references to:
 - **block.one** / **Block.one** (original company)
 - **nodeos** / **cleos** / **keosd** (executable names)
 
-Replace with the new project identity: **Anvo Network** (`core` namespace, `CORE_` macro prefix, `core` system accounts, `cored`/`core-cli`/`core-keys`/`core-util` executables).
+Replace with the new project identity: **Anvo Network** (`core_net::` namespace,
+`CORE_NET_` macro prefix, `core.*` system accounts,
+`core_netd`/`core-cli`/`core-wallet`/`core-util` executables).
+
+## Naming Convention (Finalized)
+
+| Layer | Old | New |
+|-------|-----|-----|
+| C++ namespace | `eosio::` | `core_net::` |
+| C++ identifier prefix | `eosio_` | `core_net_` |
+| Macro prefix | `EOSIO_` | `CORE_NET_` |
+| Include paths | `#include <eosio/...>` | `#include <core_net/...>` |
+| Node daemon | `nodeos` | `core_netd` |
+| CLI | `cleos` | `core-cli` |
+| Wallet | `keosd` | `core-wallet` |
+| Utility | `spring-util` | `core-util` |
+| CMake project | `antelope-spring` | `anvo-core` |
+| CMake targets | `eosio_chain` | `core_net_chain` |
+| keosd_ identifiers | `keosd_*`, `_keosd_*` | `core_wallet_*`, `_core_wallet_*` |
+| WASM intrinsics | `eosio_assert`, `eosio_exit` | `core_net_assert`, `core_net_exit` |
+| WASM injection | `eosio_injection.*` | `core_net_injection.*` |
+| System accounts (new) | — | `core`, `core.token`, `core.bios`, etc. |
+| System accounts (compat) | `eosio`, `eosio.token` | Kept via genesis config switch |
+
+**Why `core_net::` instead of `core::`:** `core::` collides with `boost::core::`.
+`core_net::` is unique and provides a consistent prefix across namespace (`core_net::`),
+identifiers (`core_net_*`), and macros (`CORE_NET_*`).
 
 ## Scale of the Effort
 
@@ -29,16 +55,29 @@ Replace with the new project identity: **Anvo Network** (`core` namespace, `CORE
 | **block.one** | ~2 | 2 | 0 |
 | **TOTAL** | **~11,079** | | **35** |
 
-This is NOT a weekend project. It's a systematic, multi-week effort that must be
-done carefully to avoid breaking the build, tests, and protocol compatibility.
-
 ### What Does NOT Need Renaming
 
 - **`fc::` namespace** (~3,200 occurrences) — generic foundation library, not branded
 - **WASM bytecode** — compiled contracts don't contain namespace strings
-- **On-chain account names** (e.g., the `eosio` system account) — these are protocol-level
-  names baked into existing chain state. Renaming them breaks compatibility. See
-  "Protocol Account Names" section below.
+- **Submodule internals that are kept as submodules** — boost, boringssl, prometheus,
+  rapidjson, secp256k1 (no eosio refs, upstream sources)
+
+## Prerequisites: Submodule Absorption
+
+**Must be done before the rename.** Absorbing submodules with `eosio` references
+eliminates cross-boundary issues that made the first rename attempt (on `rebrand/core`)
+messy.
+
+| Submodule | Action | Reason |
+|-----------|--------|--------|
+| `libraries/eos-vm` | **Absorbed** | 158 files with `eosio::vm::` → `core_net::vm::` |
+| `libraries/appbase` | **Absorbed** | Eliminate AntelopeIO dependency |
+| `libraries/softfloat` | **Absorbed** | Eliminate AntelopeIO dependency |
+| `libraries/cli11/cli11` | **Fork to Anvo-Network** | Rebase onto upstream v2.6.2, rename SpringFormatter |
+| `libraries/libfc/libraries/bls12-381` | **Fork to Anvo-Network** | Crypto lib, keep as submodule |
+| `libraries/libfc/libraries/bn256` | **Fork to Anvo-Network** | Crypto lib, keep as submodule |
+
+Already upstream (no action): boost, boringssl, prometheus-cpp, rapidjson, secp256k1.
 
 ## Renaming Categories
 
@@ -46,354 +85,195 @@ done carefully to avoid breaking the build, tests, and protocol compatibility.
 
 **`namespace eosio`** — 377 declarations across 366 files.
 
-This is the primary namespace for the entire chain library, all plugins, and all programs.
-
 ```cpp
 // Current
 namespace eosio { namespace chain { ... } }
-namespace eosio { namespace chain_apis { ... } }
 
 // New
-namespace core { namespace chain { ... } }
-namespace core { namespace chain_apis { ... } }
+namespace core_net { namespace chain { ... } }
 ```
 
-**Strategy:** Global find-and-replace with verification.
+**Strategy:** Global find-and-replace with perl negative lookbehind.
 
-- `namespace eosio` → `namespace core`
-- `eosio::` → `core::` (qualified name references)
-- `using namespace eosio` → `using namespace core`
-- `EOSIO_` macro prefix → `CORE_` (307 occurrences across 33 files)
+- `namespace eosio` → `namespace core_net`
+- `eosio::` → `core_net::` (but NOT `eosio::vm::` — see Category 5)
+- `using namespace eosio` → `using namespace core_net`
+- `EOSIO_` macro prefix → `CORE_NET_`
 
-**Risk:** Low if done mechanically. The compiler will catch any missed references.
+**Important:** Use `(?<![a-zA-Z_])eosio::` to avoid replacing `eosio` inside
+identifiers like `apply_eosio_newaccount`.
 
 ### Category 2: Include Paths & Directory Structure (HIGH EFFORT)
 
-**27 directories named `eosio`**, primarily under:
-```
-libraries/chain/include/eosio/           (121 header files)
-libraries/state_history/include/eosio/
-libraries/testing/include/eosio/
-plugins/*/include/eosio/
-```
+**27 directories named `eosio`** → rename to `core_net`.
 
-**232 `#include` directives** referencing `eosio/`:
 ```cpp
 // Current
 #include <eosio/chain/controller.hpp>
-#include <eosio/chain_plugin/chain_plugin.hpp>
 
 // New
-#include <core/chain/controller.hpp>
-#include <core/chain_plugin/chain_plugin.hpp>
+#include <core_net/chain/controller.hpp>
 ```
-
-**Strategy:**
-1. Rename all `include/eosio/` directories to `include/core/`
-2. Global find-and-replace on all `#include` directives
-3. Update CMakeLists.txt include path declarations
-
-**Risk:** Medium. Must update every include and every CMake target_include_directories.
-The compiler catches all misses immediately.
 
 ### Category 3: Executable Names (MEDIUM EFFORT)
 
-| Current | New (example) | Defined In |
-|---------|---------------|-----------|
-| `nodeos` | `cored` | `CMakeLists.txt` line 34 |
-| `cleos` | `core-cli` | `CMakeLists.txt` line 33 |
-| `keosd` | `core-keys` | `CMakeLists.txt` line 35 |
-| `spring-util` | `core-util` | `CMakeLists.txt` line 36 |
-
-These are defined as CMake variables:
-```cmake
-set( CLI_CLIENT_EXECUTABLE_NAME cleos )
-set( NODE_EXECUTABLE_NAME nodeos )
-set( KEY_STORE_EXECUTABLE_NAME keosd )
-set( SPRING_UTIL_EXECUTABLE_NAME spring-util )
-```
+| Current | New | Defined In |
+|---------|-----|-----------|
+| `nodeos` | `core_netd` | `CMakeLists.txt` |
+| `cleos` | `core-cli` | `CMakeLists.txt` |
+| `keosd` | `core-wallet` | `CMakeLists.txt` |
+| `spring-util` | `core-util` | `CMakeLists.txt` |
 
 **Downstream references:**
 - ~1,939 `nodeos` references (test scripts, docs, CLI help text)
 - ~560 `cleos` references (docs, test scripts, bash completion)
 - ~186 `keosd` references (docs, test scripts)
-- 25 test files with `nodeos_` in the filename
-- Program directories: `programs/nodeos/`, `programs/cleos/`, `programs/keosd/`
-- Doc directories: `docs/01_nodeos/`, `docs/02_cleos/`, `docs/03_keosd/`
-
-**Strategy:** Rename CMake variables first, then fix all downstream references.
-Most test scripts reference executables through variables, so many will update
-automatically. File and directory renames must be done manually.
+- 25 test files with `nodeos_` in the filename → `core_netd_*.py`
+- Program directories: `programs/nodeos/` → `programs/core_netd/`
+- Doc directories: `docs/01_nodeos/` → `docs/01_core_netd/`
 
 ### Category 4: CMake & Build System (MEDIUM EFFORT)
 
 **Files to update:**
-- Root `CMakeLists.txt` — project name: `project( antelope-spring )`
-- `CMakeModules/eosio-config.cmake.in`
-- `CMakeModules/leap-config.cmake.in`
-- `CMakeModules/spring-config.cmake.in`
-- `CMakeModules/EosioTester.cmake.in`
-- `CMakeModules/EosioTesterBuild.cmake.in`
-- `eosio.version.in` (version namespace)
-- `eos.doxygen.in` (Doxygen config)
-- `package.cmake` (package naming)
+- Root `CMakeLists.txt` — project name: `project( antelope-spring )` → `project( anvo-core )`
+- `CMakeModules/eosio-config.cmake.in` → `core_net-config.cmake.in`
+- `eosio.version.in` → `core_net.version.in`
+- CMake target names: `eosio_chain` → `core_net_chain`, `eosio_testing` → `core_net_testing`
 
-**CMake target names:**
-All library and executable targets use EOSIO-derived names. These need updating in
-CMakeLists.txt files throughout the tree and in any `target_link_libraries` references.
+### Category 5: WASM Runtime / eos-vm (MEDIUM EFFORT)
 
-### Category 5: WASM Runtime Names (MEDIUM EFFORT)
+After absorbing eos-vm into the repo:
+- `eosio::vm::` namespace → `core_net::vm::`
+- `eosio/vm/` include paths → `core_net/vm/`
+- `EOS_VM_*` macros → `CORE_NET_VM_*`
+- All unqualified `vm::` references fully qualified after moving out of `namespace eosio`
 
-~70 occurrences of `eos_vm` / `EOS_VM`:
+### Category 6: WASM Intrinsics & Injection (CRITICAL — RENAME BEFORE RELEASE)
 
-| Current | New |
-|---------|-----|
-| `eos-vm` (runtime name) | Keep `eos-vm` (internal, not user-facing) |
-| `eos-vm-jit` | Keep (internal) |
-| `eos-vm-oc` | Keep (internal) |
-| `EOS_VM_OC_*` macros | Keep (internal) |
-| `eosvmoc_*` identifiers | `newvmoc_*` or keep |
+These are protocol-level WASM function names. Renaming breaks compatibility with
+existing compiled contracts, but since this is a new L1 with a compatibility mode,
+they will be renamed:
 
-**Decision point:** The eos-vm library (`libraries/eos-vm/`) is an external submodule.
-You have two options:
-1. **Fork and rename eos-vm** — clean but means maintaining a fork of eos-vm
-2. **Keep eos-vm naming internally** — pragmatic, less maintenance, the name is
-   internal-only and not user-facing
+- `eosio_assert` → `core_net_assert`
+- `eosio_exit` → `core_net_exit`
+- `eosio_injection.*` (61 functions) → `core_net_injection.*`
 
-**Recommendation:** Keep the eos-vm naming internally for now. It's an implementation
-detail. Users never see it. Rename only user-facing references (config flags like
-`--wasm-runtime eos-vm-oc` → rename user-facing config flags).
+**Compatibility mode:** Genesis-configurable switch will allow migrating chains
+to keep the old names. See [08_system_account_compatibility.md](08_system_account_compatibility.md).
 
-### Category 6: System Account Names (CRITICAL — DO NOT RENAME)
+### Category 7: System Account Names (GENESIS-CONFIGURABLE)
 
-~698 occurrences of `eosio` as a system account name:
+~698 occurrences of `eosio` as a system account name. These become
+**genesis-configurable** rather than hard-renamed:
 
-```cpp
-name("eosio")
-name("eosio.token")
-name("eosio.system")
-name("eosio.msig")
-name("eosio.wrap")
-name("eosio.bios")
-```
+- New chains: `core`, `core.token`, `core.system`, `core.msig`, etc.
+- Migrating chains: `eosio`, `eosio.token`, etc. (default for backward compatibility)
 
-**These MUST NOT be changed in the node software.** They are protocol-level account
-names embedded in:
-- The genesis state
-- System contract ABIs
-- Every existing chain's on-chain state
-- SDKs and tools across the ecosystem
+The `config::system_account_name` constants become functions that return the
+genesis-configured value. See [08_system_account_compatibility.md](08_system_account_compatibility.md).
 
-Changing them would break compatibility with existing EOSIO chains — the exact
-opposite of our goal.
+### Category 8: C++ Identifier Prefixes (MEDIUM EFFORT)
 
-**However**, for a fresh new chain (not migrating existing state), you could:
-1. Deploy system contracts to new account names in genesis
-2. Add aliases or configuration options for system account names
-3. Keep the `eosio.*` names as defaults for backward compatibility
+Identifiers using `eosio` as a prefix get renamed to `core_net_`:
 
-**Recommendation:** Keep `eosio.*` account names as protocol constants. They're
-internal to chain state, not user-facing branding. A future protocol upgrade
-could add configurable system account names if desired.
+- `eosio_system_tester` → `core_net_system_tester`
+- `eosio_token_tester` → `core_net_token_tester`
+- `eosio_contract_abi()` → `core_net_contract_abi()`
+- `eosio_bios_wasm()` → `core_net_bios_wasm()`
+- `eosio_root_key` → `core_net_root_key`
 
-### Category 7: Protocol Features & ABI Types (CAREFUL)
+Wallet-related identifiers:
+- `keosd_*` / `_keosd_*` → `core_wallet_*` / `_core_wallet_*`
+- `make_keosd_signature_provider` → `make_core_wallet_signature_provider`
+- `no_auto_keosd` → `no_auto_core_wallet`
 
-Some protocol feature names and ABI type strings contain "eosio":
-- `eosio::abi` type identifiers in ABI serialization
-- Protocol feature names in activation records
+### Category 9: Plugin Name Strings (MEDIUM EFFORT)
 
-**These are consensus-level identifiers.** Changing them creates a fork-incompatible
-chain. Keep them unchanged for compatibility.
+Plugin registration strings in Python tests and shell scripts:
+- `"eosio::producer_plugin"` → `"core_net::producer_plugin"`
+- `"eosio::net_plugin"` → `"core_net::net_plugin"`
+- etc. (~37 Python test files, 2 shell scripts)
 
-### Category 8: Documentation & Comments (~2,500+ occurrences)
+### Category 10: Documentation & Comments (~2,500+ occurrences)
 
-- README.md
-- docs/ directory (1,500+ occurrences across 01_nodeos/, 02_cleos/, 03_keosd/)
-- Code comments referencing EOSIO, Antelope, Spring
+- README.md, docs/ directory, code comments
+- Config directory: `etc/eosio/` → `etc/core_net/`
 - License headers
 
-**Strategy:** Bulk find-and-replace. Low risk — doesn't affect compilation or runtime.
+### Category 11: CI/CD & GitHub (SOFT)
 
-### Category 9: Test Scripts (~850+ occurrences)
-
-- 25 files named `nodeos_*.py`
-- Tests reference executables by name
-- Test harness classes named after executables
-
-**Strategy:** Rename files, update references. Most test frameworks use variables
-for executable paths, so internal references update via CMake. String literals in
-test assertions/logs need manual review.
-
-### Category 10: CI/CD & GitHub (SOFT)
-
-- `.github/workflows/*.yaml` — runner labels, artifact names
+- `.github/workflows/*.yaml`
 - GitHub URLs pointing to `AntelopeIO/spring`
-- Docker image names
-- Package naming (`*-amd64.deb`)
-
-**Strategy:** Update after code changes are complete.
+- Docker image names, package naming
 
 ## Execution Plan
 
-### Phase A: Preparation (1-2 days)
+### Phase 1: Submodule Absorption (DONE)
+Absorb eos-vm, appbase, softfloat into the repo. Fork CLI11, bls12-381, bn256
+to Anvo-Network GitHub org.
 
-1. **Choose new names** for:
-   - Project name (replaces "spring" / "antelope-spring")
-   - Node daemon (replaces "nodeos")
-   - CLI client (replaces "cleos")
-   - Key daemon (replaces "keosd")
-   - Utility tool (replaces "spring-util")
-   - C++ namespace (replaces `eosio`)
-   - Macro prefix (replaces `EOSIO_`)
-
-2. **Create a renaming script** that handles:
-   - Directory renames
-   - File renames
-   - Content replacement with proper case handling
-   - Git history preservation (use `git mv` for directories/files)
-
-3. **Set up a comprehensive build verification**:
-   - Full build on x86_64
-   - Full unit test suite run
-   - Full integration test suite run
-   - Compare test results before/after rename
-
-### Phase B: Structural Renames (1-2 days)
-
-**Order matters.** Do these first as they affect file paths:
+### Phase 2: Structural Renames (1-2 days)
 
 1. Rename directories:
-   - `include/eosio/` → `include/core/` (27 directories)
-   - `programs/nodeos/` → `programs/cored/`
+   - `include/eosio/` → `include/core_net/` (27 directories)
+   - `programs/nodeos/` → `programs/core_netd/`
    - `programs/cleos/` → `programs/core-cli/`
-   - `programs/keosd/` → `programs/core-keys/`
+   - `programs/keosd/` → `programs/core-wallet/`
    - `programs/spring-util/` → `programs/core-util/`
-   - `docs/01_nodeos/` → `docs/01_cored/`
-   - `docs/02_cleos/` → `docs/02_core-cli/`
-   - `docs/03_keosd/` → `docs/03_core-keys/`
 
 2. Rename files:
-   - `eosio.version.in` → `core.version.in`
-   - `eos.doxygen.in` → `anvo.doxygen.in`
-   - `CMakeModules/eosio-config.cmake.in` → `CMakeModules/core-config.cmake.in`
-   - `CMakeModules/EosioTester*.cmake.in` → `CMakeModules/AnvoTester*.cmake.in`
-   - 25 `nodeos_*.py` test files → `cored_*.py`
+   - `eosio.version.in` → `core_net.version.in`
+   - `CMakeModules/eosio-config.cmake.in` → `CMakeModules/core_net-config.cmake.in`
+   - 25 `nodeos_*.py` test files → `core_netd_*.py`
 
-3. **Build and verify** — expect failures, fix include path issues.
+### Phase 3: Content Replacement (2-3 days)
 
-### Phase C: Content Replacement (2-3 days)
+Apply via rebrand script (`_research/tools/rebrand.sh`):
 
-Apply in this order to minimize conflicts:
+1. Namespace: `eosio::` → `core_net::` (including absorbed eos-vm)
+2. Include paths: `eosio/` → `core_net/`
+3. Macros: `EOSIO_` → `CORE_NET_`
+4. Executable names: nodeos → `core_netd`, cleos → `core-cli`, keosd → `core-wallet`
+5. C++ identifiers: `eosio_*` → `core_net_*`, `keosd_*` → `core_wallet_*`
+6. WASM intrinsics: `eosio_assert` → `core_net_assert`, etc.
+7. Plugin strings, config paths, test harness references
 
-1. **Namespace replacement** (biggest impact):
-   - `namespace eosio` → `namespace core`
-   - `eosio::` → `core::`
-   - `using namespace eosio` → `using namespace core`
+### Phase 4: Genesis Account Switch (1-2 weeks)
 
-2. **Include path replacement**:
-   - `#include <eosio/` → `#include <core/`
-   - `#include "eosio/` → `#include "anvo/`
+Implement genesis-configurable system accounts per
+[08_system_account_compatibility.md](08_system_account_compatibility.md).
 
-3. **Macro prefix replacement**:
-   - `EOSIO_` → `CORE_`
+### Phase 5: Verification & Cleanup
 
-4. **Executable name replacement**:
-   - `nodeos` → new node name (in CMake, scripts, docs)
-   - `cleos` → new CLI name
-   - `keosd` → new key daemon name
-   - `spring-util` → new utility name
-   - `spring` → new project name (in CMake, docs, version strings)
+1. Full build + full test suite
+2. Verify protocol-level behavior unchanged
+3. Update README, documentation, CI/CD
+4. Final verification
 
-5. **Organization/project name replacement**:
-   - `AntelopeIO` → new org name (in URLs, comments)
-   - `antelope-spring` → new project name (in CMake project declaration)
-   - `Antelope` → new project name (in docs, comments)
-   - `leap` → new project name (in comments, cmake configs)
+## Lessons Learned (from rebrand/core attempt)
 
-6. **Build and verify** — full build + full test suite.
-
-### Phase D: Protocol-Safe Verification (1 day)
-
-**Critical step.** Verify that protocol-level identifiers were NOT changed:
-
-1. System account names still use `eosio.*`
-2. ABI type identifiers unchanged
-3. Protocol feature names unchanged
-4. Genesis configuration compatible
-5. Snapshot import/export still works
-6. All unit tests pass with identical results
-
-### Phase E: Cleanup (1-2 days)
-
-1. Update LICENSE with new copyright holder
-2. Update README.md
-3. Update all documentation
-4. Update CI/CD workflows
-5. Update package naming
-6. Final full build + test verification
-
-## What NOT to Rename
-
-| Item | Reason |
-|------|--------|
-| `eosio` system account names | Protocol compatibility — breaks existing chains |
-| `eosio.*` contract names in genesis | Same — protocol level |
-| ABI type strings containing "eosio" | Consensus-level serialization format |
-| Protocol feature activation names | Consensus compatibility |
-| `fc::` namespace | Generic foundation library, not branded |
-| `eos-vm` internal library (optional) | Implementation detail, not user-facing |
-
-## Automation
-
-A well-written rename script can handle ~90% of this automatically:
-
-```bash
-#!/bin/bash
-# Pseudocode — actual script would need careful regex handling
-
-OLD_NS="eosio"
-NEW_NS="anvo"
-OLD_NODE="nodeos"
-NEW_NODE="cored"
-# ... etc
-
-# Step 1: Directory renames (use git mv)
-find . -type d -name "$OLD_NS" | while read dir; do
-    git mv "$dir" "$(dirname $dir)/$NEW_NS"
-done
-
-# Step 2: File renames
-find . -type f -name "*${OLD_NS}*" | while read f; do
-    git mv "$f" "$(echo $f | sed "s/$OLD_NS/$NEW_NS/g")"
-done
-
-# Step 3: Content replacement (EXCLUDE protocol constants)
-find . -type f \( -name "*.cpp" -o -name "*.hpp" -o -name "*.h" \
-    -o -name "*.cmake" -o -name "*.cmake.in" -o -name "*.py" \
-    -o -name "*.md" -o -name "*.yaml" -o -name "*.in" \) | while read f; do
-    sed -i "s/namespace eosio/namespace $NEW_NS/g" "$f"
-    sed -i "s/eosio::/anvo::/g" "$f"
-    # ... more patterns
-done
-```
-
-The remaining ~10% requires manual review:
-- Protocol account name constants (must be preserved)
-- String literals that serve as identifiers vs. branding
-- Test assertions that check specific output strings
-- Ambiguous uses of "eos" that might be part of other words
+1. **Absorb submodules first.** The first attempt hit cross-boundary issues with
+   eos-vm's `eosio::vm::` namespace because it was still a submodule.
+2. **Use perl negative lookbehind** for namespace replacement:
+   `(?<![a-zA-Z_])eosio::` → `core_net::`. Never use plain `sed 's/eosio/core_net/g'`.
+3. **Watch for double namespaces.** Config templates (`.hpp.in`) with
+   `namespace eosio { namespace nodeos {` can both get renamed, creating
+   `core_net::core_net::`.
+4. **keosd stays as C++ prefix concept** — hyphens illegal in C++, so binary is
+   `core-wallet` but identifier prefix is `core_wallet_`.
+5. **Python generators** (like `gen_protocol_feature_digest_tests.py`) emit C++ with
+   hardcoded namespace references — must be updated.
+6. **INCBIN symbols** in `.cpp.in` template files need renaming too (they generate
+   linker symbols from concatenated macro arguments).
+7. **`boost::core` collision** — this is why `core::` was abandoned for `core_net::`.
 
 ## Timeline
 
 | Phase | Duration | Dependencies |
 |-------|----------|-------------|
-| A. Preparation | 1-2 days | Choose names |
-| B. Structural renames | 1-2 days | Phase A |
-| C. Content replacement | 2-3 days | Phase B |
-| D. Protocol verification | 1 day | Phase C |
-| E. Cleanup | 1-2 days | Phase D |
-| **Total** | **~1-2 weeks** | |
-
-**Recommendation:** Do this as the very first step after forking (Phase 1A in the
-fork plan), before any feature work begins. Rebranding after feature branches diverge
-creates merge conflicts that compound over time.
+| 1. Submodule absorption | Done | — |
+| 2. Structural renames | 1-2 days | Phase 1 |
+| 3. Content replacement | 2-3 days | Phase 2 |
+| 4. Genesis account switch | 1-2 weeks | Phase 3 |
+| 5. Verification & cleanup | 1-2 days | Phase 4 |
+| **Total** | **~3-4 weeks** | |
