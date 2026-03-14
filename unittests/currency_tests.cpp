@@ -224,7 +224,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( test_overspend, T, currency_testers ) try {
          ("memo", "overspend! Alice");
 
       BOOST_CHECK_EXCEPTION( chain.push_action("alice"_n, "transfer"_n, data),
-                             core_net_assert_message_exception, eosio_assert_message_is("overdrawn balance") );
+                             core_net_assert_message_exception, core_net_assert_message_is("overdrawn balance") );
       chain.produce_block();
 
       BOOST_REQUIRE_EQUAL(chain.get_balance("alice"_n), asset::from_string( "100.0000 CUR" ));

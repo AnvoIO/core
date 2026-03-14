@@ -2225,7 +2225,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( zero_memory_pages, T, validating_testers ) try {
 
 } FC_LOG_AND_RETHROW()
 
-BOOST_AUTO_TEST_CASE_TEMPLATE( eosio_exit_in_start, T, validating_testers ) try {
+BOOST_AUTO_TEST_CASE_TEMPLATE( core_net_exit_in_start, T, validating_testers ) try {
    T chain;
 
    chain.produce_block();
@@ -2382,7 +2382,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( net_usage_tests, T, validating_testers ) try {
       std::string code = R"=====(
    (module
    (import "env" "require_auth" (func $require_auth (param i64)))
-   (import "env" "eosio_assert" (func $eosio_assert (param i32 i32)))
+   (import "env" "core_net_assert" (func $core_net_assert (param i32 i32)))
       (table 0 anyfunc)
       (memory $0 1)
       (export "apply" (func $apply))
@@ -2435,7 +2435,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( weighted_net_usage_tests, T, validating_testers )
       std::string code = R"=====(
    (module
    (import "env" "require_auth" (func $require_auth (param i64)))
-   (import "env" "eosio_assert" (func $eosio_assert (param i32 i32)))
+   (import "env" "core_net_assert" (func $core_net_assert (param i32 i32)))
       (table 0 anyfunc)
       (memory $0 1)
       (export "apply" (func $apply))

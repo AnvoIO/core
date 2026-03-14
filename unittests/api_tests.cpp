@@ -270,7 +270,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_tests, T, validating_testers) { try {
 
    //test assert_false
    BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION( chain, "test_action", "assert_false", {} ),
-                          core_net_assert_message_exception, eosio_assert_message_is("test_action::assert_false") );
+                          core_net_assert_message_exception, core_net_assert_message_is("test_action::assert_false") );
 
    // test read_action_normal
    dummy_action dummy13{DUMMY_ACTION_DEFAULT_A, DUMMY_ACTION_DEFAULT_B, DUMMY_ACTION_DEFAULT_C};
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_tests, T, validating_testers) { try {
    // test current_time
    chain.produce_block();
    BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION( chain, "test_action", "test_current_time", fc::raw::pack(now) ),
-                          core_net_assert_message_exception, eosio_assert_message_is("tmp == current_time()")     );
+                          core_net_assert_message_exception, core_net_assert_message_is("tmp == current_time()")     );
 
    // test test_current_receiver
    CALL_TEST_FUNCTION( chain, "test_action", "test_current_receiver", fc::raw::pack("testapi"_n));
@@ -567,7 +567,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cf_action_tests, T, validating_testers) { try {
 
       BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION( chain, "test_transaction", "send_cf_action_fail", {} ),
                              core_net_assert_message_exception,
-                             eosio_assert_message_is("context free actions cannot have authorizations") );
+                             core_net_assert_message_is("context free actions cannot have authorizations") );
 
       BOOST_REQUIRE_EQUAL( chain.validate(), true );
 } FC_LOG_AND_RETHROW() }
@@ -895,7 +895,7 @@ void transaction_tests(T& chain) {
    // test send_action_inline_fail
    BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION(chain, "test_transaction", "send_action_inline_fail", {}),
                           core_net_assert_message_exception,
-                          eosio_assert_message_is("test_action::assert_false")                          );
+                          core_net_assert_message_is("test_action::assert_false")                          );
 
    //   test send_transaction
       CALL_TEST_FUNCTION(chain, "test_transaction", "send_transaction", {});
@@ -1390,7 +1390,7 @@ BOOST_AUTO_TEST_CASE(more_deferred_transaction_tests) { try {
    BOOST_REQUIRE_EXCEPTION(
       chain.push_transaction( trx ),
       core_net_assert_message_exception,
-      eosio_assert_message_is("fail")
+      core_net_assert_message_is("fail")
    );
 
    BOOST_REQUIRE_EQUAL(1, index.size());
@@ -1482,7 +1482,7 @@ BOOST_AUTO_TEST_CASE(more_deferred_transaction_tests) { try {
    BOOST_REQUIRE_EXCEPTION(
       chain.push_transaction( trx2 ),
       core_net_assert_message_exception,
-      eosio_assert_message_is("fail")
+      core_net_assert_message_is("fail")
    );
 
    BOOST_REQUIRE_EQUAL(3, index.size());
@@ -1676,7 +1676,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(db_notify_tests, T, validating_testers) {
  (func $db_idx_double_find_primary (import "env" "db_idx_double_find_primary") (param i64 i64 i64 i32 i64) (result i32))
  (func $db_idx_long_double_store (import "env" "db_idx_long_double_store") (param i64 i64 i64 i64 i32) (result i32))
  (func $db_idx_long_double_find_primary (import "env" "db_idx_long_double_find_primary") (param i64 i64 i64 i32 i64) (result i32))
- (func $eosio_assert (import "env" "eosio_assert") (param i32 i32))
+ (func $core_net_assert (import "env" "core_net_assert") (param i32 i32))
  (func $require_recipient (import "env" "require_recipient") (param i64))
  (memory 1)
  (func (export "apply") (param i64 i64 i64)
@@ -1689,12 +1689,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(db_notify_tests, T, validating_testers) {
   (drop (call $db_idx256_store (i64.const 0) (i64.const 0) (get_local 0) (i64.const 0) (i32.const 256) (i32.const 2)))
   (drop (call $db_idx_double_store (i64.const 0) (i64.const 0) (get_local 0) (i64.const 0) (i32.const 256)))
   (drop (call $db_idx_long_double_store (i64.const 0) (i64.const 0) (get_local 0) (i64.const 0) (i32.const 256)))
-  (call $eosio_assert (i32.eq (call $db_find_i64 (get_local 0) (i64.const 0) (i64.const 0) (i64.const 0) ) (get_local 3)) (i32.const 0))
-  (call $eosio_assert (i32.eq (call $db_idx64_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i64.const 0)) (get_local 3)) (i32.const 32))
-  (call $eosio_assert (i32.eq (call $db_idx128_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i64.const 0)) (get_local 3)) (i32.const 64))
-  (call $eosio_assert (i32.eq (call $db_idx256_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i32.const 2) (i64.const 0)) (get_local 3)) (i32.const 96))
-  (call $eosio_assert (i32.eq (call $db_idx_double_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i64.const 0)) (get_local 3)) (i32.const 128))
-  (call $eosio_assert (i32.eq (call $db_idx_long_double_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i64.const 0)) (get_local 3)) (i32.const 160))
+  (call $core_net_assert (i32.eq (call $db_find_i64 (get_local 0) (i64.const 0) (i64.const 0) (i64.const 0) ) (get_local 3)) (i32.const 0))
+  (call $core_net_assert (i32.eq (call $db_idx64_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i64.const 0)) (get_local 3)) (i32.const 32))
+  (call $core_net_assert (i32.eq (call $db_idx128_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i64.const 0)) (get_local 3)) (i32.const 64))
+  (call $core_net_assert (i32.eq (call $db_idx256_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i32.const 2) (i64.const 0)) (get_local 3)) (i32.const 96))
+  (call $core_net_assert (i32.eq (call $db_idx_double_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i64.const 0)) (get_local 3)) (i32.const 128))
+  (call $core_net_assert (i32.eq (call $db_idx_long_double_find_primary (get_local 0) (i64.const 0) (i64.const 0) (i32.const 256) (i64.const 0)) (get_local 3)) (i32.const 160))
   (call $require_recipient (i64.const 11327368596746665984))
  )
  (data (i32.const 0) "notifier: primary")
@@ -1727,7 +1727,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(multi_index_tests, T, validating_testers) { try {
    auto check_failure = [&chain]( action_name a, const char* expected_error_msg ) {
       BOOST_CHECK_EXCEPTION(  chain.push_action( "testapi"_n, a, "testapi"_n, {} ),
                               core_net_assert_message_exception,
-                              eosio_assert_message_is( expected_error_msg )
+                              core_net_assert_message_is( expected_error_msg )
       );
    };
 
@@ -1874,12 +1874,12 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(crypto_tests, T, validating_testers) { try {
 static const char memcpy_pass_wast[] = R"======(
 (module
  (import "env" "memcpy" (func $memcpy (param i32 i32 i32) (result i32)))
- (import "env" "eosio_assert" (func $eosio_assert (param i32 i32)))
+ (import "env" "core_net_assert" (func $core_net_assert (param i32 i32)))
  (memory 1)
  (func (export "apply") (param i64 i64 i64)
   (i64.store (i32.const 0) (i64.const 0x8877665544332211))
-  (call $eosio_assert (i32.eq (call $memcpy (i32.const 65535) (i32.const 0) (i32.const 1)) (i32.const 65535)) (i32.const 128))
-  (call $eosio_assert (i64.eq (i64.load (i32.const 65528)) (i64.const 0x1100000000000000)) (i32.const 256))
+  (call $core_net_assert (i32.eq (call $memcpy (i32.const 65535) (i32.const 0) (i32.const 1)) (i32.const 65535)) (i32.const 128))
+  (call $core_net_assert (i64.eq (i64.load (i32.const 65528)) (i64.const 0x1100000000000000)) (i32.const 256))
   (drop (call $memcpy (i32.const 8) (i32.const 7) (i32.const 1)))
   (drop (call $memcpy (i32.const 7) (i32.const 8) (i32.const 1)))
  )
@@ -1911,7 +1911,7 @@ static const char memcpy_past_end_wast[] = R"======(
 static const char memmove_pass_wast[] = R"======(
 (module
  (import "env" "memmove" (func $memmove (param i32 i32 i32) (result i32)))
- (import "env" "eosio_assert" (func $eosio_assert (param i32 i32)))
+ (import "env" "core_net_assert" (func $core_net_assert (param i32 i32)))
  (memory 1)
  (func $fillmem (param i32 i32)
   (loop
@@ -1923,7 +1923,7 @@ static const char memmove_pass_wast[] = R"======(
  )
  (func $checkmem (param i32 i32 i32)
    (loop
-    (call $eosio_assert (i32.eq (i32.load8_u (get_local 0)) (get_local 1)) (get_local 2))
+    (call $core_net_assert (i32.eq (i32.load8_u (get_local 0)) (get_local 1)) (get_local 2))
     (set_local 1 (i32.sub (get_local 1) (i32.const 1)))
     (set_local 0 (i32.add (get_local 0) (i32.const 1)))
     (br_if 0 (get_local 1))
@@ -1931,8 +1931,8 @@ static const char memmove_pass_wast[] = R"======(
  )
  (func (export "apply") (param i64 i64 i64)
   (i64.store (i32.const 0) (i64.const 0x8877665544332211))
-  (call $eosio_assert (i32.eq (call $memmove (i32.const 65535) (i32.const 0) (i32.const 1)) (i32.const 65535)) (i32.const 128))
-  (call $eosio_assert (i64.eq (i64.load (i32.const 65528)) (i64.const 0x1100000000000000)) (i32.const 256))
+  (call $core_net_assert (i32.eq (call $memmove (i32.const 65535) (i32.const 0) (i32.const 1)) (i32.const 65535)) (i32.const 128))
+  (call $core_net_assert (i64.eq (i64.load (i32.const 65528)) (i64.const 0x1100000000000000)) (i32.const 256))
 
   (call $fillmem (i32.const 8) (i32.const 128))
   (drop (call $memmove (i32.const 64) (i32.const 8) (i32.const 128)))
@@ -1957,13 +1957,13 @@ static const char memmove_pass_wast[] = R"======(
 static const char memcmp_pass_wast[] = R"======(
 (module
  (import "env" "memcmp" (func $memcmp (param i32 i32 i32) (result i32)))
- (import "env" "eosio_assert" (func $eosio_assert (param i32 i32)))
+ (import "env" "core_net_assert" (func $core_net_assert (param i32 i32)))
  (memory 1)
  (func (export "apply") (param i64 i64 i64)
-  (call $eosio_assert (i32.eq (call $memcmp (i32.const 65535) (i32.const 65535) (i32.const 1)) (i32.const 0)) (i32.const 128))
-  (call $eosio_assert (i32.eq (call $memcmp (i32.const 0) (i32.const 2) (i32.const 3)) (i32.const 0)) (i32.const 256))
-  (call $eosio_assert (i32.eq (call $memcmp (i32.const 0) (i32.const 2) (i32.const 6)) (i32.const -1)) (i32.const 384))
-  (call $eosio_assert (i32.eq (call $memcmp (i32.const 2) (i32.const 0) (i32.const 6)) (i32.const 1)) (i32.const 512))
+  (call $core_net_assert (i32.eq (call $memcmp (i32.const 65535) (i32.const 65535) (i32.const 1)) (i32.const 0)) (i32.const 128))
+  (call $core_net_assert (i32.eq (call $memcmp (i32.const 0) (i32.const 2) (i32.const 3)) (i32.const 0)) (i32.const 256))
+  (call $core_net_assert (i32.eq (call $memcmp (i32.const 0) (i32.const 2) (i32.const 6)) (i32.const -1)) (i32.const 384))
+  (call $core_net_assert (i32.eq (call $memcmp (i32.const 2) (i32.const 0) (i32.const 6)) (i32.const 1)) (i32.const 512))
  )
  (data (i32.const 0) "abababcdcdcd")
  (data (i32.const 128) "memcmp at end of memory")
@@ -1976,11 +1976,11 @@ static const char memcmp_pass_wast[] = R"======(
 static const char memset_pass_wast[] = R"======(
 (module
  (import "env" "memset" (func $memset (param i32 i32 i32) (result i32)))
- (import "env" "eosio_assert" (func $eosio_assert (param i32 i32)))
+ (import "env" "core_net_assert" (func $core_net_assert (param i32 i32)))
  (memory 1)
  (func (export "apply") (param i64 i64 i64)
-  (call $eosio_assert (i32.eq (call $memset (i32.const 65535) (i32.const 0xCC) (i32.const 1)) (i32.const 65535)) (i32.const 128))
-  (call $eosio_assert (i64.eq (i64.load (i32.const 65528)) (i64.const 0xCC00000000000000)) (i32.const 256))
+  (call $core_net_assert (i32.eq (call $memset (i32.const 65535) (i32.const 0xCC) (i32.const 1)) (i32.const 65535)) (i32.const 128))
+  (call $core_net_assert (i64.eq (i64.load (i32.const 65528)) (i64.const 0xCC00000000000000)) (i32.const 256))
  )
  (data (i32.const 128) "expected memset to return 65535")
  (data (i32.const 256) "expected memset to write one byte")
@@ -2021,10 +2021,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(memory_tests, T, validating_testers) {
 
 static const char cstr_wast[] = R"======(
 (module
- (import "env" "eosio_assert" (func $eosio_assert (param i32 i32)))
+ (import "env" "core_net_assert" (func $core_net_assert (param i32 i32)))
  (memory 1)
  (func (export "apply") (param i64 i64 i64)
-  (call $eosio_assert (i32.const 1) (i32.const 65534))
+  (call $core_net_assert (i32.const 1) (i32.const 65534))
  )
  (data (i32.const 65535) "x")
 )
@@ -2293,27 +2293,27 @@ static const char resource_limits_wast[] = R"=====(
 (module
  (func $set_resource_limits (import "env" "set_resource_limits") (param i64 i64 i64 i64))
  (func $get_resource_limits (import "env" "get_resource_limits") (param i64 i32 i32 i32))
- (func $eosio_assert (import "env" "eosio_assert") (param i32 i32))
+ (func $core_net_assert (import "env" "core_net_assert") (param i32 i32))
  (memory 1)
  (func (export "apply") (param i64 i64 i64)
   (call $set_resource_limits (get_local 2) (i64.const 2788) (i64.const 11) (i64.const 12))
   (call $get_resource_limits (get_local 2) (i32.const 0x100) (i32.const 0x108) (i32.const 0x110))
-  (call $eosio_assert (i64.eq (i64.const 2788) (i64.load (i32.const 0x100))) (i32.const 8))
-  (call $eosio_assert (i64.eq (i64.const 11) (i64.load (i32.const 0x108))) (i32.const 32))
-  (call $eosio_assert (i64.eq (i64.const 12) (i64.load (i32.const 0x110))) (i32.const 64))
+  (call $core_net_assert (i64.eq (i64.const 2788) (i64.load (i32.const 0x100))) (i32.const 8))
+  (call $core_net_assert (i64.eq (i64.const 11) (i64.load (i32.const 0x108))) (i32.const 32))
+  (call $core_net_assert (i64.eq (i64.const 12) (i64.load (i32.const 0x110))) (i32.const 64))
   ;; Aligned overlap
   (call $get_resource_limits (get_local 2) (i32.const 0x100) (i32.const 0x100) (i32.const 0x110))
-  (call $eosio_assert (i64.eq (i64.const 11) (i64.load (i32.const 0x100))) (i32.const 96))
+  (call $core_net_assert (i64.eq (i64.const 11) (i64.load (i32.const 0x100))) (i32.const 96))
   (call $get_resource_limits (get_local 2) (i32.const 0x100) (i32.const 0x110) (i32.const 0x110))
-  (call $eosio_assert (i64.eq (i64.const 12) (i64.load (i32.const 0x110))) (i32.const 128))
+  (call $core_net_assert (i64.eq (i64.const 12) (i64.load (i32.const 0x110))) (i32.const 128))
   ;; Unaligned beats aligned
   (call $get_resource_limits (get_local 2) (i32.const 0x101) (i32.const 0x108) (i32.const 0x100))
-  (call $eosio_assert (i64.eq (i64.const 2788) (i64.load (i32.const 0x101))) (i32.const 160))
+  (call $core_net_assert (i64.eq (i64.const 2788) (i64.load (i32.const 0x101))) (i32.const 160))
   ;; Unaligned overlap
   (call $get_resource_limits (get_local 2) (i32.const 0x101) (i32.const 0x101) (i32.const 0x110))
-  (call $eosio_assert (i64.eq (i64.const 11) (i64.load (i32.const 0x101))) (i32.const 192))
+  (call $core_net_assert (i64.eq (i64.const 11) (i64.load (i32.const 0x101))) (i32.const 192))
   (call $get_resource_limits (get_local 2) (i32.const 0x100) (i32.const 0x111) (i32.const 0x111))
-  (call $eosio_assert (i64.eq (i64.const 12) (i64.load (i32.const 0x111))) (i32.const 224))
+  (call $core_net_assert (i64.eq (i64.const 12) (i64.load (i32.const 0x111))) (i32.const 224))
  )
  (data (i32.const 8) "expected ram 2788")
  (data (i32.const 32) "expected net 11")
@@ -2593,9 +2593,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(extended_symbol_api_tests, T, validating_testers) 
 } FC_LOG_AND_RETHROW() }
 
 /*************************************************************************************
- * eosio_assert_code_tests test cases
+ * core_net_assert_code_tests test cases
  *************************************************************************************/
-BOOST_AUTO_TEST_CASE_TEMPLATE(eosio_assert_code_tests, T, validating_testers) { try {
+BOOST_AUTO_TEST_CASE_TEMPLATE(core_net_assert_code_tests, T, validating_testers) { try {
    T chain;
 
    chain.produce_block();
@@ -2627,7 +2627,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(eosio_assert_code_tests, T, validating_testers) { 
    chain.produce_block();
 
    BOOST_CHECK_EXCEPTION( CALL_TEST_FUNCTION( chain, "test_action", "test_assert_code", fc::raw::pack((uint64_t)42) ),
-                          core_net_assert_code_exception, eosio_assert_code_is(42)                                        );
+                          core_net_assert_code_exception, core_net_assert_code_is(42)                                        );
 
 
    auto trace = CALL_TEST_FUNCTION_NO_THROW( chain, "test_action", "test_assert_code", fc::raw::pack((uint64_t)42) );

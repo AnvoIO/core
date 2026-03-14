@@ -307,9 +307,9 @@ namespace core_net { namespace chain {
       FC_DECLARE_DERIVED_EXCEPTION( invalid_action_args_exception, action_validate_exception,
                                     3050002, "Invalid Action Arguments" )
       FC_DECLARE_DERIVED_EXCEPTION( core_net_assert_message_exception, action_validate_exception,
-                                    3050003, "eosio_assert_message assertion failure" )
+                                    3050003, "core_net_assert_message assertion failure" )
       FC_DECLARE_DERIVED_EXCEPTION( core_net_assert_code_exception, action_validate_exception,
-                                    3050004, "eosio_assert_code assertion failure" )
+                                    3050004, "core_net_assert_code assertion failure" )
       FC_DECLARE_DERIVED_EXCEPTION( action_not_found_exception, action_validate_exception,
                                     3050005, "Action can not be found" )
       FC_DECLARE_DERIVED_EXCEPTION( action_data_and_struct_mismatch, action_validate_exception,
@@ -323,7 +323,7 @@ namespace core_net { namespace chain {
       FC_DECLARE_DERIVED_EXCEPTION( unauthorized_ram_usage_increase, action_validate_exception,
                                     3050010, "Action attempts to increase RAM usage of account without authorization" )
       FC_DECLARE_DERIVED_EXCEPTION( restricted_error_code_exception, action_validate_exception,
-                                    3050011, "eosio_assert_code assertion failure uses restricted error code value" )
+                                    3050011, "core_net_assert_code assertion failure uses restricted error code value" )
       // Removed 3050012 - inline_action_too_big_nonprivileged, no longer needed
       FC_DECLARE_DERIVED_EXCEPTION( action_return_value_exception, action_validate_exception,
                                     3050014, "action return value size too big" )

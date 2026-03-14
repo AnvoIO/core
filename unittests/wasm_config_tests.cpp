@@ -92,13 +92,13 @@ void test_max_mutable_global_bytes(T& chain, int32_t n_globals, int32_t oversize
    std::string code = [&] {
       std::ostringstream ss;
       ss << "(module ";
-      ss << " (func $eosio_assert (import \"env\" \"eosio_assert\") (param i32 i32))";
+      ss << " (func $core_net_assert (import \"env\" \"core_net_assert\") (param i32 i32))";
       ss << " (memory 1)";
       for(int i = 0; i < n_globals + oversize; i += 4)
          ss << "(global (mut i32) (i32.const " << i << "))";
       ss << " (func (export \"apply\") (param i64 i64 i64)";
       for(int i = 0; i < n_globals + oversize; i += 4)
-         ss << "(call $eosio_assert (i32.eq (get_global " << i/4 << ") (i32.const " << i << ")) (i32.const 0))";
+         ss << "(call $core_net_assert (i32.eq (get_global " << i/4 << ") (i32.const " << i << ")) (i32.const 0))";
       ss << " )";
       ss << ")";
       return ss.str();
@@ -352,11 +352,11 @@ BOOST_DATA_TEST_CASE_F(wasm_config_tester<savanna_validating_tester>, max_sectio
 
 static const char max_linear_memory_wast[] = R"=====(
 (module
-  (import "env" "eosio_assert" (func $$eosio_assert (param i32 i32)))
+  (import "env" "core_net_assert" (func $$core_net_assert (param i32 i32)))
   (memory 4)
   (data (i32.const ${OFFSET}) "\11\22\33\44")
   (func (export "apply") (param i64 i64 i64)
-    (call $$eosio_assert (i32.eq (i32.load (i32.const ${OFFSET})) (i32.const 0x44332211)) (i32.const 0))
+    (call $$core_net_assert (i32.eq (i32.load (i32.const ${OFFSET})) (i32.const 0x44332211)) (i32.const 0))
   )
 )
 )=====";
@@ -1162,7 +1162,7 @@ static const char check_get_wasm_parameters_wast[] = R"======(
   (import "env" "memcmp" (func $memcmp (param i32 i32 i32) (result i32)))
   (import "env" "memset" (func $memset (param i32 i32 i32) (result i32)))
   (import "env" "printhex" (func $printhex (param i32 i32)))
-  (import "env" "eosio_assert" (func $eosio_assert (param i32 i32)))
+  (import "env" "core_net_assert" (func $core_net_assert (param i32 i32)))
   (memory 1)
   (func (export "apply") (param i64 i64 i64)
      (drop (call $read_action_data (i32.const 0) (call $action_data_size)))
@@ -1171,7 +1171,7 @@ static const char check_get_wasm_parameters_wast[] = R"======(
      (if (call $memcmp (i32.const 0) (i32.const 256) (call $action_data_size))
         (then
           (call $printhex (i32.const 256) (call $action_data_size))
-          (call $eosio_assert (i32.const 0) (i32.const 512))
+          (call $core_net_assert (i32.const 0) (i32.const 512))
         )
      )
   )

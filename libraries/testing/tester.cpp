@@ -1580,7 +1580,7 @@ namespace core_net::testing {
       return match;
    }
 
-   bool eosio_assert_message_is::operator()( const core_net_assert_message_exception& ex ) {
+   bool core_net_assert_message_is::operator()( const core_net_assert_message_exception& ex ) {
       auto message = ex.get_log().at( 0 ).get_message();
       bool match = (message == expected);
       if( !match ) {
@@ -1589,7 +1589,7 @@ namespace core_net::testing {
       return match;
    }
 
-   bool eosio_assert_message_starts_with::operator()( const core_net_assert_message_exception& ex ) {
+   bool core_net_assert_message_starts_with::operator()( const core_net_assert_message_exception& ex ) {
       auto message = ex.get_log().at( 0 ).get_message();
       bool match = boost::algorithm::starts_with( message, expected );
       if( !match ) {
@@ -1598,7 +1598,7 @@ namespace core_net::testing {
       return match;
    }
 
-   bool eosio_assert_code_is::operator()( const core_net_assert_code_exception& ex ) {
+   bool core_net_assert_code_is::operator()( const core_net_assert_code_exception& ex ) {
       auto message = ex.get_log().at( 0 ).get_message();
       bool match = (message == expected);
       if( !match ) {

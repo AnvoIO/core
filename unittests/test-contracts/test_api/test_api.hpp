@@ -32,10 +32,10 @@ extern "C" {
     void set_action_return_value(const char*, size_t);
 
     __attribute__((eosio_wasm_import))
-    void  eosio_assert( uint32_t test, const char* msg );
+    void  core_net_assert( uint32_t test, const char* msg );
 
     __attribute__((eosio_wasm_import))
-    void  eosio_assert_code( uint32_t test, uint64_t code );
+    void  core_net_assert_code( uint32_t test, uint64_t code );
 
     __attribute__((eosio_wasm_import))
     uint64_t  current_time();

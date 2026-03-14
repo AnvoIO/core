@@ -42,7 +42,7 @@ CONTRACT test_ram_limit : public contract {
          test_table table( self, self.value );
          for ( int key = from; key <=to; ++key ) {
             auto itr = table.find(key);
-            eosio_assert ( itr != table.end(), "could not find test_table entry" );
+            core_net_assert ( itr != table.end(), "could not find test_table entry" );
             table.erase(itr);
          }
       }
@@ -54,7 +54,7 @@ CONTRACT test_ram_limit : public contract {
          for ( int key = from; key <= to; ++key ) {
             auto itr = table.find(key);
             core_net::print("\nkey=", key);
-            eosio_assert ( itr != table.end(), "could not find test_table entry" );
+            core_net_assert ( itr != table.end(), "could not find test_table entry" );
             core_net::print(" size=", itr->data.size());
          }
       }

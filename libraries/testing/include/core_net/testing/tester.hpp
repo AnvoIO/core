@@ -1077,10 +1077,10 @@ namespace core_net::testing {
   };
 
   /**
-   * Utility predicate to check whether an eosio_assert message is equivalent to a given string
+   * Utility predicate to check whether a core_net_assert message is equivalent to a given string
    */
-  struct eosio_assert_message_is {
-     eosio_assert_message_is( const string& msg )
+  struct core_net_assert_message_is {
+     core_net_assert_message_is( const string& msg )
            : expected( "assertion failure with message: " ) {
         expected.append( msg );
      }
@@ -1091,10 +1091,10 @@ namespace core_net::testing {
   };
 
   /**
-   * Utility predicate to check whether an eosio_assert message starts with a given string
+   * Utility predicate to check whether a core_net_assert message starts with a given string
    */
-  struct eosio_assert_message_starts_with {
-     eosio_assert_message_starts_with( const string& msg )
+  struct core_net_assert_message_starts_with {
+     core_net_assert_message_starts_with( const string& msg )
            : expected( "assertion failure with message: " ) {
         expected.append( msg );
      }
@@ -1105,10 +1105,10 @@ namespace core_net::testing {
   };
 
   /**
-   * Utility predicate to check whether an eosio_assert_code error code is equivalent to a given number
+   * Utility predicate to check whether a core_net_assert_code error code is equivalent to a given number
    */
-  struct eosio_assert_code_is {
-     eosio_assert_code_is( uint64_t error_code )
+  struct core_net_assert_code_is {
+     core_net_assert_code_is( uint64_t error_code )
            : expected( "assertion failure with error code: " ) {
         expected.append( std::to_string(error_code) );
      }

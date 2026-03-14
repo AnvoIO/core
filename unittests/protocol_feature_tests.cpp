@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(activate_preactivate_feature, T, testers) try {
    BOOST_CHECK_EXCEPTION( c.push_action( config::system_account_name, "reqactivated"_n, config::system_account_name,
                                           mutable_variant_object()("feature_digest",  digest_type()) ),
                            core_net_assert_message_exception,
-                           eosio_assert_message_is( "protocol feature is not activated" )
+                           core_net_assert_message_is( "protocol feature is not activated" )
    );
 
    c.push_action( config::system_account_name, "reqactivated"_n, config::system_account_name, mutable_variant_object()
@@ -989,7 +989,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward_setcode_test, T, testers) { try {
    // and in this case the contract is configured to reject the setcode action.
    BOOST_REQUIRE_EXCEPTION( c.set_code( tester2_account, test_contracts::noop_wasm() ),
                             core_net_assert_message_exception,
-                            eosio_assert_message_is( "rejecting all actions" ) );
+                            core_net_assert_message_is( "rejecting all actions" ) );
 
 
    tester c2(setup_policy::none);
@@ -1004,7 +1004,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(forward_setcode_test, T, testers) { try {
    // because after it is set by the native function, it is called immediately after which will reject the transaction.
    BOOST_REQUIRE_EXCEPTION( c.set_code( config::system_account_name, test_contracts::reject_all_wasm() ),
                             core_net_assert_message_exception,
-                            eosio_assert_message_is( "rejecting all actions" ) );
+                            core_net_assert_message_is( "rejecting all actions" ) );
 
 
    // Going back to the backup chain, we can create the rejectall account while the reject_all contract is
@@ -1048,7 +1048,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(get_sender_test, T, testers) { try {
                                              ("to", tester2_account.to_string())
                                              ("expected_sender", account_name{}) ),
                            core_net_assert_message_exception,
-                           eosio_assert_message_is( "sender did not match" ) );
+                           core_net_assert_message_is( "sender did not match" ) );
 
    c.push_action( tester1_account, "sendinline"_n, tester1_account, mutable_variant_object()
       ("to", tester2_account.to_string())
@@ -2008,7 +2008,7 @@ BOOST_AUTO_TEST_CASE( disable_deferred_trxs_stage_1_no_op_test ) { try {
       c.push_action( "test"_n, "cancelcall"_n, "alice"_n, fc::mutable_variant_object()
          ("sender_id", 1)),
       core_net_assert_message_exception,
-      eosio_assert_message_is( "cancel_deferred failed" ) );
+      core_net_assert_message_is( "cancel_deferred failed" ) );
    gen_size = c.control->db().template get_index<generated_transaction_multi_index,by_trx_id>().size();
    BOOST_REQUIRE_EQUAL(2u, gen_size);
    // verify alice's deferred trx is not removed

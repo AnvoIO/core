@@ -153,7 +153,7 @@ private:
                   reason += ", ";
                reason += "tx_cpu_usage";
             }
-            if (e.second.is_eosio_assert()) {
+            if (e.second.is_core_net_assert()) {
                if (!reason.empty())
                   reason += ", ";
                reason += "assert";
@@ -172,7 +172,7 @@ private:
       enum class ex_fields : uint8_t {
          ex_deadline_exception     = 1,
          ex_tx_cpu_usage_exceeded  = 2,
-         ex_eosio_assert_exception = 4,
+         ex_core_net_assert_exception = 4,
          ex_other_exception        = 8
       };
 
@@ -184,7 +184,7 @@ private:
             ex_flags = set_field(ex_flags, ex_fields::ex_deadline_exception);
          } else if (exception_code == core_net_assert_message_exception::code_value ||
                     exception_code == core_net_assert_code_exception::code_value) {
-            ex_flags = set_field(ex_flags, ex_fields::ex_eosio_assert_exception);
+            ex_flags = set_field(ex_flags, ex_fields::ex_core_net_assert_exception);
          } else {
             ex_flags = set_field(ex_flags, ex_fields::ex_other_exception);
             fc_dlog(_log, "Failed trx, account: ${a}, reason: ${r}, except: ${e}", ("a", n)("r", exception_code)("e", e));
@@ -193,7 +193,7 @@ private:
 
       bool is_deadline() const { return has_field(ex_flags, ex_fields::ex_deadline_exception); }
       bool is_tx_cpu_usage() const { return has_field(ex_flags, ex_fields::ex_tx_cpu_usage_exceeded); }
-      bool is_eosio_assert() const { return has_field(ex_flags, ex_fields::ex_eosio_assert_exception); }
+      bool is_core_net_assert() const { return has_field(ex_flags, ex_fields::ex_core_net_assert_exception); }
       bool is_other() const { return has_field(ex_flags, ex_fields::ex_other_exception); }
 
       uint32_t num_failures = 0;

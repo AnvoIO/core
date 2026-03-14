@@ -703,7 +703,7 @@ namespace LLVMJIT
 				calleeType = module.types[module.functions.imports[imm.functionIndex].type.index];
 				llvm::Value* ic = irBuilder.CreateLoad( emitLiteralPointer((void*)(OFFSET_OF_FIRST_INTRINSIC-moduleContext.importedFunctionOffsets[imm.functionIndex]*8), llvmI64Type->getPointerTo(256)) );
 				callee = irBuilder.CreateIntToPtr(ic, asLLVMType(calleeType)->getPointerTo());
-				isExit = module.functions.imports[imm.functionIndex].moduleName == "env" && module.functions.imports[imm.functionIndex].exportName == "eosio_exit";
+				isExit = module.functions.imports[imm.functionIndex].moduleName == "env" && module.functions.imports[imm.functionIndex].exportName == "core_net_exit";
 				isMemcpy = module.functions.imports[imm.functionIndex].moduleName == "env" && module.functions.imports[imm.functionIndex].exportName == "memcpy";
 			}
 			else

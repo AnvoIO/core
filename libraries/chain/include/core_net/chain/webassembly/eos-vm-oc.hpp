@@ -391,7 +391,7 @@ constexpr auto create_function() {
 template<auto F, bool injected, typename Preconditions, typename Name>
 void register_eosvm_oc(Name n) {
    // Has special handling
-   if(n == BOOST_HANA_STRING("env.eosio_exit")) return;
+   if(n == BOOST_HANA_STRING("env.core_net_exit")) return;
    constexpr auto fn = create_function<F, Preconditions, injected>();
    constexpr auto index = find_intrinsic_index(n.c_str());
    [[maybe_unused]] intrinsic the_intrinsic(

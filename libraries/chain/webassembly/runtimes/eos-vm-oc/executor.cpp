@@ -78,13 +78,13 @@ static intrinsic grow_memory_intrinsic EOSVMOC_INTRINSIC_INIT_PRIORITY("eosvmoc_
   std::integral_constant<std::size_t, find_intrinsic_index("eosvmoc_internal.grow_memory")>::value
 );
 
-//This is effectively overriding the eosio_exit intrinsic in wasm_interface
-static void eosio_exit(int32_t code) {
+//This is effectively overriding the core_net_exit intrinsic in wasm_interface
+static void core_net_exit(int32_t code) {
    siglongjmp(*eos_vm_oc_get_jmp_buf(), EOSVMOC_EXIT_CLEAN_EXIT);
    __builtin_unreachable();
 }
-static intrinsic eosio_exit_intrinsic("env.eosio_exit", IR::FunctionType::get(IR::ResultType::none,{IR::ValueType::i32}), (void*)&eosio_exit,
-  std::integral_constant<std::size_t, find_intrinsic_index("env.eosio_exit")>::value
+static intrinsic core_net_exit_intrinsic("env.core_net_exit", IR::FunctionType::get(IR::ResultType::none,{IR::ValueType::i32}), (void*)&core_net_exit,
+  std::integral_constant<std::size_t, find_intrinsic_index("env.core_net_exit")>::value
 );
 
 template <typename E>
@@ -265,7 +265,7 @@ void executor::execute(const code_descriptor& code, memory& mem, apply_context& 
             apply_func(context.get_receiver().to_uint64_t(), context.get_action().account.to_uint64_t(), context.get_action().name.to_uint64_t());
          });
          break;
-      //case 1: clean eosio_exit
+      //case 1: clean core_net_exit
       case EOSVMOC_EXIT_CHECKTIME_FAIL:
          context.trx_context.checktime();
          break;
