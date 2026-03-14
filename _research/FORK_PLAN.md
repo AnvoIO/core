@@ -133,9 +133,35 @@ testnet T2 (Month 2-3) depends on them.
 
 **What remains:**
 - CLI11 rebase onto upstream v2.6.2 (SpringFormatter → CoreNetFormatter)
-- Documentation (docs/, README.md)
+- Documentation (see below)
 - CI/CD workflows
 - New genesis configuration
+
+**Documentation requirements:**
+
+1. **Genesis configuration guide** — How to create a genesis.json for a new Anvo Network
+   chain. Must cover:
+   - The `system_account_prefix` field: what it does, when it's read (first boot only),
+     how it becomes permanent chain state
+   - Default behavior when omitted (eosio.* for migrating chains)
+   - Example genesis.json with `"system_account_prefix": "core"` for new chains
+   - Example genesis.json without the field for EOSIO chain migration
+   - What system accounts are created (`<prefix>`, `<prefix>.null`, `<prefix>.prods`)
+   - How the reserved prefix works (non-privileged accounts cannot create `<prefix>.*` names)
+
+2. **Migration guide** — How existing EOSIO chains (EOS, Telos, WAX) import a snapshot
+   and boot with their existing `eosio.*` accounts preserved. Covers:
+   - Snapshot compatibility (v2-v8 snapshots auto-default to "eosio")
+   - What changes vs. what stays the same
+
+3. **Node operator guide** — Updated for new executable names (`core_netd`, `core-cli`,
+   `core-wallet`, `core-util`), config directory (`etc/core_net/`), plugin names
+   (`core_net::producer_plugin`, etc.)
+
+4. **Developer guide** — Updated namespace (`core_net::`), include paths
+   (`#include <core_net/...>`), macro prefix (`CORE_NET_`), API endpoint paths
+
+5. **README.md** — Project overview for Anvo Network, build instructions, quick start
 
 #### 1B. System Contracts
 **Goal:** Fork and modify the bundled system contracts for the new chain.
