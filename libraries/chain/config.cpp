@@ -62,4 +62,10 @@ const name& code_name()              { return g_sys_accounts.code; }
 
 const std::string& system_account_prefix_str() { return g_prefix_str; }
 
+void reset_system_accounts_for_testing() {
+   g_sys_accounts = system_accounts::eosio_defaults();
+   g_prefix_str   = "eosio.";
+   g_initialized  = false;
+}
+
 } } } // namespace core_net::chain::config

@@ -1375,15 +1375,21 @@ struct controller_impl {
          vote_processor.notify_lib(block->block_num());
       });
 
-   auto sys = config::system_account_name();
-   set_apply_handler(sys, sys, "newaccount"_n,  &apply_eosio_newaccount);
-   set_apply_handler(sys, sys, "setcode"_n,     &apply_eosio_setcode);
-   set_apply_handler(sys, sys, "setabi"_n,      &apply_eosio_setabi);
-   set_apply_handler(sys, sys, "updateauth"_n,  &apply_eosio_updateauth);
-   set_apply_handler(sys, sys, "deleteauth"_n,  &apply_eosio_deleteauth);
-   set_apply_handler(sys, sys, "linkauth"_n,    &apply_eosio_linkauth);
-   set_apply_handler(sys, sys, "unlinkauth"_n,  &apply_eosio_unlinkauth);
-   set_apply_handler(sys, sys, "canceldelay"_n, &apply_eosio_canceldelay);
+   }
+
+   // Register native action handlers for the system account.
+   // Must be called after config::set_system_accounts() so that
+   // config::system_account_name() returns the correct value.
+   void register_native_action_handlers() {
+      auto sys = config::system_account_name();
+      set_apply_handler(sys, sys, "newaccount"_n,  &apply_eosio_newaccount);
+      set_apply_handler(sys, sys, "setcode"_n,     &apply_eosio_setcode);
+      set_apply_handler(sys, sys, "setabi"_n,      &apply_eosio_setabi);
+      set_apply_handler(sys, sys, "updateauth"_n,  &apply_eosio_updateauth);
+      set_apply_handler(sys, sys, "deleteauth"_n,  &apply_eosio_deleteauth);
+      set_apply_handler(sys, sys, "linkauth"_n,    &apply_eosio_linkauth);
+      set_apply_handler(sys, sys, "unlinkauth"_n,  &apply_eosio_unlinkauth);
+      set_apply_handler(sys, sys, "canceldelay"_n, &apply_eosio_canceldelay);
    }
 
    void open_fork_db() {
@@ -2005,6 +2011,7 @@ struct controller_impl {
 
       auto prefix = genesis.system_account_prefix.value_or("eosio"_n);
       config::set_system_accounts(config::system_accounts::from_prefix(prefix));
+      register_native_action_handlers();
 
       initialize_blockchain_state(genesis); // sets chain_head to genesis state
 
@@ -2035,6 +2042,7 @@ struct controller_impl {
 
       const auto& gpo = db.get<global_property_object>();
       config::set_system_accounts(config::system_accounts::from_prefix(gpo.system_account_prefix));
+      register_native_action_handlers();
 
       init(startup_t::existing_state);
    }
@@ -2566,6 +2574,7 @@ struct controller_impl {
       );
 
       config::set_system_accounts(config::system_accounts::from_prefix(gpo.system_account_prefix));
+      register_native_action_handlers();
 
       return result;
    }

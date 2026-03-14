@@ -43,6 +43,10 @@ struct system_accounts {
 // Set once at startup from genesis, immutable after.
 void set_system_accounts(const system_accounts& sa);
 
+// Test-only: reset global state so set_system_accounts() can be called again.
+// Must never be used in production code.
+void reset_system_accounts_for_testing();
+
 // Accessors — replace old static constants.
 // Safe to call from any thread after startup.
 const name& system_account_name();
