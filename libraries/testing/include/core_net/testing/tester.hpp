@@ -272,7 +272,7 @@ namespace core_net::testing {
          {
             vector<transaction_trace_ptr> traces;
             traces.reserve(names.size());
-            for( auto n : names ) traces.emplace_back( create_account( n, config::system_account_name, multisig, include_code ) );
+            for( auto n : names ) traces.emplace_back( create_account( n, config::system_account_name(), multisig, include_code ) );
             return traces;
          }
 
@@ -346,7 +346,7 @@ namespace core_net::testing {
          void delete_authority( account_name account, permission_name perm );
 
          transaction_trace_ptr create_account( account_name name,
-                                               account_name creator = config::system_account_name,
+                                               account_name creator = config::system_account_name(),
                                                bool multisig = false,
                                                bool include_code = true
                                              );
@@ -481,7 +481,7 @@ namespace core_net::testing {
          static genesis_state default_genesis() {
             genesis_state genesis;
             genesis.initial_timestamp = fc::time_point::from_iso_string("2020-01-01T00:00:00.000");
-            genesis.initial_key = get_public_key( config::system_account_name, "active" );
+            genesis.initial_key = get_public_key( config::system_account_name(), "active" );
 
             return genesis;
          }

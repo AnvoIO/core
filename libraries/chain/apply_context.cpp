@@ -93,9 +93,9 @@ void apply_context::exec_one()
             }
 
             if( ( receiver_account->code_hash != digest_type() ) &&
-                  (  !( act->account == config::system_account_name
+                  (  !( act->account == config::system_account_name()
                         && act->name == "setcode"_n
-                        && receiver == config::system_account_name )
+                        && receiver == config::system_account_name() )
                      || control.is_builtin_activated( builtin_protocol_feature_t::forward_setcode )
                   )
             ) {
@@ -357,7 +357,7 @@ void apply_context::execute_inline( action&& a ) {
          control.get_authorization_manager()
                 .check_authorization( {a},
                                       {},
-                                      {{receiver, config::eosio_code_name}},
+                                      {{receiver, config::code_name()}},
                                       control.pending_block_time() - trx_context.published,
                                       std::bind(&transaction_context::checktime, &this->trx_context),
                                       false,
@@ -519,7 +519,7 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
          control.get_authorization_manager()
                 .check_authorization( trx.actions,
                                       {},
-                                      {{receiver, config::eosio_code_name}},
+                                      {{receiver, config::code_name()}},
                                       delay,
                                       std::bind(&transaction_context::checktime, &this->trx_context),
                                       false
@@ -1085,7 +1085,7 @@ action_name apply_context::get_sender() const {
 }
 
 bool apply_context::is_eos_vm_oc_whitelisted() const {
-   return receiver.prefix() == config::system_account_name || // "eosio"_n
+   return receiver.prefix() == config::system_account_name() || // "eosio"_n
           control.is_eos_vm_oc_whitelisted(receiver);
 }
 

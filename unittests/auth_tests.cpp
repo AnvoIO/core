@@ -35,7 +35,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( missing_multi_sigs, TESTER, validating_testers ) 
     TESTER chain;
 
     chain.produce_block();
-    chain.create_account("alice"_n, config::system_account_name, true);
+    chain.create_account("alice"_n, config::system_account_name(), true);
     chain.produce_block();
 
     BOOST_REQUIRE_THROW(chain.push_reqauth("alice"_n, "owner"), unsatisfied_authorization); // without multisig
@@ -534,7 +534,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( linkauth_special, TESTER, validating_testers ) { 
    chain.create_account("tester2"_n);
    chain.produce_block();
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
@@ -543,7 +543,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( linkauth_special, TESTER, validating_testers ) { 
 
    auto validate_disallow = [&] (const char *type) {
       BOOST_REQUIRE_EXCEPTION(
-         chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+         chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
                ("account", "tester")
                ("code", "eosio")
                ("type", type)
@@ -582,7 +582,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( delete_auth, TESTER, validating_testers ) { try {
 
    // can't delete auth because it doesn't exist
    BOOST_REQUIRE_EXCEPTION(
-   trace = chain.push_action(config::system_account_name, deleteauth::get_name(), tester_account, fc::mutable_variant_object()
+   trace = chain.push_action(config::system_account_name(), deleteauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")),
    permission_query_exception,
@@ -592,7 +592,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( delete_auth, TESTER, validating_testers ) { try {
    });
 
    // update auth
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
@@ -600,7 +600,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( delete_auth, TESTER, validating_testers ) { try {
    );
 
    // link auth
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", "eosio.token")
            ("type", "transfer")
@@ -654,7 +654,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( delete_auth, TESTER, validating_testers ) { try {
 
    // can't delete auth because it's linked
    BOOST_REQUIRE_EXCEPTION(
-   trace = chain.push_action(config::system_account_name, deleteauth::get_name(), tester_account, fc::mutable_variant_object()
+   trace = chain.push_action(config::system_account_name(), deleteauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")),
    action_validate_exception,
@@ -664,14 +664,14 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( delete_auth, TESTER, validating_testers ) { try {
    });
 
    // unlink auth
-   trace = chain.push_action(config::system_account_name, unlinkauth::get_name(), tester_account, fc::mutable_variant_object()
+   trace = chain.push_action(config::system_account_name(), unlinkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", "eosio.token")
            ("type", "transfer"));
    BOOST_REQUIRE_EQUAL(transaction_receipt::executed, trace->receipt->status);
 
    // delete auth
-   trace = chain.push_action(config::system_account_name, deleteauth::get_name(), tester_account, fc::mutable_variant_object()
+   trace = chain.push_action(config::system_account_name(), deleteauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first"));
 

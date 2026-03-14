@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(name_prefix_tests)
 
    BOOST_CHECK_EQUAL("eosio.any"_n.prefix(), "eosio"_n);
    BOOST_CHECK_EQUAL("eosio"_n.prefix(), "eosio"_n);
-   BOOST_CHECK_EQUAL("eosio"_n.prefix(), config::system_account_name);
+   BOOST_CHECK_EQUAL("eosio"_n.prefix(), config::system_account_name());
    BOOST_CHECK_EQUAL("eosio."_n.prefix(), "eosio"_n);
    BOOST_CHECK_EQUAL("eosio.evm"_n.prefix(), "eosio"_n);
    BOOST_CHECK_EQUAL(".eosio"_n.prefix(), ""_n);
@@ -744,9 +744,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( transaction_test, T, validating_testers ) { try {
    trx.expiration = fc::time_point_sec{fc::time_point::now()};
    trx.validate();
    BOOST_CHECK_EQUAL(0u, trx.signatures.size());
-   ((const signed_transaction &)trx).sign( test.get_private_key( config::system_account_name, "active" ), test.get_chain_id());
+   ((const signed_transaction &)trx).sign( test.get_private_key( config::system_account_name(), "active" ), test.get_chain_id());
    BOOST_CHECK_EQUAL(0u, trx.signatures.size());
-   auto private_key = test.get_private_key( config::system_account_name, "active" );
+   auto private_key = test.get_private_key( config::system_account_name(), "active" );
    auto public_key = private_key.get_public_key();
    trx.sign( private_key, test.get_chain_id()  );
    BOOST_CHECK_EQUAL(1u, trx.signatures.size());
@@ -906,7 +906,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( transaction_metadata_test, T, validating_testers 
       test.set_transaction_headers(trx);
       trx.expiration = fc::time_point_sec{fc::time_point::now()};
 
-      auto private_key = test.get_private_key( config::system_account_name, "active" );
+      auto private_key = test.get_private_key( config::system_account_name(), "active" );
       auto public_key = private_key.get_public_key();
       trx.sign( private_key, test.get_chain_id()  );
       BOOST_CHECK_EQUAL(1u, trx.signatures.size());

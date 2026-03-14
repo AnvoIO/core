@@ -116,11 +116,11 @@ namespace core_net::chain {
       if (tt.action_traces.empty())
          return false;
       const auto& act = tt.action_traces[0].act;
-      if (act.account != core_net::chain::config::system_account_name || act.name != "onblock"_n ||
+      if (act.account != core_net::chain::config::system_account_name() || act.name != "onblock"_n ||
           act.authorization.size() != 1)
          return false;
       const auto& auth = act.authorization[0];
-      return auth.actor == core_net::chain::config::system_account_name &&
+      return auth.actor == core_net::chain::config::system_account_name() &&
              auth.permission == core_net::chain::config::active_name;
    }
 

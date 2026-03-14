@@ -304,7 +304,7 @@ namespace core_net { namespace chain {
                                                                                   )const
    {
       // Special case native actions cannot be linked to a minimum permission, so there is no need to check.
-      if( scope == config::system_account_name ) {
+      if( scope == config::system_account_name() ) {
           EOS_ASSERT( act_name != updateauth::get_name() &&
                      act_name != deleteauth::get_name() &&
                      act_name != linkauth::get_name() &&
@@ -319,7 +319,7 @@ namespace core_net { namespace chain {
          if( !linked_permission )
             return config::active_name;
 
-         if( *linked_permission == config::eosio_any_name )
+         if( *linked_permission == config::any_name() )
             return std::optional<permission_name>();
 
          return linked_permission;
@@ -377,7 +377,7 @@ namespace core_net { namespace chain {
       EOS_ASSERT( auth.actor == link.account, irrelevant_auth_exception,
                   "the owner of the linked permission needs to be the actor of the declared authorization" );
 
-      if( link.code == config::system_account_name
+      if( link.code == config::system_account_name()
             || !_control.is_builtin_activated( builtin_protocol_feature_t::fix_linkauth_restriction ) ) 
       {
          EOS_ASSERT( link.type != updateauth::get_name(),  action_validate_exception,
@@ -419,7 +419,7 @@ namespace core_net { namespace chain {
                   "cannot unlink non-existent permission link of account '${account}' for actions matching '${code}::${action}'",
                   ("account", unlink.account)("code", unlink.code)("action", unlink.type) );
 
-      if( *unlinked_permission_name == config::eosio_any_name )
+      if( *unlinked_permission_name == config::any_name() )
          return;
 
       EOS_ASSERT( get_permission(auth).satisfies( get_permission({unlink.account, *unlinked_permission_name}),
@@ -511,7 +511,7 @@ namespace core_net { namespace chain {
          bool special_case = false;
          fc::microseconds delay = effective_provided_delay;
 
-         if( act.account == config::system_account_name ) {
+         if( act.account == config::system_account_name() ) {
             special_case = true;
 
             if( act.name == updateauth::get_name() ) {

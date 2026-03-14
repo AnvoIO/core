@@ -33,7 +33,7 @@ BOOST_FIXTURE_TEST_CASE( verify_producer_schedule, legacy_validating_tester ) tr
          if (new_prod_schd == current_schedule) {
             scheduled_changed_to_new = true;
             // verify eosio.prods updated
-            const name usr = config::producers_account_name;
+            const name usr = config::producers_account_name();
             const name active_permission = config::active_name;
             const auto* perm = control->db().template find<permission_object, by_owner>(boost::make_tuple(usr, active_permission));
             for (auto account : perm->auth.accounts) {

@@ -266,7 +266,7 @@ name to_default_contract(const asset& a) {
    if (a.symbol_name() == a_symbol_str) {
       return core_vaulta_name;
    }
-   return config::system_account_name;
+   return config::system_account_name();
 }
 
 name to_default_contract_from_asset(const string& asset_str) {
@@ -375,7 +375,7 @@ string generate_nonce_string() {
 }
 
 chain::action generate_nonce_action() {
-   return chain::action( {}, config::null_account_name, name("nonce"), fc::raw::pack(fc::time_point::now().time_since_epoch().count()));
+   return chain::action( {}, config::null_account_name(), name("nonce"), fc::raw::pack(fc::time_point::now().time_since_epoch().count()));
 }
 
 //resolver for ABI serializer to decode actions in proposed transaction in multisig contract
@@ -592,7 +592,7 @@ void print_action( const fc::variant& at ) {
    /*
    if( code == "eosio" && func == "setcode" )
       args = args.substr(40)+"...";
-   if( name(code) == config::system_account_name && func == "setabi" )
+   if( name(code) == config::system_account_name() && func == "setabi" )
       args = args.substr(40)+"...";
    */
    if( args.size() > 100 ) args = args.substr(0,100) + "...";
@@ -981,8 +981,8 @@ struct set_account_permission_subcommand {
       permissions->add_option("permission", permission, localized("The permission name to set/delete an authority for"))->required();
       permissions->add_option("authority", authority_json_or_file, localized("[delete] NULL, [create/update] public key, JSON string or filename defining the authority, [code] contract name"));
       permissions->add_option("parent", parent, localized("[create] The permission name of this parents permission, defaults to 'active'"));
-      permissions->add_flag("--add-code", add_code, localized("[code] add '${code}' permission to specified permission authority", ("code", name(config::eosio_code_name))));
-      permissions->add_flag("--remove-code", remove_code, localized("[code] remove '${code}' permission from specified permission authority", ("code", name(config::eosio_code_name))));
+      permissions->add_flag("--add-code", add_code, localized("[code] add '${code}' permission to specified permission authority", ("code", name(config::code_name()))));
+      permissions->add_flag("--remove-code", remove_code, localized("[code] remove '${code}' permission from specified permission authority", ("code", name(config::code_name()))));
 
       add_standard_transaction_options(permissions, "account@active");
 
@@ -1019,7 +1019,7 @@ struct set_account_permission_subcommand {
 
             if ( need_auth ) {
                auto actor = (authority_json_or_file.empty()) ? name(account) : name(authority_json_or_file);
-               auto code_name = config::eosio_code_name;
+               auto code_name = config::code_name();
 
                if ( itr != res.permissions.end() ) {
                   // fetch existing authority
@@ -1237,7 +1237,7 @@ struct register_producer_subcommand {
 
          auto regprod_var = regproducer_variant(name(producer_str), producer_key, url, loc );
          auto accountPermissions = get_account_permissions(tx_permission, {name(producer_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, "regproducer"_n, regprod_var)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), "regproducer"_n, regprod_var)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -1351,7 +1351,7 @@ struct unregister_producer_subcommand {
                   ("producer", producer_str);
 
          auto accountPermissions = get_account_permissions(tx_permission, {name(producer_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, "unregprod"_n, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), "unregprod"_n, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -1372,7 +1372,7 @@ struct vote_producer_proxy_subcommand {
                   ("proxy", proxy_str)
                   ("producers", std::vector<account_name>{});
          auto accountPermissions = get_account_permissions(tx_permission, {name(voter_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, "voteproducer"_n, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), "voteproducer"_n, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -1396,7 +1396,7 @@ struct vote_producers_subcommand {
                   ("proxy", "")
                   ("producers", producer_names);
          auto accountPermissions = get_account_permissions(tx_permission, {name(voter_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, "voteproducer"_n, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), "voteproducer"_n, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -1413,8 +1413,8 @@ struct approve_producer_subcommand {
 
       approve_producer->callback([this] {
             auto result = call(get_table_func, fc::mutable_variant_object("json", true)
-                               ("code", name(config::system_account_name).to_string())
-                               ("scope", name(config::system_account_name).to_string())
+                               ("code", name(config::system_account_name()).to_string())
+                               ("scope", name(config::system_account_name()).to_string())
                                ("table", "voters")
                                ("table_key", "owner")
                                ("lower_bound", name(voter).to_uint64_t())
@@ -1449,7 +1449,7 @@ struct approve_producer_subcommand {
                ("proxy", "")
                ("producers", prods);
             auto accountPermissions = get_account_permissions(tx_permission, {name(voter), config::active_name});
-            send_actions({create_action(accountPermissions, config::system_account_name, "voteproducer"_n, act_payload)}, signing_keys_opt.get_keys());
+            send_actions({create_action(accountPermissions, config::system_account_name(), "voteproducer"_n, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -1466,8 +1466,8 @@ struct unapprove_producer_subcommand {
 
       approve_producer->callback([this] {
             auto result = call(get_table_func, fc::mutable_variant_object("json", true)
-                               ("code", name(config::system_account_name).to_string())
-                               ("scope", name(config::system_account_name).to_string())
+                               ("code", name(config::system_account_name()).to_string())
+                               ("scope", name(config::system_account_name()).to_string())
                                ("table", "voters")
                                ("table_key", "owner")
                                ("lower_bound", name(voter).to_uint64_t())
@@ -1501,7 +1501,7 @@ struct unapprove_producer_subcommand {
                ("proxy", "")
                ("producers", prods);
             auto accountPermissions = get_account_permissions(tx_permission, {name(voter), config::active_name});
-            send_actions({create_action(accountPermissions, config::system_account_name, "voteproducer"_n, act_payload)}, signing_keys_opt.get_keys());
+            send_actions({create_action(accountPermissions, config::system_account_name(), "voteproducer"_n, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -1761,8 +1761,8 @@ struct bidname_info_subcommand {
       list_producers->add_option("newname", newname, localized("The bidding name"))->required();
       list_producers->callback([this] {
          auto rawResult = call(get_table_func, fc::mutable_variant_object("json", true)
-                               ("code", name(config::system_account_name).to_string())
-                               ("scope", name(config::system_account_name).to_string())
+                               ("code", name(config::system_account_name()).to_string())
+                               ("scope", name(config::system_account_name()).to_string())
                                ("table", "namebids")
                                ("lower_bound", name(newname).to_uint64_t())
                                ("upper_bound", name(newname).to_uint64_t() + 1)
@@ -1807,7 +1807,7 @@ struct list_bw_subcommand {
       list_bw->callback([this] {
             //get entire table in scope of user account
             auto result = call(get_table_func, fc::mutable_variant_object("json", true)
-                               ("code", name(config::system_account_name).to_string())
+                               ("code", name(config::system_account_name()).to_string())
                                ("scope", name(account).to_string())
                                ("table", "delband")
             );
@@ -1909,7 +1909,7 @@ struct regproxy_subcommand {
                   ("proxy", proxy)
                   ("isproxy", true);
          auto accountPermissions = get_account_permissions(tx_permission, {name(proxy), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, "regproxy"_n, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), "regproxy"_n, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -1927,7 +1927,7 @@ struct unregproxy_subcommand {
                   ("proxy", proxy)
                   ("isproxy", false);
          auto accountPermissions = get_account_permissions(tx_permission, {name(proxy), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, "regproxy"_n, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), "regproxy"_n, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -1950,7 +1950,7 @@ struct canceldelay_subcommand {
                   ("canceling_auth", canceling_auth)
                   ("trx_id", trx_id);
          auto accountPermissions = get_account_permissions(tx_permission, canceling_auth);
-         send_actions({create_action(accountPermissions, config::system_account_name, "canceldelay"_n, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), "canceldelay"_n, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2089,7 +2089,7 @@ struct sellrex_subcommand {
             ("from", from_str)
             ("rex",  rex_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(from_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2105,7 +2105,7 @@ struct cancelrexorder_subcommand {
       cancelrexorder->callback([this] {
          fc::variant act_payload = fc::mutable_variant_object()("owner", owner_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(owner_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2131,7 +2131,7 @@ struct rentcpu_subcommand {
             ("loan_payment", loan_payment_str)
             ("loan_fund",    loan_fund_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(from_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2157,7 +2157,7 @@ struct rentnet_subcommand {
             ("loan_payment", loan_payment_str)
             ("loan_fund",    loan_fund_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(from_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2180,7 +2180,7 @@ struct fundcpuloan_subcommand {
             ("loan_num", loan_num_str)
             ("payment",  payment_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(from_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2203,7 +2203,7 @@ struct fundnetloan_subcommand {
             ("loan_num", loan_num_str)
             ("payment",  payment_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(from_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2226,7 +2226,7 @@ struct defcpuloan_subcommand {
             ("loan_num", loan_num_str)
             ("amount",   amount_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(from_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2249,7 +2249,7 @@ struct defnetloan_subcommand {
             ("loan_num", loan_num_str)
             ("amount",   amount_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(from_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2269,7 +2269,7 @@ struct mvtosavings_subcommand {
             ("owner", owner_str)
             ("rex",   rex_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(owner_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2289,7 +2289,7 @@ struct mvfrsavings_subcommand {
             ("owner", owner_str)
             ("rex",   rex_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(owner_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2305,7 +2305,7 @@ struct updaterex_subcommand {
       updaterex->callback([this] {
          fc::variant act_payload = fc::mutable_variant_object()("owner", owner_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(owner_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2321,7 +2321,7 @@ struct consolidate_subcommand {
       consolidate->callback([this] {
          fc::variant act_payload = fc::mutable_variant_object()("owner", owner_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(owner_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2341,7 +2341,7 @@ struct rexexec_subcommand {
                ("user", user_str)
                ("max",  max_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(user_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };
@@ -2357,7 +2357,7 @@ struct closerex_subcommand {
       closerex->callback([this] {
          fc::variant act_payload = fc::mutable_variant_object()("owner", owner_str);
          auto accountPermissions = get_account_permissions(tx_permission, {name(owner_str), config::active_name});
-         send_actions({create_action(accountPermissions, config::system_account_name, act_name, act_payload)}, signing_keys_opt.get_keys());
+         send_actions({create_action(accountPermissions, config::system_account_name(), act_name, act_payload)}, signing_keys_opt.get_keys());
       });
    }
 };

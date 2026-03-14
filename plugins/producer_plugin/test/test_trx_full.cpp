@@ -21,7 +21,7 @@ struct testit {
          :id(id){}
 
    static account_name get_account() {
-      return chain::config::system_account_name;
+      return chain::config::system_account_name();
    }
 
    static action_name get_name() {
@@ -42,7 +42,7 @@ auto make_unique_trx( const chain_id_type& chain_id ) {
    static uint64_t nextid = 0;
    ++nextid;
 
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
 
    signed_transaction trx;
    // if a transaction expires after it was aborted then it will not be included in a block

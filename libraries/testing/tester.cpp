@@ -701,10 +701,10 @@ namespace core_net::testing {
       if( include_code ) {
          FC_ASSERT( owner_auth.threshold <= std::numeric_limits<weight_type>::max(), "threshold is too high" );
          FC_ASSERT( active_auth.threshold <= std::numeric_limits<weight_type>::max(), "threshold is too high" );
-         owner_auth.accounts.push_back( permission_level_weight{ {a, config::eosio_code_name},
+         owner_auth.accounts.push_back( permission_level_weight{ {a, config::code_name()},
                                                                  static_cast<weight_type>(owner_auth.threshold) } );
          sort_permissions(owner_auth);
-         active_auth.accounts.push_back( permission_level_weight{ {a, config::eosio_code_name},
+         active_auth.accounts.push_back( permission_level_weight{ {a, config::code_name()},
                                                                   static_cast<weight_type>(active_auth.threshold) } );
          sort_permissions(active_auth);
       }
@@ -860,7 +860,7 @@ namespace core_net::testing {
       fc::variant pretty_trx = fc::mutable_variant_object()
          ("actions", fc::variants({
             fc::mutable_variant_object()
-               ("account", name(config::system_account_name))
+               ("account", name(config::system_account_name()))
                ("name", "reqauth")
                ("authorization", auths)
                ("data", fc::mutable_variant_object()
@@ -884,7 +884,7 @@ namespace core_net::testing {
                                         {get_private_key(from, role)});
         } else {
             return push_reqauth(from, vector<permission_level>{{from, config::owner_name}},
-                                        {get_private_key(from, role), get_private_key( config::system_account_name, "active" )} );
+                                        {get_private_key(from, role), get_private_key( config::system_account_name(), "active" )} );
         }
     }
 
@@ -894,7 +894,7 @@ namespace core_net::testing {
       fc::variant pretty_trx = fc::mutable_variant_object()
          ("actions", fc::variants({
             fc::mutable_variant_object()
-               ("account", name(config::system_account_name))
+               ("account", name(config::system_account_name()))
                ("name", "reqauth")
                ("authorization", fc::variants({
                   fc::mutable_variant_object()
@@ -909,7 +909,7 @@ namespace core_net::testing {
         // lets also push a context free action, the multi chain test will then also include a context free action
         ("context_free_actions", fc::variants({
             fc::mutable_variant_object()
-               ("account", name(config::null_account_name))
+               ("account", name(config::null_account_name()))
                ("name", "nonce")
                ("data", fc::raw::pack(v))
             })
@@ -1233,18 +1233,18 @@ namespace core_net::testing {
    }
 
    void base_tester::set_before_preactivate_bios_contract() {
-      set_code(config::system_account_name, contracts::before_preactivate_core_net_bios_wasm());
-      set_abi(config::system_account_name, contracts::before_preactivate_core_net_bios_abi());
+      set_code(config::system_account_name(), contracts::before_preactivate_core_net_bios_wasm());
+      set_abi(config::system_account_name(), contracts::before_preactivate_core_net_bios_abi());
    }
 
    void base_tester::set_before_producer_authority_bios_contract() {
-      set_code(config::system_account_name, contracts::before_producer_authority_core_net_bios_wasm());
-      set_abi(config::system_account_name, contracts::before_producer_authority_core_net_bios_abi());
+      set_code(config::system_account_name(), contracts::before_producer_authority_core_net_bios_wasm());
+      set_abi(config::system_account_name(), contracts::before_producer_authority_core_net_bios_abi());
    }
 
    void base_tester::set_bios_contract() {
-      set_code(config::system_account_name, contracts::core_net_bios_wasm());
-      set_abi(config::system_account_name, contracts::core_net_bios_abi());
+      set_code(config::system_account_name(), contracts::core_net_bios_wasm());
+      set_abi(config::system_account_name(), contracts::core_net_bios_abi());
    }
 
 
@@ -1272,7 +1272,7 @@ namespace core_net::testing {
          schedule_variant.emplace_back(e.get_abi_variant());
       }
 
-      return push_action( config::system_account_name, "setprods"_n, config::system_account_name,
+      return push_action( config::system_account_name(), "setprods"_n, config::system_account_name(),
                           fc::mutable_variant_object()("schedule", schedule_variant));
    }
 
@@ -1288,7 +1288,7 @@ namespace core_net::testing {
          }, p.authority);
       }
 
-      return push_action( config::system_account_name, "setprods"_n, config::system_account_name,
+      return push_action( config::system_account_name(), "setprods"_n, config::system_account_name(),
                           fc::mutable_variant_object()("schedule", legacy_keys));
    }
 
@@ -1342,7 +1342,7 @@ namespace core_net::testing {
       fin_policy_variant("finalizers", std::move(finalizer_auths));
 
       res.setfinalizer_trace =
-         push_action( config::system_account_name, "setfinalizer"_n, config::system_account_name,
+         push_action( config::system_account_name(), "setfinalizer"_n, config::system_account_name(),
                       fc::mutable_variant_object()("finalizer_policy", std::move(fin_policy_variant)));
       return res;
    }
@@ -1382,7 +1382,7 @@ namespace core_net::testing {
 
    void base_tester::preactivate_protocol_features(const vector<digest_type>& feature_digests) {
       for( const auto& feature_digest: feature_digests ) {
-         push_action( config::system_account_name, "activate"_n, config::system_account_name,
+         push_action( config::system_account_name(), "activate"_n, config::system_account_name(),
                       fc::mutable_variant_object()("feature_digest", feature_digest) );
       }
    }

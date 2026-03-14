@@ -1165,7 +1165,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( eosio_abi, T, validating_testers ) try {
 
    chain.produce_block();
 
-   const auto& accnt  = chain.control->db().template get<account_object,by_name>(config::system_account_name);
+   const auto& accnt  = chain.control->db().template get<account_object,by_name>(config::system_account_name());
    abi_def abi;
    BOOST_REQUIRE_EQUAL(abi_serializer::to_abi(accnt.abi, abi), true);
    abi_serializer abi_ser(std::move(abi), abi_serializer::create_yield_function( chain.abi_serializer_max_time ));
@@ -1173,15 +1173,15 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( eosio_abi, T, validating_testers ) try {
    signed_transaction trx;
    name a = "alice"_n;
    authority owner_auth =  authority( chain.get_public_key( a, "owner" ) );
-   trx.actions.emplace_back( vector<permission_level>{{config::system_account_name,config::active_name}},
+   trx.actions.emplace_back( vector<permission_level>{{config::system_account_name(),config::active_name}},
                              newaccount{
-                                   .creator  = config::system_account_name,
+                                   .creator  = config::system_account_name(),
                                    .name     = a,
                                    .owner    = owner_auth,
                                    .active   = authority( chain.get_public_key( a, "active" ) )
                              });
    chain.set_transaction_headers(trx);
-   trx.sign( chain.get_private_key( config::system_account_name, "active" ), chain.get_chain_id()  );
+   trx.sign( chain.get_private_key( config::system_account_name(), "active" ), chain.get_chain_id()  );
    auto result = chain.push_transaction( trx );
 
    fc::variant pretty_output;
@@ -2009,13 +2009,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( billed_cpu_test, T, testers ) try {
    push_trx( ptrx, fc::time_point::maximum(), 0, false, 0 ); // non-explicit billing
 
    // setup account acc with large limits
-   chain.push_action( config::system_account_name, "setalimits"_n, config::system_account_name, fc::mutable_variant_object()
+   chain.push_action( config::system_account_name(), "setalimits"_n, config::system_account_name(), fc::mutable_variant_object()
          ("account", user)
          ("ram_bytes", -1)
          ("net_weight", 19'999'999)
          ("cpu_weight", 19'999'999)
    );
-   chain.push_action( config::system_account_name, "setalimits"_n, config::system_account_name, fc::mutable_variant_object()
+   chain.push_action( config::system_account_name(), "setalimits"_n, config::system_account_name(), fc::mutable_variant_object()
          ("account", acc)
          ("ram_bytes", -1)
          ("net_weight", 9'999)
@@ -2076,7 +2076,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( billed_cpu_test, T, testers ) try {
    BOOST_CHECK_EXCEPTION( push_trx( ptrx, fc::time_point::maximum(), min_cpu_time_us - 1, true, 0 ), transaction_exception,
                           fc_exception_message_starts_with("cannot bill CPU time less than the minimum") );
 
-   chain.push_action( config::system_account_name, "setalimits"_n, config::system_account_name, fc::mutable_variant_object()
+   chain.push_action( config::system_account_name(), "setalimits"_n, config::system_account_name(), fc::mutable_variant_object()
          ("account", acc)
          ("ram_bytes", -1)
          ("net_weight", 75)
@@ -2154,7 +2154,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( billed_cpu_test, T, testers ) try {
                                                              return starts(e) && contains_reached(e) && !contains_subjective(e); } );
 
    // Test when cpu limit is 0
-   chain.push_action( config::system_account_name, "setalimits"_n, config::system_account_name, fc::mutable_variant_object()
+   chain.push_action( config::system_account_name(), "setalimits"_n, config::system_account_name(), fc::mutable_variant_object()
            ("account", acc)
            ("ram_bytes", -1)
            ("net_weight", 75)

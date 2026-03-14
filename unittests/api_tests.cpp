@@ -170,13 +170,13 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_receipt_tests, T, validating_testers) { try
       checker( res );
    };
 
-   auto result = chain.push_reqauth( config::system_account_name, "active" );
+   auto result = chain.push_reqauth( config::system_account_name(), "active" );
    BOOST_REQUIRE_EQUAL( result->receipt->status, transaction_receipt::executed );
-   BOOST_REQUIRE( result->action_traces[0].receipt->auth_sequence.find( config::system_account_name )
+   BOOST_REQUIRE( result->action_traces[0].receipt->auth_sequence.find( config::system_account_name() )
                      != result->action_traces[0].receipt->auth_sequence.end() );
    auto base_global_sequence_num = result->action_traces[0].receipt->global_sequence;
    auto base_system_recv_seq_num = result->action_traces[0].receipt->recv_sequence;
-                                   result->action_traces[0].receipt->auth_sequence[config::system_account_name];
+                                   result->action_traces[0].receipt->auth_sequence[config::system_account_name()];
    auto base_system_code_seq_num = result->action_traces[0].receipt->code_sequence.value;
    auto base_system_abi_seq_num  = result->action_traces[0].receipt->abi_sequence.value;
 
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_receipt_tests, T, validating_testers) { try
    } );
 
    chain.set_code( "test"_n, test_contracts::asserter_wasm() );
-   chain.set_code( config::system_account_name, test_contracts::payloadless_wasm() );
+   chain.set_code( config::system_account_name(), test_contracts::payloadless_wasm() );
 
    call_provereset_and_check( "test"_n, "test"_n, [&]( const transaction_trace_ptr& res ) {
       BOOST_CHECK_EQUAL( res->receipt->status, transaction_receipt::executed );
@@ -217,7 +217,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_receipt_tests, T, validating_testers) { try
    // Adding a block also retires an onblock action which increments both the global sequence number
    // and the recv and auth sequences numbers for the system account.
 
-   call_doit_and_check( config::system_account_name, "test"_n, [&]( const transaction_trace_ptr& res ) {
+   call_doit_and_check( config::system_account_name(), "test"_n, [&]( const transaction_trace_ptr& res ) {
       BOOST_CHECK_EQUAL( res->receipt->status, transaction_receipt::executed );
       BOOST_CHECK_EQUAL( res->action_traces[0].receipt->global_sequence, base_global_sequence_num + 6 );
       BOOST_CHECK_EQUAL( res->action_traces[0].receipt->recv_sequence, base_system_recv_seq_num + 4 );
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(action_receipt_tests, T, validating_testers) { try
       BOOST_CHECK_EQUAL( m.begin()->second, base_test_auth_seq_num + 4 );
    } );
 
-   chain.set_code( config::system_account_name, contracts::core_net_bios_wasm() );
+   chain.set_code( config::system_account_name(), contracts::core_net_bios_wasm() );
 
    chain.set_code( "test"_n, contracts::core_net_bios_wasm() );
    chain.set_abi( "test"_n, contracts::core_net_bios_abi() );
@@ -602,7 +602,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(cfa_stateful_api, T, validating_testers)  try {
 	chain.set_code( "testapi"_n, test_contracts::test_api_wasm() );
 
    account_name a = "testapi2"_n;
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
 
    signed_transaction trx;
 
@@ -632,7 +632,7 @@ BOOST_FIXTURE_TEST_CASE(deferred_cfa_failed, validating_tester_no_disable_deferr
 	set_code( "testapi"_n, test_contracts::test_api_wasm() );
 
    account_name a = "testapi2"_n;
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
 
    signed_transaction trx;
 
@@ -668,7 +668,7 @@ BOOST_FIXTURE_TEST_CASE(deferred_cfa_success, validating_tester_no_disable_defer
 	set_code( "testapi"_n, test_contracts::test_api_wasm() );
 
    account_name a = "testapi2"_n;
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
    signed_transaction trx;
    trx.actions.emplace_back( vector<permission_level>{{creator,config::active_name}},
                                  newaccount{
@@ -1067,7 +1067,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( inline_action_objective_limit, T, testers ) { try
    chain.set_code( "testapi"_n, test_contracts::test_api_wasm() );
    chain.produce_block();
 
-   chain.push_action(config::system_account_name, "setpriv"_n, config::system_account_name,  mutable_variant_object()
+   chain.push_action(config::system_account_name(), "setpriv"_n, config::system_account_name(),  mutable_variant_object()
          ("account", "testapi")
          ("is_priv", 1));
    chain.produce_block();
@@ -1267,15 +1267,15 @@ BOOST_FIXTURE_TEST_CASE(deferred_transaction_tests, validating_tester_no_disable
       dtt_act2.delay_sec = 5;
 
       auto auth = authority(get_public_key(name("testapi"), name(dtt_act2.permission_name).to_string()), 10);
-      auth.accounts.push_back( permission_level_weight{{"testapi"_n, config::eosio_code_name}, 1} );
+      auth.accounts.push_back( permission_level_weight{{"testapi"_n, config::code_name()}, 1} );
 
-      push_action(config::system_account_name, updateauth::get_name(), name("testapi"), fc::mutable_variant_object()
+      push_action(config::system_account_name(), updateauth::get_name(), name("testapi"), fc::mutable_variant_object()
               ("account", "testapi")
               ("permission", name(dtt_act2.permission_name))
               ("parent", "active")
               ("auth", auth)
       );
-      push_action(config::system_account_name, linkauth::get_name(), name("testapi"), fc::mutable_variant_object()
+      push_action(config::system_account_name(), linkauth::get_name(), name("testapi"), fc::mutable_variant_object()
               ("account", "testapi")
               ("code", name(dtt_act2.deferred_account))
               ("type", name(dtt_act2.deferred_action))
@@ -1292,7 +1292,7 @@ BOOST_FIXTURE_TEST_CASE(deferred_transaction_tests, validating_tester_no_disable
       dtt_action dtt_act3;
       dtt_act3.deferred_account = "testapi"_n.to_uint64_t();
       dtt_act3.permission_name = "additional"_n.to_uint64_t();
-      push_action(config::system_account_name, linkauth::get_name(), name("testapi"), fc::mutable_variant_object()
+      push_action(config::system_account_name(), linkauth::get_name(), name("testapi"), fc::mutable_variant_object()
             ("account", "testapi")
             ("code", name(dtt_act3.deferred_account))
             ("type", name(dtt_act3.deferred_action))
@@ -1306,7 +1306,7 @@ BOOST_FIXTURE_TEST_CASE(deferred_transaction_tests, validating_tester_no_disable
       // If we make testapi account to be priviledged account:
       // - the deferred transaction will work no matter who is the payer
       // - the deferred transaction will not care about the delay of the authorization
-      push_action(config::system_account_name, "setpriv"_n, config::system_account_name,  mutable_variant_object()
+      push_action(config::system_account_name(), "setpriv"_n, config::system_account_name(),  mutable_variant_object()
                                                           ("account", "testapi")
                                                           ("is_priv", 1));
       CALL_TEST_FUNCTION(*this, "test_transaction", "send_deferred_tx_with_dtt_action", fc::raw::pack(dtt_act1));
@@ -2476,7 +2476,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(permission_usage_tests, T, validating_testers) { t
 
    chain.set_authority( "bob"_n, "perm1"_n, authority( chain.get_private_key("bob"_n, "perm1").get_public_key() ) );
 
-   chain.push_action(config::system_account_name, linkauth::get_name(), "bob"_n, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), "bob"_n, fc::mutable_variant_object()
            ("account", "bob")
            ("code", "eosio")
            ("type", "reqauth")
@@ -3255,10 +3255,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( action_results_tests, T, validating_testers ) { t
    BOOST_REQUIRE_THROW(call_autoresret_and_check( "test"_n, "test"_n, "ret1overlim"_n, [&]( auto res ) {}),
                        action_return_value_exception);
    t.produce_block();
-   t.set_code( config::system_account_name, test_contracts::action_results_wasm() );
+   t.set_code( config::system_account_name(), test_contracts::action_results_wasm() );
    t.produce_block();
-   call_autoresret_and_check( config::system_account_name,
-                              config::system_account_name,
+   call_autoresret_and_check( config::system_account_name(),
+                              config::system_account_name(),
                               "retmaxlim"_n,
                               [&]( const transaction_trace_ptr& res ) {
                                  BOOST_CHECK_EQUAL( res->receipt->status, transaction_receipt::executed );
@@ -3274,8 +3274,8 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( action_results_tests, T, validating_testers ) { t
                                                                   expected_vec.end() );
                               } );
    t.produce_block();
-   BOOST_REQUIRE_THROW(call_autoresret_and_check( config::system_account_name,
-                                                  config::system_account_name,
+   BOOST_REQUIRE_THROW(call_autoresret_and_check( config::system_account_name(),
+                                                  config::system_account_name(),
                                                   "setliminv"_n,
                                                   [&]( auto res ) {}),
                        action_validate_exception);

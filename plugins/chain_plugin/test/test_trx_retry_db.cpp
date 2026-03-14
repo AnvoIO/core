@@ -34,7 +34,7 @@ struct testit {
          :id(id){}
 
    static account_name get_account() {
-      return chain::config::system_account_name;
+      return chain::config::system_account_name();
    }
    static action_name get_name() {
       return "testit"_n;
@@ -96,7 +96,7 @@ auto get_public_key( chain::name keyname, std::string role = "owner" ) {
 
 auto make_unique_trx( const chain_id_type& chain_id, const fc::microseconds& expiration, uint64_t id ) {
 
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
    signed_transaction trx;
    trx.expiration = fc::time_point_sec{fc::time_point::now() + expiration};
    trx.actions.emplace_back( vector<permission_level>{{creator, config::active_name}},

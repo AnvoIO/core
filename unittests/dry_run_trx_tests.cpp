@@ -84,9 +84,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( require_authorization, T, dry_run_trx_testers ) {
    chain.produce_block();
 
    action act = {
-      {}, // no authorization provided: vector<permission_level>{{config::system_account_name,config::active_name}},
+      {}, // no authorization provided: vector<permission_level>{{config::system_account_name(),config::active_name}},
       newaccount{
-       .creator  = config::system_account_name,
+       .creator  = config::system_account_name(),
        .name     = "alice"_n,
        .owner    = authority( chain.get_public_key( "alice"_n, "owner" ) ),
        .active   = authority( chain.get_public_key( "alice"_n, "active" ) )
@@ -110,9 +110,9 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( newaccount_test, T, dry_run_trx_testers ) { try {
    chain.produce_block();
 
    action act = {
-      vector<permission_level>{{config::system_account_name,config::active_name}},
+      vector<permission_level>{{config::system_account_name(),config::active_name}},
       newaccount{
-         .creator  = config::system_account_name,
+         .creator  = config::system_account_name(),
          .name     = "alice"_n,
          .owner    = authority( chain.get_public_key( "alice"_n, "owner" ) ),
          .active   = authority( chain.get_public_key( "alice"_n, "active" ) )
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( deleteauth_test, T, dry_run_trx_testers ) { try {
    chain.create_accounts( {"alice"_n} );
 
    // update auth
-   chain.push_action(config::system_account_name, updateauth::get_name(), "alice"_n, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), "alice"_n, fc::mutable_variant_object()
            ("account", "alice")
            ("permission", "first")
            ("parent", "active")
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( linkauth_test, T, dry_run_trx_testers ) { try {
    chain.create_accounts( {"alice"_n} );
 
    // update auth
-   chain.push_action(config::system_account_name, updateauth::get_name(), "alice"_n, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), "alice"_n, fc::mutable_variant_object()
            ("account", "alice")
            ("permission", "first")
            ("parent", "active")
@@ -261,7 +261,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( unlinkauth_test, T, dry_run_trx_testers ) { try {
    chain.create_accounts( {"alice"_n} );
 
    // update auth
-   chain.push_action(config::system_account_name, updateauth::get_name(), "alice"_n, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), "alice"_n, fc::mutable_variant_object()
            ("account", "alice")
            ("permission", "first")
            ("parent", "active")
@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( unlinkauth_test, T, dry_run_trx_testers ) { try {
    );
 
    // link auth
-   chain.push_action(config::system_account_name, linkauth::get_name(), "alice"_n, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), "alice"_n, fc::mutable_variant_object()
            ("account", "alice")
            ("code", "eosio.token")
            ("type", "transfer")

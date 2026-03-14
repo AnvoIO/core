@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <optional>
 
 namespace core_net { namespace chain {
 
@@ -15,6 +16,12 @@ struct genesis_state {
    genesis_state();
 
    static const string core_net_root_key;
+
+   // Genesis-configurable system account prefix.
+   // NOT part of FC_REFLECT — preserves binary block log format and chain_id.
+   // Handled via custom to_variant/from_variant for JSON genesis files.
+   // nullopt = "eosio" (default, backward compatible for migrating chains).
+   std::optional<name> system_account_prefix;
 
    chain_config_v0   initial_configuration = {
       .max_block_net_usage                  = config::default_max_block_net_usage,

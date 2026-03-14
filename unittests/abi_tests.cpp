@@ -1676,7 +1676,7 @@ BOOST_AUTO_TEST_CASE(packed_transaction)
    txn.context_free_actions.emplace_back(
          vector<permission_level>{{"testapi1"_n, config::active_name}},
          newaccount{
-               .creator  = config::system_account_name,
+               .creator  = config::system_account_name(),
                .name     = a,
                .owner    = authority( get_public_key( a, "owner" )),
                .active   = authority( get_public_key( a, "active" ) )
@@ -2602,7 +2602,7 @@ BOOST_AUTO_TEST_CASE(abi_large_signature)
 
       name a = "hello"_n;
       authority owner_auth =  authority( get_public_key( a, "owner" ) );
-      chain::action large_act( vector<permission_level>{{config::system_account_name,config::active_name}},
+      chain::action large_act( vector<permission_level>{{config::system_account_name(),config::active_name}},
                                act_sig{
                                   .sig = sig
                                });

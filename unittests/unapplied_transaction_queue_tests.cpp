@@ -15,7 +15,7 @@ auto unique_trx_meta_data( fc::time_point expire = fc::time_point::now() + fc::s
    ++nextid;
 
    signed_transaction trx;
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
    trx.expiration = fc::time_point_sec{expire};
    trx.actions.emplace_back( vector<permission_level>{{creator,config::active_name}},
                              onerror{ nextid, "test", 4 });
@@ -39,7 +39,7 @@ auto create_test_block_state( deque<transaction_metadata_ptr> trx_metas ) {
       block->transactions.emplace_back( *trx_meta->packed_trx() );
    }
 
-   block->producer = core_net::chain::config::system_account_name;
+   block->producer = core_net::chain::config::system_account_name();
 
    auto priv_key = core_net::testing::base_tester::get_private_key( block->producer, "active" );
    auto pub_key  = core_net::testing::base_tester::get_public_key( block->producer, "active" );

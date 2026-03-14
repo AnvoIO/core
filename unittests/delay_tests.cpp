@@ -21,9 +21,9 @@ static void create_accounts(validating_tester& chain) {
    chain.create_accounts({"eosio.msig"_n, "eosio.token"_n});
    chain.produce_block();
 
-   chain.push_action(config::system_account_name,
+   chain.push_action(config::system_account_name(),
       "setpriv"_n,
-      config::system_account_name,
+      config::system_account_name(),
       mvo()
          ("account", "eosio.msig")
          ("is_priv", 1) );
@@ -94,7 +94,7 @@ static void propose_approve_msig_updateauth_trx(validating_tester& chain, const 
       ("delay_sec", delay_sec)
       ("actions", fc::variants({
          mvo()
-            ("account", config::system_account_name)
+            ("account", config::system_account_name())
             ("name", updateauth::get_name())
             ("authorization", vector<permission_level> {{ "tester"_n, config::active_name }})
             ("data", fc::mutable_variant_object()
@@ -119,7 +119,7 @@ static void propose_approve_msig_linkauth_trx(validating_tester& chain, const na
       ("delay_sec", delay_sec)
       ("actions", fc::variants({
          mvo()
-            ("account", config::system_account_name)
+            ("account", config::system_account_name())
             ("name", linkauth::get_name())
             ("authorization", vector<permission_level>{{ "tester"_n, config::active_name }})
             ("data", fc::mutable_variant_object()
@@ -144,7 +144,7 @@ static void propose_approve_msig_unlinkauth_trx(validating_tester& chain, const 
       ("delay_sec", delay_sec)
       ("actions", fc::variants({
          mvo()
-            ("account", config::system_account_name)
+            ("account", config::system_account_name())
             ("name", unlinkauth::get_name())
             ("authorization", vector<permission_level>{{ "tester"_n, config::active_name}})
             ("data", fc::mutable_variant_object()
@@ -180,7 +180,7 @@ BOOST_FIXTURE_TEST_CASE( delay_error_create_account, validating_tester_no_disabl
    signed_transaction trx;
 
    account_name a = "newco"_n;
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
 
    auto owner_auth =  authority( get_public_key( a, "owner" ) );
    trx.actions.emplace_back( vector<permission_level>{{creator,config::active_name}},
@@ -218,13 +218,13 @@ BOOST_AUTO_TEST_CASE( link_delay_direct_test ) { try {
 
    create_accounts(chain);
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
       ("account", "tester")
       ("permission", "first")
       ("parent", "active")
       ("auth",  authority(chain.get_public_key(tester_account, "first")))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
       ("account", "tester")
       ("code", eosio_token)
       ("type", "transfer")
@@ -275,7 +275,7 @@ BOOST_AUTO_TEST_CASE( link_delay_direct_test ) { try {
    liquid_balance = get_currency_balance(chain, "tester2"_n);
    BOOST_REQUIRE_EQUAL(asset::from_string("1.0000 CUR"), liquid_balance);
 
-   trace = chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   trace = chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
@@ -333,13 +333,13 @@ BOOST_AUTO_TEST_CASE( link_delay_direct_parent_permission_test ) { try {
 
    create_accounts(chain);
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
            ("auth",  authority(chain.get_public_key(tester_account, "first")))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
@@ -388,7 +388,7 @@ BOOST_AUTO_TEST_CASE( link_delay_direct_parent_permission_test ) { try {
    liquid_balance = get_currency_balance(chain, "tester2"_n);
    BOOST_REQUIRE_EQUAL(asset::from_string("1.0000 CUR"), liquid_balance);
 
-   trace = chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   trace = chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "active")
            ("parent", "owner")
@@ -449,19 +449,19 @@ BOOST_AUTO_TEST_CASE( link_delay_direct_walk_parent_permissions_test ) { try {
 
    create_accounts(chain);
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
            ("auth",  authority(chain.get_public_key(tester_account, "first")))
    );
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "second")
            ("parent", "first")
            ("auth",  authority(chain.get_public_key(tester_account, "second")))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
@@ -512,7 +512,7 @@ BOOST_AUTO_TEST_CASE( link_delay_direct_walk_parent_permissions_test ) { try {
    liquid_balance = get_currency_balance(chain, "tester2"_n);
    BOOST_REQUIRE_EQUAL(asset::from_string("1.0000 CUR"), liquid_balance);
 
-   trace = chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   trace = chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
@@ -574,13 +574,13 @@ BOOST_AUTO_TEST_CASE( link_delay_permission_change_test ) { try {
 
    create_accounts(chain);
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
            ("auth",  authority(chain.get_public_key(tester_account, "first"), 10))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
@@ -723,19 +723,19 @@ BOOST_AUTO_TEST_CASE( link_delay_permission_change_with_delay_heirarchy_test ) {
 
    create_accounts(chain);
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
            ("auth",  authority(chain.get_public_key(tester_account, "first"), 10))
    );
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "second")
            ("parent", "first")
            ("auth",  authority(chain.get_public_key(tester_account, "second")))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
@@ -885,18 +885,18 @@ BOOST_AUTO_TEST_CASE( link_delay_link_change_test ) { try {
 
    create_accounts(chain);
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
            ("auth",  authority(chain.get_public_key(tester_account, "first"), 10))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
            ("requirement", "first"));
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "second")
            ("parent", "active")
@@ -946,7 +946,7 @@ BOOST_AUTO_TEST_CASE( link_delay_link_change_test ) { try {
    BOOST_REQUIRE_EQUAL(asset::from_string("0.0000 CUR"), liquid_balance);
 
    BOOST_REQUIRE_EXCEPTION(
-      chain.push_action( config::system_account_name, linkauth::get_name(),
+      chain.push_action( config::system_account_name(), linkauth::get_name(),
                          vector<permission_level>{permission_level{tester_account, "first"_n}},
                          fc::mutable_variant_object()
       ("account", "tester")
@@ -1051,13 +1051,13 @@ BOOST_AUTO_TEST_CASE( link_delay_unlink_test ) { try {
 
    create_accounts(chain);
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
            ("auth",  authority(chain.get_public_key(tester_account, "first"), 10))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
@@ -1106,7 +1106,7 @@ BOOST_AUTO_TEST_CASE( link_delay_unlink_test ) { try {
    BOOST_REQUIRE_EQUAL(asset::from_string("0.0000 CUR"), liquid_balance);
 
    BOOST_REQUIRE_EXCEPTION(
-      chain.push_action( config::system_account_name, unlinkauth::get_name(),
+      chain.push_action( config::system_account_name(), unlinkauth::get_name(),
                          vector<permission_level>{{tester_account, "first"_n}},
                          fc::mutable_variant_object()
          ("account", "tester")
@@ -1211,24 +1211,24 @@ BOOST_AUTO_TEST_CASE( link_delay_link_change_heirarchy_test ) { try {
 
    create_accounts(chain);
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
            ("auth",  authority(chain.get_public_key(tester_account, "first"), 10))
    );
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "second")
            ("parent", "first")
            ("auth",  authority(chain.get_public_key(tester_account, "first")))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
            ("requirement", "second"));
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "third")
            ("parent", "active")
@@ -1380,13 +1380,13 @@ BOOST_AUTO_TEST_CASE( canceldelay_test ) { try {
    chain.create_account("tester2"_n);
    chain.produce_block();
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
            ("auth",  authority(chain.get_public_key(tester_account, "first"), 10))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
@@ -1449,7 +1449,7 @@ BOOST_AUTO_TEST_CASE( canceldelay_test ) { try {
    BOOST_REQUIRE_EQUAL(asset::from_string("0.0000 CUR"), liquid_balance);
 
    BOOST_REQUIRE_EXCEPTION(
-      chain.push_action( config::system_account_name,
+      chain.push_action( config::system_account_name(),
                          updateauth::get_name(),
                          vector<permission_level>{{tester_account, "first"_n}},
                          fc::mutable_variant_object()
@@ -1464,7 +1464,7 @@ BOOST_AUTO_TEST_CASE( canceldelay_test ) { try {
    );
 
    // this transaction will be delayed 20 blocks
-   trace = chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   trace = chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
@@ -1622,19 +1622,19 @@ BOOST_AUTO_TEST_CASE( canceldelay_test2 ) { try {
    chain.create_account("tester2"_n);
    chain.produce_block();
 
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("permission", "first")
            ("parent", "active")
            ("auth",  authority(chain.get_public_key(tester_account, "first"), 5))
    );
-   chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
           ("account", "tester")
           ("permission", "second")
           ("parent", "first")
           ("auth",  authority(chain.get_public_key(tester_account, "second")))
    );
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
@@ -1747,7 +1747,7 @@ BOOST_AUTO_TEST_CASE( canceldelay_test2 ) { try {
 
    ilog("reset minimum permission of transfer to second permission");
 
-   chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
            ("account", "tester")
            ("code", eosio_token)
            ("type", "transfer")
@@ -1883,7 +1883,7 @@ BOOST_AUTO_TEST_CASE( max_transaction_delay_create ) { try {
    chain.produce_block();
 
    BOOST_REQUIRE_EXCEPTION(
-      chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+      chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
                         ("account", "tester")
                         ("permission", "first")
                         ("parent", "active")
@@ -1912,7 +1912,7 @@ BOOST_AUTO_TEST_CASE( max_transaction_delay_execute ) { try {
    );
 
    //create a permission level with delay 30 days and associate it with token transfer
-   auto trace = chain.push_action(config::system_account_name, updateauth::get_name(), tester_account, fc::mutable_variant_object()
+   auto trace = chain.push_action(config::system_account_name(), updateauth::get_name(), tester_account, fc::mutable_variant_object()
                      ("account", "tester")
                      ("permission", "first")
                      ("parent", "active")
@@ -1920,7 +1920,7 @@ BOOST_AUTO_TEST_CASE( max_transaction_delay_execute ) { try {
    );
    BOOST_REQUIRE_EQUAL(transaction_receipt::executed, trace->receipt->status);
 
-   trace = chain.push_action(config::system_account_name, linkauth::get_name(), tester_account, fc::mutable_variant_object()
+   trace = chain.push_action(config::system_account_name(), linkauth::get_name(), tester_account, fc::mutable_variant_object()
                      ("account", "tester")
                      ("code", "eosio.token")
                      ("type", "transfer")
@@ -1932,7 +1932,7 @@ BOOST_AUTO_TEST_CASE( max_transaction_delay_execute ) { try {
    //change max_transaction_delay to 60 sec
    auto params = chain.control->get_global_properties().configuration;
    params.max_transaction_delay = 60;
-   chain.push_action( config::system_account_name, "setparams"_n, config::system_account_name, mutable_variant_object()
+   chain.push_action( config::system_account_name(), "setparams"_n, config::system_account_name(), mutable_variant_object()
                         ("params", params) );
 
    chain.produce_block();
@@ -1959,9 +1959,9 @@ BOOST_AUTO_TEST_CASE( test_blockchain_params_enabled ) { try {
    //change max_transaction_delay to 60 sec
    auto params = chain.control->get_global_properties().configuration;
    params.max_transaction_delay = 60;
-   chain.push_action(config::system_account_name,
+   chain.push_action(config::system_account_name(),
                      "setparams"_n,
-                     config::system_account_name,
+                     config::system_account_name(),
                      mutable_variant_object()("params", params) );
 
    BOOST_CHECK_EQUAL(chain.control->get_global_properties().configuration.max_transaction_delay, 60u);
