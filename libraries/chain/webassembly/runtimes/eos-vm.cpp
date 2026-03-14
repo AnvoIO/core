@@ -347,6 +347,31 @@ struct host_function_registrator {
    }                                                                                                                   \
    inline static auto NAME##_registrator = NAME##_registrator_impl();
 
+// ─── WASM ABI Compatibility ──────────────────────────────────────────
+// Existing compiled contracts import intrinsics by name (e.g., "eosio_assert").
+// New contracts compiled against the updated SDK will import "core_net_assert".
+// Both names resolve to the same C++ implementation (interface::core_net_assert).
+// The legacy names (eosio_*) must be preserved indefinitely for backward
+// compatibility with deployed contracts that cannot be recompiled.
+//
+// These macros register a host function under a WASM import name that differs
+// from the C++ method name.  ALIAS_NAME must be a string literal token
+// (it gets stringified by BOOST_HANA_STRING).
+
+#define REGISTER_LEGACY_CF_HOST_FUNCTION_ALIAS(FUNC, ALIAS_NAME, ...)                                                 \
+   static host_function_registrator<&interface::FUNC, legacy_static_check_wl_args, ##__VA_ARGS__>                      \
+       FUNC##_alias_registrator_impl() {                                                                               \
+      return {BOOST_HANA_STRING("env"), BOOST_HANA_STRING(#ALIAS_NAME)};                                               \
+   }                                                                                                                   \
+   inline static auto FUNC##_alias_registrator = FUNC##_alias_registrator_impl();
+
+#define REGISTER_CF_HOST_FUNCTION_ALIAS(FUNC, ALIAS_NAME, ...)                                                         \
+   static host_function_registrator<&interface::FUNC, core_precondition, ##__VA_ARGS__>                                \
+       FUNC##_alias_registrator_impl() {                                                                               \
+      return {BOOST_HANA_STRING("env"), BOOST_HANA_STRING(#ALIAS_NAME)};                                               \
+   }                                                                                                                   \
+   inline static auto FUNC##_alias_registrator = FUNC##_alias_registrator_impl();
+
 // context free api
 REGISTER_LEGACY_CF_ONLY_HOST_FUNCTION(get_context_free_data)
 
@@ -469,6 +494,14 @@ REGISTER_LEGACY_CF_HOST_FUNCTION(core_net_assert)
 REGISTER_LEGACY_CF_HOST_FUNCTION(core_net_assert_message)
 REGISTER_CF_HOST_FUNCTION(core_net_assert_code)
 REGISTER_CF_HOST_FUNCTION(core_net_exit)
+
+// Legacy WASM import aliases (eosio_* -> core_net_*).
+// Existing compiled contracts import these names; both old and new resolve
+// to the same C++ implementation.
+REGISTER_LEGACY_CF_HOST_FUNCTION_ALIAS(core_net_assert, eosio_assert)
+REGISTER_LEGACY_CF_HOST_FUNCTION_ALIAS(core_net_assert_message, eosio_assert_message)
+REGISTER_CF_HOST_FUNCTION_ALIAS(core_net_assert_code, eosio_assert_code)
+REGISTER_CF_HOST_FUNCTION_ALIAS(core_net_exit, eosio_exit)
 
 // action api
 REGISTER_LEGACY_CF_HOST_FUNCTION(read_action_data);
