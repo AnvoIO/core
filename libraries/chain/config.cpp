@@ -43,8 +43,8 @@ system_accounts system_accounts::from_prefix(const name& prefix) {
 // ─── Global state management ─────────────────────────────────────────
 
 void set_system_accounts(const system_accounts& sa) {
-   CORE_NET_ASSERT(!g_initialized, chain_exception,
-                   "system accounts already initialized");
+   EOS_ASSERT(!g_initialized, chain_exception,
+              "system accounts already initialized");
    g_sys_accounts = sa;
    g_prefix_str = sa.system_account.to_string() + ".";
    g_initialized = true;
