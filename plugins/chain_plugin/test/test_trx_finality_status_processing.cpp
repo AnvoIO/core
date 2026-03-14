@@ -27,7 +27,7 @@ struct testit {
    : id(id){}
 
    static account_name get_account() {
-      return chain::config::system_account_name;
+      return chain::config::system_account_name();
    }
    static action_name get_name() {
       return "testit"_n;
@@ -60,7 +60,7 @@ auto make_unique_trx( const fc::microseconds& expiration ) {
 
    genesis_state gs{};
    const auto& chain_id = gs.compute_chain_id();
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
    signed_transaction trx;
    const auto now_exp = fc::time_point::now() + expiration;
    trx.expiration = fc::time_point_sec{now_exp};

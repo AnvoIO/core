@@ -41,7 +41,7 @@ void validate_authority_precondition( const apply_context& context, const author
       if( a.permission.permission == config::owner_name || a.permission.permission == config::active_name )
          continue; // account was already checked to exist, so its owner and active permissions should exist
 
-      if( a.permission.permission == config::eosio_code_name ) // virtual eosio.code permission does not really exist but is allowed
+      if( a.permission.permission == config::code_name() ) // virtual eosio.code permission does not really exist but is allowed
          continue;
 
       try {
@@ -69,7 +69,7 @@ void apply_eosio_newaccount(apply_context& context) {
    auto create = context.get_action().data_as<newaccount>();
    try {
    context.require_authorization(create.creator);
-//   context.require_write_lock( config::eosio_auth_scope );
+//   context.require_write_lock( config::auth_scope() );
    auto& authorization = context.control.get_mutable_authorization_manager();
 
    EOS_ASSERT( validate(create.owner), action_validate_exception, "Invalid owner authority");
@@ -85,8 +85,9 @@ void apply_eosio_newaccount(apply_context& context) {
    // Check if the creator is privileged
    const auto &creator = db.get<account_metadata_object, by_name>(create.creator);
    if( !creator.is_privileged() ) {
-      EOS_ASSERT( name_str.find( "eosio." ) != 0, action_validate_exception,
-                  "only privileged accounts can have names that start with 'eosio.'" );
+      EOS_ASSERT( name_str.find( config::system_account_prefix_str() ) != 0, action_validate_exception,
+                  "only privileged accounts can have names that start with '${p}'",
+                  ("p", config::system_account_prefix_str()) );
    }
 
    auto existing_account = db.find<account_object, by_name>(create.name);
@@ -261,8 +262,10 @@ void apply_eosio_updateauth(apply_context& context) {
    auto& db = context.db;
 
    EOS_ASSERT(!update.permission.empty(), action_validate_exception, "Cannot create authority with empty name");
-   EOS_ASSERT( update.permission.to_string().find( "eosio." ) != 0, action_validate_exception,
-               "Permission names that start with 'eosio.' are reserved" );
+   EOS_ASSERT( update.permission.to_string().find( config::system_account_prefix_str() ) != 0,
+               action_validate_exception,
+               "Permission names that start with '${p}' are reserved",
+               ("p", config::system_account_prefix_str()) );
    EOS_ASSERT(update.permission != update.parent, action_validate_exception, "Cannot set an authority as its own parent");
    db.get<account_object, by_name>(update.account);
    EOS_ASSERT(validate(update.auth), action_validate_exception,
@@ -325,7 +328,7 @@ void apply_eosio_updateauth(apply_context& context) {
 }
 
 void apply_eosio_deleteauth(apply_context& context) {
-//   context.require_write_lock( config::eosio_auth_scope );
+//   context.require_write_lock( config::auth_scope() );
 
    EOS_ASSERT( !context.trx_context.is_read_only(), action_validate_exception, "deleteauth not allowed in read-only transaction" );
 
@@ -362,7 +365,7 @@ void apply_eosio_deleteauth(apply_context& context) {
 }
 
 void apply_eosio_linkauth(apply_context& context) {
-//   context.require_write_lock( config::eosio_auth_scope );
+//   context.require_write_lock( config::auth_scope() );
 
    EOS_ASSERT( !context.trx_context.is_read_only(), action_validate_exception, "linkauth not allowed in read-only transaction" );
 
@@ -379,7 +382,7 @@ void apply_eosio_linkauth(apply_context& context) {
       const auto *code = db.find<account_object, by_name>(requirement.code);
       EOS_ASSERT(code != nullptr, account_query_exception,
                  "Failed to retrieve code for account: ${account}", ("account", requirement.code));
-      if( requirement.requirement != config::eosio_any_name ) {
+      if( requirement.requirement != config::any_name() ) {
          const permission_object* permission = nullptr;
          if( context.control.is_builtin_activated( builtin_protocol_feature_t::only_link_to_existing_permission ) ) {
             permission = db.find<permission_object, by_owner>(
@@ -424,7 +427,7 @@ void apply_eosio_linkauth(apply_context& context) {
 }
 
 void apply_eosio_unlinkauth(apply_context& context) {
-//   context.require_write_lock( config::eosio_auth_scope );
+//   context.require_write_lock( config::auth_scope() );
 
    EOS_ASSERT( !context.trx_context.is_read_only(), action_validate_exception, "unlinkauth not allowed in read-only transaction" );
 

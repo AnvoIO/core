@@ -84,7 +84,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( newaccount_test, T, read_only_trx_testers ) { try
    action act = {
       {},
       newaccount{
-         .creator  = config::system_account_name,
+         .creator  = config::system_account_name(),
          .name     = "alice"_n,
          .owner    = authority( chain.get_public_key( "alice"_n, "owner" ) ),
          .active   = authority( chain.get_public_key( "alice"_n, "active" ) )
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( updateauth_test, T, read_only_trx_testers ) { try
 
    auto auth = authority( chain.get_public_key( "alice"_n, "test" ) );
    action act = {
-      vector<permission_level>{{config::system_account_name,config::active_name}},
+      vector<permission_level>{{config::system_account_name(),config::active_name}},
       updateauth {
          .account = "alice"_n, .permission = "active"_n, .parent = "owner"_n, .auth  = auth
       }
@@ -148,7 +148,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( deleteauth_test, T, read_only_trx_testers ) { try
    name account = "alice"_n;
    name permission = "active"_n;
    action act = {
-      vector<permission_level>{{config::system_account_name,config::active_name}},
+      vector<permission_level>{{config::system_account_name(),config::active_name}},
       deleteauth { account, permission }
    };
 
@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( linkauth_test, T, read_only_trx_testers ) { try {
    name type = "transfer"_n;
    name requirement = "first"_n;
    action act = {
-      vector<permission_level>{{config::system_account_name,config::active_name}},
+      vector<permission_level>{{config::system_account_name(),config::active_name}},
       linkauth { account, code, type, requirement }
    };
 
@@ -181,7 +181,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( unlinkauth_test, T, read_only_trx_testers ) { try
    name code = "eosio_token"_n;
    name type = "transfer"_n;
    action act = {
-      vector<permission_level>{{config::system_account_name,config::active_name}},
+      vector<permission_level>{{config::system_account_name(),config::active_name}},
       unlinkauth { account, code, type }
    };
 
@@ -193,10 +193,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( canceldelay_test, T, read_only_trx_testers ) { tr
 
    chain.produce_block();
 
-   permission_level canceling_auth { config::system_account_name,config::active_name };
+   permission_level canceling_auth { config::system_account_name(),config::active_name };
    transaction_id_type trx_id { "0718886aa8a3895510218b523d3d694280d1dbc1f6d30e173a10b2039fc894f1" };
    action act = {
-      vector<permission_level>{{config::system_account_name,config::active_name}},
+      vector<permission_level>{{config::system_account_name(),config::active_name}},
       canceldelay { canceling_auth, trx_id }
    };
 

@@ -69,11 +69,11 @@ namespace {
       if (p->action_traces.empty())
          return false;
       const auto& act = p->action_traces[0].act;
-      if (act.account != core_net::chain::config::system_account_name || act.name != "onblock"_n ||
+      if (act.account != core_net::chain::config::system_account_name() || act.name != "onblock"_n ||
           act.authorization.size() != 1)
          return false;
       const auto& auth = act.authorization[0];
-      return auth.actor == core_net::chain::config::system_account_name &&
+      return auth.actor == core_net::chain::config::system_account_name() &&
              auth.permission == core_net::chain::config::active_name;
    }
 
@@ -316,7 +316,7 @@ namespace core_net::chain_apis {
           */
          auto process_trace = [&](const chain::transaction_trace_ptr& trace) {
             for( const auto& at : trace->action_traces ) {
-               if (std::tie(at.receiver, at.act.account) != std::tie(chain::config::system_account_name,chain::config::system_account_name)) {
+               if (std::tie(at.receiver, at.act.account) != std::tie(chain::config::system_account_name(),chain::config::system_account_name())) {
                   continue;
                }
 

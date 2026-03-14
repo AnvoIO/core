@@ -1290,7 +1290,7 @@ struct controller_impl {
       try {
          auto get_getpeerkeys_transaction = [&]() {
             auto perms = vector<permission_level>{};
-            action act(perms, config::system_account_name, "getpeerkeys"_n, {});
+            action act(perms, config::system_account_name(), "getpeerkeys"_n, {});
             signed_transaction trx;
 
             trx.actions.emplace_back(std::move(act));
@@ -1375,19 +1375,21 @@ struct controller_impl {
          vote_processor.notify_lib(block->block_num());
       });
 
-#define SET_APP_HANDLER( receiver, contract, action) \
-   set_apply_handler( account_name(#receiver), account_name(#contract), action_name(#action), \
-                      &BOOST_PP_CAT(apply_, BOOST_PP_CAT(contract, BOOST_PP_CAT(_,action) ) ) )
+   }
 
-   SET_APP_HANDLER( eosio, eosio, newaccount );
-   SET_APP_HANDLER( eosio, eosio, setcode );
-   SET_APP_HANDLER( eosio, eosio, setabi );
-   SET_APP_HANDLER( eosio, eosio, updateauth );
-   SET_APP_HANDLER( eosio, eosio, deleteauth );
-   SET_APP_HANDLER( eosio, eosio, linkauth );
-   SET_APP_HANDLER( eosio, eosio, unlinkauth );
-
-   SET_APP_HANDLER( eosio, eosio, canceldelay );
+   // Register native action handlers for the system account.
+   // Must be called after config::set_system_accounts() so that
+   // config::system_account_name() returns the correct value.
+   void register_native_action_handlers() {
+      auto sys = config::system_account_name();
+      set_apply_handler(sys, sys, "newaccount"_n,  &apply_eosio_newaccount);
+      set_apply_handler(sys, sys, "setcode"_n,     &apply_eosio_setcode);
+      set_apply_handler(sys, sys, "setabi"_n,      &apply_eosio_setabi);
+      set_apply_handler(sys, sys, "updateauth"_n,  &apply_eosio_updateauth);
+      set_apply_handler(sys, sys, "deleteauth"_n,  &apply_eosio_deleteauth);
+      set_apply_handler(sys, sys, "linkauth"_n,    &apply_eosio_linkauth);
+      set_apply_handler(sys, sys, "unlinkauth"_n,  &apply_eosio_unlinkauth);
+      set_apply_handler(sys, sys, "canceldelay"_n, &apply_eosio_canceldelay);
    }
 
    void open_fork_db() {
@@ -1686,8 +1688,8 @@ struct controller_impl {
       ilog( "Initializing new blockchain with genesis state" );
 
       // genesis state starts in legacy mode
-      producer_authority_schedule initial_schedule = { 0, { producer_authority{config::system_account_name, block_signing_authority_v0{ 1, {{genesis.initial_key, 1}} } } } };
-      legacy::producer_schedule_type initial_legacy_schedule{ 0, {{config::system_account_name, genesis.initial_key}} };
+      producer_authority_schedule initial_schedule = { 0, { producer_authority{config::system_account_name(), block_signing_authority_v0{ 1, {{genesis.initial_key, 1}} } } } };
+      legacy::producer_schedule_type initial_legacy_schedule{ 0, {{config::system_account_name(), genesis.initial_key}} };
 
       block_header_state_legacy genheader;
       genheader.active_schedule                = initial_schedule;
@@ -2007,6 +2009,10 @@ struct controller_impl {
       this->check_shutdown = std::move(check_shutdown);
       assert(this->check_shutdown);
 
+      auto prefix = genesis.system_account_prefix.value_or("eosio"_n);
+      config::set_system_accounts(config::system_accounts::from_prefix(prefix));
+      register_native_action_handlers();
+
       initialize_blockchain_state(genesis); // sets chain_head to genesis state
 
       if( blog.head() ) {
@@ -2033,6 +2039,10 @@ struct controller_impl {
       EOS_ASSERT(db.revision() == chain_head.block_num(), database_exception,
                  "chain_head block num ${bn} does not match chainbase revision ${r}",
                  ("bn", chain_head.block_num())("r", db.revision()));
+
+      const auto& gpo = db.get<global_property_object>();
+      config::set_system_accounts(config::system_accounts::from_prefix(gpo.system_account_prefix));
+      register_native_action_handlers();
 
       init(startup_t::existing_state);
    }
@@ -2457,6 +2467,7 @@ struct controller_impl {
             using v3 = legacy::snapshot_global_property_object_v3;
             using v4 = legacy::snapshot_global_property_object_v4;
             using v5 = legacy::snapshot_global_property_object_v5;
+            using v7 = legacy::snapshot_global_property_object_v7;
 
             if (std::clamp(header.version, v2::minimum_version, v2::maximum_version) == header.version ) {
                std::optional<genesis_state> genesis = extract_legacy_genesis_state(*snapshot, header.version);
@@ -2509,6 +2520,18 @@ struct controller_impl {
                });
                return; // early out to avoid default processing
             }
+
+            if (std::clamp(header.version, v7::minimum_version, v7::maximum_version) == header.version) {
+               snapshot->read_section<global_property_object>([&db = this->db](auto& section) {
+                  v7 legacy_global_properties;
+                  section.read_row(legacy_global_properties, db);
+
+                  db.create<global_property_object>([&legacy_global_properties](auto& gpo) {
+                     gpo.initialize_from(legacy_global_properties);
+                  });
+               });
+               return; // early out to avoid default processing
+            }
          }
 
          snapshot->read_section<value_t>([this,&rows_loaded]( auto& section ) {
@@ -2550,6 +2573,9 @@ struct controller_impl {
                   ("snapshot_chain_id", gpo.chain_id)("controller_chain_id", chain_id)
       );
 
+      config::set_system_accounts(config::system_accounts::from_prefix(gpo.system_account_prefix));
+      register_native_action_handlers();
+
       return result;
    }
 
@@ -2579,7 +2605,7 @@ struct controller_impl {
          a.name = name;
          a.creation_date = initial_timestamp;
 
-         if( name == config::system_account_name ) {
+         if( name == config::system_account_name() ) {
             // The initial eosio ABI value affects consensus; see  https://github.com/EOSIO/eos/issues/7794
             // TODO: This doesn't charge RAM; a fix requires a consensus upgrade.
             a.abi.assign(eosio_abi_bin, sizeof(eosio_abi_bin));
@@ -2632,6 +2658,7 @@ struct controller_impl {
          // TODO: Update this when genesis protocol features are enabled.
          gpo.wasm_configuration = genesis_state::default_initial_wasm_configuration;
          gpo.chain_id = chain_id;
+         gpo.system_account_prefix = genesis.system_account_prefix.value_or("eosio"_n);
       });
 
       db.create<protocol_state_object>([&](auto& pso ){
@@ -2647,22 +2674,22 @@ struct controller_impl {
       resource_limits.initialize_database();
 
       authority system_auth(genesis.initial_key);
-      create_native_account( genesis.initial_timestamp, config::system_account_name, system_auth, system_auth, true );
+      create_native_account( genesis.initial_timestamp, config::system_account_name(), system_auth, system_auth, true );
 
       auto empty_authority = authority(1, {}, {});
       auto active_producers_authority = authority(1, {}, {});
-      active_producers_authority.accounts.push_back({{config::system_account_name, config::active_name}, 1});
+      active_producers_authority.accounts.push_back({{config::system_account_name(), config::active_name}, 1});
 
-      create_native_account( genesis.initial_timestamp, config::null_account_name, empty_authority, empty_authority );
-      create_native_account( genesis.initial_timestamp, config::producers_account_name, empty_authority, active_producers_authority );
-      const auto& active_permission       = authorization.get_permission({config::producers_account_name, config::active_name});
-      const auto& majority_permission     = authorization.create_permission( config::producers_account_name,
+      create_native_account( genesis.initial_timestamp, config::null_account_name(), empty_authority, empty_authority );
+      create_native_account( genesis.initial_timestamp, config::producers_account_name(), empty_authority, active_producers_authority );
+      const auto& active_permission       = authorization.get_permission({config::producers_account_name(), config::active_name});
+      const auto& majority_permission     = authorization.create_permission( config::producers_account_name(),
                                                                              config::majority_producers_permission_name,
                                                                              active_permission.id,
                                                                              active_producers_authority,
                                                                              false,
                                                                              genesis.initial_timestamp );
-                                            authorization.create_permission( config::producers_account_name,
+                                            authorization.create_permission( config::producers_account_name(),
                                                                              config::minority_producers_permission_name,
                                                                              majority_permission.id,
                                                                              active_producers_authority,
@@ -4707,15 +4734,15 @@ struct controller_impl {
          return ((num_producers * numerator) / denominator) + 1;
       };
 
-      update_permission(authorization.get_permission({config::producers_account_name, config::active_name}),
+      update_permission(authorization.get_permission({config::producers_account_name(), config::active_name}),
                         calculate_threshold(2, 3) /* more than two-thirds */);
 
       update_permission(
-         authorization.get_permission({config::producers_account_name, config::majority_producers_permission_name}),
+         authorization.get_permission({config::producers_account_name(), config::majority_producers_permission_name}),
          calculate_threshold(1, 2) /* more than one-half */);
 
       update_permission(
-         authorization.get_permission({config::producers_account_name, config::minority_producers_permission_name}),
+         authorization.get_permission({config::producers_account_name(), config::minority_producers_permission_name}),
          calculate_threshold(1, 3) /* more than one-third */);
    }
 
@@ -4884,9 +4911,9 @@ struct controller_impl {
    signed_transaction get_on_block_transaction()
    {
       action on_block_act;
-      on_block_act.account = config::system_account_name;
+      on_block_act.account = config::system_account_name();
       on_block_act.name = "onblock"_n;
-      on_block_act.authorization = vector<permission_level>{{config::system_account_name, config::active_name}};
+      on_block_act.authorization = vector<permission_level>{{config::system_account_name(), config::active_name}};
       on_block_act.data = fc::raw::pack(chain_head.header());
 
       signed_transaction trx;
@@ -6152,6 +6179,7 @@ chain_id_type controller::extract_chain_id(snapshot_reader& snapshot) {
 
    using v4 = legacy::snapshot_global_property_object_v4;
    using v5 = legacy::snapshot_global_property_object_v5;
+   using v7 = legacy::snapshot_global_property_object_v7;
    if (header.version <= v4::maximum_version) {
       snapshot.read_section<global_property_object>([&chain_id]( auto &section ){
          v4 global_properties;
@@ -6162,6 +6190,13 @@ chain_id_type controller::extract_chain_id(snapshot_reader& snapshot) {
    else if (header.version <= v5::maximum_version) {
       snapshot.read_section<global_property_object>([&chain_id]( auto &section ){
          v5 global_properties;
+         section.read_row(global_properties);
+         chain_id = global_properties.chain_id;
+      });
+   }
+   else if (header.version <= v7::maximum_version) {
+      snapshot.read_section<global_property_object>([&chain_id]( auto &section ){
+         v7 global_properties;
          section.read_row(global_properties);
          chain_id = global_properties.chain_id;
       });

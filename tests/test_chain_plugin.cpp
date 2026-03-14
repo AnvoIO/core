@@ -29,7 +29,7 @@ public:
     action_result push_action( const account_name& signer, const action_name &name, const variant_object &data, bool auth = true ) {
          string action_type_name = abi_ser.get_action_type(name);
 
-         action act({}, config::system_account_name, name,
+         action act({}, config::system_account_name(), name,
                     abi_ser.variant_to_binary(action_type_name, data,
                                               abi_serializer::create_yield_function(abi_serializer_max_time)));
 
@@ -43,7 +43,7 @@ public:
                           );
     }
 
-    void transfer( name from, name to, const asset& amount, name manager = config::system_account_name ) {
+    void transfer( name from, name to, const asset& amount, name manager = config::system_account_name() ) {
       base_tester::push_action( "eosio.token"_n, "transfer"_n, manager, mutable_variant_object()
                                 ("from",    from)
                                 ("to",      to )
@@ -86,13 +86,13 @@ public:
                                           .active   = authority( get_public_key( a, "active" ) )
                                   });
 
-        trx.actions.emplace_back( get_action( config::system_account_name, "buyrambytes"_n, vector<permission_level>{{creator,config::active_name}},
+        trx.actions.emplace_back( get_action( config::system_account_name(), "buyrambytes"_n, vector<permission_level>{{creator,config::active_name}},
                                               mvo()
                                                       ("payer", creator)
                                                       ("receiver", a)
                                                       ("bytes", ram_bytes) )
         );
-        trx.actions.emplace_back( get_action( config::system_account_name, "delegatebw"_n, vector<permission_level>{{creator,config::active_name}},
+        trx.actions.emplace_back( get_action( config::system_account_name(), "delegatebw"_n, vector<permission_level>{{creator,config::active_name}},
                                               mvo()
                                                       ("from", creator)
                                                       ("receiver", a)
@@ -133,10 +133,10 @@ public:
       {
          FC_ASSERT( owner_auth.threshold <= std::numeric_limits<weight_type>::max(), "threshold is too high" );
          FC_ASSERT( active_auth.threshold <= std::numeric_limits<weight_type>::max(), "threshold is too high" );
-         owner_auth.accounts.push_back( permission_level_weight{ {a, config::eosio_code_name},
+         owner_auth.accounts.push_back( permission_level_weight{ {a, config::code_name()},
                                                                  static_cast<weight_type>(owner_auth.threshold) } );
          sort_permissions(owner_auth);
-         active_auth.accounts.push_back( permission_level_weight{ {a, config::eosio_code_name},
+         active_auth.accounts.push_back( permission_level_weight{ {a, config::code_name()},
                                                                   static_cast<weight_type>(active_auth.threshold) } );
          sort_permissions(active_auth);
       }
@@ -150,14 +150,14 @@ public:
                                 });
 
 
-      trx.actions.emplace_back( get_action( config::system_account_name, "buyram"_n, vector<permission_level>{{creator,config::active_name}},
+      trx.actions.emplace_back( get_action( config::system_account_name(), "buyram"_n, vector<permission_level>{{creator,config::active_name}},
                                             mvo()
                                             ("payer", creator)
                                             ("receiver", a)
                                             ("quant", ramfunds) )
                               );
 
-      trx.actions.emplace_back( get_action( config::system_account_name, "delegatebw"_n, vector<permission_level>{{creator,config::active_name}},
+      trx.actions.emplace_back( get_action( config::system_account_name(), "delegatebw"_n, vector<permission_level>{{creator,config::active_name}},
                                             mvo()
                                             ("from", creator)
                                             ("receiver", a)
@@ -180,7 +180,7 @@ public:
         base_tester::push_action(contract, "create"_n, contract, act );
     }
 
-    void issue( name to, const asset& amount, name manager = config::system_account_name ) {
+    void issue( name to, const asset& amount, name manager = config::system_account_name() ) {
         base_tester::push_action( "eosio.token"_n, "issue"_n, manager, mutable_variant_object()
                 ("to",      to )
                 ("quantity", amount )
@@ -201,20 +201,20 @@ public:
            token_abi_ser.set_abi(std::move(abi), abi_serializer::create_yield_function( abi_serializer_max_time ));
        }
 
-       create_currency( "eosio.token"_n, config::system_account_name, core_from_string("10000000000.0000") );
-       issue(config::system_account_name,      core_from_string("1000000000.0000"));
+       create_currency( "eosio.token"_n, config::system_account_name(), core_from_string("10000000000.0000") );
+       issue(config::system_account_name(),      core_from_string("1000000000.0000"));
        BOOST_CHECK_EQUAL( core_from_string("1000000000.0000"), get_balance( name("eosio") ) );
 
-       set_code( config::system_account_name, test_contracts::core_net_system_wasm() );
-       set_abi( config::system_account_name, test_contracts::core_net_system_abi() );
+       set_code( config::system_account_name(), test_contracts::core_net_system_wasm() );
+       set_abi( config::system_account_name(), test_contracts::core_net_system_abi() );
 
-       base_tester::push_action(config::system_account_name, "init"_n,
-                                config::system_account_name,  mutable_variant_object()
+       base_tester::push_action(config::system_account_name(), "init"_n,
+                                config::system_account_name(),  mutable_variant_object()
                                         ("version", 0)
                                         ("core", symbol(CORE_SYMBOL).to_string()));
 
        {
-           const auto& accnt = control->db().get<account_object,by_name>( config::system_account_name );
+           const auto& accnt = control->db().get<account_object,by_name>( config::system_account_name() );
            abi_def abi;
            BOOST_CHECK_EQUAL(abi_serializer::to_abi(accnt.abi, abi), true);
            abi_ser.set_abi(std::move(abi), abi_serializer::create_yield_function( abi_serializer_max_time ));
@@ -233,7 +233,7 @@ public:
     }
 
     transaction_trace_ptr setup_producer_accounts( const std::vector<account_name>& accounts ) {
-        account_name creator(config::system_account_name);
+        account_name creator(config::system_account_name());
         signed_transaction trx;
         set_transaction_headers(trx);
         asset cpu = core_from_string("80.0000");
@@ -250,14 +250,14 @@ public:
                                               .active   = authority( get_public_key( a, "active" ) )
                                       });
 
-            trx.actions.emplace_back( get_action( config::system_account_name, "buyram"_n, vector<permission_level>{ {creator, config::active_name} },
+            trx.actions.emplace_back( get_action( config::system_account_name(), "buyram"_n, vector<permission_level>{ {creator, config::active_name} },
                                                   mvo()
                                                           ("payer", creator)
                                                           ("receiver", a)
                                                           ("quant", ram) )
             );
 
-            trx.actions.emplace_back( get_action( config::system_account_name, "delegatebw"_n, vector<permission_level>{ {creator, config::active_name} },
+            trx.actions.emplace_back( get_action( config::system_account_name(), "delegatebw"_n, vector<permission_level>{ {creator, config::active_name} },
                                                   mvo()
                                                           ("from", creator)
                                                           ("receiver", a)
@@ -320,13 +320,13 @@ public:
         produce_block(fc::seconds(1000));
         produce_block();
 
-        auto trace_auth = validating_tester::push_action(config::system_account_name, updateauth::get_name(), config::system_account_name, mvo()
-                ("account", name(config::system_account_name).to_string())
+        auto trace_auth = validating_tester::push_action(config::system_account_name(), updateauth::get_name(), config::system_account_name(), mvo()
+                ("account", name(config::system_account_name()).to_string())
                 ("permission", name(config::active_name).to_string())
                 ("parent", name(config::owner_name).to_string())
-                ("auth",  authority(1, {key_weight{get_public_key( config::system_account_name, "active" ), 1}}, {
-                                            permission_level_weight{{config::system_account_name, config::eosio_code_name}, 1},
-                                            permission_level_weight{{config::producers_account_name,  config::active_name}, 1}
+                ("auth",  authority(1, {key_weight{get_public_key( config::system_account_name(), "active" ), 1}}, {
+                                            permission_level_weight{{config::system_account_name(), config::code_name()}, 1},
+                                            permission_level_weight{{config::producers_account_name(),  config::active_name}, 1}
                                     }
                 ))
         );
@@ -334,7 +334,7 @@ public:
 
         //vote for producers
         {
-            transfer( config::system_account_name, name("alice1111111"), core_from_string("100000000.0000"), config::system_account_name );
+            transfer( config::system_account_name(), name("alice1111111"), core_from_string("100000000.0000"), config::system_account_name() );
             BOOST_CHECK_EQUAL(success(), stake( name("alice1111111"), core_from_string("30000000.0000"), core_from_string("30000000.0000") ) );
             BOOST_CHECK_EQUAL(success(), buyram( name("alice1111111"), name("alice1111111"), core_from_string("30000000.0000") ) );
             BOOST_CHECK_EQUAL(success(), push_action("alice1111111"_n, "voteproducer"_n, mvo()
@@ -377,7 +377,7 @@ BOOST_FIXTURE_TEST_CASE(account_results_total_resources_test, chain_plugin_teste
     produce_block();
     setup_system_accounts();
     produce_block();
-    create_account_with_resources("alice1111111"_n, config::system_account_name);
+    create_account_with_resources("alice1111111"_n, config::system_account_name());
     //stake more than 15% of total EOS supply to activate chain
     transfer( name("eosio"), name("alice1111111"), core_from_string("650000000.0000"), name("eosio") );
 
@@ -396,8 +396,8 @@ BOOST_FIXTURE_TEST_CASE(account_results_self_delegated_bandwidth_test, chain_plu
     produce_block();
     const asset nstake = core_from_string("1.0000");
     const asset cstake = core_from_string("2.0000");
-    create_account_with_resources("alice1111111"_n, config::system_account_name, core_from_string("1.0000"), false);
-    BOOST_CHECK_EQUAL(success(), stake(config::system_account_name, name("alice1111111"), nstake, cstake));
+    create_account_with_resources("alice1111111"_n, config::system_account_name(), core_from_string("1.0000"), false);
+    BOOST_CHECK_EQUAL(success(), stake(config::system_account_name(), name("alice1111111"), nstake, cstake));
 
     read_only::get_account_results results = get_account_info(name("alice1111111"));
     BOOST_CHECK(results.total_resources.get_type() != fc::variant::type_id::null_type);
@@ -437,17 +437,17 @@ BOOST_FIXTURE_TEST_CASE(account_results_refund_request_test, chain_plugin_tester
         signed_transaction trx;
         set_transaction_headers(trx);
 
-        trx.actions.emplace_back( get_action( config::system_account_name, "delegatebw"_n,
-                                              vector<permission_level>{{config::system_account_name, config::active_name}},
+        trx.actions.emplace_back( get_action( config::system_account_name(), "delegatebw"_n,
+                                              vector<permission_level>{{config::system_account_name(), config::active_name}},
                                               mvo()
-                                                      ("from", name{config::system_account_name})
+                                                      ("from", name{config::system_account_name()})
                                                       ("receiver", "producer1111")
                                                       ("stake_net_quantity", core_from_string("150000000.0000") )
                                                       ("stake_cpu_quantity", core_from_string("0.0000") )
                                                       ("transfer", 1 )
                                   )
         );
-        trx.actions.emplace_back( get_action( config::system_account_name, "voteproducer"_n,
+        trx.actions.emplace_back( get_action( config::system_account_name(), "voteproducer"_n,
                                               vector<permission_level>{{"producer1111"_n, config::active_name}},
                                               mvo()
                                                       ("voter", "producer1111")
@@ -457,7 +457,7 @@ BOOST_FIXTURE_TEST_CASE(account_results_refund_request_test, chain_plugin_tester
         );
 
         set_transaction_headers(trx);
-        trx.sign( get_private_key( config::system_account_name, "active" ), control->get_chain_id()  );
+        trx.sign( get_private_key( config::system_account_name(), "active" ), control->get_chain_id()  );
         trx.sign( get_private_key( "producer1111"_n, "active" ), control->get_chain_id()  );
         push_transaction( trx );
     }
@@ -480,7 +480,7 @@ BOOST_FIXTURE_TEST_CASE(account_results_voter_info_test, chain_plugin_tester) { 
     produce_block();
     setup_system_accounts();
 
-    create_account_with_resources("alice1111111"_n, config::system_account_name, core_from_string("1.0000"), false);
+    create_account_with_resources("alice1111111"_n, config::system_account_name(), core_from_string("1.0000"), false);
 
     active_and_vote_producers();
     read_only::get_account_results results = get_account_info(name("alice1111111"));
@@ -495,7 +495,7 @@ BOOST_FIXTURE_TEST_CASE(account_results_rex_info_test, chain_plugin_tester) { tr
     produce_block();
     setup_system_accounts();
 
-    create_account_with_resources("alice1111111"_n, config::system_account_name, core_from_string("1.0000"), false);
+    create_account_with_resources("alice1111111"_n, config::system_account_name(), core_from_string("1.0000"), false);
 
     //stake more than 15% of total EOS supply to activate chain
     transfer( name("eosio"), name("alice1111111"), core_from_string("650000000.0000"), name("eosio") );

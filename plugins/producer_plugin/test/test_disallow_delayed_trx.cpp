@@ -10,7 +10,7 @@ struct testit {
    testit( uint64_t id = 0 ) :id(id){}
 
    static account_name get_account() {
-      return chain::config::system_account_name;
+      return chain::config::system_account_name();
    }
 
    static action_name get_name() {
@@ -27,7 +27,7 @@ using namespace core_net::chain;
 using namespace core_net::test::detail;
 
 auto make_delayed_trx( const chain_id_type& chain_id ) {
-   account_name creator = config::system_account_name;
+   account_name creator = config::system_account_name();
 
    signed_transaction trx;
    trx.actions.emplace_back( vector<permission_level>{{creator, config::active_name}}, testit{0} );

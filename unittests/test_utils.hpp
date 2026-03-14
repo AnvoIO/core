@@ -59,7 +59,7 @@ struct test_pause_action {
 template<uint64_t NAME>
 struct test_chain_action {
    static account_name get_account() {
-      return account_name(config::system_account_name);
+      return account_name(config::system_account_name());
    }
 
    static action_name get_name() {
@@ -173,7 +173,7 @@ transaction_trace_ptr CallFunction(Tester& test, T ac, const vector<char>& data,
 
 #define CALL_TEST_FUNCTION(_TESTER, CLS, MTH, DATA) CallFunction(_TESTER, test_api_action<WASM_TEST_ACTION(CLS, MTH)>{}, DATA)
 #define CALL_TEST_FUNCTION_WITH_BLOCK(_TESTER, CLS, MTH, DATA) _CallFunction(_TESTER, test_api_action<WASM_TEST_ACTION(CLS, MTH)>{}, DATA)
-#define CALL_TEST_FUNCTION_SYSTEM(_TESTER, CLS, MTH, DATA) CallFunction(_TESTER, test_chain_action<WASM_TEST_ACTION(CLS, MTH)>{}, DATA, {config::system_account_name} )
+#define CALL_TEST_FUNCTION_SYSTEM(_TESTER, CLS, MTH, DATA) CallFunction(_TESTER, test_chain_action<WASM_TEST_ACTION(CLS, MTH)>{}, DATA, {config::system_account_name()} )
 #define CALL_TEST_FUNCTION_SCOPE(_TESTER, CLS, MTH, DATA, ACCOUNT) CallFunction(_TESTER, test_api_action<WASM_TEST_ACTION(CLS, MTH)>{}, DATA, ACCOUNT)
 #define CALL_TEST_FUNCTION_NO_THROW(_TESTER, CLS, MTH, DATA) CallFunction(_TESTER, test_api_action<WASM_TEST_ACTION(CLS, MTH)>{}, DATA, {"testapi"_n}, true)
 #define CALL_TEST_FUNCTION_AND_CHECK_EXCEPTION(_TESTER, CLS, MTH, DATA, EXC, EXC_MESSAGE) \

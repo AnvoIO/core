@@ -24,9 +24,9 @@ namespace {
 template<typename T>
 struct wasm_config_tester : T {
    wasm_config_tester() {
-      T::set_abi(config::system_account_name, test_contracts::wasm_config_bios_abi());
-      T::set_code(config::system_account_name, test_contracts::wasm_config_bios_wasm());
-      bios_abi_ser = *T::get_resolver()(config::system_account_name);
+      T::set_abi(config::system_account_name(), test_contracts::wasm_config_bios_abi());
+      T::set_code(config::system_account_name(), test_contracts::wasm_config_bios_wasm());
+      bios_abi_ser = *T::get_resolver()(config::system_account_name());
    }
    void set_wasm_params(const wasm_config& params) {
       signed_transaction trx;
@@ -1216,7 +1216,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( get_wasm_parameters_test, T, validating_testers )
 
    BOOST_CHECK_THROW(check_wasm_params(fc::raw::pack(uint32_t{0}, wasm_config(original_params))), unaccessible_api);
 
-   chain.push_action( config::system_account_name, "setpriv"_n, config::system_account_name,
+   chain.push_action( config::system_account_name(), "setpriv"_n, config::system_account_name(),
                 fc::mutable_variant_object()("account", "test"_n)("is_priv", true) );
 
    check_wasm_params(fc::raw::pack(uint32_t{0}, wasm_config(original_params)));

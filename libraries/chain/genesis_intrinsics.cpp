@@ -137,6 +137,12 @@ const std::vector<const char*> genesis_intrinsics = {
    "core_net_assert_message",
    "core_net_assert_code",
    "core_net_exit",
+   // Legacy WASM import names — existing compiled contracts use these.
+   // Both old and new names must be whitelisted for backward compatibility.
+   "eosio_assert",
+   "eosio_assert_message",
+   "eosio_assert_code",
+   "eosio_exit",
    "read_action_data",
    "action_data_size",
    "current_receiver",

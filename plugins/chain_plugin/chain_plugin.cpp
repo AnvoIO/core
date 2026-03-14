@@ -1727,7 +1727,7 @@ fc::variant get_global_row( const database& db, const abi_def& abi, const abi_se
    const auto table_type = get_table_type(abi, "global"_n);
    EOS_ASSERT(table_type == read_only::KEYi64, chain::contract_table_query_exception, "Invalid table type ${type} for table global", ("type",table_type));
 
-   const auto* const table_id = db.find<chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple(config::system_account_name, config::system_account_name, "global"_n));
+   const auto* const table_id = db.find<chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple(config::system_account_name(), config::system_account_name(), "global"_n));
    EOS_ASSERT(table_id, chain::contract_table_query_exception, "Missing table global");
 
    const auto& kv_index = db.get_index<key_value_index, by_scope_primary>();
@@ -1781,7 +1781,7 @@ read_only::get_finalizer_info_result read_only::get_finalizer_info( const read_o
 
 read_only::get_producers_result
 read_only::get_producers( const read_only::get_producers_params& params, const fc::time_point& deadline ) const try {
-   abi_def abi = core_net::chain_apis::get_abi(db, config::system_account_name);
+   abi_def abi = core_net::chain_apis::get_abi(db, config::system_account_name());
    const auto table_type = get_table_type(abi, "producers"_n);
    const abi_serializer abis{ abi_def(abi), abi_serializer::create_yield_function( abi_serializer_max_time ) };
    EOS_ASSERT(table_type == KEYi64, chain::contract_table_query_exception, "Invalid table type ${type} for table producers", ("type",table_type));
@@ -1791,9 +1791,9 @@ read_only::get_producers( const read_only::get_producers_params& params, const f
 
    static const uint8_t secondary_index_num = 0;
    const auto* const table_id = d.find<chain::table_id_object, chain::by_code_scope_table>(
-           boost::make_tuple(config::system_account_name, config::system_account_name, "producers"_n));
+           boost::make_tuple(config::system_account_name(), config::system_account_name(), "producers"_n));
    const auto* const secondary_table_id = d.find<chain::table_id_object, chain::by_code_scope_table>(
-           boost::make_tuple(config::system_account_name, config::system_account_name, name("producers"_n.to_uint64_t() | secondary_index_num)));
+           boost::make_tuple(config::system_account_name(), config::system_account_name(), name("producers"_n.to_uint64_t() | secondary_index_num)));
    EOS_ASSERT(table_id && secondary_table_id, chain::contract_table_query_exception, "Missing producers table");
 
    const auto& kv_index = d.get_index<key_value_index, by_scope_primary>();
@@ -2505,9 +2505,9 @@ read_only::get_account_return_t read_only::get_account( const get_account_params
    }
 
    // add eosio.any linked authorizations
-   result.eosio_any_linked_actions = get_linked_actions(chain::config::eosio_any_name);
+   result.eosio_any_linked_actions = get_linked_actions(chain::config::any_name());
 
-   const auto& code_account = db.db().get<account_object,by_name>( config::system_account_name );
+   const auto& code_account = db.db().get<account_object,by_name>( config::system_account_name() );
    struct http_params_t {
       std::optional<vector<char>> total_resources;
       std::optional<vector<char>> self_delegated_bandwidth;
@@ -2543,7 +2543,7 @@ read_only::get_account_return_t read_only::get_account( const get_account_params
       }
 
       auto lookup_object = [&](const name& obj_name, const name& account_name) -> std::optional<vector<char>> {
-         auto t_id = d.find<chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple( config::system_account_name, account_name, obj_name ));
+         auto t_id = d.find<chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple( config::system_account_name(), account_name, obj_name ));
          if (t_id != nullptr) {
             const auto& idx = d.get_index<key_value_index, by_scope_primary>();
             auto it = idx.find(boost::make_tuple( t_id->id, params.account_name.to_uint64_t() ));
@@ -2559,8 +2559,8 @@ read_only::get_account_return_t read_only::get_account( const get_account_params
       http_params.total_resources          = lookup_object("userres"_n, params.account_name);
       http_params.self_delegated_bandwidth = lookup_object("delband"_n, params.account_name);
       http_params.refund_request           = lookup_object("refunds"_n, params.account_name);
-      http_params.voter_info               = lookup_object("voters"_n, config::system_account_name);
-      http_params.rex_info                 = lookup_object("rexbal"_n, config::system_account_name);
+      http_params.voter_info               = lookup_object("voters"_n, config::system_account_name());
+      http_params.rex_info                 = lookup_object("rexbal"_n, config::system_account_name());
       
       return [http_params = std::move(http_params), result = std::move(result), abi=std::move(abi), shorten_abi_errors=shorten_abi_errors,
               abi_serializer_max_time=abi_serializer_max_time]() mutable ->  chain::t_or_exception<read_only::get_account_results> {

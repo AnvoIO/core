@@ -279,7 +279,15 @@ inline constexpr auto get_intrinsic_table() {
       "env.bls_fp_mul",
       "env.bls_fp_exp",
       "env.set_finalizers",
-      "eosvmoc_internal.check_memcpy_params"
+      "eosvmoc_internal.check_memcpy_params",
+      // Legacy WASM import aliases (eosio_* -> core_net_*).
+      // Existing compiled contracts import these names.  Both old and new
+      // names resolve to the same C++ implementation.  Appended at the end
+      // to preserve existing slot indices (see header comment).
+      "env.eosio_assert",
+      "env.eosio_assert_message",
+      "env.eosio_assert_code",
+      "env.eosio_exit"
    );
 }
 inline constexpr std::size_t find_intrinsic_index(std::string_view hf) {

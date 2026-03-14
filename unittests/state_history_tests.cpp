@@ -279,7 +279,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_global_property_history, T, table_delt
    // Change max_transaction_delay to 60 sec
    auto params = chain.control->get_global_properties().configuration;
    params.max_transaction_delay = 60;
-   chain.push_action( config::system_account_name, "setparams"_n, config::system_account_name,
+   chain.push_action( config::system_account_name(), "setparams"_n, config::system_account_name(),
                              mutable_variant_object()
                              ("params", params) );
 
@@ -398,10 +398,10 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
 
    chain.produce_block();
 
-   chain.set_code( config::system_account_name, test_contracts::core_net_system_wasm() );
-   chain.set_abi( config::system_account_name, test_contracts::core_net_system_abi() );
+   chain.set_code( config::system_account_name(), test_contracts::core_net_system_wasm() );
+   chain.set_abi( config::system_account_name(), test_contracts::core_net_system_abi() );
 
-   chain.push_action(config::system_account_name, "init"_n, config::system_account_name,
+   chain.push_action(config::system_account_name(), "init"_n, config::system_account_name(),
                         mutable_variant_object()
                         ("version", 0)
                         ("core", symbol(CORE_SYMBOL).to_string()));
@@ -412,29 +412,29 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(test_deltas_resources_history, T, table_deltas_tes
    authority owner_auth;
    owner_auth =  authority( chain.get_public_key( "alice"_n, "owner" ) );
 
-   trx.actions.emplace_back( vector<permission_level>{{config::system_account_name,config::active_name}},
+   trx.actions.emplace_back( vector<permission_level>{{config::system_account_name(),config::active_name}},
                                 newaccount{
-                                    .creator  = config::system_account_name,
+                                    .creator  = config::system_account_name(),
                                     .name     =  "alice"_n,
                                     .owner    = owner_auth,
                                     .active   = authority( chain.get_public_key( "alice"_n, "active" ) )});
 
-   trx.actions.emplace_back( chain.get_action( config::system_account_name, "buyram"_n, vector<permission_level>{{config::system_account_name,config::active_name}},
+   trx.actions.emplace_back( chain.get_action( config::system_account_name(), "buyram"_n, vector<permission_level>{{config::system_account_name(),config::active_name}},
                                                   mutable_variant_object()
-                                                      ("payer", config::system_account_name)
+                                                      ("payer", config::system_account_name())
                                                       ("receiver",  "alice"_n)
                                                       ("quant", core_from_string("1.0000"))));
 
-   trx.actions.emplace_back( chain.get_action( config::system_account_name, "delegatebw"_n, vector<permission_level>{{config::system_account_name,config::active_name}},
+   trx.actions.emplace_back( chain.get_action( config::system_account_name(), "delegatebw"_n, vector<permission_level>{{config::system_account_name(),config::active_name}},
                                                   mutable_variant_object()
-                                                      ("from", config::system_account_name)
+                                                      ("from", config::system_account_name())
                                                       ("receiver",  "alice"_n)
                                                       ("stake_net_quantity", core_from_string("10.0000") )
                                                       ("stake_cpu_quantity", core_from_string("10.0000") )
                                                       ("transfer", 0 )));
 
    chain.set_transaction_headers(trx);
-   trx.sign( chain.get_private_key( config::system_account_name, "active" ), chain.get_chain_id()  );
+   trx.sign( chain.get_private_key( config::system_account_name(), "active" ), chain.get_chain_id()  );
    chain.push_transaction( trx );
 }
 

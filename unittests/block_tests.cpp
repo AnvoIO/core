@@ -26,7 +26,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( block_with_invalid_tx_test, T, testers )
    act.data = fc::raw::pack(act_data);
    // Re-sign the transaction
    signed_tx.signatures.clear();
-   signed_tx.sign(main.get_private_key(config::system_account_name, "active"), main.get_chain_id());
+   signed_tx.sign(main.get_private_key(config::system_account_name(), "active"), main.get_chain_id());
    // Replace the valid transaction with the invalid transaction
    auto invalid_packed_tx = packed_transaction(signed_tx);
    copy_b->transactions.back().trx = std::move(invalid_packed_tx);
@@ -44,11 +44,11 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( block_with_invalid_tx_test, T, testers )
 
    // Re-sign the block
    if constexpr (std::is_same_v<T, savanna_tester>) {
-      copy_b->producer_signature = main.get_private_key(config::system_account_name, "active").sign(copy_b->calculate_id());
+      copy_b->producer_signature = main.get_private_key(config::system_account_name(), "active").sign(copy_b->calculate_id());
    } else {
       auto header_bmroot = digest_type::hash( std::make_pair( copy_b->digest(), main.control->head_block_state_legacy()->blockroot_merkle.get_root() ) );
       auto sig_digest = digest_type::hash( std::make_pair(header_bmroot, main.control->head_block_state_legacy()->pending_schedule.schedule_hash) );
-      copy_b->producer_signature = main.get_private_key(config::system_account_name, "active").sign(sig_digest);
+      copy_b->producer_signature = main.get_private_key(config::system_account_name(), "active").sign(sig_digest);
    }
 
    // Push block with invalid transaction to other chain
@@ -81,18 +81,18 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( block_with_invalid_tx_mroot_test, T, testers )
    signed_tx.actions[0].name = "something"_n;
    // Re-sign the transaction
    signed_tx.signatures.clear();
-   signed_tx.sign(main.get_private_key(config::system_account_name, "active"), main.get_chain_id());
+   signed_tx.sign(main.get_private_key(config::system_account_name(), "active"), main.get_chain_id());
    // Replace the valid transaction with the invalid transaction
    auto invalid_packed_tx = packed_transaction(std::move(signed_tx), packed_trx.get_compression());
    copy_b->transactions.back().trx = std::move(invalid_packed_tx);
 
    // Re-sign the block
    if constexpr (std::is_same_v<T, savanna_tester>) {
-      copy_b->producer_signature = main.get_private_key(config::system_account_name, "active").sign(copy_b->calculate_id());
+      copy_b->producer_signature = main.get_private_key(config::system_account_name(), "active").sign(copy_b->calculate_id());
    } else {
       auto header_bmroot = digest_type::hash( std::make_pair( copy_b->digest(), main.control->head_block_state_legacy()->blockroot_merkle.get_root() ) );
       auto sig_digest = digest_type::hash( std::make_pair(header_bmroot, main.control->head_block_state_legacy()->pending_schedule.schedule_hash) );
-      copy_b->producer_signature = main.get_private_key(config::system_account_name, "active").sign(sig_digest);
+      copy_b->producer_signature = main.get_private_key(config::system_account_name(), "active").sign(sig_digest);
    }
 
    // Push block with invalid transaction to other chain
@@ -265,7 +265,7 @@ BOOST_FIXTURE_TEST_CASE( abort_block_transactions, validating_tester) { try {
       signed_transaction trx;
 
       account_name a = "newco"_n;
-      account_name creator = config::system_account_name;
+      account_name creator = config::system_account_name();
 
       // account does not exist before test
       BOOST_REQUIRE_EXCEPTION(control->get_account( a ), fc::exception,
@@ -312,7 +312,7 @@ BOOST_FIXTURE_TEST_CASE( abort_block_transactions_tester, validating_tester) { t
       signed_transaction trx;
 
       account_name a = "newco"_n;
-      account_name creator = config::system_account_name;
+      account_name creator = config::system_account_name();
 
       // account does not exist before test
       BOOST_REQUIRE_EXCEPTION(get_account( a ), fc::exception,
@@ -359,7 +359,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE(no_onblock_test, T, testers) { try {
    // Deploy contract that rejects all actions dispatched to it with the following exceptions:
    //   * core_net::setcode to set code on the eosio is allowed (unless the rejectall account exists)
    //   * core_net::newaccount is allowed only if it creates the rejectall account.
-   c.set_code( config::system_account_name, test_contracts::reject_all_wasm() );
+   c.set_code( config::system_account_name(), test_contracts::reject_all_wasm() );
    c.produce_block();
    r = c.produce_block_ex(); // empty block, no valid onblock since it is rejected
    BOOST_TEST_REQUIRE(!!r.onblock_trace);
@@ -411,7 +411,7 @@ BOOST_FIXTURE_TEST_CASE( invalid_qc_claim_block_num_test, validating_tester ) {
    emplace_extension(h_exts, fin_ext_id, fc::raw::pack(f_ext));
 
    // Re-sign the block
-   copy_b->producer_signature = get_private_key(config::system_account_name, "active").sign(copy_b->calculate_id());
+   copy_b->producer_signature = get_private_key(config::system_account_name(), "active").sign(copy_b->calculate_id());
 
    // Push the corrupted block. It must be rejected.
    BOOST_REQUIRE_EXCEPTION(validate_push_block(signed_block::create_signed_block(std::move(copy_b))), fc::exception,
@@ -433,7 +433,7 @@ BOOST_FIXTURE_TEST_CASE( invalid_action_mroot_test, tester )
    copy_b->action_mroot = digest_type::hash("corrupted");
 
    // Re-sign the block
-   copy_b->producer_signature = get_private_key(config::system_account_name, "active").sign(copy_b->calculate_id());
+   copy_b->producer_signature = get_private_key(config::system_account_name(), "active").sign(copy_b->calculate_id());
 
    // Push the block containing corruptted action mroot. It should fail
    BOOST_REQUIRE_EXCEPTION(push_block(signed_block::create_signed_block(std::move(copy_b))),

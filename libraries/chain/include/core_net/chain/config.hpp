@@ -3,6 +3,9 @@
 #include <fc/time.hpp>
 #include <fc/utility.hpp>
 
+#include <string>
+#include <optional>
+
 namespace core_net { namespace chain { namespace config {
 
 typedef __uint128_t uint128_t;
@@ -18,22 +21,53 @@ const static auto chain_head_filename         = "chain_head.dat";
 const static auto default_state_size          = 1*1024*1024*1024ll;
 const static auto default_state_guard_size    =    128*1024*1024ll;
 
+// ─── Genesis-configurable system account names ───────────────────────
+// These are set once at startup from genesis and never change.
+// Default: eosio.* (backward compatible for migrating EOSIO chains)
+// New chains can use core.* or any other valid account name prefix.
 
-const static name system_account_name    { "eosio"_n };
-const static name null_account_name      { "eosio.null"_n };
-const static name producers_account_name { "eosio.prods"_n };
+struct system_accounts {
+   name system_account;     // "eosio" or "core"
+   name null_account;       // "eosio.null" or "core.null"
+   name producers_account;  // "eosio.prods" or "core.prods"
+   name auth_scope;         // "eosio.auth" or "core.auth"
+   name all_scope;          // "eosio.all" or "core.all"
+   name any;                // "eosio.any" or "core.any"
+   name code;               // "eosio.code" or "core.code"
+
+   static system_accounts eosio_defaults();
+   static system_accounts core_defaults();
+   static system_accounts from_prefix(const name& prefix);
+};
+
+// Set once at startup from genesis, immutable after.
+void set_system_accounts(const system_accounts& sa);
+
+// Test-only: reset global state so set_system_accounts() can be called again.
+// Must never be used in production code.
+void reset_system_accounts_for_testing();
+
+// Accessors — replace old static constants.
+// Safe to call from any thread after startup.
+const name& system_account_name();
+const name& null_account_name();
+const name& producers_account_name();
+const name& auth_scope();
+const name& all_scope();
+const name& any_name();
+const name& code_name();
+
+// Returns the prefix string for reserved-name checks (e.g., "eosio." or "core.")
+const std::string& system_account_prefix_str();
+
+// ─── Non-configurable permission and producer names ──────────────────
 
 // Active permission of producers account requires greater than 2/3 of the producers to authorize
 const static name majority_producers_permission_name { "prod.major"_n }; // greater than 1/2 of producers needed to authorize
 const static name minority_producers_permission_name { "prod.minor"_n }; // greater than 1/3 of producers needed to authorize0
 
-const static name eosio_auth_scope       { "eosio.auth"_n };
-const static name eosio_all_scope        { "eosio.all"_n };
-
 const static name active_name     { "active"_n };
 const static name owner_name      { "owner"_n };
-const static name eosio_any_name  { "eosio.any"_n };
-const static name eosio_code_name { "eosio.code"_n };
 
 const static int      block_interval_ms = 500;
 const static int      block_interval_us = block_interval_ms*1000;

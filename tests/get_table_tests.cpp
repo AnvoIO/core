@@ -85,7 +85,7 @@ BOOST_FIXTURE_TEST_CASE( get_scope_test, validating_tester ) try {
 
    // issue
    for (account_name a: accs) {
-      issue_tokens( *this, config::system_account_name, a, core_net::chain::asset::from_string("999.0000 SYS") );
+      issue_tokens( *this, config::system_account_name(), a, core_net::chain::asset::from_string("999.0000 SYS") );
    }
    produce_block();
 
@@ -158,7 +158,7 @@ BOOST_FIXTURE_TEST_CASE( get_table_test, validating_tester ) try {
 
    // issue
    for (account_name a: accs) {
-      issue_tokens( *this, config::system_account_name, a, core_net::chain::asset::from_string("10000.0000 SYS") );
+      issue_tokens( *this, config::system_account_name(), a, core_net::chain::asset::from_string("10000.0000 SYS") );
    }
    produce_block();
 
@@ -169,7 +169,7 @@ BOOST_FIXTURE_TEST_CASE( get_table_test, validating_tester ) try {
    push_action("eosio.token"_n, "create"_n, "eosio.token"_n, act );
    // issue
    for (account_name a: accs) {
-      issue_tokens( *this, config::system_account_name, a, core_net::chain::asset::from_string("9999.0000 AAA") );
+      issue_tokens( *this, config::system_account_name(), a, core_net::chain::asset::from_string("9999.0000 AAA") );
    }
    produce_block();
 
@@ -180,7 +180,7 @@ BOOST_FIXTURE_TEST_CASE( get_table_test, validating_tester ) try {
    push_action("eosio.token"_n, "create"_n, "eosio.token"_n, act );
    // issue
    for (account_name a: accs) {
-      issue_tokens( *this, config::system_account_name, a, core_net::chain::asset::from_string("7777.0000 CCC") );
+      issue_tokens( *this, config::system_account_name(), a, core_net::chain::asset::from_string("7777.0000 CCC") );
    }
    produce_block();
 
@@ -191,7 +191,7 @@ BOOST_FIXTURE_TEST_CASE( get_table_test, validating_tester ) try {
    push_action("eosio.token"_n, "create"_n, "eosio.token"_n, act );
    // issue
    for (account_name a: accs) {
-      issue_tokens( *this, config::system_account_name, a, core_net::chain::asset::from_string("8888.0000 BBB") );
+      issue_tokens( *this, config::system_account_name(), a, core_net::chain::asset::from_string("8888.0000 BBB") );
    }
    produce_block();
 
@@ -339,15 +339,15 @@ BOOST_FIXTURE_TEST_CASE( get_table_by_seckey_test, validating_tester ) try {
 
    // issue
    for (account_name a: accs) {
-      issue_tokens( *this, config::system_account_name, a, core_net::chain::asset::from_string("10000.0000 SYS") );
+      issue_tokens( *this, config::system_account_name(), a, core_net::chain::asset::from_string("10000.0000 SYS") );
    }
    produce_block();
 
-   set_code( config::system_account_name, test_contracts::core_net_system_wasm() );
-   set_abi( config::system_account_name, test_contracts::core_net_system_abi() );
+   set_code( config::system_account_name(), test_contracts::core_net_system_wasm() );
+   set_abi( config::system_account_name(), test_contracts::core_net_system_abi() );
 
-   base_tester::push_action(config::system_account_name, "init"_n,
-                            config::system_account_name,  mutable_variant_object()
+   base_tester::push_action(config::system_account_name(), "init"_n,
+                            config::system_account_name(),  mutable_variant_object()
                             ("version", 0)
                             ("core", "4,SYS"));
 

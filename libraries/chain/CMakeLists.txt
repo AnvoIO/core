@@ -95,6 +95,7 @@ add_library( core_net_chain
              system_contract_abi_bin.cpp
              chain_config.cpp
              chain_id_type.cpp
+             config.cpp
              genesis_state.cpp
              ${CMAKE_CURRENT_BINARY_DIR}/genesis_state_root_key.cpp
 

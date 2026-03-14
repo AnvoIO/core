@@ -26,7 +26,7 @@ struct testit {
    explicit testit(uint64_t id = 0)
       :id(id){}
    static account_name get_account() {
-      return chain::config::system_account_name;
+      return chain::config::system_account_name();
    }
    static action_name get_name() {
       return "testit"_n;
@@ -42,7 +42,7 @@ struct reqactivated {
       :feature_digest(fd){};
 
    static account_name get_account() {
-      return chain::config::system_account_name;
+      return chain::config::system_account_name();
    }
    static action_name get_name() {
       return "reqactivated"_n;
@@ -50,7 +50,7 @@ struct reqactivated {
 };
 
 inline private_key_type get_private_key( name keyname, string role ) {
-   if (keyname == config::system_account_name)
+   if (keyname == config::system_account_name())
       return private_key_type::regenerate<fc::ecc::private_key_shim>(fc::sha256::hash(std::string("nathan")));
 
    return private_key_type::regenerate<fc::ecc::private_key_shim>(fc::sha256::hash(keyname.to_string()+role));
@@ -199,7 +199,7 @@ inline void activate_protocol_features_set_bios_contract(appbase::scoped_app& ap
    // Wait for next block
    std::this_thread::sleep_for( std::chrono::milliseconds(config::block_interval_ms) );
 
-   auto r = set_code(app, chain_plug->chain(), config::system_account_name, testing::contracts::core_net_bios_wasm());
+   auto r = set_code(app, chain_plug->chain(), config::system_account_name(), testing::contracts::core_net_bios_wasm());
    BOOST_CHECK(r->receipt && r->receipt->status == transaction_receipt_header::executed);
 }
 
