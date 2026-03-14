@@ -10,7 +10,9 @@ The Anvo Network codebase has been rebranded from `eosio::` to `core_net::`, but
 
 ## Implementation Steps
 
-### Step 1: system_accounts struct + global accessors
+**Status:** Steps 1-5 COMPLETE, build passes 100%. Steps 6-7 remaining.
+
+### Step 1: system_accounts struct + global accessors ✓ DONE
 **Files:** `config.hpp`, new `config.cpp`, `CMakeLists.txt`
 
 Add `system_accounts` struct with `from_prefix(name)`, `eosio_defaults()`, `core_defaults()`.
@@ -24,22 +26,22 @@ Rename config constant names to neutral:
 
 Keep the old names as deprecated inline wrappers initially for a two-step migration.
 
-### Step 2: Convert all call sites (432+ references)
+### Step 2: Convert all call sites (432+ references) ✓ DONE
 Add `()` parentheses to all `config::system_account_name` references (becomes function call). Also update `eosio_auth_scope` → `auth_scope()`, etc. This is mechanical — the compiler catches everything.
 
-### Step 3: Refactor SET_APP_HANDLER
+### Step 3: Refactor SET_APP_HANDLER ✓ DONE
 **File:** `controller.cpp`
 
 Remove the macro. Replace with direct `set_apply_handler()` calls using `config::system_account_name()`. Move handler registration from constructor to a `register_native_handlers()` method called after `config::set_system_accounts()`.
 
 Keep C++ function names as `apply_eosio_*` for now (internal, no protocol visibility). Can rename to `apply_system_*` as a follow-up.
 
-### Step 4: Fix "eosio." prefix checks
+### Step 4: Fix "eosio." prefix checks ✓ DONE
 **File:** `system_contract.cpp`
 
 Replace hardcoded `name_str.find("eosio.") != 0` with `name::prefix() != config::system_account_name()`. This cleanly handles both `"eosio."` and `"core."` chains.
 
-### Step 5: Genesis JSON support
+### Step 5: Genesis JSON support ✓ DONE
 **File:** `genesis_state.hpp`, `genesis_state.cpp`
 
 Add `std::optional<name> system_account_prefix` — NOT in FC_REFLECT (preserves binary block log format). Custom `to_variant`/`from_variant` for JSON genesis files. Missing field defaults to `"eosio"_n`.
