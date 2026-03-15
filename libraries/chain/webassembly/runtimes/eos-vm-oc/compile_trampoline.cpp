@@ -209,17 +209,20 @@ void run_compile_trampoline(int fd) {
          struct rlimit core_limits = {0u, 0u};
          setrlimit(RLIMIT_CORE, &core_limits);
 
-         try {
-            run_compile(std::move(fds[0]), std::move(fds[1]), stack_size, generated_code_size_limit,
-                        msg.log_level, msg.receiver, msg.queued_time);
-         } catch(const std::exception& e) {
-            std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-               << "EOS VM OC compile failed: " << e.what() << std::endl;
-            _exit(1);
-         } catch(...) {
-            std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-               << "EOS VM OC compile failed: unknown exception" << std::endl;
-            _exit(1);
+         {
+            std::ofstream log("/tmp/oc_compile_error.log", std::ios::app);
+            log << "OC compile child starting for " << msg.receiver << std::endl;
+            try {
+               run_compile(std::move(fds[0]), std::move(fds[1]), stack_size, generated_code_size_limit,
+                           msg.log_level, msg.receiver, msg.queued_time);
+               log << "OC compile child completed successfully" << std::endl;
+            } catch(const std::exception& e) {
+               log << "OC compile failed (exception): " << e.what() << std::endl;
+               _exit(1);
+            } catch(...) {
+               log << "OC compile failed: unknown exception" << std::endl;
+               _exit(1);
+            }
          }
          _exit(0);
       }
