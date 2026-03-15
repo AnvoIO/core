@@ -32,7 +32,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #if LLVM_VERSION_MAJOR >= 12
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/ExecutionEngine/Orc/ExecutorProcessControl.h"
-#include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
 #endif
 
 #include "llvm/Analysis/Passes.h"
@@ -61,7 +60,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "llvm/Transforms/Utils.h"
 #include <memory>
 #include <unistd.h>
-#include <fstream>
 #include <sys/mman.h>
 
 #include "llvm/Support/LEB128.h"
@@ -74,9 +72,9 @@ namespace llvm { namespace orc {
 }}
 #endif
 
-#define DUMP_UNOPTIMIZED_MODULE 1
-#define VERIFY_MODULE 1
-#define DUMP_OPTIMIZED_MODULE 1
+#define DUMP_UNOPTIMIZED_MODULE 0
+#define VERIFY_MODULE 0
+#define DUMP_OPTIMIZED_MODULE 0
 #define PRINT_DISASSEMBLY 0
 
 #if PRINT_DISASSEMBLY
@@ -220,29 +218,11 @@ namespace LLVMJIT
 	struct JITModule
 	{
 		JITModule() {
-			ES.setErrorReporter([](llvm::Error Err) {
-				std::string errStr;
-				llvm::raw_string_ostream errOS(errStr);
-				errOS << Err;
-				std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-					<< "  ORCv2 ERROR: " << errStr << std::endl;
-			});
-			// Allow outlined helper functions (e.g. __aarch64_*) to be resolved
-			// from the current process, analogous to ORCv1's NullResolver falling
-			// back to process symbols.
-			auto dlsg = llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
-				targetMachine->createDataLayout().getGlobalPrefix());
-			if(dlsg) mainJD.addGenerator(std::move(*dlsg));
 			objectLayer = std::make_unique<llvm::orc::RTDyldObjectLinkingLayer>(ES,[this]() {
 									return std::unique_ptr<llvm::RuntimeDyld::MemoryManager>(
 										std::make_unique<MemoryManagerForwarder>(*this));
 							  });
 			objectLayer->setProcessAllSections(true);
-			// On AArch64, LLVM may generate outlined helper functions (e.g.
-			// save/restore sequences) that aren't in the original IR module.
-			// Auto-claim responsibility for these extra object symbols so
-			// ORCv2 materialization doesn't fail.
-			objectLayer->setAutoClaimResponsibilityForObjectSymbols(true);
 			objectLayer->setNotifyLoaded(
 				[this](llvm::orc::MaterializationResponsibility &R, const llvm::object::ObjectFile &Obj,
 				       const llvm::RuntimeDyld::LoadedObjectInfo &o) {
@@ -402,7 +382,7 @@ namespace LLVMJIT
 	void printModule(const llvm::Module* llvmModule,const char* filename)
 	{
 		std::error_code errorCode;
-		std::string augmentedFilename = std::string("/tmp/") + filename + std::to_string(getpid()) + "_" + std::to_string(printedModuleId++) + ".ll";
+		std::string augmentedFilename = std::string(filename) + std::to_string(printedModuleId++) + ".ll";
 #if LLVM_VERSION_MAJOR >= 12
 		llvm::raw_fd_ostream dumpFileStream(augmentedFilename,errorCode,llvm::sys::fs::OF_Text);
 #else
@@ -425,8 +405,6 @@ namespace LLVMJIT
 			llvm::raw_string_ostream verifyOutputStream(verifyOutputString);
 			if(llvm::verifyModule(*llvmModule,&verifyOutputStream))
 			{
-				std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-					<< "LLVM verification errors:\n" << verifyOutputString << std::endl;
 				Errors::fatalf("LLVM verification errors:\n%s\n",verifyOutputString.c_str());
 			}
 			///Log::printf(Log::Category::debug,"Verified LLVM module\n");
@@ -451,37 +429,17 @@ namespace LLVMJIT
 		if(DUMP_OPTIMIZED_MODULE) { printModule(llvmModule,"llvmOptimizedDump"); }
 
 #if LLVM_VERSION_MAJOR >= 12
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: verify+optimize done, entering ORCv2 codegen..." << std::endl;
 		// The LLVMContext is heap-allocated (see LLVMEmitIR.cpp) so
 		// ThreadSafeContext can take ownership via unique_ptr.
 		llvm::orc::ThreadSafeContext TSCtx(std::unique_ptr<llvm::LLVMContext>(&llvmModule->getContext()));
 		std::unique_ptr<llvm::Module> mod(llvmModule);
 		llvm::orc::ThreadSafeModule TSM(std::move(mod), std::move(TSCtx));
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: calling compileLayer->add..." << std::endl;
 		auto err = compileLayer->add(mainJD, std::move(TSM));
-		if(err) {
-			std::string errStr;
-			llvm::raw_string_ostream errOS(errStr);
-			errOS << err;
-			std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: compileLayer->add FAILED: " << errStr << std::endl;
-		}
 		WAVM_ASSERT_THROW(!err);
 
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: calling ES.lookup to force materialization (wasmFunc0)..." << std::endl;
 		// Force materialization by looking up a real symbol
 		auto sym = ES.lookup({&mainJD}, ES.intern("wasmFunc0"));
-		if(!sym) {
-			std::string errStr;
-			llvm::raw_string_ostream errOS(errStr);
-			errOS << sym.takeError();
-			std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: lookup FAILED: " << errStr << std::endl;
-		} else {
-			std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: lookup succeeded, addr=" << (void*)sym->getAddress() << std::endl;
-		}
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: after lookup, code ptr="
-			<< (void*)unitmemorymanager->code.get()
-			<< " code size=" << (unitmemorymanager->code ? unitmemorymanager->code->size() : 0)
-			<< " function_to_offsets count=" << function_to_offsets.size() << std::endl;
+		WAVM_ASSERT_THROW(!!sym);
 #else
 		llvm::orc::VModuleKey K = ES.allocateVModule();
 		std::unique_ptr<llvm::Module> mod(llvmModule);
@@ -520,15 +478,12 @@ namespace LLVMJIT
 		}
 
 		// Emit LLVM IR for the module.
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  instantiateModule: calling emitModule..." << std::endl;
 		auto llvmModule = emitModule(module);
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  instantiateModule: emitModule done, calling compile..." << std::endl;
 
 		// Construct the JIT compilation pipeline for this module.
 		auto jitModule = new JITModule();
 		// Compile the module.
 		jitModule->compile(llvmModule);
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  instantiateModule: compile done, code size=" << jitModule->final_pic_code.size() << std::endl;
 
 		unsigned num_functions_stack_size_found = 0;
 		for(const auto& stacksizes : jitModule->unitmemorymanager->stack_sizes) {
@@ -553,28 +508,17 @@ namespace LLVMJIT
 				WAVM_ASSERT_THROW(offset_before_read != offset);
 
 				++num_functions_stack_size_found;
-				if(stack_size > stack_size_limit) {
-					std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-						<< "OC compile _exit(1): stack_size " << stack_size << " > limit " << stack_size_limit << std::endl;
+				if(stack_size > stack_size_limit)
 					_exit(1);
-				}
 			}
 		}
 		// On AArch64, LLVM may generate outlined helper functions (e.g.,
 		// save/restore sequences) that add extra .stack_sizes entries beyond
 		// the WASM function defs.  Require at least as many entries as defs.
-		if(num_functions_stack_size_found < module.functions.defs.size()) {
-			std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-				<< "OC compile _exit(1): stack_size_found " << num_functions_stack_size_found
-				<< " < functions.defs.size " << module.functions.defs.size() << std::endl;
+		if(num_functions_stack_size_found < module.functions.defs.size())
 			_exit(1);
-		}
-		if(jitModule->final_pic_code.size() >= generated_code_size_limit) {
-			std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-				<< "OC compile _exit(1): code size " << jitModule->final_pic_code.size()
-				<< " >= limit " << generated_code_size_limit << std::endl;
+		if(jitModule->final_pic_code.size() >= generated_code_size_limit)
 			_exit(1);
-		}
 
 		instantiated_code ret;
 		ret.code = jitModule->final_pic_code;

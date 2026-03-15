@@ -19,7 +19,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "IR/Operators.h"
 #include "IR/OperatorPrinter.h"
 #include "llvm/Support/raw_ostream.h"
-#include <fstream>
 
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -761,23 +760,6 @@ namespace LLVMJIT
 			if(imm.functionIndex < moduleContext.importedFunctionOffsets.size())
 			{
 				calleeType = module.types[module.functions.imports[imm.functionIndex].type.index];
-				// Debug: log the first few import calls with f64 types
-				static int f64_log_count = 0;
-				if(f64_log_count < 3) {
-					bool has_f64 = (calleeType->ret == ResultType::f64);
-					for(auto p : calleeType->parameters) if(p == ValueType::f64) has_f64 = true;
-					if(has_f64) {
-						std::string sig;
-						for(auto p : calleeType->parameters) sig += std::to_string((int)p) + ",";
-						std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-							<< "  call import f64: name=" << module.functions.imports[imm.functionIndex].exportName
-							<< " ret=" << (int)calleeType->ret
-							<< " params=[" << sig << "]"
-							<< " llvmType=" << asLLVMType(calleeType)->getReturnType()->isDoubleTy()
-							<< std::endl;
-						f64_log_count++;
-					}
-				}
 				llvm::Value* ic = EmitLoad(irBuilder, emitVmemPointer(OFFSET_OF_FIRST_INTRINSIC-moduleContext.importedFunctionOffsets[imm.functionIndex]*8, llvmI64Type->getPointerTo(VMEM_ADDR_SPACE)) );
 				callee = irBuilder.CreateIntToPtr(ic, asLLVMType(calleeType)->getPointerTo());
 				isExit = module.functions.imports[imm.functionIndex].moduleName == "env" && module.functions.imports[imm.functionIndex].exportName == "core_net_exit";
@@ -1489,15 +1471,6 @@ namespace LLVMJIT
 			llvmResultTypes[(Uptr)ResultType::i64] = llvmI64Type;
 			llvmResultTypes[(Uptr)ResultType::f32] = llvmF32Type;
 			llvmResultTypes[(Uptr)ResultType::f64] = llvmF64Type;
-
-			std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-				<< "  emitModule init: f32 isFloat=" << llvmF32Type->isFloatTy()
-				<< " f64 isDouble=" << llvmF64Type->isDoubleTy()
-				<< " f64 typeID=" << llvmF64Type->getTypeID()
-				<< " i64 typeID=" << llvmI64Type->getTypeID()
-				<< " ResultType::f64=" << (unsigned)ResultType::f64
-				<< " llvmResultTypes[f64] isDouble=" << llvmResultTypes[(Uptr)ResultType::f64]->isDoubleTy()
-				<< std::endl;
 
 			// Create zero constants of each type.
 			typedZeroConstants[(Uptr)ValueType::any] = nullptr;
