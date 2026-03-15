@@ -243,14 +243,14 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
    std::string wasm_runtime_desc;
    std::string delim;
 #ifdef CORE_NET_VM_JIT_RUNTIME_ENABLED
-   wasm_runtime_opt += " \"eos-vm-jit\"";
-   wasm_runtime_desc += "\"eos-vm-jit\" : A WebAssembly runtime that compiles WebAssembly code to native x86 code prior to execution.\n";
+   wasm_runtime_opt += " \"core-vm-jit\"";
+   wasm_runtime_desc += "\"core-vm-jit\" : A WebAssembly runtime that compiles WebAssembly code to native x86 code prior to execution.\n";
    delim = ", ";
 #endif
 
 #ifdef CORE_NET_VM_RUNTIME_ENABLED
-   wasm_runtime_opt += delim + "\"eos-vm\"";
-   wasm_runtime_desc += "\"eos-vm\" : A WebAssembly interpreter.\n";
+   wasm_runtime_opt += delim + "\"core-vm\"";
+   wasm_runtime_desc += "\"core-vm\" : A WebAssembly interpreter.\n";
    delim = ", ";
 #endif
 
@@ -286,7 +286,7 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("checkpoint", bpo::value<vector<string>>()->composing(), "Pairs of [BLOCK_NUM,BLOCK_ID] that should be enforced as checkpoints.")
          ("wasm-runtime", bpo::value<core_net::chain::wasm_interface::vm_type>()->value_name("runtime")->notifier([](const auto& vm){
             if(vm == wasm_interface::vm_type::core_vm_oc)
-               wlog("eos-vm-oc-forced mode is not supported. It is for development purposes only");
+               wlog("core-vm-oc-forced mode is not supported. It is for development purposes only");
          })->default_value(core_net::chain::config::default_wasm_runtime, default_wasm_runtime_str), wasm_runtime_opt.c_str()
          )
          ("profile-account", boost::program_options::value<vector<string>>()->composing(),

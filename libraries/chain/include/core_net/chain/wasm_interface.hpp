@@ -24,20 +24,20 @@ namespace core_net { namespace chain {
    class wasm_interface {
       public:
          enum class vm_type {
-            eos_vm,
-            eos_vm_jit,
+            core_vm,
+            core_vm_jit,
             core_vm_oc
          };
 
          //return string description of vm_type
          static std::string vm_type_string(vm_type vmtype) {
              switch (vmtype) {
-             case vm_type::eos_vm:
-                return "eos-vm";
+             case vm_type::core_vm:
+                return "core-vm";
              case vm_type::core_vm_oc:
-                return "eos-vm-oc";
+                return "core-vm-oc";
              default:
-                 return "eos-vm-jit";
+                 return "core-vm-jit";
              }
          }
 
@@ -104,4 +104,4 @@ namespace core_net{ namespace chain {
    }
 }}
 
-FC_REFLECT_ENUM( core_net::chain::wasm_interface::vm_type, (eos_vm)(eos_vm_jit)(core_vm_oc) )
+FC_REFLECT_ENUM( core_net::chain::wasm_interface::vm_type, (core_vm)(core_vm_jit)(core_vm_oc) )

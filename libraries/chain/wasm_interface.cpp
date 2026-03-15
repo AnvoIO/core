@@ -118,11 +118,11 @@ namespace core_net { namespace chain {
 std::istream& operator>>(std::istream& in, wasm_interface::vm_type& runtime) {
    std::string s;
    in >> s;
-   if (s == "eos-vm")
-      runtime = core_net::chain::wasm_interface::vm_type::eos_vm;
-   else if (s == "eos-vm-jit")
-      runtime = core_net::chain::wasm_interface::vm_type::eos_vm_jit;
-   else if (s == "eos-vm-oc-forced")
+   if (s == "core-vm" || s == "eos-vm")
+      runtime = core_net::chain::wasm_interface::vm_type::core_vm;
+   else if (s == "core-vm-jit" || s == "eos-vm-jit")
+      runtime = core_net::chain::wasm_interface::vm_type::core_vm_jit;
+   else if (s == "core-vm-oc-forced" || s == "eos-vm-oc-forced")
       runtime = core_net::chain::wasm_interface::vm_type::core_vm_oc;
    else
       in.setstate(std::ios_base::failbit);

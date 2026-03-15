@@ -80,15 +80,15 @@ struct corevmoc_tier {
          , corevmoc_tierup(corevmoc_tierup)
       {
 #ifdef CORE_NET_VM_RUNTIME_ENABLED
-         if(vm == wasm_interface::vm_type::eos_vm)
+         if(vm == wasm_interface::vm_type::core_vm)
             runtime_interface = std::make_unique<webassembly::eos_vm_runtime::eos_vm_runtime<core_net::vm::interpreter>>();
 #endif
 #ifdef CORE_NET_VM_JIT_RUNTIME_ENABLED
-         if(vm == wasm_interface::vm_type::eos_vm_jit && profile) {
+         if(vm == wasm_interface::vm_type::core_vm_jit && profile) {
             core_net::vm::set_profile_interval_us(200);
             runtime_interface = std::make_unique<webassembly::eos_vm_runtime::eos_vm_profile_runtime>();
          }
-         if(vm == wasm_interface::vm_type::eos_vm_jit && !profile)
+         if(vm == wasm_interface::vm_type::core_vm_jit && !profile)
             runtime_interface = std::make_unique<webassembly::eos_vm_runtime::eos_vm_runtime<core_net::vm::jit>>();
 #endif
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
