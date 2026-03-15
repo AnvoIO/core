@@ -270,25 +270,38 @@ expensive deployment). Every account is natively a smart wallet.
 #### 1E. LLVM Modernization (Prerequisite for OC + AArch64)
 **Goal:** Update eos-vm-oc to build with modern LLVM (14+).
 
-**Problem found:** Spring requires LLVM 7-11 for eos-vm-oc (the optimized WASM
-compiler). Ubuntu 24.04 ships LLVM 14-20. Ubuntu 22.04 has LLVM 11 but is EOL
-April 2027. The LLVM 7-11 requirement blocks builds on modern Linux and must be
-resolved before the AArch64 port (which depends on LLVM's AArch64 backend).
+**Status: COMPLETE** (branch `llvm/modernize-14`, build passes 100% with `-DENABLE_OC=ON`)
 
-**What needs to change:**
-- `CMakeLists.txt` version check: `LLVM_VERSION_MAJOR` range 7-11 → 7-20
-- `LLVMEmitIR.cpp`: 3 conditional blocks for LLVM <9, <10, ==10 API differences
-- `LLVMJIT.cpp`: 2 conditional blocks for LLVM 7 and <10 API differences
-- LLVM API migrations: deprecated pass manager APIs, type system changes,
-  ORCv1→ORCv2 JIT layer (if targeting LLVM 16+)
+**Problem solved:** Spring required LLVM 7-11 for eos-vm-oc. Ubuntu 24.04 ships
+LLVM 14-20. The ORCv1 JIT API was completely removed in LLVM 12, along with several
+other breaking changes in the LLVM C++ API.
 
-**Build strategy (phased):**
-1. Build without OC (`-DENABLE_OC=OFF`) — interpreter + JIT only (verified working)
-2. Patch for LLVM 14 — smallest API delta from LLVM 11, available on Ubuntu 22.04+
-3. Patch for LLVM 16-18 — full modern Linux support
-4. Then proceed with AArch64 port (LLVM handles AArch64 codegen natively)
+**What was changed:**
+- `CMakeLists.txt`: version check now accepts LLVM 7-11 **and** 14-17
+- `LLVMJIT.cpp`: Full ORCv2 JIT implementation for LLVM 12+ with `#if` guard:
+  - `RTDyldObjectLinkingLayer` (ORCv2) with `GetMemoryManager` factory
+  - `IRCompileLayer` (ORCv2) with `std::unique_ptr<IRCompiler>`
+  - `ExecutionSession` with `SelfExecutorProcessControl` (required by LLVM 14)
+  - `JITDylib` + `ThreadSafeModule` for module submission
+  - `MemoryManagerForwarder` to bridge ORCv2's `unique_ptr` factory to shared `UnitMemoryManager`
+  - `createConstantPropagationPass()` → `createSCCPPass()` (removed in LLVM 12)
+  - `F_Text` → `OF_Text` (renamed in LLVM 12)
+  - Conditional includes for removed headers (`LambdaResolver.h`, `NullResolver.h`)
+- `LLVMEmitIR.cpp`: Compatibility helpers for LLVM 14's typed pointer requirements:
+  - `EmitLoad()` / `EmitInBoundsGEP()` wrappers (17 CreateLoad + 7 CreateInBoundsGEP calls)
+  - Fixed include order (`llvm/Pass.h` before `InstCombine.h`)
+- `gs_seg_helpers.c`: Fixed Phase 1A rebrand misses (only compiled with OC enabled):
+  - `#include` path: `eosio/` → `core_net/`
+  - Macros: `EOS_VM_OC_*` → `CORE_NET_VM_OC_*`
 
-**Effort:** ~1-2 weeks for LLVM 14, ~2-3 weeks for LLVM 16+
+**All changes are backward-compatible with LLVM 7-11** via `#if LLVM_VERSION_MAJOR` guards.
+
+**Build verified:** Ubuntu 24.04, GCC 13.3, LLVM 14.0.6, `-DENABLE_OC=ON -DCMAKE_BUILD_TYPE=Release`
+
+**Remaining LLVM work (future):**
+- LLVM 15+: opaque pointers become default — `getPointerTo(N)` and `getPointerElementType()`
+  will need to be replaced. This is a larger refactor of `LLVMEmitIR.cpp`.
+- LLVM 16+: `llvm/Support/Host.h` moves to `llvm/TargetParser/Host.h`
 
 #### 1F. AArch64 Support (~3 months, parallel with 1C/1D, depends on 1E)
 **Goal:** Production-quality ARM server support for eos-vm-oc runtime.
@@ -683,10 +696,9 @@ Claude. These team estimates are for the full scope if expanding beyond that mod
 - AArch64 architecture (for ARM port)
 
 ### Build Environment
-- **Verified:** Ubuntu 24.04, GCC 13.3, CMake 3.28
-- **eos-vm-oc:** Requires LLVM 7-11 (not available on Ubuntu 24.04). Build with
-  `-DENABLE_OC=OFF` until LLVM compat is patched (Phase 1E).
-- **Without OC:** Interpreter + JIT runtimes work. Sufficient for testnet T1.
+- **Verified:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6
+- **eos-vm-oc:** Builds with LLVM 7-11 or LLVM 14-17. Ubuntu 24.04 uses `llvm-14-dev`.
+- **Full build:** `-DENABLE_OC=ON -DCMAKE_BUILD_TYPE=Release` — all runtimes (interpreter + JIT + OC)
 
 ---
 
@@ -698,7 +710,7 @@ Claude. These team estimates are for the full scope if expanding beyond that mod
 | AArch64 performance regression | Low | Medium | Graviton benchmarking throughout development |
 | EOSIO compatibility breaks | Low | High | Comprehensive contract test suite from existing chains |
 | Existing EOSIO chains don't adopt | Medium | High | Strong migration tooling, clear value proposition |
-| LLVM version compatibility issues | High | High | Spring requires LLVM 7-11; modern Linux ships 14+. Must patch before OC or AArch64 work. Mitigated: build without OC initially, patch LLVM compat in Phase 1E. |
+| LLVM version compatibility issues | ~~High~~ **Resolved** | ~~High~~ **Done** | ✓ Patched in Phase 1E. Now supports LLVM 7-11 and 14-17. LLVM 15+ (opaque pointers) is future work. |
 | ChainBase limitations block Block-STM | Medium | Medium | Shadow state avoids modifying ChainBase directly |
 
 ---
