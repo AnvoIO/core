@@ -54,7 +54,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
 set(BUILD_DOXYGEN FALSE CACHE BOOL "Build doxygen documentation on every make")
 set(ENABLE_MULTIVERSION_PROTOCOL_TEST FALSE CACHE BOOL "Enable core_netd multiversion protocol test")
 
-option(ENABLE_OC "Enable eosvm-oc on supported platforms" ON)
+option(ENABLE_OC "Enable Core VM OC on supported platforms" ON)
 
 # WASM runtimes to enable. Each runtime in this list will have:
 #  * definition CORE_NET_<RUNTIME>_RUNTIME_ENABLED defined in public libchain interface

@@ -19,24 +19,24 @@ endif()
 
 if("vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
    enable_language(ASM)
-   set(CHAIN_EOSVMOC_SOURCES webassembly/runtimes/eos-vm-oc/code_cache.cpp
-                             webassembly/runtimes/eos-vm-oc/executor.cpp
-                             webassembly/runtimes/eos-vm-oc/memory.cpp
-                             webassembly/runtimes/eos-vm-oc/intrinsic.cpp
-                             webassembly/runtimes/eos-vm-oc/LLVMJIT.cpp
-                             webassembly/runtimes/eos-vm-oc/LLVMEmitIR.cpp
-                             webassembly/runtimes/eos-vm-oc/compile_monitor.cpp
-                             webassembly/runtimes/eos-vm-oc/compile_trampoline.cpp
-                             webassembly/runtimes/eos-vm-oc/ipc_helpers.cpp
-                             webassembly/runtimes/eos-vm-oc/gs_seg_helpers.c
-                             webassembly/runtimes/eos-vm-oc/stack.cpp
-                             $<IF:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},aarch64>,webassembly/runtimes/eos-vm-oc/switch_stack_linux_aarch64.s,webassembly/runtimes/eos-vm-oc/switch_stack_linux.s>
-                             webassembly/runtimes/eos-vm-oc.cpp
-                             webassembly/runtimes/eos-vm-oc/default_real_main.cpp)
+   set(CHAIN_COREVMOC_SOURCES webassembly/runtimes/core-vm-oc/code_cache.cpp
+                             webassembly/runtimes/core-vm-oc/executor.cpp
+                             webassembly/runtimes/core-vm-oc/memory.cpp
+                             webassembly/runtimes/core-vm-oc/intrinsic.cpp
+                             webassembly/runtimes/core-vm-oc/LLVMJIT.cpp
+                             webassembly/runtimes/core-vm-oc/LLVMEmitIR.cpp
+                             webassembly/runtimes/core-vm-oc/compile_monitor.cpp
+                             webassembly/runtimes/core-vm-oc/compile_trampoline.cpp
+                             webassembly/runtimes/core-vm-oc/ipc_helpers.cpp
+                             webassembly/runtimes/core-vm-oc/gs_seg_helpers.c
+                             webassembly/runtimes/core-vm-oc/stack.cpp
+                             $<IF:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},aarch64>,webassembly/runtimes/core-vm-oc/switch_stack_linux_aarch64.s,webassembly/runtimes/core-vm-oc/switch_stack_linux.s>
+                             webassembly/runtimes/core-vm-oc.cpp
+                             webassembly/runtimes/core-vm-oc/default_real_main.cpp)
 
-   set_source_files_properties(webassembly/runtimes/eos-vm-oc/LLVMJIT.cpp PROPERTIES COMPILE_FLAGS "--std=gnu++17")
-   set_source_files_properties(webassembly/runtimes/eos-vm-oc/LLVMEmitIR.cpp PROPERTIES COMPILE_FLAGS "--std=gnu++17")
-   set_source_files_properties(webassembly/runtimes/eos-vm-oc/switch_stack_linux.s PROPERTIES COMPILE_FLAGS "-Wno-unused-command-line-argument")
+   set_source_files_properties(webassembly/runtimes/core-vm-oc/LLVMJIT.cpp PROPERTIES COMPILE_FLAGS "--std=gnu++17")
+   set_source_files_properties(webassembly/runtimes/core-vm-oc/LLVMEmitIR.cpp PROPERTIES COMPILE_FLAGS "--std=gnu++17")
+   set_source_files_properties(webassembly/runtimes/core-vm-oc/switch_stack_linux.s PROPERTIES COMPILE_FLAGS "-Wno-unused-command-line-argument")
 
    llvm_map_components_to_libnames(LLVM_LIBS support core passes mcjit native orcjit)
    include_directories(SYSTEM ${LLVM_INCLUDE_DIRS})
@@ -111,7 +111,7 @@ add_library( core_net_chain
               snapshot_scheduler.cpp
               deep_mind.cpp
 
-             ${CHAIN_EOSVMOC_SOURCES}
+             ${CHAIN_COREVMOC_SOURCES}
              ${CHAIN_EOSVM_SOURCES}
              ${CHAIN_WEBASSEMBLY_SOURCES}
 

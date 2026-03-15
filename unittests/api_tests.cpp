@@ -16,7 +16,7 @@
 #include <core_net/chain/wasm_interface.hpp>
 #include <core_net/chain/resource_limits.hpp>
 #include <core_net/chain/finalizer_authority.hpp>
-#include <core_net/chain/webassembly/eos-vm-oc/intrinsic.hpp>
+#include <core_net/chain/webassembly/core-vm-oc/intrinsic.hpp>
 
 #include <fc/crypto/sha256.hpp>
 #include <fc/exception/exception.hpp>
@@ -3357,7 +3357,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( small_const_memcpy_tests, T, validating_testers )
    t.create_account("smallmemcpy"_n);
    t.produce_block();
 
-   for(unsigned i = eosvmoc::minimum_const_memcpy_intrinsic_to_optimize; i <= eosvmoc::maximum_const_memcpy_intrinsic_to_optimize; ++i) {
+   for(unsigned i = corevmoc::minimum_const_memcpy_intrinsic_to_optimize; i <= corevmoc::maximum_const_memcpy_intrinsic_to_optimize; ++i) {
       t.set_code("smallmemcpy"_n, fc::format_string(small_memcpy_const_dstsrc_wastfmt, fc::mutable_variant_object("COPY_SIZE", i)).c_str());
 
       signed_transaction trx;
@@ -3383,7 +3383,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( small_var_memcpy_tests, T, validating_testers ) {
    t.create_account("smallmemcpy"_n);
    t.produce_block();
 
-   for(unsigned i = eosvmoc::minimum_const_memcpy_intrinsic_to_optimize; i <= eosvmoc::maximum_const_memcpy_intrinsic_to_optimize; ++i) {
+   for(unsigned i = corevmoc::minimum_const_memcpy_intrinsic_to_optimize; i <= corevmoc::maximum_const_memcpy_intrinsic_to_optimize; ++i) {
       t.set_code("smallmemcpy"_n, fc::format_string(small_memcpy_var_dstsrc_wastfmt, fc::mutable_variant_object("COPY_SIZE", i)).c_str());
 
       signed_transaction trx;

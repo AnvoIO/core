@@ -494,18 +494,18 @@ namespace core_net::testing {
             cfg.state_size = 1024*1024*16;
             cfg.state_guard_size = 0;
             cfg.contracts_console = true;
-            cfg.eosvmoc_config.cache_size = 1024*1024*8;
+            cfg.corevmoc_config.cache_size = 1024*1024*8;
             cfg.vote_thread_pool_size = 3;
 
             // don't enforce OC compilation subject limits for tests,
             // particularly EOS EVM tests may run over those limits
-            cfg.eosvmoc_config.non_whitelisted_limits.cpu_limit.reset();
-            cfg.eosvmoc_config.non_whitelisted_limits.vm_limit.reset();
-            cfg.eosvmoc_config.non_whitelisted_limits.stack_size_limit.reset();
-            cfg.eosvmoc_config.non_whitelisted_limits.generated_code_size_limit.reset();
+            cfg.corevmoc_config.non_whitelisted_limits.cpu_limit.reset();
+            cfg.corevmoc_config.non_whitelisted_limits.vm_limit.reset();
+            cfg.corevmoc_config.non_whitelisted_limits.stack_size_limit.reset();
+            cfg.corevmoc_config.non_whitelisted_limits.generated_code_size_limit.reset();
 
             // don't use auto tier up for tests, since the point is to test diff vms
-            cfg.eosvmoc_tierup = chain::wasm_interface::vm_oc_enable::oc_none;
+            cfg.corevmoc_tierup = chain::wasm_interface::vm_oc_enable::oc_none;
 
             for(int i = 0; i < boost::unit_test::framework::master_test_suite().argc; ++i) {
                if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--eos-vm"))
@@ -513,7 +513,7 @@ namespace core_net::testing {
                else if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--eos-vm-jit"))
                   cfg.wasm_runtime = chain::wasm_interface::vm_type::eos_vm_jit;
                else if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--eos-vm-oc"))
-                  cfg.wasm_runtime = chain::wasm_interface::vm_type::eos_vm_oc;
+                  cfg.wasm_runtime = chain::wasm_interface::vm_type::core_vm_oc;
             }
             auto gen = default_genesis();
             if (genesis_max_inline_action_size) {

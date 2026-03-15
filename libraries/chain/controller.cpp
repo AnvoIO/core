@@ -1342,7 +1342,7 @@ struct controller_impl {
     thread_pool(),
     my_finalizers(cfg.finalizers_dir / config::safety_filename),
     main_thread_timer(timer), // assumes constructor is called from main thread
-    wasmif( conf.wasm_runtime, conf.eosvmoc_tierup, db, main_thread_timer, conf.state_dir, conf.eosvmoc_config, !conf.profile_accounts.empty() )
+    wasmif( conf.wasm_runtime, conf.corevmoc_tierup, db, main_thread_timer, conf.state_dir, conf.corevmoc_config, !conf.profile_accounts.empty() )
    {
       assert(cfg.chain_thread_pool_size > 0);
       thread_pool.start( cfg.chain_thread_pool_size, [this]( const fc::exception& e ) {
@@ -5045,8 +5045,8 @@ struct controller_impl {
    }
 
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
-   bool is_eos_vm_oc_enabled() const {
-      return wasmif.is_eos_vm_oc_enabled();
+   bool is_core_vm_oc_enabled() const {
+      return wasmif.is_core_vm_oc_enabled();
    }
 #endif
 
@@ -5054,7 +5054,7 @@ struct controller_impl {
    // starts them. Only OC requires initialize thread specific data.
    void init_thread_local_data() {
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
-      if ( is_eos_vm_oc_enabled() ) {
+      if ( is_core_vm_oc_enabled() ) {
          wasmif.init_thread_local_data();
       }
 #endif
@@ -5922,8 +5922,8 @@ bool controller::is_profiling(account_name account) const {
    return my->conf.profile_accounts.find(account) != my->conf.profile_accounts.end();
 }
 
-bool controller::is_eos_vm_oc_whitelisted(const account_name& n) const {
-   return my->conf.eos_vm_oc_whitelist_suffixes.count(n.suffix()) > 0;
+bool controller::is_core_vm_oc_whitelisted(const account_name& n) const {
+   return my->conf.core_vm_oc_whitelist_suffixes.count(n.suffix()) > 0;
 }
 
 chain_id_type controller::get_chain_id()const {
@@ -6139,8 +6139,8 @@ vm::wasm_allocator& controller::get_wasm_allocator() {
 }
 #endif
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
-bool controller::is_eos_vm_oc_enabled() const {
-   return my->is_eos_vm_oc_enabled();
+bool controller::is_core_vm_oc_enabled() const {
+   return my->is_core_vm_oc_enabled();
 }
 #endif
 

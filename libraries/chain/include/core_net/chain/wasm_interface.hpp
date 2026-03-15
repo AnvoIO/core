@@ -11,7 +11,7 @@ namespace core_net { namespace chain {
    class apply_context;
    class wasm_runtime_interface;
    class controller;
-   namespace eosvmoc { struct config; }
+   namespace corevmoc { struct config; }
 
    struct wasm_exit {
       int32_t code = 0;
@@ -26,7 +26,7 @@ namespace core_net { namespace chain {
          enum class vm_type {
             eos_vm,
             eos_vm_jit,
-            eos_vm_oc
+            core_vm_oc
          };
 
          //return string description of vm_type
@@ -34,7 +34,7 @@ namespace core_net { namespace chain {
              switch (vmtype) {
              case vm_type::eos_vm:
                 return "eos-vm";
-             case vm_type::eos_vm_oc:
+             case vm_type::core_vm_oc:
                 return "eos-vm-oc";
              default:
                  return "eos-vm-jit";
@@ -47,18 +47,18 @@ namespace core_net { namespace chain {
             oc_none
          };
 
-         wasm_interface(vm_type vm, vm_oc_enable eosvmoc_tierup, const chainbase::database& d, platform_timer& main_thread_timer, const std::filesystem::path data_dir, const eosvmoc::config& eosvmoc_config, bool profile);
+         wasm_interface(vm_type vm, vm_oc_enable corevmoc_tierup, const chainbase::database& d, platform_timer& main_thread_timer, const std::filesystem::path data_dir, const corevmoc::config& corevmoc_config, bool profile);
          ~wasm_interface();
 
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          // initialize exec per thread
          void init_thread_local_data();
 
-         // returns true if EOS VM OC is enabled
-         bool is_eos_vm_oc_enabled() const;
+         // returns true if Core VM OC is enabled
+         bool is_core_vm_oc_enabled() const;
 
          // return number of wasm execution interrupted by eos vm oc compile completing, used for testing
-         uint64_t get_eos_vm_oc_compile_interrupt_count() const;
+         uint64_t get_core_vm_oc_compile_interrupt_count() const;
 #endif
 
          //call before dtor to skip what can be minutes of dtor overhead with some runtimes; can cause leaks
@@ -104,4 +104,4 @@ namespace core_net{ namespace chain {
    }
 }}
 
-FC_REFLECT_ENUM( core_net::chain::wasm_interface::vm_type, (eos_vm)(eos_vm_jit)(eos_vm_oc) )
+FC_REFLECT_ENUM( core_net::chain::wasm_interface::vm_type, (eos_vm)(eos_vm_jit)(core_vm_oc) )

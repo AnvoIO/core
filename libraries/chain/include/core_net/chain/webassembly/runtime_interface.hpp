@@ -24,7 +24,7 @@ class wasm_runtime_interface {
 
       virtual ~wasm_runtime_interface();
 
-      // eosvmoc_runtime needs this
+      // corevmoc_runtime needs this
       virtual void init_thread_local_data() {};
 };
 
