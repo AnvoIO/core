@@ -388,20 +388,35 @@ namespace LLVMJIT
 		if(DUMP_OPTIMIZED_MODULE) { printModule(llvmModule,"llvmOptimizedDump"); }
 
 #if LLVM_VERSION_MAJOR >= 12
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: verify+optimize done, entering ORCv2 codegen..." << std::endl;
 		auto ctx = std::make_unique<llvm::LLVMContext>();
 		// The module was created with a different context; we need to transfer ownership.
 		// We wrap the raw module pointer in a ThreadSafeModule using its existing context.
 		llvm::orc::ThreadSafeContext TSCtx(std::unique_ptr<llvm::LLVMContext>(&llvmModule->getContext()));
 		std::unique_ptr<llvm::Module> mod(llvmModule);
 		llvm::orc::ThreadSafeModule TSM(std::move(mod), std::move(TSCtx));
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: calling compileLayer->add..." << std::endl;
 		auto err = compileLayer->add(mainJD, std::move(TSM));
+		if(err) {
+			std::string errStr;
+			llvm::raw_string_ostream errOS(errStr);
+			errOS << err;
+			std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: compileLayer->add FAILED: " << errStr << std::endl;
+		}
 		WAVM_ASSERT_THROW(!err);
 
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: calling ES.lookup to force materialization..." << std::endl;
 		// Force materialization of all symbols
 		auto sym = ES.lookup({&mainJD}, ES.intern("__force_materialization__"));
 		// We expect the lookup to fail (symbol doesn't exist), but by this point
 		// all other symbols will have been materialized. Consume the error.
-		if(!sym) llvm::consumeError(sym.takeError());
+		if(!sym) {
+			std::string errStr;
+			llvm::raw_string_ostream errOS(errStr);
+			errOS << sym.takeError();
+			std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: lookup result (expected fail): " << errStr << std::endl;
+		}
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: ORCv2 codegen complete" << std::endl;
 #else
 		llvm::orc::VModuleKey K = ES.allocateVModule();
 		std::unique_ptr<llvm::Module> mod(llvmModule);
