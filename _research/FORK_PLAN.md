@@ -39,7 +39,7 @@ C++ implementation of the Antelope protocol with Savanna (HotStuff-based BFT) co
 5. **Sub-second finality** — Sui (~400ms) and Aptos (~900ms) have pushed further
 
 ### Unique Advantage
-**EOSIO compatibility.** No other chain can offer existing EOSIO projects an upgrade path
+**EOSIO compatibility.** No other project can offer existing EOSIO projects an upgrade path
 to modern BFT consensus, parallel execution, and multi-architecture support. Thousands of
 deployed contracts work unmodified.
 
