@@ -440,12 +440,15 @@ namespace LLVMJIT
 		}
 
 		// Emit LLVM IR for the module.
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  instantiateModule: calling emitModule..." << std::endl;
 		auto llvmModule = emitModule(module);
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  instantiateModule: emitModule done, calling compile..." << std::endl;
 
 		// Construct the JIT compilation pipeline for this module.
 		auto jitModule = new JITModule();
 		// Compile the module.
 		jitModule->compile(llvmModule);
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  instantiateModule: compile done, code size=" << jitModule->final_pic_code.size() << std::endl;
 
 		unsigned num_functions_stack_size_found = 0;
 		for(const auto& stacksizes : jitModule->unitmemorymanager->stack_sizes) {
