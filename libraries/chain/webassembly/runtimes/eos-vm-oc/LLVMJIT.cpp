@@ -62,6 +62,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <memory>
 #include <unistd.h>
 #include <fstream>
+#include <sys/mman.h>
 
 #include "llvm/Support/LEB128.h"
 
@@ -127,8 +128,26 @@ namespace LLVMJIT
 
 		virtual bool needsToReserveAllocationSpace() override { return true; }
 		virtual void reserveAllocationSpace(uintptr_t numCodeBytes,U32 codeAlignment,uintptr_t numReadOnlyBytes,U32 readOnlyAlignment,uintptr_t numReadWriteBytes,U32 readWriteAlignment) override {
-			code = std::make_unique<std::vector<uint8_t>>(numCodeBytes + numReadOnlyBytes + numReadWriteBytes);
+			uintptr_t total = numCodeBytes + numReadOnlyBytes + numReadWriteBytes;
+#if defined(__aarch64__)
+			// On AArch64, ADRP+ADD/LDR addressing encodes page-relative offsets.
+			// The code blob will later be loaded at a page-aligned offset in the
+			// code cache (via mmap).  We must allocate at a page-aligned address
+			// here too so that ADRP-based references to constant pools and data
+			// sections within the blob remain correct after relocation.
+			void* aligned;
+			WAVM_ASSERT_THROW(posix_memalign(&aligned, 4096, total) == 0);
+			// Wrap in a vector with a custom-allocated buffer isn't straightforward,
+			// so we use mmap for the compilation buffer and copy into the vector
+			// in finalizeMemory.
+			code_aligned_alloc = (uint8_t*)aligned;
+			code_aligned_alloc_size = total;
+			code = std::make_unique<std::vector<uint8_t>>();
+			ptr = code_aligned_alloc;
+#else
+			code = std::make_unique<std::vector<uint8_t>>(total);
 			ptr = code->data();
+#endif
 		}
 		virtual U8* allocateCodeSection(uintptr_t numBytes,U32 alignment,U32 sectionID,llvm::StringRef sectionName) override
 		{
@@ -149,12 +168,34 @@ namespace LLVMJIT
 		}
 
 		virtual bool finalizeMemory(std::string* ErrMsg = nullptr) override {
+#if defined(__aarch64__)
+			// Copy the page-aligned buffer into the vector
+			uintptr_t used = ptr - code_aligned_alloc;
+			code->assign(code_aligned_alloc, code_aligned_alloc + used);
+			free(code_aligned_alloc);
+			code_aligned_alloc = nullptr;
+#else
 			code->resize(ptr - code->data());
+#endif
 			return false;  // false == success in RTDyldMemoryManager
 		}
 
 		std::unique_ptr<std::vector<uint8_t>> code;
 		uint8_t* ptr;
+#if defined(__aarch64__)
+		uint8_t* code_aligned_alloc = nullptr;
+		uintptr_t code_aligned_alloc_size = 0;
+#endif
+
+		// Returns the base address of the code allocation (for computing offsets).
+		// On AArch64 during compilation, code lives in the page-aligned buffer;
+		// after finalizeMemory, it's in the vector.
+		uint8_t* codeBase() const {
+#if defined(__aarch64__)
+			if(code_aligned_alloc) return code_aligned_alloc;
+#endif
+			return code->data();
+		}
 
 		std::vector<uint8_t> dumpster;
 		std::list<std::vector<uint8_t>> stack_sizes;
@@ -215,8 +256,10 @@ namespace LLVMJIT
 							if(symbolSection)
 								loadedAddress += (Uptr)o.getSectionLoadAddress(*symbolSection.get());
 							Uptr functionDefIndex;
-							if(getFunctionIndexFromExternalName(name->data(),functionDefIndex))
-								function_to_offsets[functionDefIndex] = loadedAddress-(uintptr_t)unitmemorymanager->code->data();
+							if(getFunctionIndexFromExternalName(name->data(),functionDefIndex)) {
+								uintptr_t base = (uintptr_t)unitmemorymanager->codeBase();
+								function_to_offsets[functionDefIndex] = loadedAddress - base;
+							}
 #if PRINT_DISASSEMBLY
 							disassembleFunction((U8*)loadedAddress, symbolSizePair.second);
 #endif
@@ -225,7 +268,8 @@ namespace LLVMJIT
 							auto symbolSection = symbol.getSection();
 							if(symbolSection)
 								loadedAddress += (Uptr)o.getSectionLoadAddress(*symbolSection.get());
-							table_offset = loadedAddress-(uintptr_t)unitmemorymanager->code->data();
+							uintptr_t base = (uintptr_t)unitmemorymanager->codeBase();
+							table_offset = loadedAddress - base;
 						}
 					}
 				});
@@ -315,7 +359,7 @@ namespace LLVMJIT
 												loadedAddress += (Uptr)o.getSectionLoadAddress(*symbolSection.get());
 											Uptr functionDefIndex;
 											if(getFunctionIndexFromExternalName(name->data(),functionDefIndex))
-												function_to_offsets[functionDefIndex] = loadedAddress-(uintptr_t)unitmemorymanager->code->data();
+												function_to_offsets[functionDefIndex] = loadedAddress-(uintptr_t)unitmemorymanager->codeBase();
 #if PRINT_DISASSEMBLY
 											disassembleFunction((U8*)loadedAddress, symbolSizePair.second);
 #endif
@@ -324,7 +368,7 @@ namespace LLVMJIT
 											auto symbolSection = symbol.getSection();
 											if(symbolSection)
 												loadedAddress += (Uptr)o.getSectionLoadAddress(*symbolSection.get());
-											table_offset = loadedAddress-(uintptr_t)unitmemorymanager->code->data();
+											table_offset = loadedAddress-(uintptr_t)unitmemorymanager->codeBase();
 										}
 									}
 							  }
