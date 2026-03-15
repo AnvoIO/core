@@ -60,7 +60,7 @@ option(ENABLE_OC "Enable eosvm-oc on supported platforms" ON)
 #  * definition CORE_NET_<RUNTIME>_RUNTIME_ENABLED defined in public libchain interface
 #  * ctest entries with --runtime
 if(ENABLE_OC AND CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)
-   if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64")
+   if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux" AND ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64"))
       list(APPEND CORE_NET_WASM_RUNTIMES vm-oc)
       # VM OC requires LLVM, but move the check up here to a central location so that the Tester.cmakes
       # can be created with the exact version found
@@ -69,6 +69,11 @@ if(ENABLE_OC AND CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)
 	      message(FATAL_ERROR "Requires LLVM version 7-11 or 14-17")
       endif()
    endif()
+endif()
+
+# Reserve X28 as the WASM memory base pointer on AArch64 (equivalent of GS segment on x86_64)
+if("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "aarch64" AND "vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
+   add_compile_options(-ffixed-x28)
 endif()
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)

@@ -6,10 +6,16 @@
 
 #include <core_net/chain/webassembly/eos-vm-oc/eos-vm-oc.h>
 
-#ifdef __clang__
-   #define GS_PTR __attribute__((address_space(256)))
+#if defined(__x86_64__) || defined(__amd64__)
+   #ifdef __clang__
+      #define GS_PTR __attribute__((address_space(256)))
+   #else
+      #define GS_PTR __seg_gs
+   #endif
+#elif defined(__aarch64__)
+   #define GS_PTR /* no special address space on AArch64 */
 #else
-   #define GS_PTR __seg_gs
+   #error "eos-vm-oc: unsupported architecture"
 #endif
 
 //This is really rather unfortunate, but on the upside it does allow a static assert to know if

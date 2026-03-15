@@ -17,10 +17,15 @@
 
 #include "IR/Types.h"
 
+#if defined(__x86_64__) || defined(__amd64__)
 #include <asm/prctl.h>
+#endif
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 #include <sys/mman.h>
+#if defined(__aarch64__)
+#include <ucontext.h>
+#endif
 
 #if defined(__has_feature)
 #if __has_feature(shadow_call_stack)
@@ -28,7 +33,9 @@
 #endif
 #endif
 
+#if defined(__x86_64__) || defined(__amd64__)
 extern "C" int arch_prctl(int code, unsigned long* addr);
+#endif
 
 namespace core_net::chain::eosvmoc {
 
@@ -38,9 +45,15 @@ static void(*chained_handler)(int,siginfo_t*,void*);
 static void segv_handler(int sig, siginfo_t* info, void* ctx)  {
    control_block* cb_in_main_segment;
 
-   //a 0 GS value is an indicator an executor hasn't been active on this thread recently
+   //a 0 base register value is an indicator an executor hasn't been active on this thread recently
+#if defined(__aarch64__)
+   // On AArch64, read X28 directly from the signal context — more reliable than calling a function
+   ucontext_t* uc = static_cast<ucontext_t*>(ctx);
+   uint64_t current_gs = uc->uc_mcontext.regs[28];
+#else
    uint64_t current_gs = eos_vm_oc_getgs();
-   if(eos_vm_oc_getgs() == 0)
+#endif
+   if(current_gs == 0)
       goto notus;
 
    cb_in_main_segment = reinterpret_cast<control_block*>(current_gs - memory::cb_offset);
