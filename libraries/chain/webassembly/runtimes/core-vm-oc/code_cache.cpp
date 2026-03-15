@@ -50,9 +50,7 @@ code_cache_async::code_cache_async(const std::filesystem::path& data_dir, const 
 }
 
 code_cache_async::~code_cache_async() {
-   std::unique_lock g(_mtx);
    _compile_monitor_write_socket.shutdown(local::datagram_protocol::socket::shutdown_send);
-   g.unlock();
    _monitor_reply_thread.join();
    consume_compile_thread_queue();
 }
@@ -79,29 +77,33 @@ void code_cache_async::wait_on_compile_monitor_message() {
 
       _compile_complete_func(_ctx, msg.code.code_id, msg.queued_time);
 
-      process_queued_compiles();
-
       wait_on_compile_monitor_message();
    });
 }
 
-//call with _mtx locked
-void code_cache_async::write_message(const digest_type& code_id, const corevmoc_message& message, std::span<wrapped_fd> fds) {
+//called from main thread
+void code_cache_async::write_message(const digest_type& code_id, const corevmoc_message& message, uint8_t vm_version) {
+   const code_object* const codeobject = _db.find<code_object,by_code_hash>(boost::make_tuple(code_id, 0, vm_version));
+   if(!codeobject) // not found so no longer needed
+      return;
+
    _outstanding_compiles_and_poison.emplace(code_id, false);
    ++_outstanding_compiles;
-   if (!write_message_with_fds(_compile_monitor_write_socket, message, fds)) {
-      wlog("EOS VM failed to communicate to OOP manager");
+
+   std::vector<wrapped_fd> fds_to_pass;
+   fds_to_pass.emplace_back(memfd_for_bytearray(codeobject->code));
+
+   if (!write_message_with_fds(_compile_monitor_write_socket, message, fds_to_pass)) {
+      wlog("Core VM OC failed to communicate to OOP manager");
    }
 }
 
-//called from non-main thread
+//called from main thread
 void code_cache_async::process_queued_compiles() {
-   std::lock_guard g(_mtx);
    while (_outstanding_compiles < _threads && !_queued_compiles.empty()) {
       auto nextup = _queued_compiles.begin();
 
-      auto fd = memfd_for_bytearray(nextup->code);
-      write_message(nextup->code_id(), nextup->msg, std::span<wrapped_fd>{&fd, 1});
+      write_message(nextup->code_id(), nextup->msg, nextup->vm_version);
 
       _queued_compiles.erase(nextup);
    }
@@ -110,17 +112,9 @@ void code_cache_async::process_queued_compiles() {
 //called from main thread
 //number processed, bytes available (only if number processed > 0)
 std::tuple<size_t, size_t> code_cache_async::consume_compile_thread_queue() {
-   std::unique_lock g(_mtx);
-   // will be relatively small, ~ _threads. Can be larger than _threads if multiple compiles finish before
-   // consume_compile_thread_queue() is called on the main thread
-   auto outstanding_compiles = _outstanding_compiles_and_poison;
-   g.unlock();
-
-   std::vector<digest_type> erased;
-   erased.reserve(outstanding_compiles.size());
    size_t bytes_remaining = 0;
    size_t gotsome = _result_queue.consume_all([&](const wasm_compilation_result_message& result) {
-      if(outstanding_compiles[result.code.code_id] == false) {
+      if(_outstanding_compiles_and_poison[result.code.code_id] == false) {
          std::visit(overloaded {
             [&](const code_descriptor& cd) {
                _cache_index.push_front(cd);
@@ -130,20 +124,14 @@ std::tuple<size_t, size_t> code_cache_async::consume_compile_thread_queue() {
                _blacklist.emplace(result.code.code_id);
             },
             [&](const compilation_result_toofull&) {
-               run_eviction_round(); // call without mutex lock
+               run_eviction_round();
             }
          }, result.result);
       }
-      erased.push_back(result.code.code_id);
+      [[maybe_unused]] const auto c = _outstanding_compiles_and_poison.erase(result.code.code_id);
+      assert(c > 0);
       bytes_remaining = result.cache_free_bytes;
    });
-
-   g.lock();
-   for (const auto& e : erased) {
-      [[maybe_unused]] const auto c = _outstanding_compiles_and_poison.erase(e);
-      assert(c > 0);
-   }
-   g.unlock();
 
    return {gotsome, bytes_remaining};
 }
@@ -155,6 +143,8 @@ code_cache_async::get_descriptor_for_code(mode m, account_name receiver, const d
    //When app is in write window, all tasks are running sequentially and read-only threads
    //are not running. Safe to update cache entries.
    if(m.write_window) {
+      process_queued_compiles();
+
       auto [count_processed, bytes_remaining] = consume_compile_thread_queue();
 
       if(count_processed)
@@ -180,7 +170,6 @@ code_cache_async::get_descriptor_for_code(mode m, account_name receiver, const d
       // whitelisted, remove from blacklist and allow to try compile again
       _blacklist.erase(code_id);
    }
-   std::unique_lock g(_mtx);
    if(auto it = _outstanding_compiles_and_poison.find(code_id); it != _outstanding_compiles_and_poison.end()) {
       failure = get_cd_failure::temporary; // Compile might not be done yet
       it->second = false;
@@ -188,13 +177,6 @@ code_cache_async::get_descriptor_for_code(mode m, account_name receiver, const d
    }
    if(_queued_compiles.get<by_hash>().contains(code_id)) {
       failure = get_cd_failure::temporary; // Compile might not be done yet
-      return nullptr;
-   }
-   g.unlock();
-
-   const code_object* const codeobject = _db.find<code_object,by_code_hash>(boost::make_tuple(code_id, 0, vm_version));
-   if(!codeobject) { //should be impossible right?
-      failure = get_cd_failure::permanent; // Compile will not start
       return nullptr;
    }
 
@@ -206,19 +188,16 @@ code_cache_async::get_descriptor_for_code(mode m, account_name receiver, const d
       .limits = !m.whitelisted ? _corevmoc_config.non_whitelisted_limits : std::optional<subjective_compile_limits>{}
    };
 
-   g.lock();
    if(_outstanding_compiles >= _threads) {
-      std::vector<char> code{codeobject->code.begin(), codeobject->code.end()};
       if (m.high_priority)
-         _queued_compiles.emplace_front(std::move(msg), std::move(code));
+         _queued_compiles.emplace_front(std::move(msg), vm_version);
       else
-         _queued_compiles.emplace_back(std::move(msg), std::move(code));
+         _queued_compiles.emplace_back(std::move(msg), vm_version);
       failure = get_cd_failure::temporary; // Compile might not be done yet
       return nullptr;
    }
 
-   auto fd = memfd_for_bytearray(codeobject->code);
-   write_message(code_id, msg, std::span<wrapped_fd>{&fd, 1});
+   write_message(code_id, msg, vm_version);
    failure = get_cd_failure::temporary; // Compile might not be done yet
    return nullptr;
 }
@@ -437,7 +416,6 @@ code_cache_base::~code_cache_base() {
 void code_cache_base::free_code(const digest_type& code_id, const uint8_t& vm_version) {
    code_cache_index::index<by_hash>::type::iterator it = _cache_index.get<by_hash>().find(code_id);
 
-   std::lock_guard g(_mtx);
    if(it != _cache_index.get<by_hash>().end()) {
       write_message_with_fds(_compile_monitor_write_socket, evict_wasms_message{ {*it} });
       _cache_index.get<by_hash>().erase(it);
@@ -462,7 +440,6 @@ void code_cache_base::run_eviction_round() {
       evict_msg.codes.emplace_back(_cache_index.back());
       _cache_index.pop_back();
    }
-   std::lock_guard g(_mtx);
    write_message_with_fds(_compile_monitor_write_socket, evict_msg);
 }
 
