@@ -60,6 +60,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "llvm/Transforms/Utils.h"
 #include <memory>
 #include <unistd.h>
+#include <fstream>
 
 #include "llvm/Support/LEB128.h"
 
@@ -360,7 +361,11 @@ namespace LLVMJIT
 			std::string verifyOutputString;
 			llvm::raw_string_ostream verifyOutputStream(verifyOutputString);
 			if(llvm::verifyModule(*llvmModule,&verifyOutputStream))
-			{ Errors::fatalf("LLVM verification errors:\n%s\n",verifyOutputString.c_str()); }
+			{
+				std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
+					<< "LLVM verification errors:\n" << verifyOutputString << std::endl;
+				Errors::fatalf("LLVM verification errors:\n%s\n",verifyOutputString.c_str());
+			}
 			///Log::printf(Log::Category::debug,"Verified LLVM module\n");
 		}
 

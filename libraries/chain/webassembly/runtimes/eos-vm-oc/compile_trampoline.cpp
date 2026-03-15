@@ -7,6 +7,7 @@
 #include <sys/prctl.h>
 #include <signal.h>
 #include <sys/resource.h>
+#include <fstream>
 
 #include "IR/Module.h"
 #include "IR/Validate.h"
@@ -212,10 +213,12 @@ void run_compile_trampoline(int fd) {
             run_compile(std::move(fds[0]), std::move(fds[1]), stack_size, generated_code_size_limit,
                         msg.log_level, msg.receiver, msg.queued_time);
          } catch(const std::exception& e) {
-            std::cerr << "EOS VM OC compile failed: " << e.what() << std::endl;
+            std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
+               << "EOS VM OC compile failed: " << e.what() << std::endl;
             _exit(1);
          } catch(...) {
-            std::cerr << "EOS VM OC compile failed: unknown exception" << std::endl;
+            std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
+               << "EOS VM OC compile failed: unknown exception" << std::endl;
             _exit(1);
          }
          _exit(0);
