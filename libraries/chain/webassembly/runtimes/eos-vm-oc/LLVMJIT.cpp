@@ -358,7 +358,7 @@ namespace LLVMJIT
 	void printModule(const llvm::Module* llvmModule,const char* filename)
 	{
 		std::error_code errorCode;
-		std::string augmentedFilename = std::string("/tmp/") + filename + std::to_string(printedModuleId++) + ".ll";
+		std::string augmentedFilename = std::string("/tmp/") + filename + std::to_string(getpid()) + "_" + std::to_string(printedModuleId++) + ".ll";
 #if LLVM_VERSION_MAJOR >= 12
 		llvm::raw_fd_ostream dumpFileStream(augmentedFilename,errorCode,llvm::sys::fs::OF_Text);
 #else
