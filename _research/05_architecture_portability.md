@@ -10,7 +10,7 @@ No EOSIO-based chain runs in production on anything other than x86_64.
 
 | Platform | eos-vm (Interpreter) | eos-vm-jit | eos-vm-oc |
 |----------|---------------------|------------|-----------|
-| Linux x86_64 | YES | YES | YES (requires LLVM) |
+| Linux x86_64 | YES | YES | YES (LLVM 7-11 or 14-17) |
 | Linux AArch64 | YES | NO | NO |
 | macOS x86_64 | YES | NO | NO |
 | macOS ARM (Apple Silicon) | YES | NO | NO |
