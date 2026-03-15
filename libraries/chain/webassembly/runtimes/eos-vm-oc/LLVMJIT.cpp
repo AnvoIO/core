@@ -32,6 +32,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #if LLVM_VERSION_MAJOR >= 12
 #include "llvm/ExecutionEngine/Orc/ThreadSafeModule.h"
 #include "llvm/ExecutionEngine/Orc/ExecutorProcessControl.h"
+#include "llvm/ExecutionEngine/Orc/ExecutionUtils.h"
 #endif
 
 #include "llvm/Analysis/Passes.h"
@@ -185,6 +186,12 @@ namespace LLVMJIT
 				std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
 					<< "  ORCv2 ERROR: " << errStr << std::endl;
 			});
+			// Allow outlined helper functions (e.g. __aarch64_*) to be resolved
+			// from the current process, analogous to ORCv1's NullResolver falling
+			// back to process symbols.
+			auto dlsg = llvm::orc::DynamicLibrarySearchGenerator::GetForCurrentProcess(
+				targetMachine->createDataLayout().getGlobalPrefix());
+			if(dlsg) mainJD.addGenerator(std::move(*dlsg));
 			objectLayer = std::make_unique<llvm::orc::RTDyldObjectLinkingLayer>(ES,[this]() {
 									return std::unique_ptr<llvm::RuntimeDyld::MemoryManager>(
 										std::make_unique<MemoryManagerForwarder>(*this));
