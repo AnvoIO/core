@@ -303,31 +303,45 @@ other breaking changes in the LLVM C++ API.
   will need to be replaced. This is a larger refactor of `LLVMEmitIR.cpp`.
 - LLVM 16+: `llvm/Support/Host.h` moves to `llvm/TargetParser/Host.h`
 
-#### 1F. AArch64 Support (~3 months, parallel with 1C/1D, depends on 1E)
+#### 1F. AArch64 Support (depends on 1E)
 **Goal:** Production-quality ARM server support for eos-vm-oc runtime.
 
-**Strategy:** Port eos-vm-oc from x86_64 to AArch64 using dedicated register X28
-as replacement for x86_64 GS segment register. This is the approach used by V8,
-SpiderMonkey, and Wasmtime on ARM.
+**Status: IN PROGRESS** (branch `aarch64/eos-vm-oc`, 7 commits)
 
-**Depends on:** 1E (LLVM modernization) — LLVM must support AArch64 backend,
-which all modern LLVM versions do natively.
+**Strategy:** Dedicated register X28 via `-ffixed-x28`, matching V8/SpiderMonkey/Wasmtime.
 
-**Key changes (10 files requiring modification):**
+**What's done (builds 100% on both x86_64 and AArch64):**
 
-| Component | Change | Effort |
-|-----------|--------|--------|
-| `gs_seg_helpers.h/c` | Abstract GS→X28, architecture macros | 1 week |
-| `LLVMEmitIR.cpp` | Replace `address_space(256)` with X28 base register | 3-4 weeks |
-| `switch_stack_linux.s` | New AArch64 stack switching assembly | 1 day |
-| `executor.cpp` | Signal handler reads X28 from ucontext | 1 week |
-| `memory.hpp/cpp` | Runtime page size detection (4KB/64KB) | 1 week |
-| `CMakeLists.txt` | AArch64 detection, `-ffixed-x28` flag | 1 day |
-| `city.cpp` | ARM CRC32 intrinsic path | 1 day |
-| `secp256k1` | C fallback (automatic, no changes) | — |
+| Component | File(s) | Status |
+|-----------|---------|--------|
+| Build system | `CMakeLists.txt` (root + chain) | ✓ OC enabled on aarch64, `-ffixed-x28` global |
+| GS abstraction | `gs_seg_helpers.h/c` | ✓ Arch-conditional GS_PTR, X28 inline asm get/set |
+| Stack switching | `switch_stack_linux_aarch64.s` | ✓ New AArch64 assembly with AAPCS64 frame save |
+| Signal handler | `executor.cpp` | ✓ Reads X28 from ucontext on AArch64 |
+| LLVM IR generation | `LLVMEmitIR.cpp` | ✓ VMEM_ADDR_SPACE constant, emitVmemPointer(), resolveVmemPtr(), per-function X28 load via llvm.read_register |
+| LLVM JIT target | `LLVMJIT.cpp` | ✓ `+reserve-x28` target feature for codegen |
+| Host function asm | `eos-vm-oc.hpp` | ✓ 5 inline asm blocks ported (array_ptr, null_term, convert_native, depth check, ctx load) |
+| Memory layout | `memory.cpp` | ✓ Runtime 4KB page size assertion for AArch64 |
+| CRC32 | `city.cpp` | ✓ ARM CRC32 intrinsic via `arm_acle.h` |
+| Pagemap | `pagemap_accessor.hpp` | ✓ Enabled on aarch64 |
+| Tests | `eosvmoc_platform_tests.cpp` | ✓ 4 new tests (register r/w, memory constants, smoke, multi-contract) |
+| Test config | `unittests/CMakeLists.txt` | ✓ Guard nofsgs tests to x86_64 only |
+| zlib fix | `libraries/libfc/test/CMakeLists.txt` | ✓ Explicit ZLIB dep for test_fc (ARM link order) |
 
-**No contract changes required.** WASM is the abstraction boundary — contracts are
-architecture-neutral bytecode.
+**AArch64 test results:**
+- ✓ `eosvmoc_platform_tests` — 4/4 PASS (X28 register works, memory layout correct, contracts execute)
+- ✓ `eosvmoc_limits_tests` — 6/6 PASS (OC configuration and limits)
+- ✗ `wasm_part1_tests --eos-vm-oc` — 44 failures: OC compile subprocess returns `compilation_result_unknownfailure`
+
+**Remaining work:** Debug OC compilation failure on AArch64. The LLVM IR generation
+runs in a forked subprocess; the child exits 0 but the compilation result is an error.
+Likely cause: `llvm.read_register("x28")` usage in LLVMEmitIR.cpp, the `+reserve-x28`
+feature interaction with LLVM 14's AArch64 backend, or address space 0 pointer
+arithmetic issues. The x86_64 GS-segment pattern uses `inttoptr(offset)` in AS 256;
+the AArch64 equivalent needs `GEP(x28_base, offset)` in AS 0 — the `emitVmemPointer`
+and `resolveVmemPtr` helpers implement this but may have semantic issues.
+
+**ARM test server:** `ubuntu@34.213.225.55` (Ubuntu 24.04, aarch64, 8 cores, 15GB RAM)
 
 **Detailed plan:** [06_aarch64_port_implementation.md](06_aarch64_port_implementation.md)
 
@@ -696,9 +710,11 @@ Claude. These team estimates are for the full scope if expanding beyond that mod
 - AArch64 architecture (for ARM port)
 
 ### Build Environment
-- **Verified:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6
+- **x86_64:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6 — verified 100%
+- **AArch64:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6 — builds 100%, OC runtime testing in progress
 - **eos-vm-oc:** Builds with LLVM 7-11 or LLVM 14-17. Ubuntu 24.04 uses `llvm-14-dev`.
-- **Full build:** `-DENABLE_OC=ON -DCMAKE_BUILD_TYPE=Release` — all runtimes (interpreter + JIT + OC)
+- **Full build:** `-DENABLE_OC=ON -DCMAKE_BUILD_TYPE=Release` — all runtimes
+- **AArch64 runtimes:** interpreter (vm) + OC (vm-oc). No vm-jit on ARM (no backend).
 
 ---
 
