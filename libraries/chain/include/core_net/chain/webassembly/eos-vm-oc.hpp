@@ -21,8 +21,8 @@ namespace core_net { namespace chain { namespace webassembly { namespace eosvmoc
 #if defined(__aarch64__)
 // Helper to get control block pointer from X28 on AArch64.
 // On x86_64 this is handled via %gs: segment inline asm.
-inline eosvmoc::control_block* get_cb_from_base_reg() {
-   return reinterpret_cast<eosvmoc::control_block*>((char*)eos_vm_oc_getgs() + CORE_NET_VM_OC_CONTROL_BLOCK_OFFSET);
+inline control_block* get_cb_from_base_reg() {
+   return reinterpret_cast<control_block*>((char*)eos_vm_oc_getgs() + CORE_NET_VM_OC_CONTROL_BLOCK_OFFSET);
 }
 #endif
 
