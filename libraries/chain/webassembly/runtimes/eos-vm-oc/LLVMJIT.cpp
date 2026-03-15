@@ -396,9 +396,8 @@ namespace LLVMJIT
 
 #if LLVM_VERSION_MAJOR >= 12
 		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: verify+optimize done, entering ORCv2 codegen..." << std::endl;
-		auto ctx = std::make_unique<llvm::LLVMContext>();
-		// The module was created with a different context; we need to transfer ownership.
-		// We wrap the raw module pointer in a ThreadSafeModule using its existing context.
+		// The LLVMContext is heap-allocated (see LLVMEmitIR.cpp) so
+		// ThreadSafeContext can take ownership via unique_ptr.
 		llvm::orc::ThreadSafeContext TSCtx(std::unique_ptr<llvm::LLVMContext>(&llvmModule->getContext()));
 		std::unique_ptr<llvm::Module> mod(llvmModule);
 		llvm::orc::ThreadSafeModule TSM(std::move(mod), std::move(TSCtx));
