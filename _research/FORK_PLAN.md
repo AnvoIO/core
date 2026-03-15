@@ -388,12 +388,16 @@ calls resolve correctly, and compiled WASM contracts execute successfully.
   - `f64_tests` (×2), `f64_test_bitwise` (×2), `f64_test_cmp` (×2),
     `f32_f64_conversion_tests` (×2)
 
-**Remaining work:** Debug f64 test failures. These pass with the eos-vm interpreter
+**Remaining work:** Debug 8 f64 test failures. These pass with the eos-vm interpreter
 but fail with OC on AArch64 (x86_64 OC passes all). All float opcodes ARE injected
 through softfloat (verified — `wasm_injection.hpp` rewrites all float ops including
-promote/demote/comparisons into calls to `_core_net_f*` intrinsics). The issue is
-likely in how the OC JIT handles the calling convention for softfloat intrinsics on
-AArch64, or how f64 values are stored/loaded from WASM linear memory.
+promote/demote/comparisons into calls to `_core_net_f*` intrinsics). The softfloat
+functions produce correct results when called directly from C++ on AArch64. The
+failing assertion is test case 61: `assert_return_nan32(f32_demote_f64(-nan))` — the
+result of `_core_net_f64_demote(-nan)` is not recognized as NaN when called through
+the JIT. Likely cause: NaN bit pattern corruption in the JIT→host function call path,
+possibly in how `f64.const -nan` is emitted as an LLVM constant (`APFloat(double)`
+may canonicalize NaN), or in how f32 return values are handled on AArch64.
 
 **Debug instrumentation in place** (to be removed after fix): VERIFY_MODULE=1,
 DUMP_OPTIMIZED_MODULE=1, checkpoint logging to /tmp/oc_compile_error.log, crash
