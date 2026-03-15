@@ -303,31 +303,109 @@ other breaking changes in the LLVM C++ API.
   will need to be replaced. This is a larger refactor of `LLVMEmitIR.cpp`.
 - LLVM 16+: `llvm/Support/Host.h` moves to `llvm/TargetParser/Host.h`
 
-#### 1F. AArch64 Support (~3 months, parallel with 1C/1D, depends on 1E)
+#### 1F. AArch64 Support (depends on 1E)
 **Goal:** Production-quality ARM server support for eos-vm-oc runtime.
 
-**Strategy:** Port eos-vm-oc from x86_64 to AArch64 using dedicated register X28
-as replacement for x86_64 GS segment register. This is the approach used by V8,
-SpiderMonkey, and Wasmtime on ARM.
+**Status: COMPLETE** (branch `aarch64/eos-vm-oc`, ~30 commits)
 
-**Depends on:** 1E (LLVM modernization) — LLVM must support AArch64 backend,
-which all modern LLVM versions do natively.
+**Strategy:** Dedicated register X28 via `-ffixed-x28`, matching V8/SpiderMonkey/Wasmtime.
 
-**Key changes (10 files requiring modification):**
+**What's done (builds 100% on both x86_64 and AArch64):**
 
-| Component | Change | Effort |
-|-----------|--------|--------|
-| `gs_seg_helpers.h/c` | Abstract GS→X28, architecture macros | 1 week |
-| `LLVMEmitIR.cpp` | Replace `address_space(256)` with X28 base register | 3-4 weeks |
-| `switch_stack_linux.s` | New AArch64 stack switching assembly | 1 day |
-| `executor.cpp` | Signal handler reads X28 from ucontext | 1 week |
-| `memory.hpp/cpp` | Runtime page size detection (4KB/64KB) | 1 week |
-| `CMakeLists.txt` | AArch64 detection, `-ffixed-x28` flag | 1 day |
-| `city.cpp` | ARM CRC32 intrinsic path | 1 day |
-| `secp256k1` | C fallback (automatic, no changes) | — |
+| Component | File(s) | Status |
+|-----------|---------|--------|
+| Build system | `CMakeLists.txt` (root + chain) | ✓ OC enabled on aarch64, `-ffixed-x28` global |
+| GS abstraction | `gs_seg_helpers.h/c` | ✓ Arch-conditional GS_PTR, X28 inline asm get/set |
+| Stack switching | `switch_stack_linux_aarch64.s` | ✓ New AArch64 assembly with AAPCS64 frame save |
+| Signal handler | `executor.cpp` | ✓ Reads X28 from ucontext on AArch64 |
+| LLVM IR generation | `LLVMEmitIR.cpp` | ✓ VMEM_ADDR_SPACE constant, emitVmemPointer(), resolveVmemPtr(), per-function X28 load via llvm.read_register |
+| LLVM JIT target | `LLVMJIT.cpp` | ✓ `+reserve-x28` target feature for codegen |
+| Host function asm | `eos-vm-oc.hpp` | ✓ 5 inline asm blocks ported (array_ptr, null_term, convert_native, depth check, ctx load) |
+| Memory layout | `memory.cpp` | ✓ Runtime 4KB page size assertion for AArch64 |
+| CRC32 | `city.cpp` | ✓ ARM CRC32 intrinsic via `arm_acle.h` |
+| Pagemap | `pagemap_accessor.hpp` | ✓ Enabled on aarch64 |
+| Tests | `eosvmoc_platform_tests.cpp` | ✓ 4 new tests (register r/w, memory constants, smoke, multi-contract) |
+| Test config | `unittests/CMakeLists.txt` | ✓ Guard nofsgs tests to x86_64 only |
+| zlib fix | `libraries/libfc/test/CMakeLists.txt` | ✓ Explicit ZLIB dep for test_fc (ARM link order) |
+| ORCv2 context ownership | `LLVMEmitIR.cpp`, `LLVMJIT.cpp` | ✓ Heap-allocate LLVMContext for proper ThreadSafeContext ownership |
+| ORCv2 finalizeMemory | `LLVMJIT.cpp` | ✓ Fix return value (false=success, was returning true=error) |
+| Stack sizes check | `LLVMJIT.cpp` | ✓ Allow extra .stack_sizes entries from AArch64 outlined helpers |
+| tee_local fix | `LLVMEmitIR.cpp` | ✓ Don't resolve local pointers as vmem globals |
+| Table access via CB | `eos-vm-oc.h`, `ipc_protocol.hpp`, `eos-vm-oc.hpp`, `compile_trampoline.cpp`, `compile_monitor.cpp`, `executor.cpp`, `LLVMEmitIR.cpp` | ✓ Load table base from control block via X28 (avoids ADRP page-alignment issue) |
+| Stack sizes trailing | `LLVMJIT.cpp` | ✓ Handle trailing address at end of .stack_sizes section |
 
-**No contract changes required.** WASM is the abstraction boundary — contracts are
-architecture-neutral bytecode.
+**Bugs found and fixed during debug session (2026-03-15):**
+
+1. **Heap corruption (SIGABRT):** The file-scope `LLVMContext` in LLVMEmitIR.cpp was
+   wrapped in a `unique_ptr` and given to ORCv2's `ThreadSafeContext`. When ORCv2
+   moved the `ThreadSafeModule` during `IRCompileLayer::emit`, the source destructor
+   called `delete` on the non-heap context → heap corruption → SIGABRT in `__libc_free`.
+   Fix: `llvm::LLVMContext& context = *new llvm::LLVMContext;` (heap allocation).
+   This bug was latent on x86_64 (ORCv1 path didn't trigger it).
+
+2. **Materialization failure:** `UnitMemoryManager::finalizeMemory()` returned `true`
+   (= error in LLVM's RTDyldMemoryManager convention). The ORCv1 path never checked
+   this return value, but ORCv2's `RTDyldObjectLinkingLayer` does — it reported
+   "Failed to materialize symbols" for all wasmFunc* symbols even though code was
+   successfully compiled and loaded. Fix: return `false` (= success). This bug was
+   also latent on x86_64.
+
+3. **Stack sizes assertion:** LLVM's AArch64 backend generates outlined save/restore
+   helper functions that produce extra `.stack_sizes` entries (225 entries for 70 WASM
+   functions). The strict `==` check caused `_exit(1)`. Fix: changed to `>=` (require
+   at least as many entries as function defs).
+
+4. **tee_local vmem resolution (SIGSEGV):** `tee_local` in LLVMEmitIR.cpp called
+   `get_mutable_global_ptr()` on local variable pointers (stack allocas). On x86_64
+   `resolveVmemPtr` is a no-op so this was harmless, but on AArch64 it added X28 to
+   the stack address → garbage pointer → SIGSEGV. Found by dumping optimized LLVM IR
+   which showed `ptrtoint(alloca) + X28` pattern. Fix: store directly to
+   `localPointers[]`, matching `set_local` behavior.
+
+5. **ADRP page-relative table access (indirect call type mismatch):** On AArch64,
+   ADRP+ADD is page-relative — the encoded page difference is only correct if the
+   code blob is loaded at the same 4KB page alignment as where LLVM compiled it. The
+   OC code cache allocator doesn't guarantee page alignment (uses 16-byte aligned
+   `rbtree_best_fit`), so ADRP+ADD references to the `wasmTable` global pointed to
+   wrong memory → type descriptor mismatch → "Indirect call function type mismatch".
+   Fix: store `table_base` in the control block (accessible via X28) and load it
+   per-function instead of using a PC-relative global reference. Added `table_offset`
+   to `code_compilation_result_message`, `code_descriptor`, and the IPC path.
+
+6. **Trailing .stack_sizes entry:** The `.stack_sizes` section on AArch64 can end with
+   a trailing address that fills remaining space exactly, with no room for the
+   following ULEB128 stack size value. Fix: break parse loop when address read reaches
+   section boundary.
+
+**OC compilation and execution now works on AArch64.** IR verification passes, LLVM
+codegen produces position-independent code, ORCv2 materialization completes, indirect
+calls resolve correctly, and compiled WASM contracts execute successfully.
+
+**AArch64 test results (44 → 8 failures):**
+- ✓ `eosvmoc_platform_tests` — 4/4 PASS
+- ✓ `eosvmoc_limits_tests` — 6/6 PASS
+- ✗ `wasm_part1_tests --eos-vm-oc` — **8 failures** (down from 44):
+  - `f64_tests` (×2), `f64_test_bitwise` (×2), `f64_test_cmp` (×2),
+    `f32_f64_conversion_tests` (×2)
+
+7. **Page-aligned code allocation (constant pool references):** Same root cause as
+   bug 5 — ADRP page-relative addressing also affects constant pool and literal
+   pool references within the code blob. Float constants loaded via ADRP+LDR from
+   a misaligned blob produced garbage values, causing f64 test failures. Fix:
+   page-align the compilation buffer (posix_memalign) AND the code cache allocator
+   (4096-byte alignment instead of 16-byte default).
+
+**All tests now pass on AArch64:**
+- `eosvmoc_platform_tests` — 4/4 PASS
+- `eosvmoc_limits_tests` — 6/6 PASS
+- `wasm_part1_tests --eos-vm-oc` — ALL PASS (0 failures)
+
+**x86_64 tests also pass** — no regressions from the AArch64 changes.
+
+**Debug instrumentation removed.** All temporary logging, crash handlers, and
+IR dump helpers have been cleaned up. Only the actual fixes remain.
+
+**ARM test server:** `ubuntu@34.213.225.55` (Ubuntu 24.04, aarch64, 8 cores, 15GB RAM)
 
 **Detailed plan:** [06_aarch64_port_implementation.md](06_aarch64_port_implementation.md)
 
@@ -696,9 +774,11 @@ Claude. These team estimates are for the full scope if expanding beyond that mod
 - AArch64 architecture (for ARM port)
 
 ### Build Environment
-- **Verified:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6
+- **x86_64:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6 — verified 100%
+- **AArch64:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6 — builds 100%, OC runtime testing in progress
 - **eos-vm-oc:** Builds with LLVM 7-11 or LLVM 14-17. Ubuntu 24.04 uses `llvm-14-dev`.
-- **Full build:** `-DENABLE_OC=ON -DCMAKE_BUILD_TYPE=Release` — all runtimes (interpreter + JIT + OC)
+- **Full build:** `-DENABLE_OC=ON -DCMAKE_BUILD_TYPE=Release` — all runtimes
+- **AArch64 runtimes:** interpreter (vm) + OC (vm-oc). No vm-jit on ARM (no backend).
 
 ---
 

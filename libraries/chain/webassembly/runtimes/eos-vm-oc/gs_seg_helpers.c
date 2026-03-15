@@ -1,8 +1,11 @@
 #include <core_net/chain/webassembly/eos-vm-oc/gs_seg_helpers.h>
 
+#include <sys/mman.h>
+
+#if defined(__x86_64__) || defined(__amd64__)
+
 #include <asm/prctl.h>
 #include <sys/prctl.h>
-#include <sys/mman.h>
 #include <sys/auxv.h>
 #include <elf.h>
 #include <immintrin.h>
@@ -14,6 +17,16 @@ int arch_prctl(int code, unsigned long* addr);
 #endif
 
 #define EOSVMOC_MEMORY_PTR_cb_ptr GS_PTR struct eos_vm_oc_control_block* const cb_ptr = ((GS_PTR struct eos_vm_oc_control_block* const)(CORE_NET_VM_OC_CONTROL_BLOCK_OFFSET));
+
+#elif defined(__aarch64__)
+
+// On AArch64, X28 is reserved as the WASM memory base pointer (via -ffixed-x28).
+// The control block is at a fixed negative offset from the base.
+#define EOSVMOC_MEMORY_PTR_cb_ptr \
+   struct eos_vm_oc_control_block* const cb_ptr = \
+      (struct eos_vm_oc_control_block*)((char*)eos_vm_oc_getgs() + CORE_NET_VM_OC_CONTROL_BLOCK_OFFSET);
+
+#endif
 
 int32_t eos_vm_oc_grow_memory(int32_t grow, int32_t max) {
    EOSVMOC_MEMORY_PTR_cb_ptr;
@@ -71,6 +84,10 @@ void* eos_vm_oc_get_bounce_buffer_list() {
    return cb_ptr->bounce_buffers;
 }
 
+// --- Architecture-specific base register access ---
+
+#if defined(__x86_64__) || defined(__amd64__)
+
 uint64_t eos_vm_oc_getgs_syscall() {
    uint64_t gs;
    arch_prctl(ARCH_GET_GS, &gs);
@@ -123,3 +140,20 @@ void (*resolve_eos_vm_oc_setgs())(uint64_t) {
 }
 
 void eos_vm_oc_setgs(uint64_t) __attribute__ ((ifunc ("resolve_eos_vm_oc_setgs")));
+
+#elif defined(__aarch64__)
+
+// On AArch64, X28 is the dedicated WASM memory base register.
+// -ffixed-x28 ensures the compiler never touches it.
+
+uint64_t eos_vm_oc_getgs() {
+   uint64_t val;
+   __asm__ volatile("mov %0, x28" : "=r"(val));
+   return val;
+}
+
+void eos_vm_oc_setgs(uint64_t val) {
+   __asm__ volatile("mov x28, %0" :: "r"(val));
+}
+
+#endif

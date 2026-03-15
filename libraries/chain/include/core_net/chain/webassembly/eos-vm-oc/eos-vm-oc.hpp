@@ -31,6 +31,7 @@ struct code_descriptor {
    size_t code_begin;
    eosvmoc_optional_offset_or_import_t start;
    unsigned apply_offset;
+   unsigned table_offset;  // offset of indirect call table within code blob
    int starting_memory_pages;
    size_t initdata_begin;
    unsigned initdata_size;
@@ -51,6 +52,6 @@ static constexpr uint8_t current_codegen_version = 2;
 FC_REFLECT(core_net::chain::eosvmoc::no_offset, );
 FC_REFLECT(core_net::chain::eosvmoc::code_offset, (offset));
 FC_REFLECT(core_net::chain::eosvmoc::intrinsic_ordinal, (ordinal));
-FC_REFLECT(core_net::chain::eosvmoc::code_descriptor, (code_hash)(vm_version)(codegen_version)(code_begin)(start)(apply_offset)(starting_memory_pages)(initdata_begin)(initdata_size)(initdata_prologue_size));
+FC_REFLECT(core_net::chain::eosvmoc::code_descriptor, (code_hash)(vm_version)(codegen_version)(code_begin)(start)(apply_offset)(table_offset)(starting_memory_pages)(initdata_begin)(initdata_size)(initdata_prologue_size));
 
 #define EOSVMOC_INTRINSIC_INIT_PRIORITY __attribute__((init_priority(198)))

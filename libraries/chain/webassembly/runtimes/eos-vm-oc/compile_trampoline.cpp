@@ -18,7 +18,7 @@ using namespace IR;
 namespace core_net { namespace chain { namespace eosvmoc {
 
 void run_compile(wrapped_fd&& response_sock, wrapped_fd&& wasm_code, uint64_t stack_size_limit, size_t generated_code_size_limit,
-                 fc::log_level log_level, account_name receiver, fc::time_point queued_time) noexcept {  //noexcept; we'll just blow up if anything tries to cross this boundry
+                 fc::log_level log_level, account_name receiver, fc::time_point queued_time) noexcept {
    fc::time_point start = fc::time_point::now();
    std::vector<uint8_t> wasm = vector_for_memfd(wasm_code);
 
@@ -54,6 +54,7 @@ void run_compile(wrapped_fd&& response_sock, wrapped_fd&& wasm_code, uint64_t st
          result_message.apply_offset = function_to_offsets.at(exprt.index-module.functions.imports.size());
    }
 
+   result_message.table_offset = code.table_offset;
    result_message.starting_memory_pages = -1;
    if(module.memories.size())
       result_message.starting_memory_pages = module.memories.defs.at(0).type.size.min;

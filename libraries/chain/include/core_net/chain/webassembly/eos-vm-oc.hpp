@@ -18,6 +18,13 @@
 
 namespace core_net { namespace chain { namespace webassembly { namespace eosvmoc {
 
+// On AArch64, X28 holds the WASM memory base. This macro computes a pointer
+// to the control block from X28, equivalent to the %gs: segment on x86_64.
+#if defined(__aarch64__)
+#define EOSVMOC_CB_FROM_BASE_REG() \
+   reinterpret_cast<core_net::chain::eosvmoc::control_block*>((char*)eos_vm_oc_getgs() + CORE_NET_VM_OC_CONTROL_BLOCK_OFFSET)
+#endif
+
 using namespace IR;
 using namespace fc;
 
@@ -70,6 +77,7 @@ inline void* array_ptr_impl (size_t ptr, size_t length)
 
    size_t end = ptr + length*sizeof(T);
 
+#if defined(__x86_64__) || defined(__amd64__)
    asm volatile("cmp %%gs:%c[firstInvalidMemory], %[End]\n"
                 "jle 1f\n"
                 "mov %%gs:%c[firstInvalidMemory], %[End]\n"      // sets End with a known failing address
@@ -84,6 +92,17 @@ inline void* array_ptr_impl (size_t ptr, size_t length)
                   [sizeOfOneWASMPage] "i" (wasm_constraints::wasm_page_size)
                 : "cc"
                );
+#elif defined(__aarch64__)
+   {
+      auto* cb = EOSVMOC_CB_FROM_BASE_REG();
+      if((int64_t)end > cb->first_invalid_memory_address) {
+         end = cb->first_invalid_memory_address + wasm_constraints::wasm_page_size;
+         // trigger SEGV by reading from invalid address (same as x86_64 path)
+         ptr = *(size_t*)((char*)eos_vm_oc_getgs() + end);
+      }
+      ptr += (size_t)cb->full_linear_memory_start;
+   }
+#endif
 
 
    return (void*)ptr;
@@ -100,6 +119,7 @@ inline char* null_terminated_ptr_impl(uint64_t ptr)
    char dumpster;
    uint64_t scratch;
 
+#if defined(__x86_64__) || defined(__amd64__)
    asm volatile("mov %%gs:(%[Ptr]), %[Dumpster]\n"                   //probe memory location at ptr to see if valid
                 "mov %%gs:%c[firstInvalidMemory], %[Scratch]\n"      //get first invalid memory address
                 "cmpb $0, %%gs:-1(%[Scratch])\n"                     //is last byte in valid linear memory 0?
@@ -118,6 +138,20 @@ inline char* null_terminated_ptr_impl(uint64_t ptr)
                   [firstInvalidMemory] "i" (cb_first_invalid_memory_address_segment_offset)
                 : "cc"
                );
+#elif defined(__aarch64__)
+   {
+      char* base = (char*)eos_vm_oc_getgs();
+      auto* cb = EOSVMOC_CB_FROM_BASE_REG();
+      dumpster = *(volatile char*)(base + ptr);  // probe memory at ptr
+      // Check if last byte in valid linear memory is 0
+      if(*(volatile char*)(base + cb->first_invalid_memory_address - 1) != 0) {
+         // Scan for null terminator (or SEGV if we run past valid memory)
+         scratch = ptr;
+         while(*(volatile char*)(base + scratch) != 0) ++scratch;
+      }
+      ptr += (size_t)cb->full_linear_memory_start;
+   }
+#endif
 
    return (char*)ptr;
 }
@@ -125,10 +159,14 @@ inline char* null_terminated_ptr_impl(uint64_t ptr)
 inline auto convert_native_to_wasm(char* ptr) {
    constexpr int cb_full_linear_memory_start_offset = OFFSET_OF_CONTROL_BLOCK_MEMBER(full_linear_memory_start);
    char* full_linear_memory_start;
+#if defined(__x86_64__) || defined(__amd64__)
    asm("mov %%gs:%c[fullLinearMemOffset], %[fullLinearMem]\n"
       : [fullLinearMem] "=r" (full_linear_memory_start)
       : [fullLinearMemOffset] "i" (cb_full_linear_memory_start_offset)
       );
+#elif defined(__aarch64__)
+   full_linear_memory_start = EOSVMOC_CB_FROM_BASE_REG()->full_linear_memory_start;
+#endif
    U64 delta = (U64)(ptr - full_linear_memory_start);
    return (U32)delta;
 }
@@ -342,6 +380,7 @@ auto fn(A... a) {
          constexpr int cb_current_call_depth_remaining_segment_offset = OFFSET_OF_CONTROL_BLOCK_MEMBER(current_call_depth_remaining);
          constexpr int depth_assertion_intrinsic_offset = OFFSET_OF_FIRST_INTRINSIC - (int) find_intrinsic_index("eosvmoc_internal.depth_assert") * 8;
 
+#if defined(__x86_64__) || defined(__amd64__)
          asm volatile("cmpl   $1,%%gs:%c[callDepthRemainOffset]\n"
                       "jne    1f\n"
                       "callq  *%%gs:%c[depthAssertionIntrinsicOffset]\n"
@@ -350,6 +389,16 @@ auto fn(A... a) {
                       : [callDepthRemainOffset] "i" (cb_current_call_depth_remaining_segment_offset),
                         [depthAssertionIntrinsicOffset] "i" (depth_assertion_intrinsic_offset)
                       : "cc");
+#elif defined(__aarch64__)
+         {
+            auto* cb = EOSVMOC_CB_FROM_BASE_REG();
+            if(cb->current_call_depth_remaining == 1) {
+               char* base = (char*)eos_vm_oc_getgs();
+               void(*depth_assert)() = (void(*)())(*(uintptr_t*)(base + depth_assertion_intrinsic_offset));
+               depth_assert();
+            }
+         }
+#endif
       }
       using native_args = vm::flatten_parameters_t<AUTO_PARAM_WORKAROUND(F)>;
 
@@ -361,10 +410,14 @@ auto fn(A... a) {
 
       constexpr int cb_ctx_ptr_offset = OFFSET_OF_CONTROL_BLOCK_MEMBER(ctx);
       apply_context* ctx;
+#if defined(__x86_64__) || defined(__amd64__)
       asm("mov %%gs:%c[applyContextOffset], %[cPtr]\n"
           : [cPtr] "=r" (ctx)
           : [applyContextOffset] "i" (cb_ctx_ptr_offset)
           );
+#elif defined(__aarch64__)
+      ctx = EOSVMOC_CB_FROM_BASE_REG()->ctx;
+#endif
       Interface host(*ctx);
       eos_vm_oc_type_converter tc{&host, eos_vm_oc_execution_interface{stack + sizeof...(A)}};
       return result_resolver{tc}, core_net::vm::invoke_with_host<F, Preconditions, native_args>(tc, &host, std::make_index_sequence<sizeof...(A)>());

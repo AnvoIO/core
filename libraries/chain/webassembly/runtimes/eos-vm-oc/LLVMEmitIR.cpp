@@ -71,6 +71,16 @@ static inline llvm::Value* EmitInBoundsGEP(llvm::IRBuilder<>& B, llvm::Value* Pt
 }
 #endif
 
+// On x86_64, address space 256 maps to the GS segment register. LLVM emits
+// %gs:-prefixed memory ops for pointers in this address space.
+// On AArch64, there is no GS segment. We use X28 as a dedicated base register
+// and compute all "GS-relative" pointers as (X28 + offset) in address space 0.
+#if defined(__x86_64__) || defined(__amd64__)
+static constexpr unsigned VMEM_ADDR_SPACE = 256;
+#elif defined(__aarch64__)
+static constexpr unsigned VMEM_ADDR_SPACE = 0;
+#endif
+
 #define ENABLE_LOGGING 0
 #define ENABLE_FUNCTION_ENTER_EXIT_HOOKS 0
 
@@ -103,7 +113,10 @@ namespace LLVMJIT
 		else { return false; }
 	}
 
-	llvm::LLVMContext context;
+	// Heap-allocated so ThreadSafeContext can take ownership via unique_ptr
+	// in the ORCv2 compile path (LLVMJIT.cpp).  Each forked compile child
+	// uses this exactly once and then _exit()s.
+	llvm::LLVMContext& context = *new llvm::LLVMContext;
 	llvm::Type* llvmResultTypes[(Uptr)ResultType::num];
 
 	llvm::Type* llvmI8Type;
@@ -159,8 +172,9 @@ namespace LLVMJIT
 		std::vector<llvm::Constant*> globals;
 		llvm::GlobalVariable* defaultTablePointer;
 		llvm::Constant* defaultTableMaxElementIndex;
-		llvm::Constant* defaultMemoryBase;
-		llvm::Constant* depthCounter;
+		llvm::Value* defaultMemoryBase;
+		llvm::Value* depthCounter;
+		llvm::Value* tableBasePtr;  // AArch64: loaded from control block per-function
 		bool tableOnlyHasDefinedFuncs = true;
 
 		llvm::MDNode* likelyFalseBranchWeights;
@@ -229,6 +243,13 @@ namespace LLVMJIT
 		std::vector<BranchTarget> branchTargetStack;
 		std::vector<llvm::Value*> stack;
 
+
+#if defined(__aarch64__)
+		// On AArch64, X28 holds the WASM memory base. This SSA value is loaded
+		// at the entry of each function and used for all VMEM pointer computations.
+		llvm::Value* vmemBaseI64 = nullptr;
+#endif
+
 		EmitFunctionContext(EmitModuleContext& inEmitModuleContext,const Module& inModule,const FunctionDef& inFunctionDef,llvm::Function* inLLVMFunction)
 		: moduleContext(inEmitModuleContext)
 		, module(inModule)
@@ -237,6 +258,19 @@ namespace LLVMJIT
 		, llvmFunction(inLLVMFunction)
 		, irBuilder(context)
 		{}
+
+		// Create a pointer at a given offset relative to the VMEM base.
+		// On x86_64: returns inttoptr(offset) in address space 256 (GS-relative constant).
+		// On AArch64: returns inttoptr(X28 + offset) in address space 0.
+		llvm::Value* emitVmemPointer(intptr_t offset, llvm::Type* ptrType) {
+#if defined(__aarch64__)
+			llvm::Value* offsetVal = llvm::ConstantInt::get(llvmI64Type, (int64_t)offset);
+			llvm::Value* addr = irBuilder.CreateAdd(vmemBaseI64, offsetVal);
+			return irBuilder.CreateIntToPtr(addr, ptrType);
+#else
+			return emitLiteralPointer((const void*)offset, ptrType);
+#endif
+		}
 
 		void emit();
 
@@ -347,7 +381,7 @@ namespace LLVMJIT
 			// Cast the pointer to the appropriate type.
 			auto bytePointer = EmitInBoundsGEP(irBuilder, moduleContext.defaultMemoryBase, byteIndex);
 
-			return irBuilder.CreatePointerCast(bytePointer,memoryType->getPointerTo(256));
+			return irBuilder.CreatePointerCast(bytePointer,memoryType->getPointerTo(VMEM_ADDR_SPACE));
 		}
 
 		// Traps a divide-by-zero
@@ -388,7 +422,7 @@ namespace LLVMJIT
 		llvm::Value* emitRuntimeIntrinsic(const char* intrinsicName,const FunctionType* intrinsicType,const std::initializer_list<llvm::Value*>& args)
 		{
 			const core_net::chain::eosvmoc::intrinsic_entry& ie = core_net::chain::eosvmoc::get_intrinsic_map().at(intrinsicName);
-			llvm::Value* ic = EmitLoad(irBuilder, emitLiteralPointer((void*)(OFFSET_OF_FIRST_INTRINSIC-ie.ordinal*8), llvmI64Type->getPointerTo(256)) );
+			llvm::Value* ic = EmitLoad(irBuilder, emitVmemPointer(OFFSET_OF_FIRST_INTRINSIC-ie.ordinal*8, llvmI64Type->getPointerTo(VMEM_ADDR_SPACE)) );
 			llvm::Value* itp = irBuilder.CreateIntToPtr(ic, asLLVMType(ie.type)->getPointerTo());
 			return createCall(itp,llvm::ArrayRef<llvm::Value*>(args.begin(),args.end()));
 		}
@@ -726,7 +760,7 @@ namespace LLVMJIT
 			if(imm.functionIndex < moduleContext.importedFunctionOffsets.size())
 			{
 				calleeType = module.types[module.functions.imports[imm.functionIndex].type.index];
-				llvm::Value* ic = EmitLoad(irBuilder, emitLiteralPointer((void*)(OFFSET_OF_FIRST_INTRINSIC-moduleContext.importedFunctionOffsets[imm.functionIndex]*8), llvmI64Type->getPointerTo(256)) );
+				llvm::Value* ic = EmitLoad(irBuilder, emitVmemPointer(OFFSET_OF_FIRST_INTRINSIC-moduleContext.importedFunctionOffsets[imm.functionIndex]*8, llvmI64Type->getPointerTo(VMEM_ADDR_SPACE)) );
 				callee = irBuilder.CreateIntToPtr(ic, asLLVMType(calleeType)->getPointerTo());
 				isExit = module.functions.imports[imm.functionIndex].moduleName == "env" && module.functions.imports[imm.functionIndex].exportName == "core_net_exit";
 				isMemcpy = module.functions.imports[imm.functionIndex].moduleName == "env" && module.functions.imports[imm.functionIndex].exportName == "memcpy";
@@ -797,7 +831,12 @@ namespace LLVMJIT
 				"eosvmoc_internal.indirect_call_oob",FunctionType::get(),{});
 
 			// Load the type for this table entry.
+#if defined(__aarch64__)
+			// On AArch64, load table base from control block (avoids ADRP page-alignment issues)
+			auto tablePointer = moduleContext.tableBasePtr;
+#else
 			auto tablePointer = EmitInBoundsGEP(irBuilder, moduleContext.defaultTablePointer, {emitLiteral(0), emitLiteral(0)});
+#endif
 			auto functionTypePointerPointer = EmitInBoundsGEP(irBuilder, tablePointer, {functionIndexZExt, emitLiteral((U32)0)});
 			auto functionTypePointer = EmitLoad(irBuilder, functionTypePointerPointer);
 			auto llvmCalleeType = emitLiteralPointer(calleeType,llvmI8PtrType);
@@ -814,7 +853,7 @@ namespace LLVMJIT
 			if(moduleContext.tableOnlyHasDefinedFuncs) {
 				auto functionPointerPointer = EmitInBoundsGEP(irBuilder, tablePointer, {functionIndexZExt, emitLiteral((U32)1)});
 				auto functionInfo = EmitLoad(irBuilder, functionPointerPointer);  //offset of code
-				llvm::Value* running_code_start = EmitLoad(irBuilder, emitLiteralPointer((void*)OFFSET_OF_CONTROL_BLOCK_MEMBER(running_code_base), llvmI64Type->getPointerTo(256)));
+				llvm::Value* running_code_start = EmitLoad(irBuilder, emitVmemPointer(OFFSET_OF_CONTROL_BLOCK_MEMBER(running_code_base), llvmI64Type->getPointerTo(VMEM_ADDR_SPACE)));
 				llvm::Value* offset_from_start = irBuilder.CreateAdd(running_code_start, functionInfo);
 				llvm::Value* ptr_cast = irBuilder.CreateIntToPtr(offset_from_start, functionPointerType);
 				auto result = createCall(ptr_cast,llvm::ArrayRef<llvm::Value*>(llvmArgs,calleeType->parameters.size()));
@@ -837,12 +876,17 @@ namespace LLVMJIT
 				irBuilder.SetInsertPoint(is_intrinsic_block);
 				llvm::Value* intrinsic_start = emitLiteral((I64)OFFSET_OF_FIRST_INTRINSIC);
 				llvm::Value* intrinsic_offset = irBuilder.CreateAdd(intrinsic_start, functionInfo);
-				llvm::Value* intrinsic_ptr = EmitLoad(irBuilder, irBuilder.CreateIntToPtr(intrinsic_offset, llvmI64Type->getPointerTo(256)));
+	#if defined(__aarch64__)
+				llvm::Value* intrinsic_abs = irBuilder.CreateAdd(vmemBaseI64, intrinsic_offset);
+				llvm::Value* intrinsic_ptr = EmitLoad(irBuilder, irBuilder.CreateIntToPtr(intrinsic_abs, llvmI64Type->getPointerTo(VMEM_ADDR_SPACE)));
+#else
+				llvm::Value* intrinsic_ptr = EmitLoad(irBuilder, irBuilder.CreateIntToPtr(intrinsic_offset, llvmI64Type->getPointerTo(VMEM_ADDR_SPACE)));
+#endif
 				irBuilder.CreateBr(continuation_block);
 
 				llvmFunction->getBasicBlockList().push_back(is_code_offset_block);
 				irBuilder.SetInsertPoint(is_code_offset_block);
-				llvm::Value* running_code_start = EmitLoad(irBuilder, emitLiteralPointer((void*)OFFSET_OF_CONTROL_BLOCK_MEMBER(running_code_base), llvmI64Type->getPointerTo(256)));
+				llvm::Value* running_code_start = EmitLoad(irBuilder, emitVmemPointer(OFFSET_OF_CONTROL_BLOCK_MEMBER(running_code_base), llvmI64Type->getPointerTo(VMEM_ADDR_SPACE)));
 				llvm::Value* offset_from_start = irBuilder.CreateAdd(running_code_start, functionInfo);
 				irBuilder.CreateBr(continuation_block);
 
@@ -876,12 +920,24 @@ namespace LLVMJIT
 			auto value = irBuilder.CreateBitCast(pop(),localPointers[imm.variableIndex]->getType()->getPointerElementType());
 			irBuilder.CreateStore(value,localPointers[imm.variableIndex]);
 		}
+		// Resolve a VMEM-relative pointer on AArch64 by adding the X28 base.
+		// On x86_64 this is a no-op since address space 256 handles it.
+		llvm::Value* resolveVmemPtr(llvm::Value* ptr) {
+#if defined(__aarch64__)
+			llvm::Value* ptrAsInt = irBuilder.CreatePtrToInt(ptr, llvmI64Type);
+			llvm::Value* resolved = irBuilder.CreateAdd(vmemBaseI64, ptrAsInt);
+			return irBuilder.CreateIntToPtr(resolved, ptr->getType());
+#else
+			return ptr;
+#endif
+		}
+
 		llvm::Value* get_mutable_global_ptr(llvm::Value* global) {
 			if(global->getType()->isStructTy()) {
 			llvm::Value* globalsBasePtr = irBuilder.CreateExtractValue(global, 0);
-			        return EmitInBoundsGEP(irBuilder, EmitLoad(irBuilder, globalsBasePtr), irBuilder.CreateExtractValue(global, 1));
+			        return EmitInBoundsGEP(irBuilder, EmitLoad(irBuilder, resolveVmemPtr(globalsBasePtr)), irBuilder.CreateExtractValue(global, 1));
 			} else if(global->getType()->isPointerTy()) {
-			        return global;
+			        return resolveVmemPtr(global);
 			} else {
 			        return nullptr;
 			}
@@ -890,7 +946,7 @@ namespace LLVMJIT
 		{
 			WAVM_ASSERT_THROW(imm.variableIndex < localPointers.size());
 			auto value = irBuilder.CreateBitCast(getTopValue(),localPointers[imm.variableIndex]->getType()->getPointerElementType());
-			irBuilder.CreateStore(value,get_mutable_global_ptr(localPointers[imm.variableIndex]));
+			irBuilder.CreateStore(value,localPointers[imm.variableIndex]);
 		}
 		
 		void get_global(GetOrSetVariableImm<true> imm)
@@ -927,7 +983,7 @@ namespace LLVMJIT
 		{
 			auto offset = emitLiteral((I32)OFFSET_OF_CONTROL_BLOCK_MEMBER(current_linear_memory_pages));
 			auto bytePointer = EmitInBoundsGEP(irBuilder, moduleContext.defaultMemoryBase, offset);
-			auto ptrTo = irBuilder.CreatePointerCast(bytePointer,llvmI32Type->getPointerTo(256));
+			auto ptrTo = irBuilder.CreatePointerCast(bytePointer,llvmI32Type->getPointerTo(VMEM_ADDR_SPACE));
 			auto load = EmitLoad(irBuilder, ptrTo);
 			push(load);
 		}
@@ -1242,6 +1298,26 @@ namespace LLVMJIT
 		auto entryBasicBlock = llvm::BasicBlock::Create(context,"entry",llvmFunction);
 		irBuilder.SetInsertPoint(entryBasicBlock);
 
+#if defined(__aarch64__)
+		// Load X28 (WASM memory base register) via llvm.read_register intrinsic.
+		// This value is used for all VMEM-relative pointer computations in this function.
+		{
+			auto regMD = llvm::MDNode::get(context, {llvm::MDString::get(context, "x28")});
+			auto readReg = llvm::Intrinsic::getDeclaration(moduleContext.llvmModule, llvm::Intrinsic::read_register, {llvmI64Type});
+			vmemBaseI64 = irBuilder.CreateCall(readReg, {llvm::MetadataAsValue::get(context, regMD)});
+
+			// Set up per-function defaultMemoryBase, depthCounter, and table pointer from X28
+			moduleContext.defaultMemoryBase = irBuilder.CreateIntToPtr(vmemBaseI64, llvmI8Type->getPointerTo(VMEM_ADDR_SPACE));
+			moduleContext.depthCounter = emitVmemPointer(OFFSET_OF_CONTROL_BLOCK_MEMBER(current_call_depth_remaining), llvmI32Type->getPointerTo(VMEM_ADDR_SPACE));
+			// Load the table base address from the control block. This avoids
+			// ADRP+ADD PC-relative addressing which breaks when the code blob
+			// is loaded at a different page alignment than where it was compiled.
+			auto tableElementType = llvm::StructType::get(context, {llvmI8PtrType, llvmI64Type});
+			llvm::Value* tableBaseI64 = EmitLoad(irBuilder, emitVmemPointer(OFFSET_OF_CONTROL_BLOCK_MEMBER(table_base), llvmI64Type->getPointerTo(VMEM_ADDR_SPACE)));
+			moduleContext.tableBasePtr = irBuilder.CreateIntToPtr(tableBaseI64, tableElementType->getPointerTo());
+		}
+#endif
+
 		// Create and initialize allocas for all the locals and parameters.
 		auto llvmArgIt = llvmFunction->arg_begin();
 		for(Uptr localIndex = 0;localIndex < functionType->parameters.size() + functionDef.nonParameterLocalTypes.size();++localIndex)
@@ -1304,9 +1380,15 @@ namespace LLVMJIT
 
 	llvm::Module* EmitModuleContext::emit()
 	{
-		defaultMemoryBase = emitLiteralPointer(0,llvmI8Type->getPointerTo(256));
-
-		depthCounter = emitLiteralPointer((void*)OFFSET_OF_CONTROL_BLOCK_MEMBER(current_call_depth_remaining), llvmI32Type->getPointerTo(256));
+#if defined(__x86_64__) || defined(__amd64__)
+		// On x86_64, GS-relative pointers are compile-time constants (address space 256)
+		defaultMemoryBase = emitLiteralPointer(0,llvmI8Type->getPointerTo(VMEM_ADDR_SPACE));
+		depthCounter = emitLiteralPointer((void*)OFFSET_OF_CONTROL_BLOCK_MEMBER(current_call_depth_remaining), llvmI32Type->getPointerTo(VMEM_ADDR_SPACE));
+#elif defined(__aarch64__)
+		// On AArch64, these are set per-function via X28 register load in EmitFunctionContext::emit()
+		defaultMemoryBase = nullptr;
+		depthCounter = nullptr;
+#endif
 
 		// Create LLVM pointer constants for the module's imported functions.
 		for(Uptr functionIndex = 0;functionIndex < module.functions.imports.size();++functionIndex)
@@ -1320,9 +1402,9 @@ namespace LLVMJIT
 		for(const GlobalDef& global : module.globals.defs) {
 			if(global.type.isMutable) {
 			        if(current_prologue >= -(int)memory::max_prologue_size) {
-				        globals.push_back(emitLiteralPointer((void*)current_prologue,asLLVMType(global.type.valueType)->getPointerTo(256)));
+				        globals.push_back(emitLiteralPointer((void*)current_prologue,asLLVMType(global.type.valueType)->getPointerTo(VMEM_ADDR_SPACE)));
 			        } else {
-			                auto baseType = asLLVMType(global.type.valueType)->getPointerTo()->getPointerTo(256);
+			                auto baseType = asLLVMType(global.type.valueType)->getPointerTo()->getPointerTo(VMEM_ADDR_SPACE);
 				        auto basePtr = emitLiteralPointer((void*)OFFSET_OF_CONTROL_BLOCK_MEMBER(globals), baseType);
 				        auto structTy = llvm::StructType::get(context, {baseType, llvmI64Type});
 				        I64 typeSize = IR::getTypeBitWidth(global.type.valueType)/8;

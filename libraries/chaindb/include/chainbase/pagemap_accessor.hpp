@@ -38,7 +38,7 @@ public:
       if (!_pagemap_support_checked) {
          _pagemap_support_checked = true;
 
-#if defined(__linux__) && defined(__x86_64__)
+#if defined(__linux__) && (defined(__x86_64__) || defined(__aarch64__))
          std::unique_ptr<char, void(*)(char*)> p { (char *)std::aligned_alloc(pagesz, pagesz), [](char* p) {std::free(p);} };
 
          if (_clear_refs()) {

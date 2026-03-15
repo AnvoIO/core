@@ -30,7 +30,7 @@ if("vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
                              webassembly/runtimes/eos-vm-oc/ipc_helpers.cpp
                              webassembly/runtimes/eos-vm-oc/gs_seg_helpers.c
                              webassembly/runtimes/eos-vm-oc/stack.cpp
-                             webassembly/runtimes/eos-vm-oc/switch_stack_linux.s
+                             $<IF:$<STREQUAL:${CMAKE_SYSTEM_PROCESSOR},aarch64>,webassembly/runtimes/eos-vm-oc/switch_stack_linux_aarch64.s,webassembly/runtimes/eos-vm-oc/switch_stack_linux.s>
                              webassembly/runtimes/eos-vm-oc.cpp
                              webassembly/runtimes/eos-vm-oc/default_real_main.cpp)
 

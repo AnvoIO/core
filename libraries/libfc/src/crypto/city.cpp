@@ -39,6 +39,9 @@
 #if defined(__SSE4_2__) && defined(__x86_64__)
 #include <nmmintrin.h>
 #define MM_CRC32_U64I _mm_crc32_u64
+#elif defined(__aarch64__) && defined(__ARM_FEATURE_CRC32)
+#include <arm_acle.h>
+#define MM_CRC32_U64I __crc32cd
 #else
 uint64_t mm_crc32_u64(uint64_t a, uint64_t b );
 #define MM_CRC32_U64I mm_crc32_u64

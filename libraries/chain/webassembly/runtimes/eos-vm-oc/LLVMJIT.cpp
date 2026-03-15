@@ -60,6 +60,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "llvm/Transforms/Utils.h"
 #include <memory>
 #include <unistd.h>
+#include <sys/mman.h>
 
 #include "llvm/Support/LEB128.h"
 
@@ -125,8 +126,26 @@ namespace LLVMJIT
 
 		virtual bool needsToReserveAllocationSpace() override { return true; }
 		virtual void reserveAllocationSpace(uintptr_t numCodeBytes,U32 codeAlignment,uintptr_t numReadOnlyBytes,U32 readOnlyAlignment,uintptr_t numReadWriteBytes,U32 readWriteAlignment) override {
-			code = std::make_unique<std::vector<uint8_t>>(numCodeBytes + numReadOnlyBytes + numReadWriteBytes);
+			uintptr_t total = numCodeBytes + numReadOnlyBytes + numReadWriteBytes;
+#if defined(__aarch64__)
+			// On AArch64, ADRP+ADD/LDR addressing encodes page-relative offsets.
+			// The code blob will later be loaded at a page-aligned offset in the
+			// code cache (via mmap).  We must allocate at a page-aligned address
+			// here too so that ADRP-based references to constant pools and data
+			// sections within the blob remain correct after relocation.
+			void* aligned;
+			WAVM_ASSERT_THROW(posix_memalign(&aligned, 4096, total) == 0);
+			// Wrap in a vector with a custom-allocated buffer isn't straightforward,
+			// so we use mmap for the compilation buffer and copy into the vector
+			// in finalizeMemory.
+			code_aligned_alloc = (uint8_t*)aligned;
+			code_aligned_alloc_size = total;
+			code = std::make_unique<std::vector<uint8_t>>();
+			ptr = code_aligned_alloc;
+#else
+			code = std::make_unique<std::vector<uint8_t>>(total);
 			ptr = code->data();
+#endif
 		}
 		virtual U8* allocateCodeSection(uintptr_t numBytes,U32 alignment,U32 sectionID,llvm::StringRef sectionName) override
 		{
@@ -147,12 +166,34 @@ namespace LLVMJIT
 		}
 
 		virtual bool finalizeMemory(std::string* ErrMsg = nullptr) override {
+#if defined(__aarch64__)
+			// Copy the page-aligned buffer into the vector
+			uintptr_t used = ptr - code_aligned_alloc;
+			code->assign(code_aligned_alloc, code_aligned_alloc + used);
+			free(code_aligned_alloc);
+			code_aligned_alloc = nullptr;
+#else
 			code->resize(ptr - code->data());
-			return true;
+#endif
+			return false;  // false == success in RTDyldMemoryManager
 		}
 
 		std::unique_ptr<std::vector<uint8_t>> code;
 		uint8_t* ptr;
+#if defined(__aarch64__)
+		uint8_t* code_aligned_alloc = nullptr;
+		uintptr_t code_aligned_alloc_size = 0;
+#endif
+
+		// Returns the base address of the code allocation (for computing offsets).
+		// On AArch64 during compilation, code lives in the page-aligned buffer;
+		// after finalizeMemory, it's in the vector.
+		uint8_t* codeBase() const {
+#if defined(__aarch64__)
+			if(code_aligned_alloc) return code_aligned_alloc;
+#endif
+			return code->data();
+		}
 
 		std::vector<uint8_t> dumpster;
 		std::list<std::vector<uint8_t>> stack_sizes;
@@ -195,8 +236,10 @@ namespace LLVMJIT
 							if(symbolSection)
 								loadedAddress += (Uptr)o.getSectionLoadAddress(*symbolSection.get());
 							Uptr functionDefIndex;
-							if(getFunctionIndexFromExternalName(name->data(),functionDefIndex))
-								function_to_offsets[functionDefIndex] = loadedAddress-(uintptr_t)unitmemorymanager->code->data();
+							if(getFunctionIndexFromExternalName(name->data(),functionDefIndex)) {
+								uintptr_t base = (uintptr_t)unitmemorymanager->codeBase();
+								function_to_offsets[functionDefIndex] = loadedAddress - base;
+							}
 #if PRINT_DISASSEMBLY
 							disassembleFunction((U8*)loadedAddress, symbolSizePair.second);
 #endif
@@ -205,7 +248,8 @@ namespace LLVMJIT
 							auto symbolSection = symbol.getSection();
 							if(symbolSection)
 								loadedAddress += (Uptr)o.getSectionLoadAddress(*symbolSection.get());
-							table_offset = loadedAddress-(uintptr_t)unitmemorymanager->code->data();
+							uintptr_t base = (uintptr_t)unitmemorymanager->codeBase();
+							table_offset = loadedAddress - base;
 						}
 					}
 				});
@@ -295,7 +339,7 @@ namespace LLVMJIT
 												loadedAddress += (Uptr)o.getSectionLoadAddress(*symbolSection.get());
 											Uptr functionDefIndex;
 											if(getFunctionIndexFromExternalName(name->data(),functionDefIndex))
-												function_to_offsets[functionDefIndex] = loadedAddress-(uintptr_t)unitmemorymanager->code->data();
+												function_to_offsets[functionDefIndex] = loadedAddress-(uintptr_t)unitmemorymanager->codeBase();
 #if PRINT_DISASSEMBLY
 											disassembleFunction((U8*)loadedAddress, symbolSizePair.second);
 #endif
@@ -304,7 +348,7 @@ namespace LLVMJIT
 											auto symbolSection = symbol.getSection();
 											if(symbolSection)
 												loadedAddress += (Uptr)o.getSectionLoadAddress(*symbolSection.get());
-											table_offset = loadedAddress-(uintptr_t)unitmemorymanager->code->data();
+											table_offset = loadedAddress-(uintptr_t)unitmemorymanager->codeBase();
 										}
 									}
 							  }
@@ -360,7 +404,9 @@ namespace LLVMJIT
 			std::string verifyOutputString;
 			llvm::raw_string_ostream verifyOutputStream(verifyOutputString);
 			if(llvm::verifyModule(*llvmModule,&verifyOutputStream))
-			{ Errors::fatalf("LLVM verification errors:\n%s\n",verifyOutputString.c_str()); }
+			{
+				Errors::fatalf("LLVM verification errors:\n%s\n",verifyOutputString.c_str());
+			}
 			///Log::printf(Log::Category::debug,"Verified LLVM module\n");
 		}
 
@@ -383,20 +429,17 @@ namespace LLVMJIT
 		if(DUMP_OPTIMIZED_MODULE) { printModule(llvmModule,"llvmOptimizedDump"); }
 
 #if LLVM_VERSION_MAJOR >= 12
-		auto ctx = std::make_unique<llvm::LLVMContext>();
-		// The module was created with a different context; we need to transfer ownership.
-		// We wrap the raw module pointer in a ThreadSafeModule using its existing context.
+		// The LLVMContext is heap-allocated (see LLVMEmitIR.cpp) so
+		// ThreadSafeContext can take ownership via unique_ptr.
 		llvm::orc::ThreadSafeContext TSCtx(std::unique_ptr<llvm::LLVMContext>(&llvmModule->getContext()));
 		std::unique_ptr<llvm::Module> mod(llvmModule);
 		llvm::orc::ThreadSafeModule TSM(std::move(mod), std::move(TSCtx));
 		auto err = compileLayer->add(mainJD, std::move(TSM));
 		WAVM_ASSERT_THROW(!err);
 
-		// Force materialization of all symbols
-		auto sym = ES.lookup({&mainJD}, ES.intern("__force_materialization__"));
-		// We expect the lookup to fail (symbol doesn't exist), but by this point
-		// all other symbols will have been materialized. Consume the error.
-		if(!sym) llvm::consumeError(sym.takeError());
+		// Force materialization by looking up a real symbol
+		auto sym = ES.lookup({&mainJD}, ES.intern("wasmFunc0"));
+		WAVM_ASSERT_THROW(!!sym);
 #else
 		llvm::orc::VModuleKey K = ES.allocateVModule();
 		std::unique_ptr<llvm::Module> mod(llvmModule);
@@ -423,8 +466,14 @@ namespace LLVMJIT
 			llvm::TargetOptions to;
 			to.EmitStackSizeSection = 1;
 
+			llvm::SmallVector<std::string,0> targetFeatures;
+#if defined(__aarch64__)
+			// Tell LLVM's AArch64 code generator not to use X28 — it's our
+			// dedicated WASM memory base register (equivalent of GS on x86_64).
+			targetFeatures.push_back("+reserve-x28");
+#endif
 			targetMachine = llvm::EngineBuilder().setRelocationModel(llvm::Reloc::PIC_).setCodeModel(llvm::CodeModel::Small).setTargetOptions(to).selectTarget(
-				llvm::Triple(targetTriple),"","",llvm::SmallVector<std::string,0>()
+				llvm::Triple(targetTriple),"","",targetFeatures
 				);
 		}
 
@@ -448,6 +497,12 @@ namespace LLVMJIT
 
 			while(ds.isValidOffsetForAddress(offset)) {
 				ds.getAddress(&offset);
+				// On AArch64, the .stack_sizes section may have trailing
+				// address entries without a following ULEB128 value (due to
+				// section alignment/padding).  If there's no data left after
+				// the address, stop parsing.
+				if(offset >= stacksizes.size())
+					break;
 				const de_offset_t offset_before_read = offset;
 				const uint64_t stack_size = ds.getULEB128(&offset);
 				WAVM_ASSERT_THROW(offset_before_read != offset);
@@ -457,7 +512,10 @@ namespace LLVMJIT
 					_exit(1);
 			}
 		}
-		if(num_functions_stack_size_found != module.functions.defs.size())
+		// On AArch64, LLVM may generate outlined helper functions (e.g.,
+		// save/restore sequences) that add extra .stack_sizes entries beyond
+		// the WASM function defs.  Require at least as many entries as defs.
+		if(num_functions_stack_size_found < module.functions.defs.size())
 			_exit(1);
 		if(jitModule->final_pic_code.size() >= generated_code_size_limit)
 			_exit(1);
