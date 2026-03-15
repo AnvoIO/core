@@ -412,18 +412,18 @@ namespace LLVMJIT
 		}
 		WAVM_ASSERT_THROW(!err);
 
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: calling ES.lookup to force materialization..." << std::endl;
-		// Force materialization of all symbols
-		auto sym = ES.lookup({&mainJD}, ES.intern("__force_materialization__"));
-		// We expect the lookup to fail (symbol doesn't exist), but by this point
-		// all other symbols will have been materialized. Consume the error.
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: calling ES.lookup to force materialization (wasmFunc0)..." << std::endl;
+		// Force materialization by looking up a real symbol
+		auto sym = ES.lookup({&mainJD}, ES.intern("wasmFunc0"));
 		if(!sym) {
 			std::string errStr;
 			llvm::raw_string_ostream errOS(errStr);
 			errOS << sym.takeError();
-			std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: lookup result (expected fail): " << errStr << std::endl;
+			std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: lookup FAILED: " << errStr << std::endl;
+		} else {
+			std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: lookup succeeded, addr=" << (void*)sym->getAddress() << std::endl;
 		}
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: ORCv2 codegen complete, code ptr="
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: after lookup, code ptr="
 			<< (void*)unitmemorymanager->code.get()
 			<< " code size=" << (unitmemorymanager->code ? unitmemorymanager->code->size() : 0)
 			<< " function_to_offsets count=" << function_to_offsets.size() << std::endl;
