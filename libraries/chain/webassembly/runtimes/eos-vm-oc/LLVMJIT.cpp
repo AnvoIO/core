@@ -150,7 +150,7 @@ namespace LLVMJIT
 
 		virtual bool finalizeMemory(std::string* ErrMsg = nullptr) override {
 			code->resize(ptr - code->data());
-			return true;
+			return false;  // false == success in RTDyldMemoryManager
 		}
 
 		std::unique_ptr<std::vector<uint8_t>> code;
