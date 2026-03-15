@@ -152,9 +152,9 @@ const static uint32_t   setcode_ram_bytes_multiplier       = 10;     ///< multip
 const static uint32_t   hashing_checktime_block_size       = 10*1024;  /// call checktime from hashing intrinsic once per this number of bytes
 
 #ifdef CORE_NET_VM_JIT_RUNTIME_ENABLED
-const static core_net::chain::wasm_interface::vm_type default_wasm_runtime = core_net::chain::wasm_interface::vm_type::eos_vm_jit;
+const static core_net::chain::wasm_interface::vm_type default_wasm_runtime = core_net::chain::wasm_interface::vm_type::core_vm_jit;
 #else
-const static core_net::chain::wasm_interface::vm_type default_wasm_runtime = core_net::chain::wasm_interface::vm_type::eos_vm;
+const static core_net::chain::wasm_interface::vm_type default_wasm_runtime = core_net::chain::wasm_interface::vm_type::core_vm;
 #endif
 
 const static uint32_t   default_abi_serializer_max_time_us = 15*1000; ///< default deadline for abi serialization methods
