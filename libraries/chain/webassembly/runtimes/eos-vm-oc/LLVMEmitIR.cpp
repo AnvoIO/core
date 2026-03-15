@@ -19,6 +19,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include "IR/Operators.h"
 #include "IR/OperatorPrinter.h"
 #include "llvm/Support/raw_ostream.h"
+#include <fstream>
 
 #include "llvm/IR/DataLayout.h"
 #include "llvm/IR/DerivedTypes.h"
@@ -1471,6 +1472,15 @@ namespace LLVMJIT
 			llvmResultTypes[(Uptr)ResultType::i64] = llvmI64Type;
 			llvmResultTypes[(Uptr)ResultType::f32] = llvmF32Type;
 			llvmResultTypes[(Uptr)ResultType::f64] = llvmF64Type;
+
+			std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
+				<< "  emitModule init: f32 isFloat=" << llvmF32Type->isFloatTy()
+				<< " f64 isDouble=" << llvmF64Type->isDoubleTy()
+				<< " f64 typeID=" << llvmF64Type->getTypeID()
+				<< " i64 typeID=" << llvmI64Type->getTypeID()
+				<< " ResultType::f64=" << (unsigned)ResultType::f64
+				<< " llvmResultTypes[f64] isDouble=" << llvmResultTypes[(Uptr)ResultType::f64]->isDoubleTy()
+				<< std::endl;
 
 			// Create zero constants of each type.
 			typedZeroConstants[(Uptr)ValueType::any] = nullptr;
