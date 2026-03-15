@@ -208,8 +208,16 @@ void run_compile_trampoline(int fd) {
          struct rlimit core_limits = {0u, 0u};
          setrlimit(RLIMIT_CORE, &core_limits);
 
-         run_compile(std::move(fds[0]), std::move(fds[1]), stack_size, generated_code_size_limit,
-                     msg.log_level, msg.receiver, msg.queued_time);
+         try {
+            run_compile(std::move(fds[0]), std::move(fds[1]), stack_size, generated_code_size_limit,
+                        msg.log_level, msg.receiver, msg.queued_time);
+         } catch(const std::exception& e) {
+            std::cerr << "EOS VM OC compile failed: " << e.what() << std::endl;
+            _exit(1);
+         } catch(...) {
+            std::cerr << "EOS VM OC compile failed: unknown exception" << std::endl;
+            _exit(1);
+         }
          _exit(0);
       }
       else if(pid == -1)
