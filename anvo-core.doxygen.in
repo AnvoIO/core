@@ -4,10 +4,10 @@
 # Project related configuration options
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
-PROJECT_NAME           = "SPRING"
-PROJECT_NUMBER         = "${DOXY_EOS_VERSION}"
-PROJECT_BRIEF          =
-PROJECT_LOGO           = eos-logo.png
+PROJECT_NAME           = "Anvo Network Core"
+PROJECT_NUMBER         = "${DOXY_CORE_VERSION}"
+PROJECT_BRIEF          = "High-performance Layer 1 blockchain with Savanna BFT consensus"
+PROJECT_LOGO           =
 OUTPUT_DIRECTORY       =
 CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = NO

@@ -13,10 +13,10 @@ set( CMAKE_CXX_STANDARD 20 )
 set( CMAKE_CXX_EXTENSIONS ON )
 set( CXX_STANDARD_REQUIRED ON)
 
-set(VERSION_MAJOR 1)
-set(VERSION_MINOR 3)
-set(VERSION_PATCH 0)
-set(VERSION_SUFFIX dev)
+set(VERSION_MAJOR 0)
+set(VERSION_MINOR 0)
+set(VERSION_PATCH 1)
+set(VERSION_SUFFIX "")
 
 if(VERSION_SUFFIX)
     set(VERSION_FULL "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${VERSION_SUFFIX}")
@@ -318,7 +318,7 @@ add_custom_target(dev-install
 
 include(doxygen)
 
-option(ENABLE_SPRING_DEV_DEB "Enable building the spring-dev .deb package" OFF)
+option(ENABLE_CORE_DEV_DEB "Enable building the anvo-core-dev .deb package" OFF)
 
 include(package.cmake)
 include(CPack)
