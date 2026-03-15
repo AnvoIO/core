@@ -85,12 +85,12 @@ class code_cache_base {
       std::atomic<uint64_t> _executing_id{0}; // id of executing action
 
       io_context _ctx;
-      local::datagram_protocol::socket _compile_monitor_write_socket{_ctx}; // protected by _mtx for async
+      local::datagram_protocol::socket _compile_monitor_write_socket{_ctx}; // only accessed from main-thread
       local::datagram_protocol::socket _compile_monitor_read_socket{_ctx};
 
       struct queued_compile_entry {
          compile_wasm_message    msg;
-         std::vector<char>       code;
+         uint8_t                 vm_version;
 
          const digest_type&      code_id() const { return msg.code.code_id; }
       };
@@ -103,9 +103,8 @@ class code_cache_base {
                const_mem_fun<queued_compile_entry, const digest_type&, &queued_compile_entry::code_id>>
          >
       >;
-      std::mutex                             _mtx;
-      queued_compiles_t                      _queued_compiles;                  // protected by _mtx
-      std::unordered_map<digest_type, bool>  _outstanding_compiles_and_poison;  // protected by _mtx
+      queued_compiles_t                      _queued_compiles;                  // only accessed by main-thread
+      std::unordered_map<digest_type, bool>  _outstanding_compiles_and_poison;  // only accessed by main-thread
       std::atomic<size_t>                    _outstanding_compiles{0};
 
       size_t _free_bytes_eviction_threshold;
@@ -143,7 +142,7 @@ class code_cache_async : public code_cache_base {
       void wait_on_compile_monitor_message();
       std::tuple<size_t, size_t> consume_compile_thread_queue();
       void process_queued_compiles();
-      void write_message(const digest_type& code_id, const corevmoc_message& message, std::span<wrapped_fd> fds);
+      void write_message(const digest_type& code_id, const corevmoc_message& message, uint8_t vm_version);
 
 };
 
