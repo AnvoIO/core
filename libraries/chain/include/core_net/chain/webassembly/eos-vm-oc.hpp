@@ -70,6 +70,7 @@ inline void* array_ptr_impl (size_t ptr, size_t length)
 
    size_t end = ptr + length*sizeof(T);
 
+#if defined(__x86_64__) || defined(__amd64__)
    asm volatile("cmp %%gs:%c[firstInvalidMemory], %[End]\n"
                 "jle 1f\n"
                 "mov %%gs:%c[firstInvalidMemory], %[End]\n"      // sets End with a known failing address
@@ -84,6 +85,24 @@ inline void* array_ptr_impl (size_t ptr, size_t length)
                   [sizeOfOneWASMPage] "i" (wasm_constraints::wasm_page_size)
                 : "cc"
                );
+#elif defined(__aarch64__)
+   asm volatile("ldr x9, [x28, %[firstInvalidMemory]]\n"
+                "cmp x9, %[End]\n"
+                "b.ge 1f\n"
+                "mov %[End], x9\n"                               // sets End with a known failing address
+                "add %[End], %[End], %[sizeOfOneWASMPage]\n"     // see above comment
+                "ldr %[Ptr], [x28, %[End]]\n"                    // loads from the known failing address
+                "1:\n"
+                "ldr x9, [x28, %[linearMemoryStart]]\n"
+                "add %[Ptr], %[Ptr], x9\n"
+                : [Ptr] "+r" (ptr),
+                  [End] "+r" (end)
+                : [linearMemoryStart] "i" (cb_full_linear_memory_start_segment_offset),
+                  [firstInvalidMemory] "i" (cb_first_invalid_memory_address_segment_offset),
+                  [sizeOfOneWASMPage] "i" (wasm_constraints::wasm_page_size)
+                : "cc", "x9"
+               );
+#endif
 
 
    return (void*)ptr;
@@ -100,6 +119,7 @@ inline char* null_terminated_ptr_impl(uint64_t ptr)
    char dumpster;
    uint64_t scratch;
 
+#if defined(__x86_64__) || defined(__amd64__)
    asm volatile("mov %%gs:(%[Ptr]), %[Dumpster]\n"                   //probe memory location at ptr to see if valid
                 "mov %%gs:%c[firstInvalidMemory], %[Scratch]\n"      //get first invalid memory address
                 "cmpb $0, %%gs:-1(%[Scratch])\n"                     //is last byte in valid linear memory 0?
@@ -118,6 +138,29 @@ inline char* null_terminated_ptr_impl(uint64_t ptr)
                   [firstInvalidMemory] "i" (cb_first_invalid_memory_address_segment_offset)
                 : "cc"
                );
+#elif defined(__aarch64__)
+   asm volatile("ldrb %w[Dumpster], [x28, %[Ptr]]\n"                //probe memory location at ptr to see if valid
+                "ldr %[Scratch], [x28, %[firstInvalidMemory]]\n"     //get first invalid memory address
+                "sub x9, %[Scratch], #1\n"
+                "ldrb w10, [x28, x9]\n"                              //is last byte in valid linear memory 0?
+                "cbz w10, 2f\n"                                      //if so, this will be a null terminated string one way or another
+                "mov %[Scratch], %[Ptr]\n"
+                "1:\n"                                               //start loop looking for either 0, or until we SEGV
+                "add %[Scratch], %[Scratch], #1\n"
+                "sub x9, %[Scratch], #1\n"
+                "ldrb w10, [x28, x9]\n"
+                "cbnz w10, 1b\n"
+                "2:\n"
+                "ldr x9, [x28, %[linearMemoryStart]]\n"             //add address of linear memory 0 to ptr
+                "add %[Ptr], %[Ptr], x9\n"
+                : [Ptr] "+r" (ptr),
+                  [Dumpster] "=r" (dumpster),
+                  [Scratch] "=r" (scratch)
+                : [linearMemoryStart] "i" (cb_full_linear_memory_start_segment_offset),
+                  [firstInvalidMemory] "i" (cb_first_invalid_memory_address_segment_offset)
+                : "cc", "x9", "x10"
+               );
+#endif
 
    return (char*)ptr;
 }
@@ -125,10 +168,17 @@ inline char* null_terminated_ptr_impl(uint64_t ptr)
 inline auto convert_native_to_wasm(char* ptr) {
    constexpr int cb_full_linear_memory_start_offset = OFFSET_OF_CONTROL_BLOCK_MEMBER(full_linear_memory_start);
    char* full_linear_memory_start;
+#if defined(__x86_64__) || defined(__amd64__)
    asm("mov %%gs:%c[fullLinearMemOffset], %[fullLinearMem]\n"
       : [fullLinearMem] "=r" (full_linear_memory_start)
       : [fullLinearMemOffset] "i" (cb_full_linear_memory_start_offset)
       );
+#elif defined(__aarch64__)
+   asm("ldr %[fullLinearMem], [x28, %[fullLinearMemOffset]]\n"
+      : [fullLinearMem] "=r" (full_linear_memory_start)
+      : [fullLinearMemOffset] "i" (cb_full_linear_memory_start_offset)
+      );
+#endif
    U64 delta = (U64)(ptr - full_linear_memory_start);
    return (U32)delta;
 }
@@ -342,6 +392,7 @@ auto fn(A... a) {
          constexpr int cb_current_call_depth_remaining_segment_offset = OFFSET_OF_CONTROL_BLOCK_MEMBER(current_call_depth_remaining);
          constexpr int depth_assertion_intrinsic_offset = OFFSET_OF_FIRST_INTRINSIC - (int) find_intrinsic_index("eosvmoc_internal.depth_assert") * 8;
 
+#if defined(__x86_64__) || defined(__amd64__)
          asm volatile("cmpl   $1,%%gs:%c[callDepthRemainOffset]\n"
                       "jne    1f\n"
                       "callq  *%%gs:%c[depthAssertionIntrinsicOffset]\n"
@@ -350,6 +401,18 @@ auto fn(A... a) {
                       : [callDepthRemainOffset] "i" (cb_current_call_depth_remaining_segment_offset),
                         [depthAssertionIntrinsicOffset] "i" (depth_assertion_intrinsic_offset)
                       : "cc");
+#elif defined(__aarch64__)
+         asm volatile("ldr    w9, [x28, %[callDepthRemainOffset]]\n"
+                      "cmp    w9, #1\n"
+                      "b.ne   1f\n"
+                      "ldr    x9, [x28, %[depthAssertionIntrinsicOffset]]\n"
+                      "blr    x9\n"
+                      "1:\n"
+                      :
+                      : [callDepthRemainOffset] "i" (cb_current_call_depth_remaining_segment_offset),
+                        [depthAssertionIntrinsicOffset] "i" (depth_assertion_intrinsic_offset)
+                      : "cc", "x9", "x30");
+#endif
       }
       using native_args = vm::flatten_parameters_t<AUTO_PARAM_WORKAROUND(F)>;
 
@@ -361,10 +424,17 @@ auto fn(A... a) {
 
       constexpr int cb_ctx_ptr_offset = OFFSET_OF_CONTROL_BLOCK_MEMBER(ctx);
       apply_context* ctx;
+#if defined(__x86_64__) || defined(__amd64__)
       asm("mov %%gs:%c[applyContextOffset], %[cPtr]\n"
           : [cPtr] "=r" (ctx)
           : [applyContextOffset] "i" (cb_ctx_ptr_offset)
           );
+#elif defined(__aarch64__)
+      asm("ldr %[cPtr], [x28, %[applyContextOffset]]\n"
+          : [cPtr] "=r" (ctx)
+          : [applyContextOffset] "i" (cb_ctx_ptr_offset)
+          );
+#endif
       Interface host(*ctx);
       eos_vm_oc_type_converter tc{&host, eos_vm_oc_execution_interface{stack + sizeof...(A)}};
       return result_resolver{tc}, core_net::vm::invoke_with_host<F, Preconditions, native_args>(tc, &host, std::make_index_sequence<sizeof...(A)>());
