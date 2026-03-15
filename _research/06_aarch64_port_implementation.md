@@ -564,6 +564,44 @@ on some ARM kernels — needs testing.
 24. Run existing EOSIO contract test suite
 25. Stress testing with realistic workloads
 
+## Bugs Discovered During Port (2026-03-15)
+
+These are bugs in the ORCv2 JIT integration (Phase 1E) that were **latent on x86_64**
+and only manifested on AArch64 because the AArch64 codegen exercises different code
+paths (outlined helpers, different materialization timing).
+
+### Bug 1: LLVMContext Ownership (Heap Corruption)
+
+**Root cause:** `LLVMEmitIR.cpp` declared `LLVMContext` as a file-scope static object.
+`LLVMJIT.cpp` wrapped `&llvmModule->getContext()` in a `unique_ptr` and handed it to
+ORCv2's `ThreadSafeContext`. When ORCv2 moved the `ThreadSafeModule` during
+`IRCompileLayer::emit`, the destructor of the moved-from TSM called `delete` on the
+file-scope object → heap corruption → SIGABRT.
+
+**Why it didn't crash on x86_64:** Unknown — likely different heap layout or the ORCv1
+path (LLVM 7-11) didn't move the module in the same way. The bug existed in the Phase
+1E ORCv2 code but was never triggered by x86_64 tests.
+
+**Fix:** Heap-allocate the context: `llvm::LLVMContext& context = *new llvm::LLVMContext;`
+
+### Bug 2: finalizeMemory() Return Value
+
+**Root cause:** `UnitMemoryManager::finalizeMemory()` returned `true`. In LLVM's
+`RTDyldMemoryManager` convention, `true` = error, `false` = success. The ORCv1 path
+never checked this return value. ORCv2's `RTDyldObjectLinkingLayer` does check it and
+reports "Failed to materialize" when it returns true.
+
+**Fix:** Return `false`.
+
+### Bug 3: .stack_sizes Count on AArch64
+
+**Root cause:** LLVM's AArch64 backend generates outlined save/restore helper functions
+(for callee-saved registers) as separate symbols. Each gets its own `.stack_sizes`
+entry, inflating the count from 70 (number of WASM functions) to 225. The strict `==`
+assertion caused `_exit(1)`.
+
+**Fix:** Changed check from `num_found != defs.size()` to `num_found < defs.size()`.
+
 ## Risk Assessment
 
 | Risk | Likelihood | Impact | Mitigation |
@@ -574,6 +612,8 @@ on some ARM kernels — needs testing.
 | Performance regression vs x86_64 OC | Medium | Medium | AArch64 LLVM codegen is good; may need tuning |
 | Signal handler timing differences | Low | Medium | SIGSEGV handling is POSIX-standard on AArch64 |
 | LLVM version compatibility | Low | Low | Same LLVM versions work on both architectures |
+| ORCv2 latent bugs from Phase 1E | **Realized** | High | Three bugs found and fixed. May be more. |
+| emitVmemPointer/resolveVmemPtr pointer math | **Active** | High | Runtime SIGSEGV — under investigation |
 
 ## Expected Performance
 

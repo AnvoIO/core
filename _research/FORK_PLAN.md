@@ -306,7 +306,7 @@ other breaking changes in the LLVM C++ API.
 #### 1F. AArch64 Support (depends on 1E)
 **Goal:** Production-quality ARM server support for eos-vm-oc runtime.
 
-**Status: IN PROGRESS** (branch `aarch64/eos-vm-oc`, 7 commits)
+**Status: IN PROGRESS** (branch `aarch64/eos-vm-oc`, ~17 commits)
 
 **Strategy:** Dedicated register X28 via `-ffixed-x28`, matching V8/SpiderMonkey/Wasmtime.
 
@@ -327,19 +327,53 @@ other breaking changes in the LLVM C++ API.
 | Tests | `eosvmoc_platform_tests.cpp` | ✓ 4 new tests (register r/w, memory constants, smoke, multi-contract) |
 | Test config | `unittests/CMakeLists.txt` | ✓ Guard nofsgs tests to x86_64 only |
 | zlib fix | `libraries/libfc/test/CMakeLists.txt` | ✓ Explicit ZLIB dep for test_fc (ARM link order) |
+| ORCv2 context ownership | `LLVMEmitIR.cpp`, `LLVMJIT.cpp` | ✓ Heap-allocate LLVMContext for proper ThreadSafeContext ownership |
+| ORCv2 finalizeMemory | `LLVMJIT.cpp` | ✓ Fix return value (false=success, was returning true=error) |
+| Stack sizes check | `LLVMJIT.cpp` | ✓ Allow extra .stack_sizes entries from AArch64 outlined helpers |
+
+**Bugs found and fixed during debug session (2026-03-15):**
+
+1. **Heap corruption (SIGABRT):** The file-scope `LLVMContext` in LLVMEmitIR.cpp was
+   wrapped in a `unique_ptr` and given to ORCv2's `ThreadSafeContext`. When ORCv2
+   moved the `ThreadSafeModule` during `IRCompileLayer::emit`, the source destructor
+   called `delete` on the non-heap context → heap corruption → SIGABRT in `__libc_free`.
+   Fix: `llvm::LLVMContext& context = *new llvm::LLVMContext;` (heap allocation).
+   This bug was latent on x86_64 (ORCv1 path didn't trigger it).
+
+2. **Materialization failure:** `UnitMemoryManager::finalizeMemory()` returned `true`
+   (= error in LLVM's RTDyldMemoryManager convention). The ORCv1 path never checked
+   this return value, but ORCv2's `RTDyldObjectLinkingLayer` does — it reported
+   "Failed to materialize symbols" for all wasmFunc* symbols even though code was
+   successfully compiled and loaded. Fix: return `false` (= success). This bug was
+   also latent on x86_64.
+
+3. **Stack sizes assertion:** LLVM's AArch64 backend generates outlined save/restore
+   helper functions that produce extra `.stack_sizes` entries (225 entries for 70 WASM
+   functions). The strict `==` check caused `_exit(1)`. Fix: changed to `>=` (require
+   at least as many entries as function defs).
+
+**OC compilation now fully succeeds on AArch64.** IR verification passes, LLVM codegen
+produces 48,928 bytes of position-independent code with 70 functions, ORCv2
+materialization completes, code is sent back via IPC to the parent process.
 
 **AArch64 test results:**
 - ✓ `eosvmoc_platform_tests` — 4/4 PASS (X28 register works, memory layout correct, contracts execute)
 - ✓ `eosvmoc_limits_tests` — 6/6 PASS (OC configuration and limits)
-- ✗ `wasm_part1_tests --eos-vm-oc` — 44 failures: OC compile subprocess returns `compilation_result_unknownfailure`
+- ✗ `wasm_part1_tests --eos-vm-oc` — SIGSEGV during WASM execution (compilation succeeds)
 
-**Remaining work:** Debug OC compilation failure on AArch64. The LLVM IR generation
-runs in a forked subprocess; the child exits 0 but the compilation result is an error.
-Likely cause: `llvm.read_register("x28")` usage in LLVMEmitIR.cpp, the `+reserve-x28`
-feature interaction with LLVM 14's AArch64 backend, or address space 0 pointer
-arithmetic issues. The x86_64 GS-segment pattern uses `inttoptr(offset)` in AS 256;
-the AArch64 equivalent needs `GEP(x28_base, offset)` in AS 0 — the `emitVmemPointer`
-and `resolveVmemPtr` helpers implement this but may have semantic issues.
+**Remaining work:** Debug runtime SIGSEGV when executing JIT-compiled WASM code.
+GDB backtrace shows crash at pc in JIT code region with corrupt stack. Register dump:
+x28 = valid WASM memory base, x0 = 0x5530ea0000000000 (looks like un-rebased WASM
+pointer). Likely cause: `emitVmemPointer()` / `resolveVmemPtr()` pointer arithmetic
+in LLVMEmitIR.cpp — the `inttoptr(base + offset)` pattern may not produce correct
+addresses, or the `llvm.read_register("x28")` value isn't being propagated correctly
+through LLVM optimization passes. Could also be AArch64 outlined helper functions
+clobbering X28 despite `+reserve-x28`.
+
+**Debug instrumentation in place** (to be removed after fix): VERIFY_MODULE=1,
+checkpoint logging to /tmp/oc_compile_error.log, crash signal handler, noexcept
+removed from run_compile(), ORCv2 error reporter, DynamicLibrarySearchGenerator,
+setAutoClaimResponsibilityForObjectSymbols(true).
 
 **ARM test server:** `ubuntu@34.213.225.55` (Ubuntu 24.04, aarch64, 8 cores, 15GB RAM)
 
