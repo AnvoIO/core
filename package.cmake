@@ -47,8 +47,9 @@ set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/Anvo-Network/core")
 set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
 set(CPACK_DEBIAN_BASE_PACKAGE_SECTION "utils")
 
-set(CPACK_DEBIAN_PACKAGE_CONFLICTS "eosio, mandel, leap, spring")
-set(CPACK_RPM_PACKAGE_CONFLICTS "eosio, mandel, leap, spring")
+# No conflicts — our binaries (core_netd, core-cli, core-wallet, core-util)
+# have different names than legacy packages (nodeos, cleos, keosd) and can
+# coexist on the same system.
 
 set(CPACK_COMPONENTS_ALL "base")
 if(ENABLE_CORE_DEV_DEB)

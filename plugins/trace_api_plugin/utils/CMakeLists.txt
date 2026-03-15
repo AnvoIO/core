@@ -1,13 +1,13 @@
-add_executable( trace_api_util
+add_executable( core-trace-api-util
         compress_cmd.cpp
         trace_api_util.cpp
 )
-target_link_libraries( trace_api_util trace_api_plugin )
-target_include_directories( trace_api_util PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+target_link_libraries( core-trace-api-util trace_api_plugin )
+target_include_directories( core-trace-api-util PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 
-copy_bin( trace_api_util )
+copy_bin( core-trace-api-util )
 install( TARGETS
-    trace_api_util
+    core-trace-api-util
 
     COMPONENT base
 
