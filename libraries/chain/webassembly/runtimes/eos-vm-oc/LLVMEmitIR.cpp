@@ -174,6 +174,7 @@ namespace LLVMJIT
 		llvm::Constant* defaultTableMaxElementIndex;
 		llvm::Value* defaultMemoryBase;
 		llvm::Value* depthCounter;
+		llvm::Value* tableBasePtr;  // AArch64: loaded from control block per-function
 		bool tableOnlyHasDefinedFuncs = true;
 
 		llvm::MDNode* likelyFalseBranchWeights;
@@ -830,7 +831,12 @@ namespace LLVMJIT
 				"eosvmoc_internal.indirect_call_oob",FunctionType::get(),{});
 
 			// Load the type for this table entry.
+#if defined(__aarch64__)
+			// On AArch64, load table base from control block (avoids ADRP page-alignment issues)
+			auto tablePointer = moduleContext.tableBasePtr;
+#else
 			auto tablePointer = EmitInBoundsGEP(irBuilder, moduleContext.defaultTablePointer, {emitLiteral(0), emitLiteral(0)});
+#endif
 			auto functionTypePointerPointer = EmitInBoundsGEP(irBuilder, tablePointer, {functionIndexZExt, emitLiteral((U32)0)});
 			auto functionTypePointer = EmitLoad(irBuilder, functionTypePointerPointer);
 			auto llvmCalleeType = emitLiteralPointer(calleeType,llvmI8PtrType);
@@ -1300,9 +1306,15 @@ namespace LLVMJIT
 			auto readReg = llvm::Intrinsic::getDeclaration(moduleContext.llvmModule, llvm::Intrinsic::read_register, {llvmI64Type});
 			vmemBaseI64 = irBuilder.CreateCall(readReg, {llvm::MetadataAsValue::get(context, regMD)});
 
-			// Set up per-function defaultMemoryBase and depthCounter from X28
+			// Set up per-function defaultMemoryBase, depthCounter, and table pointer from X28
 			moduleContext.defaultMemoryBase = irBuilder.CreateIntToPtr(vmemBaseI64, llvmI8Type->getPointerTo(VMEM_ADDR_SPACE));
 			moduleContext.depthCounter = emitVmemPointer(OFFSET_OF_CONTROL_BLOCK_MEMBER(current_call_depth_remaining), llvmI32Type->getPointerTo(VMEM_ADDR_SPACE));
+			// Load the table base address from the control block. This avoids
+			// ADRP+ADD PC-relative addressing which breaks when the code blob
+			// is loaded at a different page alignment than where it was compiled.
+			auto tableElementType = llvm::StructType::get(context, {llvmI8PtrType, llvmI64Type});
+			llvm::Value* tableBaseI64 = EmitLoad(irBuilder, emitVmemPointer(OFFSET_OF_CONTROL_BLOCK_MEMBER(table_base), llvmI64Type->getPointerTo(VMEM_ADDR_SPACE)));
+			moduleContext.tableBasePtr = irBuilder.CreateIntToPtr(tableBaseI64, tableElementType->getPointerTo());
 		}
 #endif
 

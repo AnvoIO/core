@@ -35,6 +35,7 @@ struct eos_vm_oc_control_block {
    void* bounce_buffers;
 #endif
    uintptr_t running_code_base;
+   uintptr_t table_base;  // base address of indirect call table in the code blob
    int64_t  first_invalid_memory_address;
    unsigned is_running;
    int64_t max_linear_memory_pages;

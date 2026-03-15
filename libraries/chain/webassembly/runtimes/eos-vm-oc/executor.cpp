@@ -236,6 +236,7 @@ void executor::execute(const code_descriptor& code, memory& mem, apply_context& 
    cb->jmp = &executors_sigjmp_buf;
    cb->bounce_buffers = &executors_bounce_buffers;
    cb->running_code_base = (uintptr_t)(code_mapping + code.code_begin);
+   cb->table_base = cb->running_code_base + code.table_offset;
    cb->is_running = true;
    cb->globals = globals;
 

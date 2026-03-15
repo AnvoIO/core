@@ -57,6 +57,7 @@ void run_compile(wrapped_fd&& response_sock, wrapped_fd&& wasm_code, uint64_t st
          result_message.apply_offset = function_to_offsets.at(exprt.index-module.functions.imports.size());
    }
 
+   result_message.table_offset = code.table_offset;
    result_message.starting_memory_pages = -1;
    if(module.memories.size())
       result_message.starting_memory_pages = module.memories.defs.at(0).type.size.min;
