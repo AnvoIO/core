@@ -28,7 +28,16 @@ using namespace boost::asio;
 
 namespace bip = boost::interprocess;
 
-using allocator_t = bip::rbtree_best_fit<bip::null_mutex_family, bip::offset_ptr<void>, alignof(std::max_align_t)>;
+// On AArch64, JIT code uses ADRP+ADD/LDR (page-relative addressing) for
+// internal data references.  The code blob must be loaded at the same page
+// alignment as where it was compiled.  Since the compilation buffer is
+// page-aligned, the code cache allocation must also be page-aligned (4096).
+#if defined(__aarch64__)
+static constexpr size_t code_cache_alignment = 4096;
+#else
+static constexpr size_t code_cache_alignment = alignof(std::max_align_t);
+#endif
+using allocator_t = bip::rbtree_best_fit<bip::null_mutex_family, bip::offset_ptr<void>, code_cache_alignment>;
 
 struct config;
 
