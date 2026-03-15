@@ -11,6 +11,11 @@
 namespace core_net { namespace chain { namespace eosvmoc {
 
 memory::memory(uint64_t sliced_pages) {
+#if defined(__aarch64__)
+   // memory_prologue_size is aligned to 4KB pages. AArch64 systems with 64KB pages
+   // would break the mmap/mprotect alignment assumptions. Require 4KB pages for now.
+   FC_ASSERT(sysconf(_SC_PAGE_SIZE) == 4096, "eos-vm-oc on AArch64 currently requires 4KB pages");
+#endif
    uint64_t number_slices = sliced_pages + 1;
    uint64_t wasm_memory_size = sliced_pages * wasm_constraints::wasm_page_size;
    int fd = exec_sealed_memfd_create("eosvmoc_mem");

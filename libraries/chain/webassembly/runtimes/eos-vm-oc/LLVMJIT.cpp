@@ -423,8 +423,14 @@ namespace LLVMJIT
 			llvm::TargetOptions to;
 			to.EmitStackSizeSection = 1;
 
+			llvm::SmallVector<std::string,0> targetFeatures;
+#if defined(__aarch64__)
+			// Tell LLVM's AArch64 code generator not to use X28 — it's our
+			// dedicated WASM memory base register (equivalent of GS on x86_64).
+			targetFeatures.push_back("+reserve-x28");
+#endif
 			targetMachine = llvm::EngineBuilder().setRelocationModel(llvm::Reloc::PIC_).setCodeModel(llvm::CodeModel::Small).setTargetOptions(to).selectTarget(
-				llvm::Triple(targetTriple),"","",llvm::SmallVector<std::string,0>()
+				llvm::Triple(targetTriple),"","",targetFeatures
 				);
 		}
 
