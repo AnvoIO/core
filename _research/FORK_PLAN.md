@@ -240,6 +240,33 @@ separate branch. See Phase 1A-VM below.
 
 **Detailed architecture:** [20_core_vm_oc_architecture.md](20_core_vm_oc_architecture.md)
 
+#### 1A-CDT. CDT Fork & Rebrand (required before chain launch)
+**Goal:** Fork the Contract Development Toolkit to support `core_net::` namespaced
+headers and build functions, enabling full end-to-end contract development.
+
+**Status: PLANNED** — Required before contracts can be fully tested against the node.
+
+**Why needed:**
+- CDT provides the `eosio::` namespace (`eosio::contract`, `eosio::action`, etc.)
+  used in all contract code via `#include <eosio/...>`
+- CDT CMake functions (`find_package(spring)`, `eosio_check_version`,
+  `add_eosio_test_executable`) reference Spring package names
+- Contract tests link against the node's test framework via CDT's build system
+- Without CDT fork, contracts compile but tests cannot link against our node
+
+**Fork from:** `AntelopeIO/cdt` → private `Anvo-Network/cdt`
+
+**Changes needed:**
+- CMake package: `find_package(spring)` → `find_package(core)` (or dual-name)
+- CMake functions: `add_eosio_test_executable` → `add_core_test_executable`
+- SDK headers: provide `core_net::` namespace aliases alongside `eosio::`
+- SDK headers: `#include <core_net/...>` wrappers around `#include <eosio/...>`
+- Build scripts: Spring → Core references
+- Keep backward compat: existing `eosio::` namespace must continue to work
+
+**Not needed immediately:** Contracts compile with upstream CDT today. The fork is
+needed for running contract tests against our node and for shipping a developer SDK.
+
 #### 1B. System Contracts
 **Goal:** Fork and modify the bundled system contracts for the new chain.
 
