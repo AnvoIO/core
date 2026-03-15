@@ -306,7 +306,7 @@ other breaking changes in the LLVM C++ API.
 #### 1F. AArch64 Support (depends on 1E)
 **Goal:** Production-quality ARM server support for eos-vm-oc runtime.
 
-**Status: IN PROGRESS** (branch `aarch64/eos-vm-oc`, ~17 commits)
+**Status: IN PROGRESS** (branch `aarch64/eos-vm-oc`, ~25 commits)
 
 **Strategy:** Dedicated register X28 via `-ffixed-x28`, matching V8/SpiderMonkey/Wasmtime.
 
@@ -330,6 +330,9 @@ other breaking changes in the LLVM C++ API.
 | ORCv2 context ownership | `LLVMEmitIR.cpp`, `LLVMJIT.cpp` | ✓ Heap-allocate LLVMContext for proper ThreadSafeContext ownership |
 | ORCv2 finalizeMemory | `LLVMJIT.cpp` | ✓ Fix return value (false=success, was returning true=error) |
 | Stack sizes check | `LLVMJIT.cpp` | ✓ Allow extra .stack_sizes entries from AArch64 outlined helpers |
+| tee_local fix | `LLVMEmitIR.cpp` | ✓ Don't resolve local pointers as vmem globals |
+| Table access via CB | `eos-vm-oc.h`, `ipc_protocol.hpp`, `eos-vm-oc.hpp`, `compile_trampoline.cpp`, `compile_monitor.cpp`, `executor.cpp`, `LLVMEmitIR.cpp` | ✓ Load table base from control block via X28 (avoids ADRP page-alignment issue) |
+| Stack sizes trailing | `LLVMJIT.cpp` | ✓ Handle trailing address at end of .stack_sizes section |
 
 **Bugs found and fixed during debug session (2026-03-15):**
 
@@ -352,28 +355,50 @@ other breaking changes in the LLVM C++ API.
    functions). The strict `==` check caused `_exit(1)`. Fix: changed to `>=` (require
    at least as many entries as function defs).
 
-**OC compilation now fully succeeds on AArch64.** IR verification passes, LLVM codegen
-produces 48,928 bytes of position-independent code with 70 functions, ORCv2
-materialization completes, code is sent back via IPC to the parent process.
+4. **tee_local vmem resolution (SIGSEGV):** `tee_local` in LLVMEmitIR.cpp called
+   `get_mutable_global_ptr()` on local variable pointers (stack allocas). On x86_64
+   `resolveVmemPtr` is a no-op so this was harmless, but on AArch64 it added X28 to
+   the stack address → garbage pointer → SIGSEGV. Found by dumping optimized LLVM IR
+   which showed `ptrtoint(alloca) + X28` pattern. Fix: store directly to
+   `localPointers[]`, matching `set_local` behavior.
 
-**AArch64 test results:**
-- ✓ `eosvmoc_platform_tests` — 4/4 PASS (X28 register works, memory layout correct, contracts execute)
-- ✓ `eosvmoc_limits_tests` — 6/6 PASS (OC configuration and limits)
-- ✗ `wasm_part1_tests --eos-vm-oc` — SIGSEGV during WASM execution (compilation succeeds)
+5. **ADRP page-relative table access (indirect call type mismatch):** On AArch64,
+   ADRP+ADD is page-relative — the encoded page difference is only correct if the
+   code blob is loaded at the same 4KB page alignment as where LLVM compiled it. The
+   OC code cache allocator doesn't guarantee page alignment (uses 16-byte aligned
+   `rbtree_best_fit`), so ADRP+ADD references to the `wasmTable` global pointed to
+   wrong memory → type descriptor mismatch → "Indirect call function type mismatch".
+   Fix: store `table_base` in the control block (accessible via X28) and load it
+   per-function instead of using a PC-relative global reference. Added `table_offset`
+   to `code_compilation_result_message`, `code_descriptor`, and the IPC path.
 
-**Remaining work:** Debug runtime SIGSEGV when executing JIT-compiled WASM code.
-GDB backtrace shows crash at pc in JIT code region with corrupt stack. Register dump:
-x28 = valid WASM memory base, x0 = 0x5530ea0000000000 (looks like un-rebased WASM
-pointer). Likely cause: `emitVmemPointer()` / `resolveVmemPtr()` pointer arithmetic
-in LLVMEmitIR.cpp — the `inttoptr(base + offset)` pattern may not produce correct
-addresses, or the `llvm.read_register("x28")` value isn't being propagated correctly
-through LLVM optimization passes. Could also be AArch64 outlined helper functions
-clobbering X28 despite `+reserve-x28`.
+6. **Trailing .stack_sizes entry:** The `.stack_sizes` section on AArch64 can end with
+   a trailing address that fills remaining space exactly, with no room for the
+   following ULEB128 stack size value. Fix: break parse loop when address read reaches
+   section boundary.
+
+**OC compilation and execution now works on AArch64.** IR verification passes, LLVM
+codegen produces position-independent code, ORCv2 materialization completes, indirect
+calls resolve correctly, and compiled WASM contracts execute successfully.
+
+**AArch64 test results (44 → 8 failures):**
+- ✓ `eosvmoc_platform_tests` — 4/4 PASS
+- ✓ `eosvmoc_limits_tests` — 6/6 PASS
+- ✗ `wasm_part1_tests --eos-vm-oc` — **8 failures** (down from 44):
+  - `f64_tests` (×2), `f64_test_bitwise` (×2), `f64_test_cmp` (×2),
+    `f32_f64_conversion_tests` (×2)
+
+**Remaining work:** Debug f64 test failures. These pass with the eos-vm interpreter
+but fail with OC on AArch64 (x86_64 OC passes all). All float opcodes ARE injected
+through softfloat (verified — `wasm_injection.hpp` rewrites all float ops including
+promote/demote/comparisons into calls to `_core_net_f*` intrinsics). The issue is
+likely in how the OC JIT handles the calling convention for softfloat intrinsics on
+AArch64, or how f64 values are stored/loaded from WASM linear memory.
 
 **Debug instrumentation in place** (to be removed after fix): VERIFY_MODULE=1,
-checkpoint logging to /tmp/oc_compile_error.log, crash signal handler, noexcept
-removed from run_compile(), ORCv2 error reporter, DynamicLibrarySearchGenerator,
-setAutoClaimResponsibilityForObjectSymbols(true).
+DUMP_OPTIMIZED_MODULE=1, checkpoint logging to /tmp/oc_compile_error.log, crash
+signal handler, noexcept removed from run_compile(), ORCv2 error reporter,
+DynamicLibrarySearchGenerator, setAutoClaimResponsibilityForObjectSymbols(true).
 
 **ARM test server:** `ubuntu@34.213.225.55` (Ubuntu 24.04, aarch64, 8 cores, 15GB RAM)
 
