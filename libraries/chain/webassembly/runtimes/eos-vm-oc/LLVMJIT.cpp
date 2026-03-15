@@ -498,15 +498,15 @@ namespace LLVMJIT
 
 			while(ds.isValidOffsetForAddress(offset)) {
 				ds.getAddress(&offset);
+				// On AArch64, the .stack_sizes section may have trailing
+				// address entries without a following ULEB128 value (due to
+				// section alignment/padding).  If there's no data left after
+				// the address, stop parsing.
+				if(offset >= stacksizes.size())
+					break;
 				const de_offset_t offset_before_read = offset;
 				const uint64_t stack_size = ds.getULEB128(&offset);
-				if(offset_before_read == offset) {
-					std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
-						<< "OC compile: stack_sizes ULEB128 decode failed at offset " << offset_before_read
-						<< " in section of size " << stacksizes.size()
-						<< " (found " << num_functions_stack_size_found << " entries so far)" << std::endl;
-					WAVM_ASSERT_THROW(offset_before_read != offset);
-				}
+				WAVM_ASSERT_THROW(offset_before_read != offset);
 
 				++num_functions_stack_size_found;
 				if(stack_size > stack_size_limit) {
