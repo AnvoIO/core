@@ -186,6 +186,48 @@ testnet T2 (Month 2-3) depends on them.
 
 6. **README.md** — Project overview for Anvo Network, build instructions, quick start
 
+#### 1A-OC. eos-vm-oc Component Rebrand
+**Goal:** Remove remaining `eos` branding from the OC compiler component, completing
+the Phase 1A rebrand for the now-functional AArch64+x86_64 OC runtime.
+
+**Status: PLANNED**
+
+The Phase 1A rebrand covered the top-level namespace, macros, executables, and WASM
+intrinsics but left the internal eos-vm-oc component untouched since it wasn't yet
+ported to AArch64. Now that Phase 1F is complete, this component should be rebranded.
+
+**Naming convention:**
+
+| Category | Old | New |
+|----------|-----|-----|
+| C++ namespace | `eosvmoc` | `corevmoc` |
+| C functions | `eos_vm_oc_*` | `core_vm_oc_*` |
+| C macros | `EOSVMOC_*` | `COREVMOC_*` |
+| Directory paths | `eos-vm-oc/` | `core-vm-oc/` |
+| File names | `eos-vm-oc.hpp`, `eos-vm-oc.h` | `core-vm-oc.hpp`, `core-vm-oc.h` |
+| Log/error strings | `"EOS VM OC"` | `"Core VM OC"` |
+| CMake variables | `CHAIN_EOSVMOC_SOURCES` | `CHAIN_COREVMOC_SOURCES` |
+| Test suites | `eosvmoc_*_tests` | `corevmoc_*_tests` |
+| Internal intrinsics | `eosvmoc_internal.*` | `corevmoc_internal.*` |
+| CLI options | `--eos-vm-oc-*` | `--core-vm-oc-*` (primary) + `--eos-vm-oc-*` (deprecated alias) |
+
+**What stays unchanged:**
+- `CORE_NET_VM_OC_*` macros (already rebranded in Phase 1A)
+- `core_net::` namespace qualifiers (already rebranded)
+- `vm-oc` runtime name in config (neutral, no "eos")
+- Process names (`oc-monitor`, `oc-trampoline`, `oc-compile`) — neutral
+
+**Backward compatibility for migrating chains:**
+- CLI options `--eos-vm-oc-cache-size-mb`, `--eos-vm-oc-enable`,
+  `--eos-vm-oc-compile-threads`, `--eos-vm-oc-whitelist` preserved as deprecated
+  aliases mapping to new `--core-vm-oc-*` names
+- OC code cache is per-node and rebuilt on startup — no serialization compat concern
+- `eosvmoc_internal.*` intrinsic names are runtime-internal (never in WASM imports);
+  renaming requires bumping `current_codegen_version` to invalidate cached code
+
+**Scope:** ~35 unique patterns, ~250+ occurrences across ~30 files. Directory renames
+affect include paths throughout the codebase.
+
 #### 1B. System Contracts
 **Goal:** Fork and modify the bundled system contracts for the new chain.
 
