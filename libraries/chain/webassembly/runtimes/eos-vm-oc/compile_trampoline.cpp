@@ -8,6 +8,8 @@
 #include <signal.h>
 #include <sys/resource.h>
 #include <fstream>
+#include <execinfo.h>
+#include <fcntl.h>
 
 #include "IR/Module.h"
 #include "IR/Validate.h"
@@ -208,6 +210,25 @@ void run_compile_trampoline(int fd) {
 
          struct rlimit core_limits = {0u, 0u};
          setrlimit(RLIMIT_CORE, &core_limits);
+
+         // Install crash signal handler for debugging
+         struct sigaction crash_sa{};
+         crash_sa.sa_handler = [](int sig) {
+            const char* signame = sig == SIGSEGV ? "SIGSEGV" : sig == SIGABRT ? "SIGABRT" : sig == SIGBUS ? "SIGBUS" : "UNKNOWN";
+            void* bt[32];
+            int n = backtrace(bt, 32);
+            // Write to log file
+            int fd = open("/tmp/oc_compile_error.log", O_WRONLY|O_CREAT|O_APPEND, 0644);
+            if(fd >= 0) {
+               dprintf(fd, "OC compile child CRASHED with signal %s (%d)\nBacktrace:\n", signame, sig);
+               backtrace_symbols_fd(bt, n, fd);
+               close(fd);
+            }
+            _exit(128 + sig);
+         };
+         sigaction(SIGSEGV, &crash_sa, nullptr);
+         sigaction(SIGABRT, &crash_sa, nullptr);
+         sigaction(SIGBUS, &crash_sa, nullptr);
 
          {
             std::ofstream log("/tmp/oc_compile_error.log", std::ios::app);
