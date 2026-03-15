@@ -498,10 +498,13 @@ namespace LLVMJIT
 				}
 			}
 		}
-		if(num_functions_stack_size_found != module.functions.defs.size()) {
+		// On AArch64, LLVM may generate outlined helper functions (e.g.,
+		// save/restore sequences) that add extra .stack_sizes entries beyond
+		// the WASM function defs.  Require at least as many entries as defs.
+		if(num_functions_stack_size_found < module.functions.defs.size()) {
 			std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
 				<< "OC compile _exit(1): stack_size_found " << num_functions_stack_size_found
-				<< " != functions.defs.size " << module.functions.defs.size() << std::endl;
+				<< " < functions.defs.size " << module.functions.defs.size() << std::endl;
 			_exit(1);
 		}
 		if(jitModule->final_pic_code.size() >= generated_code_size_limit) {
