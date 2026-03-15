@@ -197,6 +197,11 @@ namespace LLVMJIT
 										std::make_unique<MemoryManagerForwarder>(*this));
 							  });
 			objectLayer->setProcessAllSections(true);
+			// On AArch64, LLVM may generate outlined helper functions (e.g.
+			// save/restore sequences) that aren't in the original IR module.
+			// Auto-claim responsibility for these extra object symbols so
+			// ORCv2 materialization doesn't fail.
+			objectLayer->setAutoClaimResponsibilityForObjectSymbols(true);
 			objectLayer->setNotifyLoaded(
 				[this](llvm::orc::MaterializationResponsibility &R, const llvm::object::ObjectFile &Obj,
 				       const llvm::RuntimeDyld::LoadedObjectInfo &o) {
