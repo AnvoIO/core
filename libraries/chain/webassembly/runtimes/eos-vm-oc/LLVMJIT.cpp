@@ -464,14 +464,25 @@ namespace LLVMJIT
 				WAVM_ASSERT_THROW(offset_before_read != offset);
 
 				++num_functions_stack_size_found;
-				if(stack_size > stack_size_limit)
+				if(stack_size > stack_size_limit) {
+					std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
+						<< "OC compile _exit(1): stack_size " << stack_size << " > limit " << stack_size_limit << std::endl;
 					_exit(1);
+				}
 			}
 		}
-		if(num_functions_stack_size_found != module.functions.defs.size())
+		if(num_functions_stack_size_found != module.functions.defs.size()) {
+			std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
+				<< "OC compile _exit(1): stack_size_found " << num_functions_stack_size_found
+				<< " != functions.defs.size " << module.functions.defs.size() << std::endl;
 			_exit(1);
-		if(jitModule->final_pic_code.size() >= generated_code_size_limit)
+		}
+		if(jitModule->final_pic_code.size() >= generated_code_size_limit) {
+			std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
+				<< "OC compile _exit(1): code size " << jitModule->final_pic_code.size()
+				<< " >= limit " << generated_code_size_limit << std::endl;
 			_exit(1);
+		}
 
 		instantiated_code ret;
 		ret.code = jitModule->final_pic_code;
