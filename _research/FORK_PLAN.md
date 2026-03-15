@@ -306,7 +306,7 @@ other breaking changes in the LLVM C++ API.
 #### 1F. AArch64 Support (depends on 1E)
 **Goal:** Production-quality ARM server support for eos-vm-oc runtime.
 
-**Status: IN PROGRESS** (branch `aarch64/eos-vm-oc`, ~25 commits)
+**Status: COMPLETE** (branch `aarch64/eos-vm-oc`, ~30 commits)
 
 **Strategy:** Dedicated register X28 via `-ffixed-x28`, matching V8/SpiderMonkey/Wasmtime.
 
@@ -388,21 +388,22 @@ calls resolve correctly, and compiled WASM contracts execute successfully.
   - `f64_tests` (×2), `f64_test_bitwise` (×2), `f64_test_cmp` (×2),
     `f32_f64_conversion_tests` (×2)
 
-**Remaining work:** Debug 8 f64 test failures. These pass with the eos-vm interpreter
-but fail with OC on AArch64 (x86_64 OC passes all). All float opcodes ARE injected
-through softfloat (verified — `wasm_injection.hpp` rewrites all float ops including
-promote/demote/comparisons into calls to `_core_net_f*` intrinsics). The softfloat
-functions produce correct results when called directly from C++ on AArch64. The
-failing assertion is test case 61: `assert_return_nan32(f32_demote_f64(-nan))` — the
-result of `_core_net_f64_demote(-nan)` is not recognized as NaN when called through
-the JIT. Likely cause: NaN bit pattern corruption in the JIT→host function call path,
-possibly in how `f64.const -nan` is emitted as an LLVM constant (`APFloat(double)`
-may canonicalize NaN), or in how f32 return values are handled on AArch64.
+7. **Page-aligned code allocation (constant pool references):** Same root cause as
+   bug 5 — ADRP page-relative addressing also affects constant pool and literal
+   pool references within the code blob. Float constants loaded via ADRP+LDR from
+   a misaligned blob produced garbage values, causing f64 test failures. Fix:
+   page-align the compilation buffer (posix_memalign) AND the code cache allocator
+   (4096-byte alignment instead of 16-byte default).
 
-**Debug instrumentation in place** (to be removed after fix): VERIFY_MODULE=1,
-DUMP_OPTIMIZED_MODULE=1, checkpoint logging to /tmp/oc_compile_error.log, crash
-signal handler, noexcept removed from run_compile(), ORCv2 error reporter,
-DynamicLibrarySearchGenerator, setAutoClaimResponsibilityForObjectSymbols(true).
+**All tests now pass on AArch64:**
+- `eosvmoc_platform_tests` — 4/4 PASS
+- `eosvmoc_limits_tests` — 6/6 PASS
+- `wasm_part1_tests --eos-vm-oc` — ALL PASS (0 failures)
+
+**x86_64 tests also pass** — no regressions from the AArch64 changes.
+
+**Debug instrumentation removed.** All temporary logging, crash handlers, and
+IR dump helpers have been cleaned up. Only the actual fixes remain.
 
 **ARM test server:** `ubuntu@34.213.225.55` (Ubuntu 24.04, aarch64, 8 cores, 15GB RAM)
 
