@@ -17,21 +17,23 @@ the starting point for the fork. No external dependency needed.
 
 ## Native Handlers (Node-Level, Not Contract)
 
-These actions are handled natively by the node and bypass contract code entirely:
+These actions are handled natively by the node and bypass contract code entirely.
+The system account prefix is genesis-configurable (`eosio` for migrating chains,
+`core` for new chains — see doc 08):
 
 ```
-eosio::newaccount    — account creation
-eosio::setcode       — deploy/update contract code
-eosio::setabi        — deploy/update contract ABI
-eosio::updateauth    — modify account permissions
-eosio::deleteauth    — remove custom permissions
-eosio::linkauth      — link action to custom permission
-eosio::unlinkauth    — unlink action from custom permission
-eosio::canceldelay   — cancel delayed transaction
+<system>::newaccount    — account creation
+<system>::setcode       — deploy/update contract code
+<system>::setabi        — deploy/update contract ABI
+<system>::updateauth    — modify account permissions
+<system>::deleteauth    — remove custom permissions
+<system>::linkauth      — link action to custom permission
+<system>::unlinkauth    — unlink action from custom permission
+<system>::canceldelay   — cancel delayed transaction
 ```
 
-These are registered in `controller.cpp` via `SET_APP_HANDLER` macro. The system
-account name is the only thing that needs to change here (doc 08).
+These are registered in `controller.cpp` via `SET_APP_HANDLER` macro using the
+genesis-configurable system account name (doc 08).
 
 ## Privileged Intrinsics (System Contract Can Call)
 
@@ -82,20 +84,20 @@ The system contract's `onblock` handler:
 
 | Change | What | In Contract |
 |---|---|---|
-| Gas pricing tables | `gas_params` table: cpu_price, net_price, ram_price | eosio.system |
-| Gas price governance | `setgasprices` action (producer vote) | eosio.system |
-| Baseline allocation | On `newaccount`: set baseline cpu/net/ram weights | eosio.system |
-| Refundable deposit | `deposit_table`, maturity tracking, `reclaimdeposit` action | eosio.system |
-| Deposit sponsor tracking | Who paid deposit, who gets refund | eosio.system |
-| Gas fee collection | Collect fees, distribute (burn/treasury/validators) | eosio.system |
-| RAM market removal | Remove `buyram`/`sellram` Bancor logic, replace with fixed-price | eosio.system |
-| RAM fixed pricing | Governance-set RAM price via `setramprices` | eosio.system |
+| Gas pricing tables | `gas_params` table: cpu_price, net_price, ram_price | core.system |
+| Gas price governance | `setgasprices` action (producer vote) | core.system |
+| Baseline allocation | On `newaccount`: set baseline cpu/net/ram weights | core.system |
+| Refundable deposit | `deposit_table`, maturity tracking, `reclaimdeposit` action | core.system |
+| Deposit sponsor tracking | Who paid deposit, who gets refund | core.system |
+| Gas fee collection | Collect fees, distribute (burn/treasury/validators) | core.system |
+| RAM market removal | Remove `buyram`/`sellram` Bancor logic, replace with fixed-price | core.system |
+| RAM fixed pricing | Governance-set RAM price via `setramprices` | core.system |
 
 ### From Passkey Accounts (Doc 12)
 
 | Change | What | In Contract |
 |---|---|---|
-| Hash-based account names | Derive name from pubkey hash on creation | eosio.system |
+| Hash-based account names | Derive name from pubkey hash on creation | core.system |
 | Name service (optional) | Alias registry: readable name → hash-based account | New contract |
 
 ### From Identity (Doc 13)
@@ -111,7 +113,7 @@ The system contract's `onblock` handler:
 
 | Change | What | In Contract |
 |---|---|---|
-| System account names | Genesis-configurable (eosio.* or core.*) | eosio.system + node |
+| System account names | Genesis-configurable (eosio.* or core.*) | core.system + node |
 
 ### From Rebrand (Doc 07)
 
@@ -153,7 +155,7 @@ core-contracts/
 The genesis boot sequence for a new chain:
 
 ```
-1. Start cored with genesis.json (creates system account + initial key)
+1. Start core_netd with genesis.json (creates system account + initial key)
 2. Deploy boot contract to system account (core)
 3. Activate required protocol features:
    - PREACTIVATE_FEATURE

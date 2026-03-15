@@ -186,15 +186,15 @@ testnet T2 (Month 2-3) depends on them.
 
 6. **README.md** — Project overview for Anvo Network, build instructions, quick start
 
-#### 1A-OC. eos-vm-oc Component Rebrand
+#### 1A-OC. Core VM OC Component Rebrand
 **Goal:** Remove remaining `eos` branding from the OC compiler component, completing
 the Phase 1A rebrand for the now-functional AArch64+x86_64 OC runtime.
 
 **Status: COMPLETE** (branch `rebrand/eos-vm-oc`, merged to main)
 
 The Phase 1A rebrand covered the top-level namespace, macros, executables, and WASM
-intrinsics but left the internal eos-vm-oc component untouched since it wasn't yet
-ported to AArch64. Now complete — 61 files changed, all tests pass on both architectures.
+intrinsics but left the internal OC component untouched since it wasn't yet ported
+to AArch64. Now complete — 61 files changed, all tests pass on both architectures.
 
 **Naming convention:**
 
@@ -236,7 +236,7 @@ affect include paths throughout the codebase.
 
 **Remaining VM rebrand work:** `eos_vm` → `core_vm` and `eos_vm_jit` → `core_vm_jit`
 enum values and CLI flags (`--eos-vm`, `--eos-vm-jit`) need dual-name treatment on a
-separate branch. See Phase 1A-VM below.
+separate branch.
 
 **Detailed architecture:** [20_core_vm_oc_architecture.md](20_core_vm_oc_architecture.md)
 
@@ -275,13 +275,20 @@ headers and build functions, enabling full end-to-end contract development.
 needed for running contract tests against our node and for shipping a developer SDK.
 
 #### 1B. System Contracts
-**Goal:** Fork and modify the bundled system contracts for the new chain.
+**Goal:** Modify the system contracts for the new chain's resource model and features.
 
-**Starting point:** Spring's `unittests/contracts/` — complete, tested contracts
-with Savanna support (eosio.system, eosio.token, eosio.msig, eosio.wrap, eosio.boot).
+**Status: REBRAND COMPLETE, MODIFICATIONS PENDING**
+
+**Repo:** Private `Anvo-Network/contracts` (forked from AntelopeIO/reference-contracts)
+- Fully rebranded: `core.system`, `core.token`, `core.msig`, `core.wrap`, `core.bios`,
+  `core.boot`, `core.bpay`, `core.fees`
+- Namespaces: `coresystem`, `corebios`, `coreboot`
+- Account names: `"core"_n`, `"core.token"_n`, etc.
+- Tests, docs, LICENSE (BSL), CONTRIBUTING.md all updated
+- Compiles with upstream CDT 4.1.1 (verified)
+- Depends on Phase 1A-CDT for running contract tests against our node
 
 **Modifications for launch (Phase 1):**
-- Rename accounts (part of rebrand)
 - Add gas pricing + collection (doc 11)
 - Add baseline allocation on account creation (doc 11)
 - Add refundable deposit system (doc 11)
@@ -356,11 +363,11 @@ expensive deployment). Every account is natively a smart wallet.
 **Detailed plan:** [12_passkey_accounts.md](12_passkey_accounts.md)
 
 #### 1E. LLVM Modernization (Prerequisite for OC + AArch64)
-**Goal:** Update eos-vm-oc to build with modern LLVM (14+).
+**Goal:** Update the OC runtime to build with modern LLVM (14+).
 
 **Status: COMPLETE** (branch `llvm/modernize-14`, build passes 100% with `-DENABLE_OC=ON`)
 
-**Problem solved:** Spring required LLVM 7-11 for eos-vm-oc. Ubuntu 24.04 ships
+**Problem solved:** Spring required LLVM 7-11 for its OC runtime. Ubuntu 24.04 ships
 LLVM 14-20. The ORCv1 JIT API was completely removed in LLVM 12, along with several
 other breaking changes in the LLVM C++ API.
 
@@ -392,7 +399,7 @@ other breaking changes in the LLVM C++ API.
 - LLVM 16+: `llvm/Support/Host.h` moves to `llvm/TargetParser/Host.h`
 
 #### 1F. AArch64 Support (depends on 1E)
-**Goal:** Production-quality ARM server support for eos-vm-oc runtime.
+**Goal:** Production-quality ARM server support for the Core VM OC runtime.
 
 **Status: COMPLETE** (branch `aarch64/eos-vm-oc`, ~30 commits)
 
@@ -408,18 +415,18 @@ other breaking changes in the LLVM C++ API.
 | Signal handler | `executor.cpp` | ✓ Reads X28 from ucontext on AArch64 |
 | LLVM IR generation | `LLVMEmitIR.cpp` | ✓ VMEM_ADDR_SPACE constant, emitVmemPointer(), resolveVmemPtr(), per-function X28 load via llvm.read_register |
 | LLVM JIT target | `LLVMJIT.cpp` | ✓ `+reserve-x28` target feature for codegen |
-| Host function asm | `eos-vm-oc.hpp` | ✓ 5 inline asm blocks ported (array_ptr, null_term, convert_native, depth check, ctx load) |
+| Host function asm | `core-vm-oc.hpp` | ✓ 5 inline asm blocks ported (array_ptr, null_term, convert_native, depth check, ctx load) |
 | Memory layout | `memory.cpp` | ✓ Runtime 4KB page size assertion for AArch64 |
 | CRC32 | `city.cpp` | ✓ ARM CRC32 intrinsic via `arm_acle.h` |
 | Pagemap | `pagemap_accessor.hpp` | ✓ Enabled on aarch64 |
-| Tests | `eosvmoc_platform_tests.cpp` | ✓ 4 new tests (register r/w, memory constants, smoke, multi-contract) |
+| Tests | `corevmoc_platform_tests.cpp` | ✓ 4 new tests (register r/w, memory constants, smoke, multi-contract) |
 | Test config | `unittests/CMakeLists.txt` | ✓ Guard nofsgs tests to x86_64 only |
 | zlib fix | `libraries/libfc/test/CMakeLists.txt` | ✓ Explicit ZLIB dep for test_fc (ARM link order) |
 | ORCv2 context ownership | `LLVMEmitIR.cpp`, `LLVMJIT.cpp` | ✓ Heap-allocate LLVMContext for proper ThreadSafeContext ownership |
 | ORCv2 finalizeMemory | `LLVMJIT.cpp` | ✓ Fix return value (false=success, was returning true=error) |
 | Stack sizes check | `LLVMJIT.cpp` | ✓ Allow extra .stack_sizes entries from AArch64 outlined helpers |
 | tee_local fix | `LLVMEmitIR.cpp` | ✓ Don't resolve local pointers as vmem globals |
-| Table access via CB | `eos-vm-oc.h`, `ipc_protocol.hpp`, `eos-vm-oc.hpp`, `compile_trampoline.cpp`, `compile_monitor.cpp`, `executor.cpp`, `LLVMEmitIR.cpp` | ✓ Load table base from control block via X28 (avoids ADRP page-alignment issue) |
+| Table access via CB | `core-vm-oc.h`, `ipc_protocol.hpp`, `core-vm-oc.hpp`, `compile_trampoline.cpp`, `compile_monitor.cpp`, `executor.cpp`, `LLVMEmitIR.cpp` | ✓ Load table base from control block via X28 (avoids ADRP page-alignment issue) |
 | Stack sizes trailing | `LLVMJIT.cpp` | ✓ Handle trailing address at end of .stack_sizes section |
 
 **Bugs found and fixed during debug session (2026-03-15):**
@@ -470,9 +477,9 @@ codegen produces position-independent code, ORCv2 materialization completes, ind
 calls resolve correctly, and compiled WASM contracts execute successfully.
 
 **AArch64 test results (44 → 8 failures):**
-- ✓ `eosvmoc_platform_tests` — 4/4 PASS
-- ✓ `eosvmoc_limits_tests` — 6/6 PASS
-- ✗ `wasm_part1_tests --eos-vm-oc` — **8 failures** (down from 44):
+- ✓ `corevmoc_platform_tests` — 4/4 PASS
+- ✓ `corevmoc_limits_tests` — 6/6 PASS
+- ✗ `wasm_part1_tests --core-vm-oc` — **8 failures** (down from 44):
   - `f64_tests` (×2), `f64_test_bitwise` (×2), `f64_test_cmp` (×2),
     `f32_f64_conversion_tests` (×2)
 
@@ -484,9 +491,9 @@ calls resolve correctly, and compiled WASM contracts execute successfully.
    (4096-byte alignment instead of 16-byte default).
 
 **All tests now pass on AArch64:**
-- `eosvmoc_platform_tests` — 4/4 PASS
-- `eosvmoc_limits_tests` — 6/6 PASS
-- `wasm_part1_tests --eos-vm-oc` — ALL PASS (0 failures)
+- `corevmoc_platform_tests` — 4/4 PASS
+- `corevmoc_limits_tests` — 6/6 PASS
+- `wasm_part1_tests --core-vm-oc` — ALL PASS (0 failures)
 
 **x86_64 tests also pass** — no regressions from the AArch64 changes.
 
@@ -581,7 +588,7 @@ shadow_0  shadow_1  shadow_2  shadow_3
 **Phase 2A: Read-Only Parallelism — Warmup (Month 3, ~2-4 weeks)**
 - Separate read-only queries from state-modifying transactions
 - Execute read-only transactions in parallel against a state snapshot
-- Gets the team familiar with Spring's threading model
+- Gets the team familiar with the node's threading model
 - Delivers immediate, low-risk value
 - Foundation infrastructure reused by Block-STM (thread pools, per-thread contexts)
 
@@ -716,7 +723,7 @@ already have access to Keccak-256, secp256k1, BLS pairing, SHA-256, and RIPEMD-1
 - Production-grade multi-chain bridge already handling BTC and ETH/USDT
 - Go bridge node with TSS/MPC threshold signing (no single node holds keys)
 - 5-node testnet mesh validated, 14 ADRs documenting security architecture
-- Bridge node is **chain-agnostic** — porting to Spring fork is config changes only
+- Bridge node is **chain-agnostic** — porting to Anvo Network is config changes only
 - Smart contracts (C, EOSIO CDT) need redeployment with updated account names
 
 **Effort WITH Crosslink:** ~3-4 months (port, Savanna finality integration, remaining work)
@@ -867,6 +874,17 @@ Claude. These team estimates are for the full scope if expanding beyond that mod
 - **Core VM OC:** Builds with LLVM 7-11 or LLVM 14-17. Ubuntu 24.04 uses `llvm-14-dev`.
 - **Full build:** `-DENABLE_OC=ON -DCMAKE_BUILD_TYPE=Release` — all runtimes
 - **AArch64 runtimes:** interpreter (vm) + OC (vm-oc). No vm-jit on ARM (no backend).
+- **Packaging:** v0.0.1-alpha `.deb` packages verified on both architectures (amd64 + arm64)
+
+### Contracts Repository
+- **Repo:** Private `Anvo-Network/contracts` — fully rebranded, compiles with CDT 4.1.1
+- **Status:** Rebrand complete; gas/deposit/baseline modifications pending (Phase 1C)
+- **Depends on:** Phase 1A-CDT for running contract tests against our node
+
+### Crypto Libraries
+- **bls12-381:** Forked to Anvo-Network, MIT license, builds and tests on ARM
+- **bn256:** Forked to Anvo-Network, ENF license retained
+- Both are submodules under `libraries/libfc/libraries/`
 
 ---
 
