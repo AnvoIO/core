@@ -18,12 +18,11 @@
 
 namespace core_net { namespace chain { namespace webassembly { namespace eosvmoc {
 
+// On AArch64, X28 holds the WASM memory base. This macro computes a pointer
+// to the control block from X28, equivalent to the %gs: segment on x86_64.
 #if defined(__aarch64__)
-// Helper to get control block pointer from X28 on AArch64.
-// On x86_64 this is handled via %gs: segment inline asm.
-inline control_block* get_cb_from_base_reg() {
-   return reinterpret_cast<control_block*>((char*)eos_vm_oc_getgs() + CORE_NET_VM_OC_CONTROL_BLOCK_OFFSET);
-}
+#define EOSVMOC_CB_FROM_BASE_REG() \
+   reinterpret_cast<core_net::chain::eosvmoc::control_block*>((char*)eos_vm_oc_getgs() + CORE_NET_VM_OC_CONTROL_BLOCK_OFFSET)
 #endif
 
 using namespace IR;
@@ -95,7 +94,7 @@ inline void* array_ptr_impl (size_t ptr, size_t length)
                );
 #elif defined(__aarch64__)
    {
-      auto* cb = get_cb_from_base_reg();
+      auto* cb = EOSVMOC_CB_FROM_BASE_REG();
       if((int64_t)end > cb->first_invalid_memory_address) {
          end = cb->first_invalid_memory_address + wasm_constraints::wasm_page_size;
          // trigger SEGV by reading from invalid address (same as x86_64 path)
@@ -142,7 +141,7 @@ inline char* null_terminated_ptr_impl(uint64_t ptr)
 #elif defined(__aarch64__)
    {
       char* base = (char*)eos_vm_oc_getgs();
-      auto* cb = get_cb_from_base_reg();
+      auto* cb = EOSVMOC_CB_FROM_BASE_REG();
       dumpster = *(volatile char*)(base + ptr);  // probe memory at ptr
       // Check if last byte in valid linear memory is 0
       if(*(volatile char*)(base + cb->first_invalid_memory_address - 1) != 0) {
@@ -166,7 +165,7 @@ inline auto convert_native_to_wasm(char* ptr) {
       : [fullLinearMemOffset] "i" (cb_full_linear_memory_start_offset)
       );
 #elif defined(__aarch64__)
-   full_linear_memory_start = get_cb_from_base_reg()->full_linear_memory_start;
+   full_linear_memory_start = EOSVMOC_CB_FROM_BASE_REG()->full_linear_memory_start;
 #endif
    U64 delta = (U64)(ptr - full_linear_memory_start);
    return (U32)delta;
@@ -392,7 +391,7 @@ auto fn(A... a) {
                       : "cc");
 #elif defined(__aarch64__)
          {
-            auto* cb = get_cb_from_base_reg();
+            auto* cb = EOSVMOC_CB_FROM_BASE_REG();
             if(cb->current_call_depth_remaining == 1) {
                char* base = (char*)eos_vm_oc_getgs();
                void(*depth_assert)() = (void(*)())(*(uintptr_t*)(base + depth_assertion_intrinsic_offset));
@@ -417,7 +416,7 @@ auto fn(A... a) {
           : [applyContextOffset] "i" (cb_ctx_ptr_offset)
           );
 #elif defined(__aarch64__)
-      ctx = get_cb_from_base_reg()->ctx;
+      ctx = EOSVMOC_CB_FROM_BASE_REG()->ctx;
 #endif
       Interface host(*ctx);
       eos_vm_oc_type_converter tc{&host, eos_vm_oc_execution_interface{stack + sizeof...(A)}};
