@@ -876,3 +876,5 @@ Claude. These team estimates are for the full scope if expanding beyond that mod
 | [16](16_indexing_api_layer.md) | Integrated indexer as node plugin, API layer, block explorer |
 | [17](17_migration_mechanics.md) | EOSIO chain migration: snapshot format, state transformation, migration contracts |
 | [18](18_licensing.md) | BSL 1.1 license: terms, Additional Use Grant, change date, contributor DCO, messaging |
+| [19](19_genesis_accounts_implementation.md) | Genesis-configurable accounts implementation details |
+| [20](20_core_vm_oc_architecture.md) | Core VM OC: architecture, code cache format, AArch64 port, migration guide |
