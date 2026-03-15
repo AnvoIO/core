@@ -1,10 +1,13 @@
 # AArch64 Port — Detailed Implementation Plan
 
+**Status: COMPLETE** — All tests pass on AArch64. Merged to main. Component rebranded
+to Core VM OC. See [20_core_vm_oc_architecture.md](20_core_vm_oc_architecture.md) for
+the current architecture reference.
+
 ## Overview
 
-This document provides a file-by-file, change-by-change plan for porting Spring's
-eos-vm-oc runtime from x86_64 to AArch64 (ARM64). The goal is production-quality
-JIT performance on ARM servers (AWS Graviton, Ampere Altra, Apple Silicon).
+This document provides the original file-by-file plan for porting the OC runtime from
+x86_64 to AArch64 (ARM64), plus the bugs discovered and fixed during implementation.
 
 ## The Core Problem
 

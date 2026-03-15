@@ -190,11 +190,11 @@ testnet T2 (Month 2-3) depends on them.
 **Goal:** Remove remaining `eos` branding from the OC compiler component, completing
 the Phase 1A rebrand for the now-functional AArch64+x86_64 OC runtime.
 
-**Status: PLANNED**
+**Status: COMPLETE** (branch `rebrand/eos-vm-oc`, merged to main)
 
 The Phase 1A rebrand covered the top-level namespace, macros, executables, and WASM
 intrinsics but left the internal eos-vm-oc component untouched since it wasn't yet
-ported to AArch64. Now that Phase 1F is complete, this component should be rebranded.
+ported to AArch64. Now complete — 61 files changed, all tests pass on both architectures.
 
 **Naming convention:**
 
@@ -225,8 +225,20 @@ ported to AArch64. Now that Phase 1F is complete, this component should be rebra
 - `eosvmoc_internal.*` intrinsic names are runtime-internal (never in WASM imports);
   renaming requires bumping `current_codegen_version` to invalidate cached code
 
-**Scope:** ~35 unique patterns, ~250+ occurrences across ~30 files. Directory renames
+**Code cache migration:**
+- New magic number: `COREVMOC` (0x434F4D5645524F43) for new chains
+- Legacy magic: `EOSVMOC2` (0x32434F4D56534F45) accepted on read for migration
+- Magic identifies file format; codegen version (bumped to 3) tracked per entry
+- Cache is silently rebuilt on version mismatch — no operator action required
+
+**Scope:** ~35 unique patterns, ~660+ occurrences across ~61 files. Directory renames
 affect include paths throughout the codebase.
+
+**Remaining VM rebrand work:** `eos_vm` → `core_vm` and `eos_vm_jit` → `core_vm_jit`
+enum values and CLI flags (`--eos-vm`, `--eos-vm-jit`) need dual-name treatment on a
+separate branch. See Phase 1A-VM below.
+
+**Detailed architecture:** [20_core_vm_oc_architecture.md](20_core_vm_oc_architecture.md)
 
 #### 1B. System Contracts
 **Goal:** Fork and modify the bundled system contracts for the new chain.
@@ -816,9 +828,9 @@ Claude. These team estimates are for the full scope if expanding beyond that mod
 - AArch64 architecture (for ARM port)
 
 ### Build Environment
-- **x86_64:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6 — verified 100%
-- **AArch64:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6 — builds 100%, OC runtime testing in progress
-- **eos-vm-oc:** Builds with LLVM 7-11 or LLVM 14-17. Ubuntu 24.04 uses `llvm-14-dev`.
+- **x86_64:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6 — verified 100%, all tests pass
+- **AArch64:** Ubuntu 24.04, GCC 13.3, CMake 3.28, LLVM 14.0.6 — verified 100%, all tests pass
+- **Core VM OC:** Builds with LLVM 7-11 or LLVM 14-17. Ubuntu 24.04 uses `llvm-14-dev`.
 - **Full build:** `-DENABLE_OC=ON -DCMAKE_BUILD_TYPE=Release` — all runtimes
 - **AArch64 runtimes:** interpreter (vm) + OC (vm-oc). No vm-jit on ARM (no backend).
 
