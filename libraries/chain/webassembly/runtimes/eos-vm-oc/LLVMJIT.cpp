@@ -416,7 +416,10 @@ namespace LLVMJIT
 			errOS << sym.takeError();
 			std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: lookup result (expected fail): " << errStr << std::endl;
 		}
-		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: ORCv2 codegen complete" << std::endl;
+		std::ofstream("/tmp/oc_compile_error.log", std::ios::app) << "  compile: ORCv2 codegen complete, code ptr="
+			<< (void*)unitmemorymanager->code.get()
+			<< " code size=" << (unitmemorymanager->code ? unitmemorymanager->code->size() : 0)
+			<< " function_to_offsets count=" << function_to_offsets.size() << std::endl;
 #else
 		llvm::orc::VModuleKey K = ES.allocateVModule();
 		std::unique_ptr<llvm::Module> mod(llvmModule);
