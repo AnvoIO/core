@@ -940,7 +940,7 @@ namespace LLVMJIT
 		{
 			WAVM_ASSERT_THROW(imm.variableIndex < localPointers.size());
 			auto value = irBuilder.CreateBitCast(getTopValue(),localPointers[imm.variableIndex]->getType()->getPointerElementType());
-			irBuilder.CreateStore(value,get_mutable_global_ptr(localPointers[imm.variableIndex]));
+			irBuilder.CreateStore(value,localPointers[imm.variableIndex]);
 		}
 		
 		void get_global(GetOrSetVariableImm<true> imm)
