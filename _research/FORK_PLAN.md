@@ -264,6 +264,13 @@ headers and build functions, enabling full end-to-end contract development.
 - Build scripts: Spring → Core references
 - Keep backward compat: existing `eosio::` namespace must continue to work
 
+**Versioning strategy:**
+- Bump CDT major version (e.g., CDT 5.0) to establish a Core-specific version line
+- Legacy/migrating chains continue building contracts with AntelopeIO CDT 4.x
+- New contracts targeting Core use CDT 5.x with `core_net::` namespace and headers
+- Contracts compiled with either CDT produce valid WASM — the bytecode is the same,
+  only the SDK headers and build system differ
+
 **Not needed immediately:** Contracts compile with upstream CDT today. The fork is
 needed for running contract tests against our node and for shipping a developer SDK.
 
