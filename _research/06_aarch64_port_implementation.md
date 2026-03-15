@@ -9,9 +9,16 @@ the current architecture reference.
 This document provides the original file-by-file plan for porting the OC runtime from
 x86_64 to AArch64 (ARM64), plus the bugs discovered and fixed during implementation.
 
+> **Note on file paths:** This plan was written before the OC component rebrand.
+> Directory paths referencing `eos-vm-oc/` now correspond to `core-vm-oc/` in the
+> current codebase. Similarly, `eos-vm-oc.hpp` → `core-vm-oc.hpp`,
+> `eos-vm-oc.h` → `core-vm-oc.h`. Code identifiers like `eosvmoc_switch_stack`
+> are now `corevmoc_switch_stack`, etc. See [20_core_vm_oc_architecture.md](20_core_vm_oc_architecture.md)
+> for current file paths.
+
 ## The Core Problem
 
-eos-vm-oc uses the x86_64 **GS segment register** as a base pointer for all WASM
+The OC runtime (originally eos-vm-oc) uses the x86_64 **GS segment register** as a base pointer for all WASM
 execution context. Every memory access, every host function call, every global variable
 read goes through GS. This pattern is baked into three layers:
 

@@ -19,7 +19,7 @@ support, passkey accounts, and a sovereign identity platform.
    state mutation and maps the dependency graph between transactions.
 
 3. **[03_wasm_threading_model.md](03_wasm_threading_model.md)** — Analysis of the WASM
-   runtime's threading model. Documents per-thread isolation (executor, memory, GS segment),
+   runtime's threading model. Documents per-thread isolation (executor, memory, base register),
    host function categorization, and code cache thread safety.
 
 4. **[04_block_stm_integration_plan.md](04_block_stm_integration_plan.md)** — Concrete
@@ -29,12 +29,12 @@ support, passkey accounts, and a sovereign identity platform.
 ### Architecture Portability
 
 5. **[05_architecture_portability.md](05_architecture_portability.md)** — Complete inventory
-   of x86_64 dependencies. Analysis of porting strategies (port eos-vm-oc vs. replace with
-   Wasmtime/Cranelift). Covers AArch64, Apple Silicon, and RISC-V considerations.
+   of x86_64 dependencies. Analysis of porting strategies (port OC runtime vs. replace with
+   Wasmtime/Cranelift). Covers AArch64, Apple Silicon, and RISC-V considerations. **RESOLVED.**
 
 6. **[06_aarch64_port_implementation.md](06_aarch64_port_implementation.md)** — File-by-file
-   implementation plan for porting eos-vm-oc to AArch64. Covers GS→X28 register replacement,
-   LLVM IR changes, signal handler updates, memory layout, and 12-week timeline.
+   implementation plan for porting Core VM OC to AArch64. Covers GS→X28 register replacement,
+   LLVM IR changes, signal handler updates, memory layout, and bugs found. **COMPLETE.**
 
 ### Rebrand
 
@@ -100,6 +100,16 @@ support, passkey accounts, and a sovereign identity platform.
     Additional Use Grant permits all ecosystem use, restricts competing L1 forks. Full
     license text, contributor DCO, community messaging guidance, Crosslink licensing options.
 
+### Implementation Details
+
+19. **[19_genesis_accounts_implementation.md](19_genesis_accounts_implementation.md)** —
+    Genesis-configurable system accounts implementation: config struct, global accessors,
+    432+ call site conversions, snapshot v9, test suite.
+
+20. **[20_core_vm_oc_architecture.md](20_core_vm_oc_architecture.md)** — Core VM OC
+    architecture reference: code cache format, compilation pipeline, AArch64 register
+    strategy, ADRP alignment, signal handling, migration guide. **Current reference doc.**
+
 ## Key Findings
 
 ### Parallel Execution
@@ -109,8 +119,9 @@ support, passkey accounts, and a sovereign identity platform.
 - **Block-STM** is the best-fit approach — no protocol changes, deterministic, graceful degradation
 - Most real-world EOSIO transaction workloads are low-conflict → 4-8x speedup expected
 
-### Architecture Portability
-- ~80% of x86_64 coupling is in **eos-vm-oc** (GS segment, stack switching asm, LLVM codegen)
+### Architecture Portability — COMPLETE
+- ~80% of x86_64 coupling was in the OC runtime (GS segment, stack switching asm, LLVM codegen)
 - The **interpreter already runs on any architecture** — ARM support is trivially available at reduced performance
-- **Decision: Port eos-vm-oc to AArch64** using dedicated X28 register (doc 06)
-- Production-quality AArch64 support is a **~3 month effort** (12-week calendar timeline)
+- **Core VM OC ported to AArch64** using dedicated X28 register (doc 06) — all tests pass
+- 7 bugs found and fixed during port (3 latent ORCv2 bugs, 4 AArch64-specific)
+- Both x86_64 and AArch64 verified, v0.0.1-alpha packages built for both architectures

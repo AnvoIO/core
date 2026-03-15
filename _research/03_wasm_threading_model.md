@@ -8,13 +8,13 @@ The main gaps are at the state access layer, not the VM itself.
 
 ## Runtime Architecture
 
-Spring supports three WASM runtimes:
+The node supports three WASM runtimes:
 
 | Runtime | Type | Platform | Best For |
 |---------|------|----------|----------|
 | eos-vm | Interpreter | All | Development, non-x86 |
 | eos-vm-jit | JIT compiler | x86_64 | General use |
-| eos-vm-oc | LLVM AOT compiler | x86_64 Linux | Production (fastest) |
+| Core VM OC | LLVM AOT compiler | x86_64 + AArch64 Linux | Production (fastest) |
 
 The `wasm_interface` class is a thin wrapper around `wasm_interface_impl`, which manages
 runtime selection and the code cache.
@@ -24,7 +24,7 @@ runtime selection and the code cache.
 ```
 wasm_interface::apply(code_hash, vm_type, vm_version, apply_context)
   → wasm_interface_impl::apply()
-    → [OC path] eosvmoc_tier::exec->execute(code, mem, context)
+    → [OC path] corevmoc_tier::exec->execute(code, mem, context)
     → [fallback] runtime_interface->instantiate_module()->apply(context)
 ```
 
@@ -34,7 +34,7 @@ wasm_interface::apply(code_hash, vm_type, vm_version, apply_context)
 
 ```cpp
 // Each thread gets its own backend and execution context
-thread_local static eosio::vm::wasm_allocator wasm_alloc;  // controller.cpp
+thread_local static core_net::vm::wasm_allocator wasm_alloc;  // controller.cpp
 ```
 
 Each `apply()` call sets the thread-local allocator on the backend:
@@ -42,26 +42,27 @@ Each `apply()` call sets the thread-local allocator on the backend:
 _runtime->_bkend.set_wasm_allocator(&context.control.get_wasm_allocator());
 ```
 
-### eos-vm-oc (Optimized Compiler)
+### Core VM OC (Optimized Compiler)
 
 ```cpp
-struct eosvmoc_tier {
-    eosvmoc::code_cache_async cc;                              // SHARED
-    thread_local static std::unique_ptr<eosvmoc::executor> exec;  // PER-THREAD
-    thread_local static std::unique_ptr<eosvmoc::memory> mem;     // PER-THREAD
+struct corevmoc_tier {
+    corevmoc::code_cache_async cc;                              // SHARED
+    thread_local static std::unique_ptr<corevmoc::executor> exec;  // PER-THREAD
+    thread_local static std::unique_ptr<corevmoc::memory> mem;     // PER-THREAD
 };
 ```
 
-**Per-thread executor** — handles WASM function dispatch, signal handling, x86-64 GS
-segment setup. No sharing between threads.
+**Per-thread executor** — handles WASM function dispatch, signal handling, memory base
+register setup (GS on x86_64, X28 on AArch64). No sharing between threads.
 
 **Per-thread memory** — WASM linear memory allocation with two layouts:
 - Main thread: full allocation (8GB+ virtual address space)
 - Read-only threads: sliced layout (10 pages, mprotect-expanded on demand)
 
-### GS Segment Architecture (x86-64)
+### Memory Base Register Architecture
 
-Each OC executor sets the x86-64 GS base register to point at a per-execution control block:
+Each OC executor sets the memory base register (GS on x86_64, X28 on AArch64) to point
+at a per-execution control block:
 
 ```cpp
 struct eos_vm_oc_control_block {
@@ -79,13 +80,16 @@ struct eos_vm_oc_control_block {
 };
 ```
 
-Host functions access `apply_context` via GS:
+Host functions access `apply_context` via the memory base register:
 ```cpp
+// x86_64: via GS segment register
 apply_context* ctx;
 asm("mov %%gs:%c[applyContextOffset], %[cPtr]\n" : [cPtr] "=r" (ctx));
+
+// AArch64: via X28 register + offset (C pointer arithmetic)
 ```
 
-This is **already thread-safe** — each thread has its own GS pointing to its own control block.
+This is **already thread-safe** — each thread has its own base register pointing to its own control block.
 
 ### Thread-Aware Module Instantiation
 
@@ -93,9 +97,9 @@ The OC instantiated module already branches on thread identity:
 ```cpp
 void apply(apply_context& context) override {
     if (is_main_thread())
-        _eosvmoc_runtime.exec.execute(*cd, _eosvmoc_runtime.mem, context);
+        _corevmoc_runtime.exec.execute(*cd, _corevmoc_runtime.mem, context);
     else
-        _eosvmoc_runtime.exec_thread_local->execute(*cd, *_eosvmoc_runtime.mem_thread_local, context);
+        _corevmoc_runtime.exec_thread_local->execute(*cd, *_corevmoc_runtime.mem_thread_local, context);
 }
 ```
 
@@ -105,7 +109,7 @@ void apply(apply_context& context) override {
 
 Intrinsics are registered at process startup via static constructors into an immutable
 `intrinsic_map_t` (std::map). They're dispatched via a jump table embedded in the WASM
-memory prologue, accessed through the GS segment.
+memory prologue, accessed through the memory base register (GS on x86_64, X28 on AArch64).
 
 **Thread-safe for reads** — the map never changes after initialization.
 
@@ -172,10 +176,10 @@ under heavy load with many different contracts.
 |-----------|-------------|-------|
 | Executor (exec) | YES | thread_local per thread |
 | Memory (mem) | YES | thread_local, sliced for non-main |
-| Control Block | YES | Per-execution via GS segment |
+| Control Block | YES | Per-execution via memory base register |
 | WASM Allocator | YES | thread_local in controller |
 | Intrinsic Map | YES | Immutable after init |
-| Intrinsic Dispatch | YES | Via per-thread GS segment |
+| Intrinsic Dispatch | YES | Via per-thread memory base register |
 | Module Instantiation | YES | Already branches on thread ID |
 | Code Cache (reads) | YES | Mutex-protected |
 | Code Cache (writes) | PARTIAL | Only safe during write window |
@@ -201,7 +205,7 @@ The WASM layer itself is mostly ready. The gaps are:
 ## Conclusion
 
 The WASM runtime is the **least problematic** component for parallel execution.
-The per-thread executor/memory/allocator/GS-segment architecture was designed for
+The per-thread executor/memory/allocator/base-register architecture was designed for
 concurrent use (initially for read-only parallel transactions). Extending this to
 write-parallel execution requires changes at the state layer (ChainBase), not the
 VM layer. The WASM side essentially "just works" if you give each thread its own

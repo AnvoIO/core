@@ -1,6 +1,11 @@
 # Architecture Portability Analysis — Beyond x86_64
 
-## Current State
+> **Status: RESOLVED.** The AArch64 port is complete. The OC runtime (now Core VM OC)
+> runs on both x86_64 and AArch64. See [06_aarch64_port_implementation.md](06_aarch64_port_implementation.md)
+> and [20_core_vm_oc_architecture.md](20_core_vm_oc_architecture.md). This document
+> is retained as the original analysis of Spring's x86_64 dependencies.
+
+## Current State (Spring Upstream)
 
 Spring currently requires x86_64 for production use. On other architectures, only the
 WASM interpreter is available, which is roughly **10-30x slower** than the JIT/OC runtimes.
@@ -287,44 +292,43 @@ would benefit from ARM support.
 RISC-V servers are emerging (SiFive, StarFive). Not urgent but worth keeping the door open.
 If you go with Wasmtime/Cranelift, RISC-V support comes for free.
 
-## Recommendations for Your Fork
+## Recommendations for the Fork
 
-### Immediate (Step 1): AArch64 Linux Support — SELECTED
+### Step 1: AArch64 Linux Support — COMPLETE
 
-1. Fix the easy items: CRC32 intrinsics, secp256k1 fallback, build system changes
-2. Verify the interpreter runs correctly on AArch64 (it should, but test it)
-3. Port eos-vm-oc to AArch64:
-   - Replace GS with TPIDR_EL0
-   - Write AArch64 stack switch assembly
-   - Verify LLVM AArch64 codegen
-   - Handle 4KB/64KB page size differences
-4. Drop eos-vm-jit requirement — let eos-vm-oc handle JIT on all platforms via LLVM
+1. ✓ Fixed CRC32 intrinsics, secp256k1 fallback, build system changes
+2. ✓ Verified interpreter runs correctly on AArch64
+3. ✓ Ported OC runtime (now Core VM OC) to AArch64:
+   - Replaced GS with dedicated X28 register via `-ffixed-x28`
+   - Wrote AArch64 stack switch assembly
+   - Verified LLVM AArch64 codegen (ORCv2)
+   - Runtime 4KB page size assertion for AArch64
+4. ✓ Dropped eos-vm-jit on ARM — Core VM OC handles JIT via LLVM
 
 ### Future Option (Step 2): Wasmtime Integration (NOT CURRENTLY PLANNED)
 
 1. Build a `wasmtime_runtime` class implementing `wasm_runtime_interface`
-2. Benchmark against eos-vm-oc on both x86_64 and AArch64
+2. Benchmark against Core VM OC on both x86_64 and AArch64
 3. If performance is acceptable, make Wasmtime the default runtime
 4. Keep eos-vm interpreter as emergency fallback
 
 ### Future Option (Step 3): Deprecate Architecture-Specific Code (NOT CURRENTLY PLANNED)
 
-1. Remove eos-vm-oc and eos-vm-jit
+1. Remove Core VM OC and eos-vm-jit
 2. Wasmtime becomes the only JIT runtime
 3. All architecture support comes from Cranelift — x86_64, AArch64, RISC-V, s390x
 4. Dramatically reduced maintenance burden
 
-## Difficulty Assessment
+## Difficulty Assessment (Original Estimates vs Actual)
 
-| Task | Effort | Risk |
-|------|--------|------|
-| Build system changes for AArch64 | 1-2 days | Low |
-| Crypto library portability (secp256k1, CRC32) | 1 week | Low |
-| Interpreter verification on AArch64 | 1 week | Low |
-| eos-vm-oc AArch64 port | 2-4 months | Medium |
-| Wasmtime integration | 3-6 months | Medium |
-| Full architecture-neutral runtime | 6-12 months | Medium-High |
+| Task | Estimated Effort | Actual | Risk |
+|------|-----------------|--------|------|
+| Build system changes for AArch64 | 1-2 days | ~1 day | Low |
+| Crypto library portability (secp256k1, CRC32) | 1 week | ~2 days | Low |
+| Interpreter verification on AArch64 | 1 week | ~1 day | Low |
+| Core VM OC AArch64 port | 2-4 months | ~3 weeks | Medium (7 bugs found) |
+| Wasmtime integration | 3-6 months | Not started | Medium |
+| Full architecture-neutral runtime | 6-12 months | Not started | Medium-High |
 
-**Bottom line:** Getting basic AArch64 support (interpreter-only) is trivial — maybe
-two weeks of work. Getting *production-quality* AArch64 support with competitive
-performance is a 2-6 month effort depending on the strategy chosen.
+**Bottom line:** Production-quality AArch64 support with Core VM OC is complete.
+All tests pass on both x86_64 and AArch64.
