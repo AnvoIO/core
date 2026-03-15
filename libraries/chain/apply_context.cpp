@@ -1084,9 +1084,9 @@ action_name apply_context::get_sender() const {
    return action_name();
 }
 
-bool apply_context::is_eos_vm_oc_whitelisted() const {
+bool apply_context::is_core_vm_oc_whitelisted() const {
    return receiver.prefix() == config::system_account_name() || // "eosio"_n
-          control.is_eos_vm_oc_whitelisted(receiver);
+          control.is_core_vm_oc_whitelisted(receiver);
 }
 
 // Context             |    OC?
@@ -1097,8 +1097,8 @@ bool apply_context::is_eos_vm_oc_whitelisted() const {
 // Speculative P2P trx | baseline, OC for whitelisted
 // Compute trx         | baseline, OC for whitelisted
 // Read only trx       | OC
-bool apply_context::should_use_eos_vm_oc()const {
-   return is_eos_vm_oc_whitelisted() // all whitelisted accounts use OC always
+bool apply_context::should_use_core_vm_oc()const {
+   return is_core_vm_oc_whitelisted() // all whitelisted accounts use OC always
           || (is_applying_block() && !control.is_producer_node()) // validating/applying block
           || trx_context.is_read_only();
 }

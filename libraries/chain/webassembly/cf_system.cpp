@@ -45,7 +45,7 @@ namespace core_net { namespace chain { namespace webassembly {
       }
    }
 
-   //be aware that EOS VM OC handles core_net_exit internally and this function will not be called by OC
+   //be aware that Core VM OC handles core_net_exit internally and this function will not be called by OC
    void interface::core_net_exit( int32_t code ) const {
       throw wasm_exit{};
    }

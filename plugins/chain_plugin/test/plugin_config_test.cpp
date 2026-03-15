@@ -21,18 +21,18 @@ BOOST_AUTO_TEST_CASE(chain_plugin_default_tests) {
    BOOST_CHECK_EQUAL(config->max_retained_files, UINT32_MAX);
 
    // test default eos-vm-oc-whitelist
-   BOOST_CHECK(plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"xsat"}));
-   BOOST_CHECK(plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"vaulta"}));
-   BOOST_CHECK(plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"core.vaulta"}));
-   BOOST_CHECK(plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"xs.vaulta"}));
-   BOOST_CHECK(plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"xsat.vaulta"}));
-   BOOST_CHECK(plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"vaulta.xsat"}));
-   BOOST_CHECK(!plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"vault"}));
-   BOOST_CHECK(!plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"xs"}));
-   BOOST_CHECK(!plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{""}));
+   BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"xsat"}));
+   BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"vaulta"}));
+   BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"core.vaulta"}));
+   BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"xs.vaulta"}));
+   BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"xsat.vaulta"}));
+   BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"vaulta.xsat"}));
+   BOOST_CHECK(!plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"vault"}));
+   BOOST_CHECK(!plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"xs"}));
+   BOOST_CHECK(!plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{""}));
 }
 
-BOOST_AUTO_TEST_CASE(chain_plugin_eos_vm_oc_whitelist) {
+BOOST_AUTO_TEST_CASE(chain_plugin_core_vm_oc_whitelist) {
    fc::temp_directory  tmp;
    appbase::scoped_app app;
 
@@ -43,8 +43,8 @@ BOOST_AUTO_TEST_CASE(chain_plugin_eos_vm_oc_whitelist) {
 
    BOOST_CHECK(app->initialize<core_net::chain_plugin>(args.size(), const_cast<char**>(args.data())));
    auto& plugin = app->get_plugin<core_net::chain_plugin>();
-   BOOST_CHECK(plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"hello"}));
-   BOOST_CHECK(plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"xs.hello"}));
-   BOOST_CHECK(!plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"xsat"}));
-   BOOST_CHECK(!plugin.chain().is_eos_vm_oc_whitelisted(core_net::chain::name{"vaulta"}));
+   BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"hello"}));
+   BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"xs.hello"}));
+   BOOST_CHECK(!plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"xsat"}));
+   BOOST_CHECK(!plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"vaulta"}));
 }

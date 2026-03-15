@@ -1,0 +1,18 @@
+#pragma once
+
+#include "Inline/BasicTypes.h"
+#include "IR/Module.h"
+
+#include "llvm/IR/Module.h"
+
+#include <vector>
+#include <map>
+
+namespace core_net { namespace chain { namespace corevmoc {
+
+namespace LLVMJIT {
+   bool getFunctionIndexFromExternalName(const char* externalName,Uptr& outFunctionDefIndex);
+   const char* getTableSymbolName();
+   llvm::Module* emitModule(const IR::Module& module);
+}
+}}}

@@ -285,7 +285,7 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
           "the location of the protocol_features directory (absolute path or relative to application config dir)")
          ("checkpoint", bpo::value<vector<string>>()->composing(), "Pairs of [BLOCK_NUM,BLOCK_ID] that should be enforced as checkpoints.")
          ("wasm-runtime", bpo::value<core_net::chain::wasm_interface::vm_type>()->value_name("runtime")->notifier([](const auto& vm){
-            if(vm == wasm_interface::vm_type::eos_vm_oc)
+            if(vm == wasm_interface::vm_type::core_vm_oc)
                wlog("eos-vm-oc-forced mode is not supported. It is for development purposes only");
          })->default_value(core_net::chain::config::default_wasm_runtime, default_wasm_runtime_str), wasm_runtime_opt.c_str()
          )
@@ -352,20 +352,20 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          )
 
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
-         ("eos-vm-oc-cache-size-mb", bpo::value<uint64_t>()->default_value(eosvmoc::config().cache_size / (1024u*1024u)), "Maximum size (in MiB) of the EOS VM OC code cache")
-         ("eos-vm-oc-compile-threads", bpo::value<uint64_t>()->default_value(1u)->notifier([](const auto t) {
+         ("core-vm-oc-cache-size-mb,eos-vm-oc-cache-size-mb", bpo::value<uint64_t>()->default_value(corevmoc::config().cache_size / (1024u*1024u)), "Maximum size (in MiB) of the Core VM OC code cache")
+         ("core-vm-oc-compile-threads,eos-vm-oc-compile-threads", bpo::value<uint64_t>()->default_value(1u)->notifier([](const auto t) {
                if(t == 0) {
-                  elog("eos-vm-oc-compile-threads must be set to a non-zero value");
+                  elog("core-vm-oc-compile-threads must be set to a non-zero value");
                   EOS_ASSERT(false, plugin_exception, "");
                }
-         }), "Number of threads to use for EOS VM OC tier-up")
-         ("eos-vm-oc-enable", bpo::value<chain::wasm_interface::vm_oc_enable>()->default_value(chain::wasm_interface::vm_oc_enable::oc_auto),
-          "Enable EOS VM OC tier-up runtime ('auto', 'all', 'none').\n"
-          "'auto' - EOS VM OC tier-up is enabled for eosio.* accounts, read-only trxs, and except on producers applying blocks.\n"
-          "'all'  - EOS VM OC tier-up is enabled for all contract execution.\n"
-          "'none' - EOS VM OC tier-up is completely disabled.\n")
-         ("eos-vm-oc-whitelist", bpo::value<vector<string>>()->composing()->multitoken()->default_value(std::vector<string>{"xsat", "vaulta"}),
-          "EOS VM OC tier-up whitelist account suffixes for tier-up runtime 'auto'.")
+         }), "Number of threads to use for Core VM OC tier-up")
+         ("core-vm-oc-enable,eos-vm-oc-enable", bpo::value<chain::wasm_interface::vm_oc_enable>()->default_value(chain::wasm_interface::vm_oc_enable::oc_auto),
+          "Enable Core VM OC tier-up runtime ('auto', 'all', 'none').\n"
+          "'auto' - Core VM OC tier-up is enabled for eosio.* accounts, read-only trxs, and except on producers applying blocks.\n"
+          "'all'  - Core VM OC tier-up is enabled for all contract execution.\n"
+          "'none' - Core VM OC tier-up is completely disabled.\n")
+         ("core-vm-oc-whitelist,eos-vm-oc-whitelist", bpo::value<vector<string>>()->composing()->multitoken()->default_value(std::vector<string>{"xsat", "vaulta"}),
+          "Core VM OC tier-up whitelist account suffixes for tier-up runtime 'auto'.")
 #endif
          ("enable-account-queries", bpo::value<bool>()->default_value(false), "enable queries to find accounts by various metadata.")
          ("transaction-retry-max-storage-size-gb", bpo::value<uint64_t>(),
@@ -533,18 +533,18 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
       LOAD_VALUE_SET( options, "actor-blacklist", chain_config->actor_blacklist );
       LOAD_VALUE_SET( options, "contract-whitelist", chain_config->contract_whitelist );
       LOAD_VALUE_SET( options, "contract-blacklist", chain_config->contract_blacklist );
-      LOAD_VALUE_SET( options, "eos-vm-oc-whitelist", chain_config->eos_vm_oc_whitelist_suffixes);
+      LOAD_VALUE_SET( options, "core-vm-oc-whitelist", chain_config->core_vm_oc_whitelist_suffixes);
 
       LOAD_VALUE_SET( options, "trusted-producer", chain_config->trusted_producers );
 
-      if (!chain_config->eos_vm_oc_whitelist_suffixes.empty()) {
-         const auto& wl = chain_config->eos_vm_oc_whitelist_suffixes;
+      if (!chain_config->core_vm_oc_whitelist_suffixes.empty()) {
+         const auto& wl = chain_config->core_vm_oc_whitelist_suffixes;
          std::string s = std::accumulate(std::next(wl.begin()), wl.end(),
                                          wl.begin()->to_string(),
                                          [](std::string a, account_name b) -> std::string {
                                             return std::move(a) + ", " + b.to_string();
                                          });
-         ilog("eos-vm-oc-whitelist accounts: ${a}", ("a", s));
+         ilog("core-vm-oc-whitelist accounts: ${a}", ("a", s));
       }
       if( options.count( "action-blacklist" )) {
          const std::vector<std::string>& acts = options["action-blacklist"].as<std::vector<std::string>>();
@@ -966,11 +966,11 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
       chain_config->db_map_mode = options.at("database-map-mode").as<pinnable_mapped_file::map_mode>();
 
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
-      if( options.count("eos-vm-oc-cache-size-mb") )
-         chain_config->eosvmoc_config.cache_size = options.at( "eos-vm-oc-cache-size-mb" ).as<uint64_t>() * 1024u * 1024u;
-      if( options.count("eos-vm-oc-compile-threads") )
-         chain_config->eosvmoc_config.threads = options.at("eos-vm-oc-compile-threads").as<uint64_t>();
-      chain_config->eosvmoc_tierup = options["eos-vm-oc-enable"].as<chain::wasm_interface::vm_oc_enable>();
+      if( options.count("core-vm-oc-cache-size-mb") )
+         chain_config->corevmoc_config.cache_size = options.at( "core-vm-oc-cache-size-mb" ).as<uint64_t>() * 1024u * 1024u;
+      if( options.count("core-vm-oc-compile-threads") )
+         chain_config->corevmoc_config.threads = options.at("core-vm-oc-compile-threads").as<uint64_t>();
+      chain_config->corevmoc_tierup = options["core-vm-oc-enable"].as<chain::wasm_interface::vm_oc_enable>();
 #endif
 
       account_queries_enabled = options.at("enable-account-queries").as<bool>();

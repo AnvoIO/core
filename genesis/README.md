@@ -1,15 +1,15 @@
-## Vaulta Mainnet
+## Anvo Mainnet
 
-See also: https://github.com/CryptoLions/EOS-MainNet
+See also: TBD
 
-## Jungle testnet
+### Mainnet API Nodes
 
-See also: https://github.com/CryptoLions/EOS-Jungle-Testnet
+See also: TBD
 
-## Kylin testnet
+## Anvo Testnet
 
-See also: https://github.com/cryptokylin/CryptoKylin-Testnet
+See also: TBD
 
-## API Nodes
+### Testnet API Nodes
 
-- [Greymass API Nodes](https://www.greymass.com/endpoints)
+See also: TBD

@@ -9,7 +9,7 @@
 #include <core_net/vm/backend.hpp>
 #include <core_net/chain/webassembly/preconditions.hpp>
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
-#include <core_net/chain/webassembly/eos-vm-oc.hpp>
+#include <core_net/chain/webassembly/core-vm-oc.hpp>
 #endif
 #include <boost/hana/string.hpp>
 #include <boost/hana/equal.hpp>
@@ -301,7 +301,7 @@ struct host_function_registrator {
       rhf_t::add<HostFunction, Preconditions...>(mod_name.c_str(), fn_name.c_str());
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       constexpr bool is_injected = (Mod() == BOOST_HANA_STRING(CORE_NET_INJECTED_MODULE_NAME));
-      eosvmoc::register_eosvm_oc<HostFunction, is_injected, std::tuple<Preconditions...>>(
+      corevmoc::register_eosvm_oc<HostFunction, is_injected, std::tuple<Preconditions...>>(
           mod_name + BOOST_HANA_STRING(".") + fn_name);
 #endif
    }

@@ -32,18 +32,18 @@
 
 namespace core_net { namespace chain {
 
-   wasm_interface::wasm_interface(vm_type vm, vm_oc_enable eosvmoc_tierup, const chainbase::database& d,
-                                  platform_timer& main_thread_timer, const std::filesystem::path data_dir, const eosvmoc::config& eosvmoc_config, bool profile)
-     : my( new wasm_interface_impl(vm, eosvmoc_tierup, d, main_thread_timer, data_dir, eosvmoc_config, profile) ) {}
+   wasm_interface::wasm_interface(vm_type vm, vm_oc_enable corevmoc_tierup, const chainbase::database& d,
+                                  platform_timer& main_thread_timer, const std::filesystem::path data_dir, const corevmoc::config& corevmoc_config, bool profile)
+     : my( new wasm_interface_impl(vm, corevmoc_tierup, d, main_thread_timer, data_dir, corevmoc_config, profile) ) {}
 
    wasm_interface::~wasm_interface() {}
 
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
    void wasm_interface::init_thread_local_data() {
       // OC tierup and OC runtime are mutually exclusive
-      if (my->eosvmoc) {
-         my->eosvmoc->init_thread_local_data();
-      } else if (my->wasm_runtime_time == wasm_interface::vm_type::eos_vm_oc && my->runtime_interface) {
+      if (my->corevmoc) {
+         my->corevmoc->init_thread_local_data();
+      } else if (my->wasm_runtime_time == wasm_interface::vm_type::core_vm_oc && my->runtime_interface) {
          my->runtime_interface->init_thread_local_data();
       }
    }
@@ -98,12 +98,12 @@ namespace core_net { namespace chain {
    }
 
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
-   bool wasm_interface::is_eos_vm_oc_enabled() const {
-      return my->is_eos_vm_oc_enabled();
+   bool wasm_interface::is_core_vm_oc_enabled() const {
+      return my->is_core_vm_oc_enabled();
    }
 
-   uint64_t wasm_interface::get_eos_vm_oc_compile_interrupt_count() const {
-      return my->get_eos_vm_oc_compile_interrupt_count();
+   uint64_t wasm_interface::get_core_vm_oc_compile_interrupt_count() const {
+      return my->get_core_vm_oc_compile_interrupt_count();
    }
 #endif
 
@@ -111,8 +111,8 @@ namespace core_net { namespace chain {
    wasm_runtime_interface::~wasm_runtime_interface() = default;
 
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
-   thread_local std::unique_ptr<eosvmoc::executor> wasm_interface_impl::eosvmoc_tier::exec{};
-   thread_local std::unique_ptr<eosvmoc::memory>   wasm_interface_impl::eosvmoc_tier::mem{};
+   thread_local std::unique_ptr<corevmoc::executor> wasm_interface_impl::corevmoc_tier::exec{};
+   thread_local std::unique_ptr<corevmoc::memory>   wasm_interface_impl::corevmoc_tier::mem{};
 #endif
 
 std::istream& operator>>(std::istream& in, wasm_interface::vm_type& runtime) {
@@ -123,7 +123,7 @@ std::istream& operator>>(std::istream& in, wasm_interface::vm_type& runtime) {
    else if (s == "eos-vm-jit")
       runtime = core_net::chain::wasm_interface::vm_type::eos_vm_jit;
    else if (s == "eos-vm-oc-forced")
-      runtime = core_net::chain::wasm_interface::vm_type::eos_vm_oc;
+      runtime = core_net::chain::wasm_interface::vm_type::core_vm_oc;
    else
       in.setstate(std::ios_base::failbit);
    return in;
