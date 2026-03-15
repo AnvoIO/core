@@ -178,6 +178,13 @@ namespace LLVMJIT
 	struct JITModule
 	{
 		JITModule() {
+			ES.setErrorReporter([](llvm::Error Err) {
+				std::string errStr;
+				llvm::raw_string_ostream errOS(errStr);
+				errOS << Err;
+				std::ofstream("/tmp/oc_compile_error.log", std::ios::app)
+					<< "  ORCv2 ERROR: " << errStr << std::endl;
+			});
 			objectLayer = std::make_unique<llvm::orc::RTDyldObjectLinkingLayer>(ES,[this]() {
 									return std::unique_ptr<llvm::RuntimeDyld::MemoryManager>(
 										std::make_unique<MemoryManagerForwarder>(*this));
