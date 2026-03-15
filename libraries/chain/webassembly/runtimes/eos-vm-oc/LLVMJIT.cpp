@@ -75,7 +75,7 @@ namespace llvm { namespace orc {
 
 #define DUMP_UNOPTIMIZED_MODULE 0
 #define VERIFY_MODULE 1
-#define DUMP_OPTIMIZED_MODULE 0
+#define DUMP_OPTIMIZED_MODULE 1
 #define PRINT_DISASSEMBLY 0
 
 #if PRINT_DISASSEMBLY
@@ -358,7 +358,7 @@ namespace LLVMJIT
 	void printModule(const llvm::Module* llvmModule,const char* filename)
 	{
 		std::error_code errorCode;
-		std::string augmentedFilename = std::string(filename) + std::to_string(printedModuleId++) + ".ll";
+		std::string augmentedFilename = std::string("/tmp/") + filename + std::to_string(printedModuleId++) + ".ll";
 #if LLVM_VERSION_MAJOR >= 12
 		llvm::raw_fd_ostream dumpFileStream(augmentedFilename,errorCode,llvm::sys::fs::OF_Text);
 #else
