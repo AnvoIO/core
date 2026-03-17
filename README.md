@@ -1,5 +1,7 @@
 # Anvo Network Core
 
+> **[What's New in Anvo Core](WHATS_NEW.md)** — Breaking changes, CDT 5.x compatibility, and migration guide
+
 High-performance Layer 1 blockchain node software. A fork of [Spring](https://github.com/AntelopeIO/spring) (Antelope/EOSIO) rebranded for Anvo Network, featuring Savanna consensus -- a HotStuff-based BFT protocol delivering 2-3 second finality. Full smart contract compatibility with existing EOSIO chains; no recompilation required.
 
 ## Key Features
