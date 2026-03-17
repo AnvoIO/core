@@ -414,6 +414,45 @@ Public goods funding:
   → Gitcoin-style funding with real sybil resistance
 ```
 
+## Antelope Chain Findings: Identity
+
+### UX Network — eosio.info On-Chain KYC Framework
+
+UX Network ships a production on-chain identity layer (`eosio.info`) with a clean
+multi-provider design. Four tables:
+
+| Table | Scope | Purpose |
+|---|---|---|
+| `kycaccounts` | global | Whitelisted KYC provider accounts (managed by `eosio`) |
+| `keytypes` | global | Definitions of verification and info key types, with `user` boolean distinguishing user-provided vs provider-verified |
+| `userverifs` | per provider | Verification records added by KYC providers. Composite key index `(user, verification_key)` with secondary indices by user and by key |
+| `userkeys` | per user | User-controlled info records (self-declared data) |
+
+Key design patterns:
+- **Multiple independent providers** — any whitelisted KYC provider can add verifications
+- **User sovereignty** — users control their own `userkeys` data independently
+- **Composite key indexing** — `(uint128_t{x} << 64) | y` for efficient cross-key lookups
+- **Separation of user data and verified data** — the `user` boolean on key types distinguishes
+  self-declared information from third-party verifications
+
+**Discussion:** This maps well to Anvo's layered identity model:
+- `kycaccounts` ≈ Layer 4 attestor registry
+- `userverifs` ≈ Layer 4 credential attestations
+- `userkeys` ≈ User-controlled data vault (Layer 3/Data Ecosystem)
+- The composite key pattern is efficient and should be adopted
+
+UX's design is simpler than Anvo's full vision (no social vouching, no ZK biometrics,
+no reputation) but provides a solid structural foundation for the attestation
+framework. The multi-provider model is especially important — avoids single-provider
+lock-in and allows different providers for different jurisdictions/use cases.
+
+**Recommendation:** Use UX's table structure as a starting template for Anvo's
+attestation contract, then extend with:
+- Attestation expiry timestamps
+- Revocation support
+- Layer classification (which identity layer does this attestation satisfy?)
+- Privacy flags (on-chain hash vs. full data)
+
 ## Implementation Roadmap
 
 ### Phase 1: Foundation (Included in Chain Launch)

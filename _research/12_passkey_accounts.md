@@ -339,6 +339,36 @@ New user creates passkey account (dApp pays gas for creation)
 The user experience: create account with Face ID, start using the dApp,
 never think about resources or fees.
 
+### Integration with Referral Tracking
+
+Account creation should record the referrer (the dApp or user that sponsored the
+account). This enables behavior-based reputation (doc 14):
+
+```
+New user creates passkey account
+    → referrer recorded (dApp account or sponsoring user)
+    → account matures (deposit refund eligible after 30 days + 10 txns)
+    → referrer earns reputation for bringing a real user
+    → if account is spam (never matures, gets banned)
+    → referrer loses reputation, may lose referral privileges
+```
+
+The referral is captured at `newaccount` time with minimal overhead — just one
+additional table write. This creates a self-policing growth loop where referrers
+are incentivized to bring in real users, not spam accounts.
+
+### Integration with Granular Permissions
+
+Account creation can set initial capability flags (doc 14) based on the creation
+context:
+
+- **dApp-sponsored**: account gets basic capabilities (transfer, stake)
+- **Self-funded**: account gets full capabilities
+- **Referral-sponsored**: capabilities gated by referrer's reputation level
+
+This replaces Libre's approach of a separate permission contract (`eosio.libre`)
+with capabilities baked into the system contract from the start.
+
 ## Competitive Position
 
 | Feature | Anvo | Ethereum | Solana | Aptos | Sui |

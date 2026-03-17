@@ -100,6 +100,19 @@ support, passkey accounts, and a sovereign identity platform.
     Additional Use Grant permits all ecosystem use, restricts competing L1 forks. Full
     license text, contributor DCO, community messaging guidance, Crosslink licensing options.
 
+### Governance
+
+21. **[21_governance_dao.md](21_governance_dao.md)** — Governance/DAO contract design.
+    Libre btc-libre-governance analysis, other DAO models (Aragon, Compound, Cosmos),
+    proposal lifecycle, paginated vote counting, delegation, identity-gated participation.
+
+### Ecosystem Analysis
+
+22. **[22_antelope_chain_comparison.md](22_antelope_chain_comparison.md)** — System contract
+    comparison across WAX, Telos, UX Network, and Libre. Feature-by-feature analysis of
+    producer management, voting, pay models, resource models, governance, and identity.
+    Recommendations for what to adopt, adapt, or skip.
+
 ### Implementation Details
 
 19. **[19_genesis_accounts_implementation.md](19_genesis_accounts_implementation.md)** —

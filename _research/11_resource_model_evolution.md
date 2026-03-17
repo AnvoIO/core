@@ -470,3 +470,167 @@ spam accounts that never mature eventually lose their deposit AND get cleaned up
 
 Most of the work is in the system contract, not the node. The node changes
 are contained to `transaction_context.cpp` and the transaction serialization.
+
+## Protocol Feature Activation
+
+The resource model changes require protocol feature activation, similar to how
+Savanna consensus is activated. The `gas_payment_mode` feature must be:
+
+1. Defined in the node binary (feature digest, description, dependencies)
+2. Pre-activated by a producer via `preactivate_feature`
+3. Voted on by 2/3+ of active producers
+4. Activated in a subsequent block after sufficient agreement
+
+Chains that don't activate the feature run the existing staking-only model
+unchanged. This is the same mechanism used for `WEBAUTHN_KEY`, `BLS_PRIMITIVES2`,
+and all other Antelope protocol upgrades.
+
+## Libre Chain Reference: Account Resource Allocator
+
+Libre Chain faced the same baseline allocation problem and solved it with an
+external TypeScript service (`account-resource-allocator`) that:
+
+- Polls accounts registered in a vault table
+- Monitors CPU/NET/RAM usage against configurable minimum thresholds
+  (`MIN_CPU_LIMIT`, `MIN_NET_LIMIT`, `MIN_RAM_LIMIT`)
+- Calls `setalimits` to replenish resources when accounts drop below thresholds
+- Runs as a daemon outside the chain
+
+**Assessment:** This is a band-aid approach — an off-chain service doing what
+should be a protocol-level guarantee. It has single-point-of-failure risk (if the
+service stops, accounts run out of resources), requires infrastructure to operate,
+and doesn't scale to millions of accounts.
+
+Anvo's design supersedes this entirely by making baseline allocation a protocol-level
+feature: every account gets a free baseline at creation time, enforced by the node,
+with no external service needed. The Libre approach validates the need but not the
+solution.
+
+## Antelope Chain Findings: RAM & Resource Models
+
+### Fixed-Price RAM (UX Network — Production Validated)
+
+UX Network replaced the Bancor RAM market with fixed-price RAM: `1 UTXRAM = 1 KB`.
+RAM fees are disabled entirely. This is the same direction Anvo plans (governance-set
+pricing, no speculation). UX validates that this works in production without issues.
+
+Their implementation completely bypasses the Bancor algorithm — the `rammarket` table
+still exists for compatibility but price calculations are replaced with fixed math.
+RAM must be bought/sold in exact KB increments.
+
+**Discussion:** Should Anvo keep sub-KB granularity (byte-level pricing) or adopt
+UX's KB-increment approach? Byte-level is more flexible but KB-level is simpler.
+The governance-set price per byte approach in doc 11 is more flexible than UX's
+fixed 1:1 ratio and is recommended.
+
+### Fee-Offset Inflation (WAX — Key Idea for Gas Model)
+
+WAX collects fees from Powerup and uses them to offset inflation in real-time:
+
+```
+distribute_tokens = continuous_rate × token_supply × time_fraction
+fees_collected = balance_of(eosio.fees)
+fees_to_use = min(distribute_tokens, fees_collected)
+tokens_to_issue = distribute_tokens - fees_to_use
+// Excess fees beyond what's needed are BURNED via token::retire
+```
+
+This creates a path to zero or negative net inflation during high chain activity.
+
+**Discussion:** This maps directly to Anvo's gas model. Gas fees collected could
+offset the inflation budget before any new tokens are issued. During high utilization,
+gas revenue could exceed the inflation target, making the token deflationary. This
+should be designed into the fee distribution mechanism (doc 11, "Fee Distribution"
+section). The burn-excess-fees approach is simple and effective — no complex
+tokenomics needed, just `if fees > budget: burn(fees - budget)`.
+
+### REX Removal (WAX, Libre)
+
+Both WAX and Libre removed REX entirely. With alternative resource models (Powerup
+on WAX, external allocator on Libre), REX added complexity without proportional
+benefit.
+
+**Discussion:** Anvo's gas model likely makes REX unnecessary. Users who want
+sustained throughput stake tokens (existing `delegatebw`). Users who want
+occasional throughput pay gas. The REX lending market was designed to solve the
+problem of unused staked resources — gas solves this more cleanly. Recommend
+removing REX from the system contracts unless a specific use case emerges.
+
+### Usage-Proportional Inflation (UX Network — Study Further)
+
+UX Network's most novel idea: inflation tokens are distributed to users proportional
+to their actual CPU usage, not to stakers. BPs serve as oracles reporting per-account
+usage data with a modal-hash consensus mechanism.
+
+The inflation formula uses an entropy-inspired function: `C(x) = -x × ln(x) × e`,
+where x is utilization. Inflation is inversely proportional to utilization — low
+usage triggers higher inflation to incentivize growth; high usage reduces inflation.
+A decaying value-transfer rate with a 365-day half-life limits total issuance.
+
+**Discussion:** This is intellectually interesting but adds significant complexity
+(oracle reporting, consensus on usage data, per-account tracking). For Anvo, the
+gas model already creates usage incentives (fees fund the network). However, the
+concept of rewarding active users — not just stakers — is worth revisiting for
+Phase 3 tokenomics. A simpler version might rebate a percentage of gas fees to
+active accounts, funded from the inflation budget.
+
+### Fee Distribution Router (Vaulta — Key Pattern)
+
+Vaulta's `eosio.fees` contract routes all collected fees through a single contract
+with configurable distribution strategies:
+
+- **Strategies table** with configurable weights: `buyramburn`, `buyramself`,
+  `donatetorex`, `eosio.bpay`, `eosio.bonds`
+- **Epoch system** — configurable time interval (default 10 minutes). `distribute()`
+  callable by anyone but only after epoch completes.
+- All fee sources (RAM fees, name bid fees, gas fees) channel to `eosio.fees`,
+  then get distributed proportionally to strategies.
+
+**Discussion:** This is a cleaner architecture than WAX's inline fee-offset approach.
+A single fee router with governance-adjustable weights means the fee distribution
+can be rebalanced (e.g., 40% burn, 30% stakers, 20% treasury, 10% BPs) without
+code changes. For Anvo, gas fees should flow through a similar router contract.
+The epoch-based batching reduces per-transaction overhead — fees accumulate, then
+get distributed in bulk.
+
+### Inflation Schedule System (Vaulta — Pre-Committed Tokenomics)
+
+Vaulta added a `schedules` table storing `(start_time, continuous_rate)` pairs:
+
+- `setschedule(start_time, continuous_rate)` — privileged action to pre-commit
+  future inflation rate changes
+- `execschedule()` — callable by anyone; applies the rate once the time arrives
+- Also auto-executes during `claimrewards()` for guaranteed application
+
+**Discussion:** This enables governance to pre-commit to inflation changes (e.g.,
+annual halving, gradual reduction to zero) without needing future MSIGs or code
+upgrades. Simple to implement and eliminates the need for manual intervention.
+Strongly recommended for Anvo — define the inflation trajectory at launch and let
+it auto-execute.
+
+### Max Supply Awareness (Vaulta — Graceful Deflation Transition)
+
+Vaulta's `claimrewards()` checks if `token_supply + new_tokens > token_max_supply`.
+If so, it falls back to using existing reserves instead of minting. This enables
+a clean transition from inflationary to fixed-supply economics.
+
+**Discussion:** Combined with the inflation schedule system, this creates a smooth
+path: inflation rate decreases over time via the schedule, and once supply approaches
+max_supply, the system automatically stops minting and uses accumulated reserves.
+Worth adopting.
+
+### RAM Gift System (Vaulta — dApp Onboarding)
+
+Vaulta's `giftram` action transfers encumbered RAM that can only be returned to
+the gifter, not sold or traded:
+
+- `giftram(from, to, bytes, memo)` — gift RAM to an account
+- `ungiftram(from, to, memo)` — return all gifted RAM to gifter
+- `gifted_ram` table tracks giftee→gifter→bytes
+- `reduce_ram()` excludes gifted RAM from sellable/transferable amount
+
+**Discussion:** Perfect for dApp-sponsored account onboarding in the gas model.
+A dApp gifts RAM to new user accounts for contract interaction, but the user can't
+extract value by selling the RAM. When the dApp relationship ends, the dApp reclaims
+the RAM. This pairs well with the refundable deposit system — the dApp sponsors
+both the deposit and the RAM, reclaims both when the user matures or leaves.

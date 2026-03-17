@@ -294,9 +294,12 @@ needed for running contract tests against our node and for shipping a developer 
 - Add refundable deposit system (doc 11)
 - Replace Bancor RAM market with fixed pricing (doc 11)
 - Hash-based account name derivation (doc 12)
+- Granular permission system baked into core contracts (doc 14)
+- Governance/DAO contract for on-chain parameter governance (doc 21)
+- Referral tracking with behavior-based reputation (doc 14)
 - Boot sequence scripting for new chain genesis
 
-**New contracts (Phase 3):**
+**New contracts (Phase 2-3):**
 - Identity registry + social vouching (doc 13)
 - Attestation framework (doc 13)
 - Social recovery (doc 12)
