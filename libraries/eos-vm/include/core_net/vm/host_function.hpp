@@ -119,15 +119,16 @@ namespace core_net { namespace vm {
 
       template <typename T>
       inline constexpr auto as_result(T&& val) const {
-         if constexpr (std::is_integral_v<T> && sizeof(T) == 4)
+         using U = std::decay_t<T>;
+         if constexpr (std::is_integral_v<U> && sizeof(U) == 4)
             return i32_const_t{ static_cast<uint32_t>(val) };
-         else if constexpr (std::is_integral_v<T> && sizeof(T) == 8)
+         else if constexpr (std::is_integral_v<U> && sizeof(U) == 8)
             return i64_const_t{ static_cast<uint64_t>(val) };
-         else if constexpr (std::is_floating_point_v<T> && sizeof(T) == 4)
+         else if constexpr (std::is_floating_point_v<U> && sizeof(U) == 4)
             return f32_const_t{ static_cast<float>(val) };
-         else if constexpr (std::is_floating_point_v<T> && sizeof(T) == 8)
+         else if constexpr (std::is_floating_point_v<U> && sizeof(U) == 8)
             return f64_const_t{ static_cast<double>(val) };
-         else if constexpr (std::is_void_v<std::decay_t<std::remove_pointer_t<T>>>)
+         else if constexpr (std::is_void_v<std::decay_t<std::remove_pointer_t<U>>>)
             return i32_const_t{ static_cast<uint32_t>(reinterpret_cast<uintptr_t>(val) -
                                                       reinterpret_cast<uintptr_t>(this->access())) };
          else

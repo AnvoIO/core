@@ -1,5 +1,6 @@
 #pragma once
 
+#include <core_net/vm/allocator.hpp>
 #include <core_net/vm/exceptions.hpp>
 #include <core_net/vm/span.hpp>
 #include <core_net/vm/utils.hpp>

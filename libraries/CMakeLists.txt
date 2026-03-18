@@ -24,12 +24,20 @@ add_subdirectory( state_history )
 add_subdirectory( cli11 )
 
 set(USE_EXISTING_SOFTFLOAT ON CACHE BOOL "use pre-exisiting softfloat lib")
-set(ENABLE_TOOLS OFF CACHE BOOL "Build tools")
-set(ENABLE_TESTS OFF CACHE BOOL "Build tests")
 set(ENABLE_ADDRESS_SANITIZER OFF CACHE BOOL "Use address sanitizer")
 set(ENABLE_UNDEFINED_BEHAVIOR_SANITIZER OFF CACHE BOOL "Use UB sanitizer")
 set(ENABLE_PROFILE OFF CACHE BOOL "Enable for profile builds")
+# eos-vm has its own ENABLE_TESTS/ENABLE_TOOLS options that conflict with the
+# top-level project options.  Force them OFF so only the eos-vm library is
+# built; our own test suite exercises the VM through the chain layer.
 if(vm IN_LIST CORE_NET_WASM_RUNTIMES OR vm-jit IN_LIST CORE_NET_WASM_RUNTIMES)
-add_subdirectory( eos-vm )
+   # CMP0077 NEW: option() honors normal variables, so our overrides stick.
+   set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+   set(ENABLE_TESTS OFF)
+   set(ENABLE_TOOLS OFF)
+   add_subdirectory( eos-vm )
+   unset(ENABLE_TESTS)
+   unset(ENABLE_TOOLS)
+   unset(CMAKE_POLICY_DEFAULT_CMP0077)
 endif()
 add_subdirectory( prometheus )
