@@ -30,8 +30,8 @@ def cleos_help_test(args):
     """Test that cleos help contains option and subcommand descriptions"""
     help_text = subprocess.check_output(["./programs/core-cli/core-cli"] + args)
 
-    assert(b'Options:' in help_text)
-    assert(b'Subcommands:' in help_text)
+    assert(b'OPTIONS:' in help_text or b'Options:' in help_text)
+    assert(b'SUBCOMMANDS:' in help_text or b'Subcommands:' in help_text)
 
 
 def cli11_bugfix_test():
