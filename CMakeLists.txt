@@ -244,7 +244,7 @@ configure_file(LICENSE                                                     licen
 configure_file(libraries/softfloat/COPYING.txt                             licenses/core/LICENSE.softfloat COPYONLY)
 configure_file(libraries/wasm-jit/LICENSE                                  licenses/core/LICENSE.wavm      COPYONLY)
 configure_file(libraries/libfc/secp256k1/secp256k1/COPYING                 licenses/core/LICENSE.secp256k1 COPYONLY)
-configure_file(libraries/libfc/include/fc/crypto/webauthn_json/license.txt licenses/core/LICENSE.rapidjson COPYONLY)
+configure_file(libraries/rapidjson/license.txt                            licenses/core/LICENSE.rapidjson COPYONLY)
 configure_file(libraries/eos-vm/LICENSE                                    licenses/core/LICENSE.eos-vm    COPYONLY)
 configure_file(libraries/prometheus/prometheus-cpp/LICENSE                 licenses/core/LICENSE.prom      COPYONLY)
 configure_file(programs/core-cli/LICENSE.CLI11                             licenses/core/LICENSE.CLI11     COPYONLY)
