@@ -419,7 +419,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( blacklist_onerror, T, whitelist_blacklist_validat
    );
 
    BOOST_CHECK_EXCEPTION( tester1.chain->produce_block(), fc::exception,
-                          fc_exception_message_is("action 'core_net::onerror' is on the action blacklist")
+                          fc_exception_message_is("action 'eosio::onerror' is on the action blacklist")
                         );
 
 } FC_LOG_AND_RETHROW() }

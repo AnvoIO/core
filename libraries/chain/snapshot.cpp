@@ -21,6 +21,18 @@ using namespace eosio_rapidjson;
 
 namespace core_net { namespace chain {
 
+// When reading snapshots created before the eosio -> core_net namespace rename,
+// section names will use the old "eosio::chain::" prefix. Convert to try the
+// legacy name as a fallback.
+static std::string legacy_section_name(const std::string& section_name) {
+   const std::string current_prefix = "core_net::chain::";
+   const std::string legacy_prefix  = "eosio::chain::";
+   if (section_name.substr(0, current_prefix.size()) == current_prefix) {
+      return legacy_prefix + section_name.substr(current_prefix.size());
+   }
+   return {};
+}
+
 variant_snapshot_writer::variant_snapshot_writer(fc::mutable_variant_object& snapshot)
 : snapshot(snapshot)
 {
@@ -99,6 +111,17 @@ void variant_snapshot_reader::set_section( const string& section_name ) {
       if (section["name"].as_string() == section_name) {
          cur_section = &section.get_object();
          return;
+      }
+   }
+
+   // Try legacy eosio::chain:: prefix for snapshots created before namespace rename
+   auto legacy = legacy_section_name(section_name);
+   if (!legacy.empty()) {
+      for( const auto& section: sections ) {
+         if (section["name"].as_string() == legacy) {
+            cur_section = &section.get_object();
+            return;
+         }
       }
    }
 
@@ -292,13 +315,8 @@ bool istream_snapshot_reader::validate_section() const {
    return true;
 }
 
-void istream_snapshot_reader::set_section( const string& section_name ) {
-   auto restore_pos = fc::make_scoped_exit([this,pos=snapshot.tellg()](){
-      snapshot.seekg(pos);
-   });
-
+bool istream_snapshot_reader::find_section( const string& name ) {
    const std::streamoff header_size = sizeof(ostream_snapshot_writer::magic_number) + sizeof(current_snapshot_version);
-
    auto next_section_pos = header_pos + header_size;
 
    while (true) {
@@ -315,7 +333,7 @@ void istream_snapshot_reader::set_section( const string& section_name ) {
       snapshot.read((char*)&row_count,sizeof(row_count));
 
       bool match = true;
-      for(auto c : section_name) {
+      for(auto c : name) {
          if(snapshot.get() != c) {
             match = false;
             break;
@@ -325,11 +343,27 @@ void istream_snapshot_reader::set_section( const string& section_name ) {
       if (match && snapshot.get() == 0) {
          cur_row = 0;
          num_rows = row_count;
-
-         // leave the stream at the right point
-         restore_pos.cancel();
-         return;
+         return true;
       }
+   }
+   return false;
+}
+
+void istream_snapshot_reader::set_section( const string& section_name ) {
+   auto restore_pos = fc::make_scoped_exit([this,pos=snapshot.tellg()](){
+      snapshot.seekg(pos);
+   });
+
+   if (find_section(section_name)) {
+      restore_pos.cancel();
+      return;
+   }
+
+   // Try legacy eosio::chain:: prefix for snapshots created before namespace rename
+   auto legacy = legacy_section_name(section_name);
+   if (!legacy.empty() && find_section(legacy)) {
+      restore_pos.cancel();
+      return;
    }
 
    EOS_THROW(snapshot_exception, "Binary snapshot has no section named ${n}", ("n", section_name));
@@ -429,13 +463,21 @@ bool istream_json_snapshot_reader::validate_section() const {
 }
 
 void istream_json_snapshot_reader::set_section( const string& section_name ) {
-   EOS_ASSERT( impl->doc.HasMember( section_name.c_str() ), snapshot_exception, "JSON snapshot has no section ${sec}", ("sec", section_name) );
-   EOS_ASSERT( impl->doc[section_name.c_str()].HasMember( "num_rows" ), snapshot_exception, "JSON snapshot ${sec} num_rows not found", ("sec", section_name) );
-   EOS_ASSERT( impl->doc[section_name.c_str()].HasMember( "rows" ), snapshot_exception, "JSON snapshot ${sec} rows not found", ("sec", section_name) );
-   EOS_ASSERT( impl->doc[section_name.c_str()]["rows"].IsArray(), snapshot_exception, "JSON snapshot ${sec} rows is not an array", ("sec_name", section_name) );
+   std::string effective_name = section_name;
+   if (!impl->doc.HasMember(effective_name.c_str())) {
+      // Try legacy eosio::chain:: prefix for snapshots created before namespace rename
+      auto legacy = legacy_section_name(section_name);
+      if (!legacy.empty() && impl->doc.HasMember(legacy.c_str())) {
+         effective_name = legacy;
+      }
+   }
+   EOS_ASSERT( impl->doc.HasMember( effective_name.c_str() ), snapshot_exception, "JSON snapshot has no section ${sec}", ("sec", section_name) );
+   EOS_ASSERT( impl->doc[effective_name.c_str()].HasMember( "num_rows" ), snapshot_exception, "JSON snapshot ${sec} num_rows not found", ("sec", section_name) );
+   EOS_ASSERT( impl->doc[effective_name.c_str()].HasMember( "rows" ), snapshot_exception, "JSON snapshot ${sec} rows not found", ("sec", section_name) );
+   EOS_ASSERT( impl->doc[effective_name.c_str()]["rows"].IsArray(), snapshot_exception, "JSON snapshot ${sec} rows is not an array", ("sec_name", section_name) );
 
-   impl->sec_name = section_name;
-   impl->num_rows = impl->doc[section_name.c_str()]["num_rows"].GetInt();
+   impl->sec_name = effective_name;
+   impl->num_rows = impl->doc[effective_name.c_str()]["num_rows"].GetInt();
    ilog( "reading ${section_name}, num_rows: ${num_rows}", ("section_name", section_name)( "num_rows", impl->num_rows ) );
 }
 
@@ -503,7 +545,7 @@ void threaded_snapshot_reader::validate() {
    } FC_LOG_AND_RETHROW()
 }
 
-void threaded_snapshot_reader::set_section(const string& section_name) {
+bool threaded_snapshot_reader::find_section_by_name(const string& name) {
    using magic_number_t = std::decay_t<decltype(ostream_snapshot_writer::magic_number)>;
    using version_t = std::decay_t<decltype(current_snapshot_version)>;
 
@@ -512,20 +554,32 @@ void threaded_snapshot_reader::set_section(const string& section_name) {
       const uint64_t this_section_size      = snapshot_file.unpack_from<uint64_t>(next_section_offs);
       const uint64_t this_section_row_count = snapshot_file.unpack_from<uint64_t>(next_section_offs + sizeof(uint64_t));
       const uint64_t section_name_offset    = next_section_offs + sizeof(uint64_t) + sizeof(uint64_t);
-      const uint64_t section_data_offset    = section_name_offset + section_name.size() + 1;
 
       //section size does not include the section size record itself, so + sizeof(uint64_t)
       EOS_ASSERT(next_section_offs + this_section_size + sizeof(uint64_t) < mapped_snap.get_size(), snapshot_exception, "Binary snapshot section too short");
 
-      if(strncmp(section_name.c_str(), mapped_snap_addr+section_name_offset, section_name.size() + 1) == 0) {
+      if(strncmp(name.c_str(), mapped_snap_addr+section_name_offset, name.size() + 1) == 0) {
+         const uint64_t section_data_offset = section_name_offset + name.size() + 1;
          cur_row = 0;
          num_rows = this_section_row_count;
          ds = fc::datastream<const char*>(mapped_snap_addr+section_data_offset, mapped_snap.get_size() - section_data_offset);
-         return;
+         return true;
       }
 
       next_section_offs += sizeof(this_section_size) + this_section_size;
    }
+
+   return false;
+}
+
+void threaded_snapshot_reader::set_section(const string& section_name) {
+   if (find_section_by_name(section_name))
+      return;
+
+   // Try legacy eosio::chain:: prefix for snapshots created before namespace rename
+   auto legacy = legacy_section_name(section_name);
+   if (!legacy.empty() && find_section_by_name(legacy))
+      return;
 
    EOS_THROW(snapshot_exception, "Binary snapshot has no section named ${n}", ("n", section_name));
 }

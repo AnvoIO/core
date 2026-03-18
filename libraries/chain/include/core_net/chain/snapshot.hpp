@@ -386,6 +386,7 @@ namespace core_net { namespace chain {
 
       private:
          bool validate_section() const;
+         bool find_section( const string& name );
 
          std::istream&  snapshot;
          std::streampos header_pos;
@@ -426,6 +427,8 @@ namespace core_net { namespace chain {
          bool supports_threading() const override {return true;}
 
       private:
+         bool find_section_by_name(const string& name);
+
          fc::random_access_file                   snapshot_file;
          const boost::interprocess::mapped_region mapped_snap;
          const char* const                        mapped_snap_addr;

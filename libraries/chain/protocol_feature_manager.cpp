@@ -65,7 +65,7 @@ Also allows a contract to send a deferred transaction in a manner that enables t
          } )
          (  builtin_protocol_feature_t::fix_linkauth_restriction, builtin_protocol_feature_spec{
             "FIX_LINKAUTH_RESTRICTION",
-            fc::variant("a98241c83511dc86c857221b9372b4aa7cea3aaebc567a48604e1d3db3557050").as<digest_type>(),
+            fc::variant("414ed72762a15b045bc1d7fc774314b3828cd87c0acb182eb662b3d6fc4d1288").as<digest_type>(),
             // SHA256 hash of the raw message below within the comment delimiters (exclude newline after /*) (do not modify message below).
 /*
 Builtin protocol feature: FIX_LINKAUTH_RESTRICTION
@@ -112,7 +112,7 @@ Adds CPU and network bandwidth usage to only the first authorizer of a transacti
          } )
          (  builtin_protocol_feature_t::forward_setcode, builtin_protocol_feature_spec{
             "FORWARD_SETCODE",
-            fc::variant("898082c59f921d0042e581f00a59d5ceb8be6f1d9c7a45b6f07c0e26eaee0222").as<digest_type>(),
+            fc::variant("aa88176806ba864700b6f2b7e32f59993644ebc25a04fd70c113a2fbd5aadd9e").as<digest_type>(),
             // SHA256 hash of the raw message below within the comment delimiters (exclude newline after /*) (do not modify message below).
 /*
 Builtin protocol feature: FORWARD_SETCODE
