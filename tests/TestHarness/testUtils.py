@@ -61,7 +61,7 @@ class Utils:
     testBinPath = Path(__file__).resolve().parents[2] / 'bin'
 
     EosClientPath=str(testBinPath / "core-cli")
-    MiscEosClientArgs="--no-auto-keosd"
+    MiscEosClientArgs="--no-auto-core-wallet"
 
     SpringClientPath=str(testBinPath / "core-util")
 
