@@ -1,4 +1,8 @@
+# Disable BoringSSL tests/benchmarks to avoid target conflicts with Spring
+set(BUILD_TESTING_SAVE ${BUILD_TESTING})
+set(BUILD_TESTING OFF)
 add_subdirectory(bssl EXCLUDE_FROM_ALL)
+set(BUILD_TESTING ${BUILD_TESTING_SAVE})
 target_compile_options(fipsmodule PRIVATE -Wno-error)
 target_compile_options(crypto PRIVATE -Wno-error)
 target_compile_options(decrepit PRIVATE -Wno-error)
