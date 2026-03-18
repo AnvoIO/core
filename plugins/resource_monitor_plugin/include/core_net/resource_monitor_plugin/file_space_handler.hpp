@@ -166,7 +166,7 @@ namespace core_net::resource_monitor {
       }
       update_warning_interval_counter();
 
-      timer.expires_from_now( boost::posix_time::seconds( sleep_time_in_secs ));
+      timer.expires_after( std::chrono::seconds( sleep_time_in_secs ));
       timer.async_wait([this](const auto& ec) {
          if ( ec ) {
             // No need to check if ec is operation_aborted (cancelled),
@@ -190,7 +190,7 @@ namespace core_net::resource_monitor {
       static constexpr size_t thread_pool_size = 1;
       core_net::chain::named_thread_pool<struct resmon> thread_pool;
 
-      boost::asio::deadline_timer timer {thread_pool.get_executor()};
+      boost::asio::steady_timer timer {thread_pool.get_executor()};
 
       uint32_t sleep_time_in_secs {2};
       uint32_t shutdown_threshold {90};

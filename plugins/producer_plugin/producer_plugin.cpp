@@ -19,7 +19,6 @@
 #include <fc/time.hpp>
 
 #include <boost/asio.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/signals2/connection.hpp>
 
 #include <cstdint>
@@ -706,7 +705,7 @@ public:
    bool                                  _pause_production   = false;
 
    core_net::chain::named_thread_pool<struct prod>      _timer_thread;
-   boost::asio::deadline_timer                       _timer{_timer_thread.get_executor()};
+   boost::asio::steady_timer                          _timer{_timer_thread.get_executor()};
 
    using signature_provider_type = signature_provider_plugin::signature_provider_type;
    std::map<chain::public_key_type, signature_provider_type> _signature_providers;
@@ -826,7 +825,7 @@ public:
                                                                    // use atomic for simplicity and performance
    fc::time_point                 _ro_read_window_start_time;
    fc::time_point                 _ro_window_deadline;    // only modified on app thread, read-window deadline or write-window deadline
-   boost::asio::deadline_timer    _ro_timer{_timer_thread.get_executor()}; // only accessible from the main thread
+   boost::asio::steady_timer      _ro_timer{_timer_thread.get_executor()}; // only accessible from the main thread
    fc::microseconds               _ro_max_trx_time_us{0}; // calculated during option initialization
    ro_trx_queue_t                 _ro_exhausted_trx_queue;
    alignas(hardware_destructive_interference_sz)
@@ -2824,7 +2823,7 @@ void producer_plugin_impl::schedule_production_loop() {
 
    if (result == start_block_result::failed) {
       fc_wlog(_log, "Failed to start a pending block, will try again later");
-      _timer.expires_from_now(boost::posix_time::microseconds(config::block_interval_us / 10));
+      _timer.expires_after(std::chrono::microseconds(config::block_interval_us / 10));
 
       // we failed to start a block, so try again later?
       _timer.async_wait([this, cid = ++_timer_corelation_id](const boost::system::error_code& ec) {
@@ -2878,18 +2877,18 @@ void producer_plugin_impl::schedule_maybe_produce_block(bool exhausted) {
 
    assert(in_producing_mode());
    // we succeeded but block may be exhausted
-   static const boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
    auto deadline = block_timing_util::calculate_producing_block_deadline(_produce_block_cpu_effort, chain.pending_block_time());
 
    if (!exhausted && deadline > fc::time_point::now()) {
       // ship this block off no later than its deadline
       EOS_ASSERT(chain.is_building_block(), missing_pending_block_state, "producing without pending_block_state, start_block succeeded");
-      _timer.expires_at(epoch + boost::posix_time::microseconds(deadline.time_since_epoch().count()));
+      auto dur = deadline - fc::time_point::now();
+      _timer.expires_after(std::chrono::microseconds(dur.count()));
       fc_dlog(_log, "Scheduling Block Production on Normal Block #${num} for ${time}",
               ("num", chain.head().block_num() + 1)("time", deadline));
    } else {
       EOS_ASSERT(chain.is_building_block(), missing_pending_block_state, "producing without pending_block_state");
-      _timer.expires_from_now(boost::posix_time::microseconds(0));
+      _timer.expires_after(std::chrono::microseconds(0));
       fc_dlog(_log, "Scheduling Block Production on ${desc} Block #${num} immediately",
               ("num", chain.head().block_num() + 1)("desc", block_is_exhausted() ? "Exhausted" : "Deadline exceeded"));
    }
@@ -2911,8 +2910,8 @@ void producer_plugin_impl::schedule_delayed_production_loop(const std::weak_ptr<
                                                             std::optional<fc::time_point>              wake_up_time) {
    if (wake_up_time) {
       fc_dlog(_log, "Scheduling Speculative/Production Change at ${time}", ("time", wake_up_time));
-      static const boost::posix_time::ptime epoch(boost::gregorian::date(1970, 1, 1));
-      _timer.expires_at(epoch + boost::posix_time::microseconds(wake_up_time->time_since_epoch().count()));
+      auto dur = *wake_up_time - fc::time_point::now();
+      _timer.expires_after(std::chrono::microseconds(dur.count()));
       _timer.async_wait([this, cid = ++_timer_corelation_id](const boost::system::error_code& ec) {
          if (ec != boost::asio::error::operation_aborted && cid == _timer_corelation_id) {
             interrupt_transaction(controller::interrupt_t::all_trx);
@@ -3108,8 +3107,7 @@ void producer_plugin_impl::start_write_window() {
    _time_tracker.unpause(now);
 
    _ro_window_deadline = now + _ro_write_window_time_us; // not allowed on block producers, so no need to limit to block deadline
-   auto expire_time = boost::posix_time::microseconds(_ro_write_window_time_us.count());
-   _ro_timer.expires_from_now(expire_time);
+   _ro_timer.expires_after(std::chrono::microseconds(_ro_write_window_time_us.count()));
    _ro_timer.async_wait([this](const boost::system::error_code& ec) {
       if (ec != boost::asio::error::operation_aborted) {
          app().executor().post(priority::high, exec_queue::read_write, // placed in read_write so only called from main thread
@@ -3154,8 +3152,7 @@ void producer_plugin_impl::switch_to_read_window() {
          _ro_thread_pool.get_executor(), [self = this, pending_block_num]() { return self->read_only_execution_task(pending_block_num); }));
    }
 
-   auto expire_time = boost::posix_time::microseconds(_ro_read_window_time_us.count());
-   _ro_timer.expires_from_now(expire_time);
+   _ro_timer.expires_after(std::chrono::microseconds(_ro_read_window_time_us.count()));
    // Needs to be on read_only because that is what is being processed until switch_to_write_window().
    _ro_timer.async_wait([this](const boost::system::error_code& ec) {
       app().executor().post(priority::high, exec_queue::read_only, [this, ec]() {

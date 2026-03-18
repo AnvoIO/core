@@ -102,7 +102,7 @@ public:
             }
 
             if (!cancelled) {
-               boost::asio::async_connect(s, resolved.begin(), resolved.end(), [&final_ec](const error_code& ec, tcp::resolver::iterator ){
+               boost::asio::async_connect(s, resolved, [&final_ec](const error_code& ec, const tcp::endpoint& ){
                   final_ec.emplace(ec);
                });
             }
