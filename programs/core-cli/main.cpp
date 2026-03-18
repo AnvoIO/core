@@ -977,14 +977,15 @@ struct set_account_permission_subcommand {
 
    set_account_permission_subcommand(CLI::App* accountCmd) {
       auto permissions = accountCmd->add_subcommand("permission", localized("Set parameters dealing with account permissions"));
+      add_standard_transaction_options(permissions, "account@active");
+
       permissions->add_option("account", account, localized("The account to set/delete a permission authority for"))->required();
-      permissions->add_option("permission", permission, localized("The permission name to set/delete an authority for"))->required();
+      permissions->add_option("perm_name", permission, localized("The permission name to set/delete an authority for"))->required();
       permissions->add_option("authority", authority_json_or_file, localized("[delete] NULL, [create/update] public key, JSON string or filename defining the authority, [code] contract name"));
       permissions->add_option("parent", parent, localized("[create] The permission name of this parents permission, defaults to 'active'"));
       permissions->add_flag("--add-code", add_code, localized("[code] add '${code}' permission to specified permission authority", ("code", name(config::code_name()))));
       permissions->add_flag("--remove-code", remove_code, localized("[code] remove '${code}' permission from specified permission authority", ("code", name(config::code_name()))));
 
-      add_standard_transaction_options(permissions, "account@active");
 
       permissions->callback([this] {
          EOSC_ASSERT( !(add_code && remove_code), "ERROR: Either --add-code or --remove-code can be set" );
