@@ -47,7 +47,7 @@ try:
     extraNodeosArgs=" --production-pause-vote-timeout-ms 0 "
 
     if cluster.launch(pnodes=pnodes, totalNodes=total_nodes, extraNodeosArgs=extraNodeosArgs,
-                      topo="./tests/nodeos_late_block_test_shape.json", delay=delay, loadSystemContract=False,
+                      topo="./tests/core_netd_late_block_test_shape.json", delay=delay, loadSystemContract=False,
                       activateIF=True, signatureProviderForNonProducer=True) is False:
         errorExit("Failed to stand up eos cluster.")
 

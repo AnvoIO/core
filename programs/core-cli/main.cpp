@@ -160,7 +160,7 @@ constexpr name core_vaulta_name = "core.vaulta"_n;
 constexpr name eosio_token_name = "eosio.token"_n;
 const char* a_symbol_str = "A";
 string default_url = "http://127.0.0.1:8888";
-string default_wallet_url = "unix://" + (determine_home_directory() / "eosio-wallet" / (string(key_store_executable_name) + ".sock")).string();
+string default_wallet_url = "unix://" + (determine_home_directory() / "core-wallet" / (string(key_store_executable_name) + ".sock")).string();
 string wallet_url; //to be set to default_wallet_url in main
 std::map<name, std::string>  abi_files_override;
 
