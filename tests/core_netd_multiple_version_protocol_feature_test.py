@@ -182,10 +182,10 @@ try:
     oldNode.kill(signal.SIGTERM)
     # Note, for the following relaunch, these will fail to relaunch immediately (expected behavior of export/import), so the chainArg will not replace the old cmd
     oldNode.relaunch(chainArg="--export-reversible-blocks {}".format(portableRevBlkPath), timeout=1)
-    oldNode.relaunch(chainArg="--import-reversible-blocks {}".format(portableRevBlkPath), timeout=1, nodeosPath="programs/nodeos/nodeos")
+    oldNode.relaunch(chainArg="--import-reversible-blocks {}".format(portableRevBlkPath), timeout=1, nodeosPath="programs/core_netd/core_netd")
     os.remove(portableRevBlkPath)
 
-    restartNode(oldNode, chainArg="--replay", nodeosPath="programs/nodeos/nodeos")
+    restartNode(oldNode, chainArg="--replay", nodeosPath="programs/core_netd/core_netd")
     time.sleep(2) # Give some time to replay
 
     assert areNodesInSync(allNodes), "All nodes should be in sync"

@@ -96,7 +96,7 @@ struct random_access_file_context {
       struct iovec iov[IOV_MAX];
       int i = 0;
       for(auto it = boost::asio::buffer_sequence_begin(mbs); it != boost::asio::buffer_sequence_end(mbs); ++it) {
-         const boost::asio::mutable_buffer& b = *it;
+         const boost::asio::mutable_buffer b(*it);
          iov[i].iov_base = b.data();
          iov[i].iov_len = b.size();
          if(++i == IOV_MAX)
