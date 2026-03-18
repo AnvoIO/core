@@ -185,7 +185,7 @@ class Cluster(object):
         specificExtraNodeosArgs: dictionary of arguments to pass to a specific node (via --specific-num and
                                  --specific-nodeos flags on launcher), example: { "5" : "--plugin core_net::test_control_api_plugin" }
         specificNodeosInstances: dictionary of paths to launch specific nodeos binaries (via --spcfc-inst-num and
-                                 --spcfc_inst_nodeos flags to launcher), example: { "4" : "bin/nodeos"}
+                                 --spcfc_inst_core_netd flags to launcher), example: { "4" : "bin/core_netd"}
         onlySetProds: Stop the bootstrap process after setting the producers
         pfSetupPolicy: determine the protocol feature setup policy (none, preactivate_feature_only, or full)
         alternateVersionLabelsFile: Supply an alternate version labels file to use with associatedNodeLabels.
@@ -290,7 +290,7 @@ class Cluster(object):
                     continue
                 argsArr.append("--specific-num")
                 argsArr.append(str(nodeNum))
-                argsArr.append("--specific-nodeos")
+                argsArr.append(f"--specific-{Utils.EosServerName}")
                 if arg.find("--http-max-response-time-ms") != -1:
                     httpMaxResponseTimeSet = True
                 if arg[0] != "'" and arg[-1] != "'":
@@ -304,7 +304,7 @@ class Cluster(object):
                 assert(isinstance(arg, str))
                 argsArr.append("--spcfc-inst-num")
                 argsArr.append(str(nodeNum))
-                argsArr.append("--spcfc-inst-nodeos")
+                argsArr.append(f"--spcfc-inst-{Utils.EosServerName}")
                 argsArr.append(arg)
 
         if not httpMaxResponseTimeSet and extraNodeosArgs.find("--http-max-response-time-ms") == -1:
@@ -315,7 +315,7 @@ class Cluster(object):
             nodeosArgs += extraNodeosArgs
 
         if nodeosArgs:
-            argsArr.append("--nodeos")
+            argsArr.append(f"--{Utils.EosServerName}")
             argsArr.append(nodeosArgs)
 
         if genesisPath is None:
@@ -336,7 +336,7 @@ class Cluster(object):
                     Utils.errorExit("associatedNodeLabels passed in indicates label %s for node num %s, but it was not identified in %s" % (label, nodeNum, alternateVersionLabelsFile))
                 argsArr.append("--spcfc-inst-num")
                 argsArr.append(str(nodeNum))
-                argsArr.append("--spcfc-inst-nodeos")
+                argsArr.append(f"--spcfc-inst-{Utils.EosServerName}")
                 argsArr.append(path)
 
         # must be last cmdArr.append before subprocess.call, so that everything is on the command line

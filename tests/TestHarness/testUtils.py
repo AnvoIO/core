@@ -63,12 +63,12 @@ class Utils:
     EosClientPath=str(testBinPath / "core-cli")
     MiscEosClientArgs="--no-auto-keosd"
 
-    SpringClientPath=str(testBinPath / "spring-util")
+    SpringClientPath=str(testBinPath / "core-util")
 
     EosWalletName="core-wallet"
     EosWalletPath=str(testBinPath / EosWalletName)
 
-    EosServerName="nodeos"
+    EosServerName="core_netd"
     EosServerPath=str(testBinPath / EosServerName)
 
     ShuttingDown=False
