@@ -552,6 +552,8 @@ bool threaded_snapshot_reader::find_section_by_name(const string& name) {
    uint64_t next_section_offs = sizeof(magic_number_t) + sizeof(version_t);
    while(true) {
       const uint64_t this_section_size      = snapshot_file.unpack_from<uint64_t>(next_section_offs);
+      if(this_section_size == std::numeric_limits<uint64_t>::max())
+         break;
       const uint64_t this_section_row_count = snapshot_file.unpack_from<uint64_t>(next_section_offs + sizeof(uint64_t));
       const uint64_t section_name_offset    = next_section_offs + sizeof(uint64_t) + sizeof(uint64_t);
 
