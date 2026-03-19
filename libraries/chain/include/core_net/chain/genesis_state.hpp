@@ -81,5 +81,15 @@ struct genesis_state {
 } } // namespace core_net::chain
 
 // @swap initial_timestamp initial_key initial_configuration
+// FC_REFLECT provides binary pack/unpack (used for chain_id computation).
+// system_account_prefix is intentionally excluded to keep chain_id stable.
 FC_REFLECT(core_net::chain::genesis_state,
            (initial_timestamp)(initial_key)(initial_configuration))
+
+// Custom variant overloads that include system_account_prefix for JSON.
+// Declared here so they are visible before any .as<genesis_state>() call,
+// ensuring they take precedence over FC_REFLECT's template-based variants.
+namespace fc {
+void to_variant(const core_net::chain::genesis_state& gs, fc::variant& v);
+void from_variant(const fc::variant& v, core_net::chain::genesis_state& gs);
+}
