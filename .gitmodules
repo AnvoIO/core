@@ -1,9 +1,6 @@
 [submodule "libraries/rapidjson"]
 	path = libraries/rapidjson
 	url = https://github.com/Tencent/rapidjson/
-[submodule "libraries/libfc/include/fc/crypto/webauthn_json"]
-	path = libraries/libfc/include/fc/crypto/webauthn_json
-	url = https://github.com/Tencent/rapidjson/
 [submodule "libraries/libfc/secp256k1/secp256k1"]
 	path = libraries/libfc/secp256k1/secp256k1
 	url = https://github.com/bitcoin-core/secp256k1

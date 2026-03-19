@@ -91,8 +91,7 @@ Options:
 
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
-#include <boost/process.hpp>
-#include <boost/process/spawn.hpp>
+#include <boost/process/v1.hpp>
 #include <boost/range/adaptor/transformed.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -161,7 +160,7 @@ constexpr name core_vaulta_name = "core.vaulta"_n;
 constexpr name eosio_token_name = "eosio.token"_n;
 const char* a_symbol_str = "A";
 string default_url = "http://127.0.0.1:8888";
-string default_wallet_url = "unix://" + (determine_home_directory() / "eosio-wallet" / (string(key_store_executable_name) + ".sock")).string();
+string default_wallet_url = "unix://" + (determine_home_directory() / "core-wallet" / (string(key_store_executable_name) + ".sock")).string();
 string wallet_url; //to be set to default_wallet_url in main
 std::map<name, std::string>  abi_files_override;
 
@@ -978,14 +977,15 @@ struct set_account_permission_subcommand {
 
    set_account_permission_subcommand(CLI::App* accountCmd) {
       auto permissions = accountCmd->add_subcommand("permission", localized("Set parameters dealing with account permissions"));
+      add_standard_transaction_options(permissions, "account@active");
+
       permissions->add_option("account", account, localized("The account to set/delete a permission authority for"))->required();
-      permissions->add_option("permission", permission, localized("The permission name to set/delete an authority for"))->required();
+      permissions->add_option("perm_name", permission, localized("The permission name to set/delete an authority for"))->required();
       permissions->add_option("authority", authority_json_or_file, localized("[delete] NULL, [create/update] public key, JSON string or filename defining the authority, [code] contract name"));
       permissions->add_option("parent", parent, localized("[create] The permission name of this parents permission, defaults to 'active'"));
       permissions->add_flag("--add-code", add_code, localized("[code] add '${code}' permission to specified permission authority", ("code", name(config::code_name()))));
       permissions->add_flag("--remove-code", remove_code, localized("[code] remove '${code}' permission from specified permission authority", ("code", name(config::code_name()))));
 
-      add_standard_transaction_options(permissions, "account@active");
 
       permissions->callback([this] {
          EOSC_ASSERT( !(add_code && remove_code), "ERROR: Either --add-code or --remove-code can be set" );
@@ -1181,7 +1181,7 @@ void ensure_core_wallet_running(CLI::App* app) {
     }
 
     if (std::filesystem::exists(binPath)) {
-        namespace bp = boost::process;
+        namespace bp = boost::process::v1;
         binPath = std::filesystem::canonical(binPath);
 
         vector<std::string> pargs;
@@ -1190,7 +1190,7 @@ void ensure_core_wallet_running(CLI::App* app) {
         pargs.push_back("--unix-socket-path");
         pargs.push_back(string(key_store_executable_name) + ".sock");
 
-        ::boost::process::child keos(binPath.string(), pargs,
+        bp::child keos(binPath.string(), pargs,
                                      bp::std_in.close(),
                                      bp::std_out > bp::null,
                                      bp::std_err > bp::null);

@@ -8,10 +8,10 @@ import subprocess
 
 def run_cleos_wallet_command(command: str, no_auto_keosd: bool):
     """Run the given cleos command and return subprocess.CompletedProcess."""
-    args = ['./programs/cleos/cleos']
+    args = ['./programs/core-cli/core-cli']
 
     if no_auto_keosd:
-        args.append('--no-auto-keosd')
+        args.append('--no-auto-core-wallet')
 
     args += 'wallet', command
 
@@ -36,11 +36,11 @@ def keosd_auto_launch_test():
     """Test that keos auto-launching works but can be optionally inhibited."""
     stop_keosd()
 
-    # Make sure that when '--no-auto-keosd' is given, keosd is not started by
+    # Make sure that when '--no-auto-core-wallet' is given, keosd is not started by
     # cleos.
     completed_process = run_cleos_wallet_command('list', no_auto_keosd=True)
     assert completed_process.returncode != 0
-    check_cleos_stderr(completed_process.stderr, b'Failed http request to keosd')
+    check_cleos_stderr(completed_process.stderr, b'Failed http request to core-wallet')
 
     # Verify that keosd auto-launching works.
     completed_process = run_cleos_wallet_command('list', no_auto_keosd=False)

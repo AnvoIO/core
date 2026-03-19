@@ -14,7 +14,7 @@ from pathlib import Path, PurePath
 sys.path.append(str(PurePath(PurePath(Path(__file__).absolute()).parent).parent))
 
 from .log_reader import blockData, trxData, chainData, scrapeTrxGenTrxSentDataLogs, JsonReportHandler, analyzeLogResults, TpsTestConfig, ArtifactPaths, LogAnalysis
-from .NodeosPluginArgs import ChainPluginArgs, HttpPluginArgs, NetPluginArgs, ProducerPluginArgs, ResourceMonitorPluginArgs, SignatureProviderPluginArgs, StateHistoryPluginArgs, TraceApiPluginArgs
+from .CorePluginArgs import ChainPluginArgs, HttpPluginArgs, NetPluginArgs, ProducerPluginArgs, ResourceMonitorPluginArgs, SignatureProviderPluginArgs, StateHistoryPluginArgs, TraceApiPluginArgs
 from TestHarness import Account, Cluster, TestHelper, Utils, WalletMgr, TransactionGeneratorsLauncher, TpsTrxGensConfig
 from TestHarness.TestHelper import AppArgs
 from dataclasses import dataclass, asdict, field
@@ -129,7 +129,7 @@ class PerformanceTestBasic:
                 if not self.prodsEnableTraceApi:
                     validationNodeSpecificNodeosStr += "--plugin core_net::trace_api_plugin "
                 if self.nonProdsEosVmOcEnable:
-                    validationNodeSpecificNodeosStr += "--eos-vm-oc-enable all "
+                    validationNodeSpecificNodeosStr += "--core-vm-oc-enable all "
                 if validationNodeSpecificNodeosStr:
                     self.specificExtraNodeosArgs.update({f"{nodeId}" : validationNodeSpecificNodeosStr for nodeId in self._validationNodeIds})
 
@@ -645,7 +645,7 @@ class PerformanceTestBasic:
         chainPluginArgs = ChainPluginArgs(signatureCpuBillablePct=args.signature_cpu_billable_pct,
                                         chainThreads=args.chain_threads, databaseMapMode=args.database_map_mode,
                                         wasmRuntime=args.wasm_runtime, contractsConsole=args.contracts_console,
-                                        eosVmOcCacheSizeMb=args.eos_vm_oc_cache_size_mb, eosVmOcCompileThreads=args.eos_vm_oc_compile_threads,
+                                        coreVmOcCacheSizeMb=args.eos_vm_oc_cache_size_mb, coreVmOcCompileThreads=args.eos_vm_oc_compile_threads,
                                         blockLogRetainBlocks=args.block_log_retain_blocks,
                                         chainStateDbSizeMb=args.chain_state_db_size_mb, abiSerializerMaxTimeMs=990000)
 

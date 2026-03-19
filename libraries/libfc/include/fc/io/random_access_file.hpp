@@ -95,7 +95,8 @@ struct random_access_file_context {
    ssize_t read_from(const MutableBufferSequence& mbs, ssize_t offs) {
       struct iovec iov[IOV_MAX];
       int i = 0;
-      for(const boost::asio::mutable_buffer& b : mbs) {
+      for(auto it = boost::asio::buffer_sequence_begin(mbs); it != boost::asio::buffer_sequence_end(mbs); ++it) {
+         const boost::asio::mutable_buffer b(*it);
          iov[i].iov_base = b.data();
          iov[i].iov_len = b.size();
          if(++i == IOV_MAX)
@@ -115,7 +116,8 @@ struct random_access_file_context {
       while(boost::beast::buffer_bytes(bs_left)) {
          struct iovec iov[IOV_MAX];
          int i = 0;
-         for(const boost::asio::const_buffer& b : bs_left) {
+         for(auto it = boost::asio::buffer_sequence_begin(bs_left); it != boost::asio::buffer_sequence_end(bs_left); ++it) {
+            const boost::asio::const_buffer& b = *it;
             iov[i].iov_base = (char*)b.data();
             iov[i].iov_len = b.size();
             if(++i == IOV_MAX)

@@ -16,7 +16,7 @@ if [[ -z "$EXPECTED" ]]; then
 fi
 echo "Expecting \"$EXPECTED\"..."
 # get nodeos version
-ACTUAL=$($BUILD_ROOT/bin/nodeos --version)
+ACTUAL=$($BUILD_ROOT/bin/core_netd --version)
 EXIT_CODE=$?
 # verify 0 exit code explicitly
 if [[ $EXIT_CODE -ne 0 ]]; then

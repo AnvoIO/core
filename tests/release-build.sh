@@ -12,7 +12,7 @@ echo 'debugging symbols, and performs compiler optimizations.'
 echo ''
 
 TDIR=$(mktemp -d || exit 1)
-NODEOS_DEBUG=$(programs/nodeos/nodeos --config-dir "${TDIR}" --data-dir "${TDIR}" --extract-build-info >(python3 -c 'import json,sys; print(str(json.load(sys.stdin)["debug"]).lower());') &> /dev/null)
+NODEOS_DEBUG=$(programs/core_netd/core_netd --config-dir "${TDIR}" --data-dir "${TDIR}" --extract-build-info >(python3 -c 'import json,sys; print(str(json.load(sys.stdin)["debug"]).lower());') &> /dev/null)
 #avoiding an rm -rf out of paranoia, but with the tradeoff this could change somehow in the future
 rm "${TDIR}/config.ini" || exit 1
 rmdir "${TDIR}" || exit 1

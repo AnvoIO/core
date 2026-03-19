@@ -91,7 +91,7 @@ class PluginHttpTest(unittest.TestCase):
         plugin_names = ["trace_api_plugin", "test_control_api_plugin", "test_control_plugin", "net_plugin",
                         "net_api_plugin", "producer_plugin", "producer_api_plugin", "chain_api_plugin",
                         "http_plugin", "db_size_api_plugin", "prometheus_plugin"]
-        nodeos_plugins = "--plugin eosio::" +  " --plugin eosio::".join(plugin_names)
+        nodeos_plugins = "--plugin core_net::" +  " --plugin core_net::".join(plugin_names)
         nodeos_flags = (" --data-dir=%s --config-dir=%s --trace-dir=%s --trace-no-abis --access-control-allow-origin=%s "
                         "--contracts-console --http-validate-host=%s --verbose-http-errors --max-transaction-time -1 --abi-serializer-max-time-ms 30000 --http-max-response-time-ms 30000 "
                         "--p2p-peer-address localhost:9011 --resource-monitor-not-shutdown-on-threshold-exceeded ") % (self.data_dir, self.config_dir, self.data_dir, "\'*\'", "false")
