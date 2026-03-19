@@ -58,7 +58,7 @@ class Cluster(object):
 
     # pylint: disable=too-many-arguments
     def __init__(self, localCluster=True, host="localhost", port=8888, walletHost="localhost", walletPort=9899
-                 , defproduceraPrvtKey=None, defproducerbPrvtKey=None, staging=False, loggingLevel="debug", loggingLevelDict={}, nodeosVers="", unshared=False, keepRunning=False, keepLogs=False):
+                 , defproduceraPrvtKey=None, defproducerbPrvtKey=None, staging=False, loggingLevel="debug", loggingLevelDict={}, nodeosVers="", unshared=False, keepRunning=False, keepLogs=False, systemAccountPrefix="eosio"):
         """Cluster container.
         localCluster [True|False] Is cluster local to host.
         host: eos server host
@@ -95,7 +95,9 @@ class Cluster(object):
         self.defProducerAccounts={}
         self.defproduceraAccount=self.defProducerAccounts["defproducera"]= Account("defproducera")
         self.defproducerbAccount=self.defProducerAccounts["defproducerb"]= Account("defproducerb")
-        self.eosioAccount=self.defProducerAccounts["eosio"]= Account("eosio")
+        self.systemAccountPrefix=systemAccountPrefix
+        self.systemAccountName=systemAccountPrefix  # "eosio" or "core"
+        self.eosioAccount=self.defProducerAccounts[self.systemAccountName]= Account(self.systemAccountName)
 
         self.defproduceraAccount.ownerPrivateKey=defproduceraPrvtKey
         self.defproduceraAccount.activePrivateKey=defproduceraPrvtKey
@@ -327,6 +329,10 @@ class Cluster(object):
             argsArr.append("--genesis")
             argsArr.append(str(genesisPath))
 
+        if self.systemAccountPrefix != "eosio":
+            argsArr.append("--system-account-prefix")
+            argsArr.append(self.systemAccountPrefix)
+
         if associatedNodeLabels is not None:
             for nodeNum,label in associatedNodeLabels.items():
                 assert(isinstance(nodeNum, (str,int)))
@@ -525,7 +531,7 @@ class Cluster(object):
             initAccountKeys(account, producerKeys[name])
             self.defProducerAccounts[name] = account
 
-        self.eosioAccount=self.defProducerAccounts["eosio"]
+        self.eosioAccount=self.defProducerAccounts[self.systemAccountName]
         self.defproduceraAccount=self.defProducerAccounts["defproducera"]
         self.defproducerbAccount=self.defProducerAccounts["defproducerb"]
 
@@ -1031,11 +1037,11 @@ class Cluster(object):
         setFinStr +=  f'}}}}'
         if Utils.Debug: Utils.Print("setfinalizers: %s" % (setFinStr))
         Utils.Print("Setting finalizers")
-        opts = "--permission eosio@active"
+        opts = f"--permission {self.systemAccountName}@active"
         # setfinalizer can fail on ci/cd because it required too much CPU, try a few times
         retries = 3
         while retries > 0:
-            trans = node.pushMessage("eosio", "setfinalizer", setFinStr, opts, force=True)
+            trans = node.pushMessage(self.systemAccountName, "setfinalizer", setFinStr, opts, force=True)
             if trans is None or not trans[0]:
                 retries = retries - 1
                 continue
@@ -1072,7 +1078,7 @@ class Cluster(object):
 
         ignWallet=self.walletMgr.create("ignition")
 
-        eosioName="eosio"
+        eosioName=self.systemAccountName
         eosioKeys=producerKeys[eosioName]
         eosioAccount=Account(eosioName)
         eosioAccount.ownerPrivateKey=eosioKeys["private"]
@@ -1150,7 +1156,7 @@ class Cluster(object):
 
                     Utils.Print("Setting producers.")
                     opts="--permission eosio@active"
-                    myTrans=biosNode.pushMessage("eosio", "setprods", setProdsStr, opts)
+                    myTrans=biosNode.pushMessage(self.systemAccountName, "setprods", setProdsStr, opts)
                     if myTrans is None or not myTrans[0]:
                         Utils.Print("ERROR: Failed to set producers.")
                         return None
@@ -1172,7 +1178,7 @@ class Cluster(object):
                 Utils.Print("Setting producers: %s." % (", ".join(prodNames)))
                 opts="--permission eosio@active"
                 # pylint: disable=redefined-variable-type
-                trans=biosNode.pushMessage("eosio", "setprods", setProdsStr, opts)
+                trans=biosNode.pushMessage(self.systemAccountName, "setprods", setProdsStr, opts)
                 if trans is None or not trans[0]:
                     Utils.Print("ERROR: Failed to set producer %s." % (keys["name"]))
                     return None
@@ -1184,7 +1190,7 @@ class Cluster(object):
                 return None
 
             # wait for block production handover (essentially a block produced by anyone but eosio).
-            lam = lambda: biosNode.getInfo(exitOnError=True)["head_block_producer"] != "eosio"
+            lam = lambda: biosNode.getInfo(exitOnError=True)["head_block_producer"] != self.systemAccountName
             ret=Utils.waitForBool(lam)
             if not ret:
                 Utils.Print("ERROR: Block production handover failed.")
@@ -1201,7 +1207,8 @@ class Cluster(object):
                 return None
             return trans
 
-        systemAccounts = ['eosio.bpay', 'eosio.msig', 'eosio.names', 'eosio.ram', 'eosio.ramfee', 'eosio.saving', 'eosio.stake', 'eosio.token', 'eosio.vpay', 'eosio.wrap']
+        p = self.systemAccountPrefix
+        systemAccounts = [f'{p}.bpay', f'{p}.msig', f'{p}.names', f'{p}.ram', f'{p}.ramfee', f'{p}.saving', f'{p}.stake', f'{p}.token', f'{p}.vpay', f'{p}.wrap']
         acctTrans = list(map(createSystemAccount, systemAccounts))
 
         for trans in acctTrans:
@@ -1217,7 +1224,7 @@ class Cluster(object):
         #             self.activateInstantFinality()
 
         eosioTokenAccount = copy.deepcopy(eosioAccount)
-        eosioTokenAccount.name = 'eosio.token'
+        eosioTokenAccount.name = f'{self.systemAccountPrefix}.token'
         contract="eosio.token"
         contractDir=str(self.unittestsContractsPath / contract)
         wasmFile="%s.wasm" % (contract)
@@ -1479,9 +1486,9 @@ class Cluster(object):
 
         setProdsStr += ' ] }'
         Utils.Print("setprods: %s" % (setProdsStr))
-        opts = "--permission eosio@active"
+        opts = f"--permission {self.systemAccountName}@active"
         # pylint: disable=redefined-variable-type
-        trans = self.biosNode.pushMessage("eosio", "setprods", setProdsStr, opts)
+        trans = self.biosNode.pushMessage(self.systemAccountName, "setprods", setProdsStr, opts)
         if trans is None or not trans[0]:
             Utils.Print("ERROR: Failed to set producer with cmd %s" % (setProdsStr))
             return None

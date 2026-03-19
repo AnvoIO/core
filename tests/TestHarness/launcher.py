@@ -205,6 +205,7 @@ class cluster_generator:
         cfg.add_argument('--template', help='the startup script template', default='testnet.template')
         cfg.add_argument('--max-block-cpu-usage', type=int, help='the "max-block-cpu-usage" value to use in the genesis.json file', default=None)
         cfg.add_argument('--max-transaction-cpu-usage', type=int, help='the "max-transaction-cpu-usage" value to use in the genesis.json file', default=None)
+        cfg.add_argument('--system-account-prefix', help='set system_account_prefix in genesis.json (e.g. "core" or "eosio")', default=None)
         cfg.add_argument('--logging-level', type=fc_log_level, help='Provide the "level" value to use in the logging.json file')
         cfg.add_argument('--logging-level-map', type=json.loads, help='JSON string of a logging level dictionary to use in the logging.json file for specific nodes, matching based on node number. Ex: {"bios":"off","00":"info"}')
         cfg.add_argument('--signature-provider', action='store_true', help='add signature provider (BLS key pair) for non-producers', default=False)
@@ -296,7 +297,7 @@ class cluster_generator:
                                             'PUB_BLS_qVbh4IjYZpRGo8U_0spBUM-u-r_G0fMo4MzLZRsKWmm5uyeQTp74YFaMN9IDWPoVVT5rj_Tw1gvps6K9_OZ6sabkJJzug3uGfjA6qiaLbLh5Fnafwv-nVgzzzBlU2kwRrcHc8Q',
                                             'PVT_BLS_edLoUiiP2FfMem4la3Ek8zxIDjDjOFylRw9ymdeOVCC0CuXN',
                                             'SIG_BLS_L5MXQpJTX_v7cXDy4ML4fWVw_69MKuG5qTq7dD_Zb3Yuw1RbMXBOYXDoAbFF37gFmHudY3kkqXtETLs9nMTjTaTwgdDZWpFy1_csEIZT-xIOQttc76bpZhI67902g2sIDf6JSf9JtbhdTUc_HNbL7H2ZR2bqGS3YPbV5z7x24AR2vwTcJogMqLyy6H5nKQAEwIvXcL15gbs2EkH_ch-IZDdn4F0zUYifpOo-ovXY_CX_yL2rKIx_2a9IHg0pPrMOdfHs9A'))
-                node.producers.append('eosio')
+                node.producers.append(self.args.system_account_prefix or 'eosio')
             else:
                 node.keys.append(KeyStrings(account.ownerPublicKey, account.ownerPrivateKey, account.blsFinalizerPublicKey, account.blsFinalizerPrivateKey, account.blsFinalizerPOP))
                 if node_count < non_bios:
@@ -390,6 +391,7 @@ class cluster_generator:
         genesis['initial_key'] = self.network.nodes['bios'].keys[0].pubkey
         if self.args.max_block_cpu_usage is not None:       genesis['initial_configuration']['max_block_cpu_usage']       = self.args.max_block_cpu_usage
         if self.args.max_transaction_cpu_usage is not None: genesis['initial_configuration']['max_transaction_cpu_usage'] = self.args.max_transaction_cpu_usage
+        if self.args.system_account_prefix is not None:    genesis['system_account_prefix'] = self.args.system_account_prefix
         return genesis
 
     def write_genesis_file(self, node, genesis):
