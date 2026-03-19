@@ -14,7 +14,7 @@ from pathlib import Path, PurePath
 sys.path.append(str(PurePath(PurePath(Path(__file__).absolute()).parent).parent))
 
 from .log_reader import blockData, trxData, chainData, scrapeTrxGenTrxSentDataLogs, JsonReportHandler, analyzeLogResults, TpsTestConfig, ArtifactPaths, LogAnalysis
-from .NodeosPluginArgs import ChainPluginArgs, HttpPluginArgs, NetPluginArgs, ProducerPluginArgs, ResourceMonitorPluginArgs, SignatureProviderPluginArgs, StateHistoryPluginArgs, TraceApiPluginArgs
+from .CorePluginArgs import ChainPluginArgs, HttpPluginArgs, NetPluginArgs, ProducerPluginArgs, ResourceMonitorPluginArgs, SignatureProviderPluginArgs, StateHistoryPluginArgs, TraceApiPluginArgs
 from TestHarness import Account, Cluster, TestHelper, Utils, WalletMgr, TransactionGeneratorsLauncher, TpsTrxGensConfig
 from TestHarness.TestHelper import AppArgs
 from dataclasses import dataclass, asdict, field
