@@ -65,8 +65,8 @@ if(ENABLE_OC AND CMAKE_SIZEOF_VOID_P EQUAL 8 AND NOT WIN32)
       # VM OC requires LLVM, but move the check up here to a central location so that the Tester.cmakes
       # can be created with the exact version found
       find_package(LLVM REQUIRED CONFIG)
-      if(LLVM_VERSION_MAJOR VERSION_LESS 7 OR (LLVM_VERSION_MAJOR VERSION_GREATER_EQUAL 12 AND LLVM_VERSION_MAJOR VERSION_LESS 14) OR LLVM_VERSION_MAJOR VERSION_GREATER_EQUAL 18)
-	      message(FATAL_ERROR "Requires LLVM version 7-11 or 14-17")
+      if(LLVM_VERSION_MAJOR VERSION_LESS 7 OR (LLVM_VERSION_MAJOR VERSION_GREATER_EQUAL 12 AND LLVM_VERSION_MAJOR VERSION_LESS 14) OR LLVM_VERSION_MAJOR VERSION_GREATER_EQUAL 20)
+	      message(FATAL_ERROR "Requires LLVM version 7-11 or 14-19")
       endif()
    endif()
 endif()
