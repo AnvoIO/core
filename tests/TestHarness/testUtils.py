@@ -58,7 +58,10 @@ class Utils:
     Debug=False
     FNull = open(os.devnull, 'w')
 
-    testBinPath = Path(__file__).resolve().parents[2] / 'bin'
+    # Use cwd to find the build dir's bin/. When test files are symlinked from the
+    # build dir to the source dir, __file__ resolves through the symlink to the source
+    # tree, but ctest always sets WORKING_DIRECTORY to the build root.
+    testBinPath = Path.cwd() / 'bin'
 
     EosClientPath=str(testBinPath / "core-cli")
     MiscEosClientArgs="--no-auto-core-wallet"
