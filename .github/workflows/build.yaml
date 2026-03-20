@@ -51,6 +51,30 @@ jobs:
       platforms: ${{needs.platform-cache.outputs.platforms}}
       platform-list: ${{needs.platform-cache.outputs.platform-list}}
 
+  build-arm64:
+    name: Build ARM64
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
+            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
+      - name: Build
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -GNinja
+          cmake --build build
+          tar -pc --exclude "*.o" build | zstd --long -T0 -9 > build.tar.zst
+      - name: Upload builddir
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu24-arm64-build
+          path: build.tar.zst
+          compression-level: 0
+
   v:
     name: Discover Versions
     runs-on: ubuntu-latest
@@ -172,6 +196,28 @@ jobs:
           awk 'BEGIN {err = 1} /bmi2/ && /adx/ {err = 0} END {exit err}' /proc/cpuinfo
           build/tools/fsgsbase-enabled
 
+  tests-arm64:
+    name: Tests (ubuntu24-arm64)
+    needs: [build-arm64]
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
+            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
+      - name: Download builddir
+        uses: actions/download-artifact@v4
+        with:
+          name: ubuntu24-arm64-build
+      - name: Run Parallel Tests
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+          zstdcat build.tar.zst | tar x
+          cd build
+          ctest --output-on-failure --extra-verbose -j $(nproc) -LE "(nonparallelizable_tests|long_running_tests)" --timeout 480
+
   np-tests:
     name: NP Tests (${{matrix.cfg.name}})
     needs: [platform-cache, build-base]
@@ -213,6 +259,40 @@ jobs:
             core*.zst
           compression-level: 0
 
+  np-tests-arm64:
+    name: NP Tests (ubuntu24-arm64)
+    needs: [build-arm64]
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
+            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
+      - name: Download builddir
+        uses: actions/download-artifact@v4
+        with:
+          name: ubuntu24-arm64-build
+      - name: Build platform image
+        run: docker build -t arm64-ubuntu24 -f .cicd/platforms/ubuntu24.Dockerfile .
+      - name: Run tests in parallel containers
+        uses: ./.github/actions/parallel-ctest-containers
+        with:
+          container: arm64-ubuntu24
+          error-log-paths: '["build/etc", "build/var", "build/spring-ignition-wd", "build/TestLogs", "build/PerformanceHarnessScenarioRunnerLogs"]'
+          log-tarball-prefix: ubuntu24-arm64
+          tests-label: nonparallelizable_tests
+          test-timeout: 420
+      - name: Upload logs from failed tests
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ubuntu24-arm64-np-logs
+          path: |
+            *-logs.tar.gz
+          compression-level: 0
+
   lr-tests:
     name: LR Tests (${{matrix.cfg.name}})
     needs: [platform-cache, build-base]
@@ -252,6 +332,40 @@ jobs:
           path: |
             *-logs.tar.gz
             core*.zst
+          compression-level: 0
+
+  lr-tests-arm64:
+    name: LR Tests (ubuntu24-arm64)
+    needs: [build-arm64]
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y \
+            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
+            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
+      - name: Download builddir
+        uses: actions/download-artifact@v4
+        with:
+          name: ubuntu24-arm64-build
+      - name: Build platform image
+        run: docker build -t arm64-ubuntu24 -f .cicd/platforms/ubuntu24.Dockerfile .
+      - name: Run tests in parallel containers
+        uses: ./.github/actions/parallel-ctest-containers
+        with:
+          container: arm64-ubuntu24
+          error-log-paths: '["build/etc", "build/var", "build/spring-ignition-wd", "build/TestLogs", "build/PerformanceHarnessScenarioRunnerLogs"]'
+          log-tarball-prefix: ubuntu24-arm64
+          tests-label: long_running_tests
+          test-timeout: 2700
+      - name: Upload logs from failed tests
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: ubuntu24-arm64-lr-logs
+          path: |
+            *-logs.tar.gz
           compression-level: 0
 
   libtester-tests:
@@ -347,9 +461,9 @@ jobs:
 
   all-passing:
     name: All Required Tests Passed
-    needs: [tests, np-tests, libtester-tests]
+    needs: [tests, np-tests, libtester-tests, tests-arm64, np-tests-arm64]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - if: needs.tests.result != 'success' || needs.np-tests.result != 'success' || needs.libtester-tests.result != 'success'
+      - if: needs.tests.result != 'success' || needs.np-tests.result != 'success' || needs.libtester-tests.result != 'success' || needs.tests-arm64.result != 'success' || needs.np-tests-arm64.result != 'success'
         run: false
