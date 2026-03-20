@@ -54,19 +54,28 @@ jobs:
   build-arm64:
     name: Build ARM64
     runs-on: ubuntu-24.04-arm
+    container: ubuntu:noble
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      TZ: Etc/UTC
     steps:
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get upgrade -y && apt-get install -y \
+            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
+            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - name: Install dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y \
-            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
-            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
       - name: Build
         run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -GNinja
+          chown -R $(id -u):$(id -g) $PWD
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DLLVM_DIR=/usr/lib/llvm-14/lib/cmake/llvm -GNinja
           cmake --build build
+          # Replace symlinks in build/tests/ with real files so the archive
+          # is self-contained for ephemeral containers (generated files like
+          # core_symbol.py only exist in the build tree, not the source tree)
+          find build/tests -type l -exec sh -c 'target=$(readlink "$1") && [ -f "$target" ] && rm "$1" && cp "$target" "$1"' _ {} \;
           tar -pc --exclude "*.o" build | zstd --long -T0 -9 > build.tar.zst
       - name: Upload builddir
         uses: actions/upload-artifact@v4
@@ -200,13 +209,19 @@ jobs:
     name: Tests (ubuntu24-arm64)
     needs: [build-arm64]
     runs-on: ubuntu-24.04-arm
+    container:
+      image: ubuntu:noble
+      options: --security-opt seccomp=unconfined
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      TZ: Etc/UTC
     steps:
-      - uses: actions/checkout@v4
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y \
+          apt-get update && apt-get upgrade -y && apt-get install -y \
             build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
             llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
+      - uses: actions/checkout@v4
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
@@ -265,11 +280,6 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y \
-            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
-            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
@@ -340,11 +350,6 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: |
-          sudo apt-get update && sudo apt-get install -y \
-            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
-            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
