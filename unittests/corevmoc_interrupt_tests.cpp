@@ -37,6 +37,16 @@ BOOST_AUTO_TEST_CASE( wasm_interrupt_test ) { try {
    t.set_code( "testapi"_n, test_contracts::test_api_wasm() );
    t.produce_block();
 
+   // Allow time for any outstanding OC compiles (e.g. bios) to complete so the compile thread
+   // is free when the testapi action triggers its compile. Without this, the testapi compile
+   // may be blocked behind a long-running bios compile and not finish within the deadline.
+   // Sleep and produce blocks in a loop to drain ALL pending compiles, including any new ones
+   // triggered by produce_block itself (e.g. bios code changes during savanna transition).
+   for (int i = 0; i < 3; ++i) {
+      std::this_thread::sleep_for(std::chrono::seconds(4));
+      t.produce_block();
+   }
+
    auto pre_count = t.control->get_wasm_interface().get_core_vm_oc_compile_interrupt_count();
 
    // Use an infinite executing action. When oc compile completes it will kill the action and restart it under
