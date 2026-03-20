@@ -231,10 +231,14 @@ jobs:
           chown -R $(id -u):$(id -g) $PWD
           zstdcat build.tar.zst | tar x
           cd build
-          # Use half the cores — the shared ARM64 runner has limited RAM and
-          # resource-heavy tests (plugin_test spawns OC thread pools with large
-          # mmap regions) can OOM or segfault under full parallelism.
-          ctest --output-on-failure --extra-verbose -j $(( $(nproc) / 2 + 1 )) -LE "(nonparallelizable_tests|long_running_tests)" --timeout 480
+          # Exclude plugin_test from parallel run — it spawns OC thread pools
+          # with large mmap regions that crash under memory pressure on shared
+          # runners.  Run it separately below.
+          ctest --output-on-failure --extra-verbose -j $(( $(nproc) / 2 + 1 )) -LE "(nonparallelizable_tests|long_running_tests)" -E plugin_test --timeout 480
+      - name: Run plugin_test (isolated)
+        run: |
+          cd build
+          ctest --output-on-failure --extra-verbose -R '^plugin_test$' --timeout 480
 
   np-tests:
     name: NP Tests (${{matrix.cfg.name}})
