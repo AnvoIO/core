@@ -32,7 +32,7 @@ public:
    CoreNetFormatter(CoreNetFormatter&&) = default;
 
    /// Print subcommands with tree-style hierarchy
-   CLI11_NODISCARD std::string
+   [[nodiscard]] std::string
    make_subcommands(const CLI::App* app, CLI::AppFormatMode mode) const override {
       std::stringstream out;
 
@@ -86,7 +86,7 @@ public:
    }
 
    /// Print expanded subcommand with tree indentation
-   CLI11_NODISCARD std::string
+   [[nodiscard]] std::string
    make_expanded(const CLI::App* sub, CLI::AppFormatMode mode) const override {
       std::stringstream out;
 
@@ -125,7 +125,7 @@ public:
    }
 
    /// Print option group with title
-   CLI11_NODISCARD std::string
+   [[nodiscard]] std::string
    make_group(std::string group, bool is_positional, std::vector<const CLI::Option*> opts) const override {
       std::stringstream out;
       out << "\n" << group << ":\n";
