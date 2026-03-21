@@ -38,9 +38,6 @@ jobs:
           chown -R $(id -u):$(id -g) $PWD
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DLLVM_DIR=/usr/lib/llvm-14/lib/cmake/llvm -GNinja
           cmake --build build
-          # Replace symlinks in build/tests/ with real files so the archive
-          # is self-contained for ephemeral containers (generated files like
-          # core_symbol.py only exist in the build tree, not the source tree)
           find build/tests -type l -exec sh -c 'target=$(readlink "$1") && [ -f "$target" ] && rm "$1" && cp "$target" "$1"' _ {} \;
           tar -pc --exclude "*.o" build | zstd --long -T0 -9 > build.tar.zst
       - name: Upload builddir
@@ -54,26 +51,27 @@ jobs:
     name: Tests (ubuntu24-arm64)
     needs: [build-arm64]
     runs-on: ubuntu-24.04-arm
+    container:
+      image: ubuntu:noble
+      options: --security-opt seccomp=unconfined
     env:
       DEBIAN_FRONTEND: noninteractive
       TZ: Etc/UTC
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y \
-            libcurl4-openssl-dev libgmp-dev llvm-14-dev libzstd-dev \
-            python3-numpy zlib1g-dev zstd
+          apt-get update && apt-get upgrade -y && apt-get install -y \
+            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
+            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
       - uses: actions/checkout@v4
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
           name: ubuntu24-arm64-build
-      - name: Extract build
-        run: |
-          zstdcat build.tar.zst | tar x
-          chown -R $(id -u):$(id -g) build
       - name: Run Parallel Tests
         run: |
+          chown -R $(id -u):$(id -g) $PWD
+          zstdcat build.tar.zst | tar x
           cd build
           ctest --output-on-failure -j $(( $(nproc) / 2 + 1 )) -LE "(nonparallelizable_tests|long_running_tests)" -E plugin_test --timeout 480
       - name: Run plugin_test (isolated)
@@ -85,26 +83,27 @@ jobs:
     name: NP Tests (ubuntu24-arm64)
     needs: [build-arm64]
     runs-on: ubuntu-24.04-arm
+    container:
+      image: ubuntu:noble
+      options: --security-opt seccomp=unconfined
     env:
       DEBIAN_FRONTEND: noninteractive
       TZ: Etc/UTC
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y \
-            libcurl4-openssl-dev libgmp-dev llvm-14-dev libzstd-dev \
-            python3-numpy zlib1g-dev zstd
+          apt-get update && apt-get upgrade -y && apt-get install -y \
+            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
+            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
       - uses: actions/checkout@v4
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
           name: ubuntu24-arm64-build
-      - name: Extract build
-        run: |
-          zstdcat build.tar.zst | tar x
-          chown -R $(id -u):$(id -g) build
       - name: Run NP Tests
         run: |
+          chown -R $(id -u):$(id -g) $PWD
+          zstdcat build.tar.zst | tar x
           cd build
           ctest --output-on-failure -j $(( $(nproc) / 2 + 1 )) -L nonparallelizable_tests --timeout 420
 
@@ -112,26 +111,27 @@ jobs:
     name: LR Tests (ubuntu24-arm64)
     needs: [build-arm64]
     runs-on: ubuntu-24.04-arm
+    container:
+      image: ubuntu:noble
+      options: --security-opt seccomp=unconfined
     env:
       DEBIAN_FRONTEND: noninteractive
       TZ: Etc/UTC
     steps:
       - name: Install dependencies
         run: |
-          sudo apt-get update && sudo apt-get install -y \
-            libcurl4-openssl-dev libgmp-dev llvm-14-dev libzstd-dev \
-            python3-numpy zlib1g-dev zstd
+          apt-get update && apt-get upgrade -y && apt-get install -y \
+            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
+            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev zstd
       - uses: actions/checkout@v4
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
           name: ubuntu24-arm64-build
-      - name: Extract build
-        run: |
-          zstdcat build.tar.zst | tar x
-          chown -R $(id -u):$(id -g) build
       - name: Run LR Tests
         run: |
+          chown -R $(id -u):$(id -g) $PWD
+          zstdcat build.tar.zst | tar x
           cd build
           ctest --output-on-failure -j $(( $(nproc) / 2 + 1 )) -L long_running_tests --timeout 2700
 
