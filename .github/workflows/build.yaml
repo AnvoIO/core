@@ -71,6 +71,7 @@ jobs:
       - name: Extract build
         run: |
           zstdcat build.tar.zst | tar x
+          chown -R $(id -u):$(id -g) build
       - name: Run Parallel Tests
         run: |
           cd build
@@ -101,6 +102,7 @@ jobs:
       - name: Extract build
         run: |
           zstdcat build.tar.zst | tar x
+          chown -R $(id -u):$(id -g) build
       - name: Run NP Tests
         run: |
           cd build
@@ -127,6 +129,7 @@ jobs:
       - name: Extract build
         run: |
           zstdcat build.tar.zst | tar x
+          chown -R $(id -u):$(id -g) build
       - name: Run LR Tests
         run: |
           cd build
