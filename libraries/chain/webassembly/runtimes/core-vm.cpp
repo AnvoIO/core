@@ -1,11 +1,11 @@
-#include <core_net/chain/webassembly/eos-vm.hpp>
+#include <core_net/chain/webassembly/core-vm.hpp>
 #include <core_net/chain/webassembly/interface.hpp>
 #include <core_net/chain/account_object.hpp>
 #include <core_net/chain/apply_context.hpp>
 #include <core_net/chain/transaction_context.hpp>
 #include <core_net/chain/global_property_object.hpp>
 #include <core_net/chain/wasm_constraints.hpp>
-//eos-vm includes
+//core-vm includes
 #include <core_net/vm/backend.hpp>
 #include <core_net/chain/webassembly/preconditions.hpp>
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
@@ -14,7 +14,7 @@
 #include <boost/hana/string.hpp>
 #include <boost/hana/equal.hpp>
 
-namespace core_net { namespace chain { namespace webassembly { namespace eos_vm_runtime {
+namespace core_net { namespace chain { namespace webassembly { namespace vm_runtime {
 
 using namespace core_net::vm;
 
@@ -54,7 +54,7 @@ namespace {
 
 // Used on setcode.  Must not reject anything that WAVM accepts
 // For the moment, this runs after WAVM validation, as I am not
-// sure that eos-vm will replicate WAVM's parsing exactly.
+// sure that the vm will replicate WAVM's parsing exactly.
 struct setcode_options {
    static constexpr bool forbid_export_mutable_globals = false;
    static constexpr bool allow_code_after_function_end = true;
@@ -66,9 +66,9 @@ struct setcode_options {
 void validate(const bytes& code, const whitelisted_intrinsics_type& intrinsics) {
    wasm_code_ptr code_ptr((uint8_t*)code.data(), code.size());
    try {
-      eos_vm_null_backend_t<setcode_options> bkend(code_ptr, code.size(), nullptr);
+      vm_null_backend_t<setcode_options> bkend(code_ptr, code.size(), nullptr);
       // check import signatures
-       eos_vm_host_functions_t::resolve(bkend.get_module());
+       vm_host_functions_t::resolve(bkend.get_module());
       // check that the imports are all currently enabled
       const auto& imports = bkend.get_module().imports;
       for(std::uint32_t i = 0; i < imports.size(); ++i) {
@@ -87,9 +87,9 @@ void validate( const bytes& code, const wasm_config& cfg, const whitelisted_intr
    EOS_ASSERT(code.size() <= cfg.max_module_bytes, wasm_serialization_error, "Code too large");
    wasm_code_ptr code_ptr((uint8_t*)code.data(), code.size());
    try {
-      eos_vm_null_backend_t<wasm_config> bkend(code_ptr, code.size(), nullptr, cfg);
+      vm_null_backend_t<wasm_config> bkend(code_ptr, code.size(), nullptr, cfg);
       // check import signatures
-      eos_vm_host_functions_t::resolve(bkend.get_module());
+      vm_host_functions_t::resolve(bkend.get_module());
       // check that the imports are all currently enabled
       const auto& imports = bkend.get_module().imports;
       for(std::uint32_t i = 0; i < imports.size(); ++i) {
@@ -121,11 +121,11 @@ struct apply_options {
 };
 
 template<typename Impl>
-class eos_vm_instantiated_module : public wasm_instantiated_module_interface {
-   using backend_t = eos_vm_backend_t<Impl>;
+class vm_instantiated_module : public wasm_instantiated_module_interface {
+   using backend_t = vm_backend_t<Impl>;
    public:
 
-      eos_vm_instantiated_module(eos_vm_runtime<Impl>* runtime, std::unique_ptr<backend_t> mod) :
+      vm_instantiated_module(vm_runtime_impl<Impl>* runtime, std::unique_ptr<backend_t> mod) :
          _runtime(runtime),
          _instantiated_module(std::move(mod)) {}
 
@@ -165,20 +165,20 @@ class eos_vm_instantiated_module : public wasm_instantiated_module_interface {
          } catch(core_net::vm::wasm_memory_exception& e) {
             FC_THROW_EXCEPTION(wasm_execution_error, "access violation: ${d}", ("d", e.detail()));
          } catch(core_net::vm::exception& e) {
-            FC_THROW_EXCEPTION(wasm_execution_error, "eos-vm system failure: ${d}", ("d", e.detail()));
+            FC_THROW_EXCEPTION(wasm_execution_error, "vm system failure: ${d}", ("d", e.detail()));
          }
       }
 
    private:
-      eos_vm_runtime<Impl>*            _runtime;
+      vm_runtime_impl<Impl>*            _runtime;
       std::unique_ptr<backend_t> _instantiated_module;
 };
 
 #ifdef __x86_64__
-class eos_vm_profiling_module : public wasm_instantiated_module_interface {
-      using backend_t = core_net::vm::backend<eos_vm_host_functions_t, core_net::vm::jit_profile, webassembly::eos_vm_runtime::apply_options, vm::profile_instr_map>;
+class vm_profiling_module : public wasm_instantiated_module_interface {
+      using backend_t = core_net::vm::backend<vm_host_functions_t, core_net::vm::jit_profile, webassembly::vm_runtime::apply_options, vm::profile_instr_map>;
    public:
-      eos_vm_profiling_module(std::unique_ptr<backend_t> mod, const char * code, std::size_t code_size) :
+      vm_profiling_module(std::unique_ptr<backend_t> mod, const char * code, std::size_t code_size) :
          _instantiated_module(std::move(mod)),
          _original_code(code, code + code_size) {}
 
@@ -209,7 +209,7 @@ class eos_vm_profiling_module : public wasm_instantiated_module_interface {
          } catch(core_net::vm::wasm_memory_exception& e) {
             FC_THROW_EXCEPTION(wasm_execution_error, "access violation");
          } catch(core_net::vm::exception& e) {
-            FC_THROW_EXCEPTION(wasm_execution_error, "eos-vm system failure");
+            FC_THROW_EXCEPTION(wasm_execution_error, "vm system failure");
          }
       }
 
@@ -239,13 +239,13 @@ class eos_vm_profiling_module : public wasm_instantiated_module_interface {
 #endif
 
 template<typename Impl>
-eos_vm_runtime<Impl>::eos_vm_runtime() {}
+vm_runtime_impl<Impl>::vm_runtime_impl() {}
 
 template<typename Impl>
-std::unique_ptr<wasm_instantiated_module_interface> eos_vm_runtime<Impl>::instantiate_module(const char* code_bytes, size_t code_size,
+std::unique_ptr<wasm_instantiated_module_interface> vm_runtime_impl<Impl>::instantiate_module(const char* code_bytes, size_t code_size,
                                                                                              const digest_type&, const uint8_t&, const uint8_t&) {
 
-   using backend_t = eos_vm_backend_t<Impl>;
+   using backend_t = vm_backend_t<Impl>;
    try {
       wasm_code_ptr code((uint8_t*)code_bytes, code_size);
       apply_options options = { .max_pages = 65536,
@@ -257,47 +257,47 @@ std::unique_ptr<wasm_instantiated_module_interface> eos_vm_runtime<Impl>::instan
       else
 #endif
          bkend = std::make_unique<backend_t>(code, code_size, nullptr, options, false, false); // false, false <--> 2-passes parsing, backend does not own execution context (execution context is reused per thread)
-      eos_vm_host_functions_t::resolve(bkend->get_module());
-      return std::make_unique<eos_vm_instantiated_module<Impl>>(this, std::move(bkend));
+      vm_host_functions_t::resolve(bkend->get_module());
+      return std::make_unique<vm_instantiated_module<Impl>>(this, std::move(bkend));
    } catch(core_net::vm::exception& e) {
-      FC_THROW_EXCEPTION(wasm_execution_error, "Error building eos-vm interp: ${e}", ("e", e.what()));
+      FC_THROW_EXCEPTION(wasm_execution_error, "Error building vm interp: ${e}", ("e", e.what()));
    }
 }
 
-template class eos_vm_runtime<core_net::vm::interpreter>;
+template class vm_runtime_impl<core_net::vm::interpreter>;
 #ifdef __x86_64__
-template class eos_vm_runtime<core_net::vm::jit>;
+template class vm_runtime_impl<core_net::vm::jit>;
 
-eos_vm_profile_runtime::eos_vm_profile_runtime() {}
+vm_profile_runtime::vm_profile_runtime() {}
 
-std::unique_ptr<wasm_instantiated_module_interface> eos_vm_profile_runtime::instantiate_module(const char* code_bytes, size_t code_size,
+std::unique_ptr<wasm_instantiated_module_interface> vm_profile_runtime::instantiate_module(const char* code_bytes, size_t code_size,
                                                                                                const digest_type&, const uint8_t&, const uint8_t&) {
 
-   using backend_t = core_net::vm::backend<eos_vm_host_functions_t, core_net::vm::jit_profile, webassembly::eos_vm_runtime::apply_options, vm::profile_instr_map>;
+   using backend_t = core_net::vm::backend<vm_host_functions_t, core_net::vm::jit_profile, webassembly::vm_runtime::apply_options, vm::profile_instr_map>;
    try {
       wasm_code_ptr code((uint8_t*)code_bytes, code_size);
       apply_options options = { .max_pages = 65536,
                                 .max_call_depth = 0 };
       std::unique_ptr<backend_t> bkend = std::make_unique<backend_t>(code, code_size, nullptr, options, true, false); // true, false <--> single parsing, backend does not own execution context (execution context is reused per thread)
-      eos_vm_host_functions_t::resolve(bkend->get_module());
-      return std::make_unique<eos_vm_profiling_module>(std::move(bkend), code_bytes, code_size);
+      vm_host_functions_t::resolve(bkend->get_module());
+      return std::make_unique<vm_profiling_module>(std::move(bkend), code_bytes, code_size);
    } catch(core_net::vm::exception& e) {
-      FC_THROW_EXCEPTION(wasm_execution_error, "Error building eos-vm interp: ${e}", ("e", e.what()));
+      FC_THROW_EXCEPTION(wasm_execution_error, "Error building vm interp: ${e}", ("e", e.what()));
    }
 }
 #endif
 
 template<typename Impl>
-thread_local typename eos_vm_runtime<Impl>::context_t eos_vm_runtime<Impl>::_exec_ctx;
+thread_local typename vm_runtime_impl<Impl>::context_t vm_runtime_impl<Impl>::_exec_ctx;
 template<typename Impl>
-thread_local eos_vm_backend_t<Impl> eos_vm_runtime<Impl>::_bkend;
+thread_local vm_backend_t<Impl> vm_runtime_impl<Impl>::_bkend;
 }
 
 template <auto HostFunction, typename... Preconditions>
 struct host_function_registrator {
    template <typename Mod, typename Name>
    constexpr host_function_registrator(Mod mod_name, Name fn_name) {
-      using rhf_t = eos_vm_host_functions_t;
+      using rhf_t = vm_host_functions_t;
       rhf_t::add<HostFunction, Preconditions...>(mod_name.c_str(), fn_name.c_str());
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       constexpr bool is_injected = (Mod() == BOOST_HANA_STRING(CORE_NET_INJECTED_MODULE_NAME));

@@ -1,13 +1,13 @@
 # ##################################################################################################
-# Defines the eos-vm library and associated tooling. See docs/cmake.md for instructions on how to
-# build eos-vm or integrate with another system with CMake.
+# Defines the core-vm library and associated tooling. See docs/cmake.md for instructions on how to
+# build core-vm or integrate with another system with CMake.
 # ##################################################################################################
 cmake_minimum_required(VERSION 3.12)
 set(VERSION_MAJOR 1)
 set(VERSION_MINOR 0)
 set(VERSION_PATCH 0)
 set(VERSION_SUFFIX rc1)
-project(eos-vm VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+project(core-vm VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
 
 if (VERSION_SUFFIX)
    set(VERSION_FULL "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-${VERSION_SUFFIX}")
@@ -15,7 +15,7 @@ else()
    set(VERSION_FULL "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 endif()
 
-message(STATUS "Building eos-vm v${VERSION_FULL}...")
+message(STATUS "Building core-vm v${VERSION_FULL}...")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_EXTENSIONS ON)
@@ -30,11 +30,11 @@ link_libraries(Threads::Threads)
 # Gate against Windows builds.
 # ##################################################################################################
 if (WIN32)
-   message(FATAL_ERROR "EOS-VM currently only builds on Unix like OSes (Linux, Mac OSX)")
+   message(FATAL_ERROR "core-vm currently only builds on Unix like OSes (Linux, Mac OSX)")
 endif()
 
 # ##################################################################################################
-# Defined options for building or integrating eos-vm.
+# Defined options for building or integrating core-vm.
 # ##################################################################################################
 include(CMakeDependentOption)
 option(ENABLE_SOFTFLOAT "enable the backend to use deterministic software floating point operations"
@@ -51,20 +51,20 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/modules")
 include(EosVMBuildUtils)
 
 # ##################################################################################################
-# Create the eos-vm library.
+# Create the core-vm library.
 # ##################################################################################################
-add_library(eos-vm INTERFACE)
-target_include_directories(eos-vm
+add_library(core-vm INTERFACE)
+target_include_directories(core-vm
                            INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include
                                      ${CMAKE_CURRENT_SOURCE_DIR}/external/softfloat/source/include)
 # ignore the C++17 register warning until clean up
-target_compile_options( eos-vm INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-Wno-register> )
+target_compile_options( core-vm INTERFACE $<$<COMPILE_LANGUAGE:CXX>:-Wno-register> )
 
 # ##################################################################################################
-# Enable debugging stats for eos-vm.
+# Enable debugging stats for core-vm.
 # ##################################################################################################
 if(FULL_DEBUG_BUILD)
-   target_compile_definitions(eos-vm INTERFACE -DCORE_NET_VM_FULL_DEBUG)
+   target_compile_definitions(core-vm INTERFACE -DCORE_NET_VM_FULL_DEBUG)
 endif()
 
 # ##################################################################################################
@@ -77,23 +77,23 @@ if(ENABLE_SOFTFLOAT)
       add_subdirectory(external)
       remove_definitions( -w )
    endif()
-   target_compile_definitions(eos-vm INTERFACE -DCORE_NET_VM_SOFTFLOAT)
-   target_link_libraries(eos-vm INTERFACE softfloat)
+   target_compile_definitions(core-vm INTERFACE -DCORE_NET_VM_SOFTFLOAT)
+   target_link_libraries(core-vm INTERFACE softfloat)
 endif()
 
 if(ENABLE_MEMORY_OPS_ALIGNMENT)
-   target_compile_definitions(eos-vm INTERFACE -DCORE_NET_VM_ALIGN_MEMORY_OPS)
+   target_compile_definitions(core-vm INTERFACE -DCORE_NET_VM_ALIGN_MEMORY_OPS)
 endif()
 
 # ##################################################################################################
-# Build eos-vm tools.
+# Build core-vm tools.
 # ##################################################################################################
 if(ENABLE_TOOLS)
 add_subdirectory(tools)
 endif()
 
 # ##################################################################################################
-# Build eos-vm tests.
+# Build core-vm tests.
 # ##################################################################################################
 if(ENABLE_TESTS)
    include(CTest)
@@ -125,10 +125,10 @@ endif()
 # Installation.
 # ##################################################################################################
 if(ENABLE_INSTALL)
-   if(EOSVM_INSTALL_COMPONENT)
-      set(INSTALL_LIBRARY_TARGETS_COMPONENT_ARGS COMPONENT ${EOSVM_INSTALL_COMPONENT} EXCLUDE_FROM_ALL)
-      set(INSTALL_PUBLIC_HEADER_TARGETS_COMPONENT_ARGS COMPONENT ${EOSVM_INSTALL_COMPONENT} EXCLUDE_FROM_ALL)
-      set(INSTALL_DIRECTORY_COMPONENT_ARGS COMPONENT ${EOSVM_INSTALL_COMPONENT} EXCLUDE_FROM_ALL)
+   if(COREVM_INSTALL_COMPONENT)
+      set(INSTALL_LIBRARY_TARGETS_COMPONENT_ARGS COMPONENT ${COREVM_INSTALL_COMPONENT} EXCLUDE_FROM_ALL)
+      set(INSTALL_PUBLIC_HEADER_TARGETS_COMPONENT_ARGS COMPONENT ${COREVM_INSTALL_COMPONENT} EXCLUDE_FROM_ALL)
+      set(INSTALL_DIRECTORY_COMPONENT_ARGS COMPONENT ${COREVM_INSTALL_COMPONENT} EXCLUDE_FROM_ALL)
    else()
       set(INSTALL_LIBRARY_TARGETS_COMPONENT_ARGS COMPONENT Libraries)
       set(INSTALL_PUBLIC_HEADER_TARGETS_COMPONENT_ARGS COMPONENT Headers)
@@ -136,7 +136,7 @@ if(ENABLE_INSTALL)
 
    include(GNUInstallDirs)
    message(STATUS "Installing...")
-   install(TARGETS eos-vm
+   install(TARGETS core-vm
             LIBRARY
                DESTINATION ${CMAKE_INSTALL_LIBDIR}
                ${INSTALL_LIBRARY_TARGETS_COMPONENT_ARGS}
@@ -148,4 +148,3 @@ if(ENABLE_INSTALL)
       DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
       ${INSTALL_DIRECTORY_COMPONENT_ARGS})
 endif()
-

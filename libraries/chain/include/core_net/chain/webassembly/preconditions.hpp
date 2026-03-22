@@ -2,7 +2,7 @@
 
 #include <core_net/chain/types.hpp>
 #include <core_net/chain/webassembly/common.hpp>
-#include <core_net/chain/webassembly/eos-vm.hpp>
+#include <core_net/chain/webassembly/core-vm.hpp>
 
 #include <core_net/vm/backend.hpp>
 #include <core_net/vm/host_function.hpp>

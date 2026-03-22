@@ -20,7 +20,7 @@
 #include "WAST/WAST.h"
 #include "IR/Validate.h"
 
-#include <core_net/chain/webassembly/eos-vm.hpp>
+#include <core_net/chain/webassembly/core-vm.hpp>
 #include <core_net/vm/allocator.hpp>
 
 #include <mutex>
@@ -81,15 +81,15 @@ struct corevmoc_tier {
       {
 #ifdef CORE_NET_VM_RUNTIME_ENABLED
          if(vm == wasm_interface::vm_type::core_vm)
-            runtime_interface = std::make_unique<webassembly::eos_vm_runtime::eos_vm_runtime<core_net::vm::interpreter>>();
+            runtime_interface = std::make_unique<webassembly::vm_runtime::vm_runtime_impl<core_net::vm::interpreter>>();
 #endif
 #ifdef CORE_NET_VM_JIT_RUNTIME_ENABLED
          if(vm == wasm_interface::vm_type::core_vm_jit && profile) {
             core_net::vm::set_profile_interval_us(200);
-            runtime_interface = std::make_unique<webassembly::eos_vm_runtime::eos_vm_profile_runtime>();
+            runtime_interface = std::make_unique<webassembly::vm_runtime::vm_profile_runtime>();
          }
          if(vm == wasm_interface::vm_type::core_vm_jit && !profile)
-            runtime_interface = std::make_unique<webassembly::eos_vm_runtime::eos_vm_runtime<core_net::vm::jit>>();
+            runtime_interface = std::make_unique<webassembly::vm_runtime::vm_runtime_impl<core_net::vm::jit>>();
 #endif
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          if(vm == wasm_interface::vm_type::core_vm_oc)

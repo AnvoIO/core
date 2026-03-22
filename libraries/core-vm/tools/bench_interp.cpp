@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
    } catch ( const core_net::vm::exception& ex ) {
       auto t4 = std::chrono::high_resolution_clock::now();
       std::cout << "Execution " << std::chrono::duration_cast<std::chrono::nanoseconds>(t4-t3).count() << "\n";
-      std::cerr << "eos-vm interpreter error\n";
+      std::cerr << "core-vm interpreter error\n";
       std::cerr << ex.what() << " : " << ex.detail() <<  "\n";
    }
    return 0;

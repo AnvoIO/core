@@ -1898,7 +1898,7 @@ static char reset_memory_fail1_wast[] = R"======(
 )
 )======";
 
-// In a previous version of eos-vm, this would leave
+// In a previous version of core-vm, this would leave
 // memory incorrectly accessible to the next action.
 static char reset_memory_fail2_wast[] = R"======(
 (module
@@ -1943,7 +1943,7 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( reset_memory_fail, T, validating_testers ) try {
    chain.produce_block();
 } FC_LOG_AND_RETHROW()
 
-// TODO: Update to use eos-vm once merged
+// TODO: Update to use core-vm once merged
 BOOST_AUTO_TEST_CASE( code_size )  try {
    using namespace IR;
    using namespace Serialization;

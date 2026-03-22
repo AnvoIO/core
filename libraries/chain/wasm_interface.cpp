@@ -1,5 +1,5 @@
 #include <core_net/chain/webassembly/interface.hpp>
-#include <core_net/chain/webassembly/eos-vm.hpp>
+#include <core_net/chain/webassembly/core-vm.hpp>
 #include <core_net/chain/wasm_interface.hpp>
 #include <core_net/chain/apply_context.hpp>
 #include <core_net/chain/controller.hpp>
@@ -54,7 +54,7 @@ namespace core_net { namespace chain {
 
       if (control.is_builtin_activated(builtin_protocol_feature_t::configurable_wasm_limits)) {
          const auto& gpo = control.get_global_properties();
-         webassembly::eos_vm_runtime::validate( code, gpo.wasm_configuration, pso.whitelisted_intrinsics );
+         webassembly::vm_runtime::validate( code, gpo.wasm_configuration, pso.whitelisted_intrinsics );
          return;
       }
       Module module;
@@ -70,7 +70,7 @@ namespace core_net { namespace chain {
       wasm_validations::wasm_binary_validation validator(control, module);
       validator.validate();
 
-      webassembly::eos_vm_runtime::validate( code, pso.whitelisted_intrinsics );
+      webassembly::vm_runtime::validate( code, pso.whitelisted_intrinsics );
 
       //there are a couple opportunties for improvement here--
       //Easy: Cache the Module created here so it can be reused for instantiaion
@@ -118,11 +118,11 @@ namespace core_net { namespace chain {
 std::istream& operator>>(std::istream& in, wasm_interface::vm_type& runtime) {
    std::string s;
    in >> s;
-   if (s == "core-vm" || s == "eos-vm")
+   if (s == "vm" || s == "core-vm" || s == "eos-vm")
       runtime = core_net::chain::wasm_interface::vm_type::core_vm;
-   else if (s == "core-vm-jit" || s == "eos-vm-jit")
+   else if (s == "vm-jit" || s == "core-vm-jit" || s == "eos-vm-jit")
       runtime = core_net::chain::wasm_interface::vm_type::core_vm_jit;
-   else if (s == "core-vm-oc-forced" || s == "eos-vm-oc-forced")
+   else if (s == "vm-oc-forced" || s == "core-vm-oc-forced" || s == "eos-vm-oc-forced")
       runtime = core_net::chain::wasm_interface::vm_type::core_vm_oc;
    else
       in.setstate(std::ios_base::failbit);
