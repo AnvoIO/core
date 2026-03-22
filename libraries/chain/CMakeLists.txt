@@ -44,8 +44,8 @@ if("vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
 endif()
 
 if("vm" IN_LIST CORE_NET_WASM_RUNTIMES OR "vm-jit" IN_LIST CORE_NET_WASM_RUNTIMES)
-   set(CHAIN_EOSVM_SOURCES "webassembly/runtimes/eos-vm.cpp")
-   set(CHAIN_EOSVM_LIBRARIES eos-vm)
+   set(CHAIN_COREVM_SOURCES "webassembly/runtimes/core-vm.cpp")
+   set(CHAIN_COREVM_LIBRARIES core-vm)
 endif()
 
 set(CHAIN_WEBASSEMBLY_SOURCES
@@ -112,7 +112,7 @@ add_library( core_net_chain
               deep_mind.cpp
 
              ${CHAIN_COREVMOC_SOURCES}
-             ${CHAIN_EOSVM_SOURCES}
+             ${CHAIN_COREVM_SOURCES}
              ${CHAIN_WEBASSEMBLY_SOURCES}
 
              authority.cpp
@@ -135,7 +135,7 @@ add_library( core_net_chain
 
 
 target_link_libraries( core_net_chain PUBLIC bn256 fc chainbase eosio_rapidjson Logging IR WAST WASM
-                       softfloat builtins ${CHAIN_EOSVM_LIBRARIES} ${LLVM_LIBS} ${CHAIN_RT_LINKAGE}
+                       softfloat builtins ${CHAIN_COREVM_LIBRARIES} ${LLVM_LIBS} ${CHAIN_RT_LINKAGE}
                        Boost::signals2 Boost::hana Boost::property_tree Boost::multi_index Boost::asio Boost::lockfree
                        Boost::assign Boost::accumulators Boost::rational
                      )

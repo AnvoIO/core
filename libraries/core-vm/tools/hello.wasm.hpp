@@ -16,7 +16,7 @@
 //    print_num(c);
 //    core_net::check(b == c, "Failure B != C");
 //    for (uint64_t i = 0; i < a; i++)
-//        print_name("eos-vm");
+//        print_name("core-vm");
 //    print_span(test_str, 5);
 //    print_span(test_str, 10);
 //}

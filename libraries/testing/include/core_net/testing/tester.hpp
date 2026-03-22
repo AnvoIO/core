@@ -508,13 +508,16 @@ namespace core_net::testing {
             cfg.corevmoc_tierup = chain::wasm_interface::vm_oc_enable::oc_none;
 
             for(int i = 0; i < boost::unit_test::framework::master_test_suite().argc; ++i) {
-               if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--core-vm") ||
+               if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--vm") ||
+                  boost::unit_test::framework::master_test_suite().argv[i] == std::string("--core-vm") ||
                   boost::unit_test::framework::master_test_suite().argv[i] == std::string("--eos-vm"))
                   cfg.wasm_runtime = chain::wasm_interface::vm_type::core_vm;
-               else if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--core-vm-jit") ||
+               else if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--vm-jit") ||
+                       boost::unit_test::framework::master_test_suite().argv[i] == std::string("--core-vm-jit") ||
                        boost::unit_test::framework::master_test_suite().argv[i] == std::string("--eos-vm-jit"))
                   cfg.wasm_runtime = chain::wasm_interface::vm_type::core_vm_jit;
-               else if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--core-vm-oc") ||
+               else if(boost::unit_test::framework::master_test_suite().argv[i] == std::string("--vm-oc") ||
+                       boost::unit_test::framework::master_test_suite().argv[i] == std::string("--core-vm-oc") ||
                        boost::unit_test::framework::master_test_suite().argv[i] == std::string("--eos-vm-oc"))
                   cfg.wasm_runtime = chain::wasm_interface::vm_type::core_vm_oc;
             }

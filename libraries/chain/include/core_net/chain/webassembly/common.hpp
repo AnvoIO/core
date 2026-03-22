@@ -115,9 +115,11 @@ namespace core_net { namespace chain {
 
    using type_converter = basic_type_converter<core_net::vm::execution_interface>;
 
-   using eos_vm_host_functions_t = core_net::vm::registered_host_functions<webassembly::interface,
-                                                                        core_net::vm::execution_interface,
-                                                                        core_net::chain::type_converter>;
+   using vm_host_functions_t = core_net::vm::registered_host_functions<webassembly::interface,
+                                                                      core_net::vm::execution_interface,
+                                                                      core_net::chain::type_converter>;
+   using core_vm_host_functions_t = vm_host_functions_t; // legacy alias
+   using eos_vm_host_functions_t  = vm_host_functions_t; // legacy alias
    using wasm_size_t = core_net::vm::wasm_size_t;
 
 }} // core_net::chain

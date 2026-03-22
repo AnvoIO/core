@@ -8,7 +8,7 @@ using namespace core_net;
 using namespace core_net::vm;
 
 /**
- * Simple implementation of an interpreter using eos-vm.
+ * Simple implementation of an interpreter using core-vm.
  */
 int main(int argc, char** argv) {
    // Thread specific `allocator` used for wasm linear memory.
@@ -34,7 +34,7 @@ int main(int argc, char** argv) {
       bkend.execute_all(std::move(wd));
 
    } catch ( const core_net::vm::exception& ex ) {
-      std::cerr << "eos-vm interpreter error\n";
+      std::cerr << "core-vm interpreter error\n";
       std::cerr << ex.what() << " : " << ex.detail() << "\n";
    }
    return 0;

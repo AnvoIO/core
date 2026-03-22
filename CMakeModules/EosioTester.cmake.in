@@ -67,7 +67,7 @@ if(UNIX AND NOT APPLE)
 endif()
 
 set(CORE_NET_WASM_RUNTIMES @CORE_NET_WASM_RUNTIMES@)
-if("eos-vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
+if("vm-oc" IN_LIST CORE_NET_WASM_RUNTIMES)
    set(WRAP_MAIN "-Wl,-wrap=main")
 endif()
 

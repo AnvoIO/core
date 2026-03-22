@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(chain_plugin_default_tests) {
    BOOST_REQUIRE(config);
    BOOST_CHECK_EQUAL(config->max_retained_files, UINT32_MAX);
 
-   // test default eos-vm-oc-whitelist
+   // test default vm-oc-whitelist
    BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"xsat"}));
    BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"vaulta"}));
    BOOST_CHECK(plugin.chain().is_core_vm_oc_whitelisted(core_net::chain::name{"core.vaulta"}));
