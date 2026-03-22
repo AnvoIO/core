@@ -12,6 +12,8 @@
 
 #ifdef __x86_64__
 #include <core_net/vm/x86_64.hpp>
+#elif defined(__aarch64__)
+#include <core_net/vm/aarch64.hpp>
 #endif
 
 #include <atomic>
@@ -24,7 +26,7 @@
 
 namespace core_net { namespace vm {
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
    struct jit {
       template<typename Host>
       using context = jit_execution_context<Host>;

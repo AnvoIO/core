@@ -174,7 +174,7 @@ class vm_instantiated_module : public wasm_instantiated_module_interface {
       std::unique_ptr<backend_t> _instantiated_module;
 };
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
 class vm_profiling_module : public wasm_instantiated_module_interface {
       using backend_t = core_net::vm::backend<vm_host_functions_t, core_net::vm::jit_profile, webassembly::vm_runtime::apply_options, vm::profile_instr_map>;
    public:
@@ -265,7 +265,7 @@ std::unique_ptr<wasm_instantiated_module_interface> vm_runtime_impl<Impl>::insta
 }
 
 template class vm_runtime_impl<core_net::vm::interpreter>;
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
 template class vm_runtime_impl<core_net::vm::jit>;
 
 vm_profile_runtime::vm_profile_runtime() {}

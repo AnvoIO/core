@@ -381,7 +381,7 @@ namespace core_net { namespace vm {
          __builtin_unreachable();
       }
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
       int backtrace(void** out, int count, void* uc) const {
          static_assert(EnableBacktrace);
          void* end = this->_top_frame;
@@ -392,40 +392,62 @@ namespace core_net { namespace vm {
             rbp = this->_bottom_frame;
          } else if(count != 0) {
             if(uc) {
-#ifdef __APPLE__
+#ifdef __x86_64__
+#  ifdef __APPLE__
                auto rip = reinterpret_cast<unsigned char*>(static_cast<ucontext_t*>(uc)->uc_mcontext->__ss.__rip);
                rbp = reinterpret_cast<void*>(static_cast<ucontext_t*>(uc)->uc_mcontext->__ss.__rbp);
                auto rsp = reinterpret_cast<void*>(static_cast<ucontext_t*>(uc)->uc_mcontext->__ss.__rsp);
-#elif defined __FreeBSD__
+#  elif defined __FreeBSD__
                auto rip = reinterpret_cast<unsigned char*>(static_cast<ucontext_t*>(uc)->uc_mcontext.mc_rip);
                rbp = reinterpret_cast<void*>(static_cast<ucontext_t*>(uc)->uc_mcontext.mc_rbp);
                auto rsp = reinterpret_cast<void*>(static_cast<ucontext_t*>(uc)->uc_mcontext.mc_rsp);
-#else
+#  else
                auto rip = reinterpret_cast<unsigned char*>(static_cast<ucontext_t*>(uc)->uc_mcontext.gregs[REG_RIP]);
                rbp = reinterpret_cast<void*>(static_cast<ucontext_t*>(uc)->uc_mcontext.gregs[REG_RBP]);
                auto rsp = reinterpret_cast<void*>(static_cast<ucontext_t*>(uc)->uc_mcontext.gregs[REG_RSP]);
-#endif
+#  endif
                out[i++] = rip;
                // If we were interrupted in the function prologue or epilogue,
                // avoid dropping the parent frame.
                auto code_base = reinterpret_cast<const unsigned char*>(_mod->allocator.get_code_start());
                auto code_end = code_base + _mod->allocator._code_size;
                if(rip >= code_base && rip < code_end && count > 1) {
-                  // function prologue
+                  // function prologue: push rbp
                   if(*reinterpret_cast<const unsigned char*>(rip) == 0x55) {
-                     if(rip != *static_cast<void**>(rsp)) { // Ignore fake frame set up for softfloat calls
+                     if(rip != *static_cast<void**>(rsp)) {
                         out[i++] = *static_cast<void**>(rsp);
                      }
                   } else if(rip[0] == 0x48 && rip[1] == 0x89 && (rip[2] == 0xe5 || rip[2] == 0x27)) {
-                     if((rip - 1) != static_cast<void**>(rsp)[1]) { // Ignore fake frame set up for softfloat calls
+                     if((rip - 1) != static_cast<void**>(rsp)[1]) {
                         out[i++] = static_cast<void**>(rsp)[1];
                      }
                   }
-                  // function epilogue
+                  // function epilogue: ret
                   else if(rip[0] == 0xc3) {
                      out[i++] = *static_cast<void**>(rsp);
                   }
                }
+#elif defined(__aarch64__)
+               // AArch64: read pc, fp (x29), lr (x30) from ucontext
+               auto pc  = reinterpret_cast<unsigned char*>(static_cast<ucontext_t*>(uc)->uc_mcontext.pc);
+               rbp = reinterpret_cast<void*>(static_cast<ucontext_t*>(uc)->uc_mcontext.regs[29]); // x29 = fp
+               auto lr  = reinterpret_cast<void*>(static_cast<ucontext_t*>(uc)->uc_mcontext.regs[30]); // x30 = lr
+               out[i++] = pc;
+               auto code_base = reinterpret_cast<const unsigned char*>(_mod->allocator.get_code_start());
+               auto code_end = code_base + _mod->allocator._code_size;
+               if(pc >= code_base && pc < code_end && count > 1) {
+                  uint32_t instr;
+                  memcpy(&instr, pc, 4);
+                  // function prologue: stp x29, x30, [sp, ...] — encoding starts with 0xa9
+                  if((instr & 0xFF000000u) == 0xa9000000u) {
+                     out[i++] = lr;
+                  }
+                  // function epilogue: ret — encoding 0xd65f03c0
+                  else if(instr == 0xd65f03c0u) {
+                     out[i++] = lr;
+                  }
+               }
+#endif // __x86_64__ / __aarch64__
             } else {
                rbp = __builtin_frame_address(0);
             }
@@ -440,7 +462,7 @@ namespace core_net { namespace vm {
       }
 
       static constexpr bool async_backtrace() { return EnableBacktrace; }
-#endif
+#endif // __x86_64__ || __aarch64__ (backtrace)
 
       inline int32_t get_global_i32(uint32_t index) {
          return _globals[index].value.i32;
@@ -487,13 +509,14 @@ namespace core_net { namespace vm {
          return result;
       }
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
       /* TODO abstract this and clean this up a bit, this really doesn't belong here */
       template<int Count>
       static native_value execute(native_value* data, native_value (*fun)(void*, void*), jit_execution_context* context, void* linear_memory, void* stack) {
          static_assert(sizeof(native_value) == 8, "8-bytes expected for native_value");
          native_value result;
          unsigned stack_check = context->_remaining_call_depth;
+#ifdef __x86_64__
          // TODO refactor this whole thing to not need all of this, should be generated from the backend
          // currently ignoring register c++17 warning
          register void* stack_top asm ("r12") = stack;
@@ -551,9 +574,93 @@ namespace core_net { namespace vm {
                      "mov %[fun], 8(%[context]); ");
          }
 #undef ASM_CODE
+#elif defined(__aarch64__)
+         // AArch64 JIT trampoline
+         // Register convention:
+         //   x0 = context, x1 = linear_memory (set by JIT code)
+         //   x19 = call depth counter (callee-saved)
+         //   x20 = alt stack pointer (callee-saved)
+         //   x29 = frame pointer, x30 = link register
+         register void* stack_top asm ("x20") = stack;
+#define ASM_CODE_A64(before, after)                                     \
+         asm volatile(                                                  \
+            /* Save callee-saved registers */                            \
+            "stp x29, x30, [sp, #-96]!\n"                               \
+            "stp x19, x20, [sp, #16]\n"                                 \
+            "stp x21, x22, [sp, #32]\n"                                 \
+            "stp x23, x24, [sp, #48]\n"                                 \
+            "stp x25, x26, [sp, #64]\n"                                 \
+            "stp x27, x28, [sp, #80]\n"                                 \
+            "mov x29, sp\n"                                              \
+            /* Switch stack if alternate stack provided */                \
+            "cbz %[stack_top], 3f\n"                                     \
+            "str sp, [%[stack_top]]\n"                                   \
+            "mov sp, %[stack_top]\n"                                     \
+            "b 4f\n"                                                     \
+            "3:\n"                                                       \
+            "mov %[stack_top], sp\n"                                     \
+            "sub sp, sp, #0x60\n"   /* reserve space (no red zone on aarch64) */ \
+            "str %[stack_top], [sp]\n"                                   \
+            "4:\n"                                                       \
+            /* Save and reset FPCR */                                    \
+            "mrs x9, fpcr\n"                                             \
+            "str x9, [sp, #16]\n"                                        \
+            "mov x9, #0\n"       /* default FPCR: round-to-nearest */    \
+            "msr fpcr, x9\n"                                             \
+            /* Push WASM arguments (pairs for 16-byte alignment) */      \
+            "mov x9, %[Count]\n"                                         \
+            "cbz x9, 2f\n"                                               \
+            "1:\n"                                                       \
+            "ldr x10, [%[data]], #8\n"                                   \
+            "str x10, [sp, #-16]!\n"                                     \
+            "subs x9, x9, #1\n"                                          \
+            "b.ne 1b\n"                                                  \
+            "2:\n"                                                       \
+            /* Set up registers for JIT code */                          \
+            "mov x19, %[stack_check]\n"  /* call depth in callee-saved */ \
+            before                                                       \
+            "blr %[fun]\n"                                               \
+            after                                                        \
+            /* Clean up argument stack */                                 \
+            "add sp, sp, %[StackOffset]\n"                               \
+            /* Restore FPCR and stack */                                 \
+            "ldr x9, [sp, #16]\n"                                        \
+            "msr fpcr, x9\n"                                             \
+            "ldr x9, [sp]\n"                                              \
+            "mov sp, x9\n"                                               \
+            /* Restore callee-saved registers */                         \
+            "ldp x27, x28, [sp, #80]\n"                                  \
+            "ldp x25, x26, [sp, #64]\n"                                  \
+            "ldp x23, x24, [sp, #48]\n"                                  \
+            "ldp x21, x22, [sp, #32]\n"                                  \
+            "ldp x19, x20, [sp, #16]\n"                                  \
+            "ldp x29, x30, [sp], #96\n"                                  \
+            : [result] "=&r" (result),                                   \
+              [data] "+r" (data), [fun] "+r" (fun), [stack_top] "+r" (stack_top) \
+            : [context] "r" (context), [linear_memory] "r" (linear_memory), \
+              [StackOffset] "n" (Count*16), [Count] "n" (Count),         \
+              [stack_check] "r" (stack_check)                            \
+            : "memory", "cc",                                            \
+              "x9", "x10", "x11", "x12", "x13", "x14", "x15",          \
+              "x16", "x17",                                              \
+              "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",           \
+              "v8", "v9", "v10", "v11", "v12", "v13", "v14", "v15",     \
+              "v16", "v17", "v18", "v19", "v20", "v21", "v22", "v23",   \
+              "v24", "v25", "v26", "v27", "v28", "v29", "v30", "v31"    \
+         );
+         if constexpr (!EnableBacktrace) {
+            ASM_CODE_A64("", "");
+         } else {
+            ASM_CODE_A64(
+               "str x29, [%[context], #8]\n",
+               "str xzr, [%[context], #8]\n"
+            );
+         }
+#undef ASM_CODE_A64
+#endif // __x86_64__ / __aarch64__
          return result;
       }
-#endif
+#endif // defined(__x86_64__) || defined(__aarch64__)
 
       host_type * _host = nullptr;
       uint32_t _remaining_call_depth = 0;
