@@ -577,11 +577,15 @@ namespace core_net { namespace vm {
 #elif defined(__aarch64__)
          // AArch64 JIT trampoline
          // Register convention:
-         //   x0 = context, x1 = linear_memory (set by JIT code)
+         //   x0 = context, x1 = linear_memory (set by trampoline before blr)
          //   x19 = call depth counter (callee-saved)
          //   x20 = alt stack pointer (callee-saved)
          //   x29 = frame pointer, x30 = link register
          register void* stack_top asm ("x20") = stack;
+         // Pin context and linear_memory to specific registers so the asm
+         // block can reference them without clobbering x0/x1 early.
+         register void* ctx_reg asm ("x21") = context;
+         register void* mem_reg asm ("x22") = linear_memory;
 #define ASM_CODE_A64(before, after)                                     \
          asm volatile(                                                  \
             /* Save callee-saved registers */                            \
@@ -617,10 +621,15 @@ namespace core_net { namespace vm {
             "subs x9, x9, #1\n"                                          \
             "b.ne 1b\n"                                                  \
             "2:\n"                                                       \
-            /* Set up registers for JIT code */                          \
-            "mov x19, %[stack_check]\n"  /* call depth in callee-saved */ \
+            /* Set up registers for JIT code:                         */ \
+            /*   x0 = context, x1 = linear_memory, x19 = call depth  */ \
+            "mov x19, %[stack_check]\n"                                  \
+            "mov x0, %[ctx_reg]\n"                                       \
+            "mov x1, %[mem_reg]\n"                                       \
             before                                                       \
             "blr %[fun]\n"                                               \
+            /* Result is in x0 — move to result register */              \
+            "mov %[result], x0\n"                                        \
             after                                                        \
             /* Clean up argument stack */                                 \
             "add sp, sp, %[StackOffset]\n"                               \
@@ -638,10 +647,11 @@ namespace core_net { namespace vm {
             "ldp x29, x30, [sp], #96\n"                                  \
             : [result] "=&r" (result),                                   \
               [data] "+r" (data), [fun] "+r" (fun), [stack_top] "+r" (stack_top) \
-            : [context] "r" (context), [linear_memory] "r" (linear_memory), \
+            : [ctx_reg] "r" (ctx_reg), [mem_reg] "r" (mem_reg),          \
               [StackOffset] "n" (Count*16), [Count] "n" (Count),         \
               [stack_check] "r" (stack_check)                            \
             : "memory", "cc",                                            \
+              "x0", "x1",                                                \
               "x9", "x10", "x11", "x12", "x13", "x14", "x15",          \
               "x16", "x17",                                              \
               "v0", "v1", "v2", "v3", "v4", "v5", "v6", "v7",           \
@@ -653,8 +663,8 @@ namespace core_net { namespace vm {
             ASM_CODE_A64("", "");
          } else {
             ASM_CODE_A64(
-               "str x29, [%[context], #8]\n",
-               "str xzr, [%[context], #8]\n"
+               "str x29, [x0, #8]\n",       /* x0 = context, set above */
+               "str xzr, [%[ctx_reg], #8]\n" /* x0 may be clobbered by JIT */
             );
          }
 #undef ASM_CODE_A64
