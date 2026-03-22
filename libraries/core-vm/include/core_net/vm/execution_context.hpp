@@ -594,7 +594,8 @@ namespace core_net { namespace vm {
             "mov x29, sp\n"                                              \
             /* Switch stack if alternate stack provided */                \
             "cbz %[stack_top], 3f\n"                                     \
-            "str sp, [%[stack_top]]\n"                                   \
+            "mov x9, sp\n"                                               \
+            "str x9, [%[stack_top]]\n"                                   \
             "mov sp, %[stack_top]\n"                                     \
             "b 4f\n"                                                     \
             "3:\n"                                                       \
