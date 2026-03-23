@@ -2194,8 +2194,6 @@ namespace core_net { namespace vm {
          if (funcnum > 0xFFFF) {
             emit_a64(0x72A00000 | (((funcnum >> 16) & 0xFFFF) << 5) | 2);
          }
-         // mov w3, #1  -- jit_call = true (third explicit param)
-         emit_a64(0x52800023); // movz w3, #1
 
          // stp x0, x1, [sp, #-16]!  -- save context (x0) and memory base (x1)
          emit_a64(0xA9BF07E0);
@@ -2612,7 +2610,7 @@ namespace core_net { namespace vm {
       static native_value call_host_function(Context* context /*x0*/, native_value* stack /*x1*/, uint32_t idx /*w2*/) {
          native_value result;
          vm::longjmp_on_exception([&]() {
-            result = context->call_host_function(stack, idx);
+            result = context->call_host_function(stack, idx, true /* jit_call: stride 2 on aarch64 */);
          });
          return result;
       }
