@@ -378,7 +378,20 @@ namespace core_net { namespace vm {
                   stack = static_cast<char*>(stack) - 24;
 #endif
                }
-               auto fn = reinterpret_cast<native_value (*)(void*, void*)>(_mod->jit_mod->jit_code_offset[func_index - _mod->jit_mod->get_imported_functions_size()] + _mod->allocator._code_base);
+               auto jit_idx = func_index - _mod->jit_mod->get_imported_functions_size();
+               auto offset = _mod->jit_mod->jit_code_offset[jit_idx];
+               auto code_base = _mod->allocator._code_base;
+               auto fn = reinterpret_cast<native_value (*)(void*, void*)>(offset + code_base);
+#ifdef __aarch64__
+               {
+                  static int fn_dbg = 0;
+                  if(fn_dbg < 5) {
+                     fn_dbg++;
+                     fprintf(stderr, "JIT execute: func_index=%u jit_idx=%u offset=%td code_base=%p fn=%p\n",
+                             func_index, jit_idx, offset, (void*)code_base, (void*)fn);
+                  }
+               }
+#endif
 
                if constexpr(EnableBacktrace) {
                   sigset_t block_mask;
