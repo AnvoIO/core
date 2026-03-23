@@ -277,12 +277,20 @@ namespace core_net { namespace vm {
 #ifndef NDEBUG
          uint32_t original_operands = get_operand_stack().size();
 #endif
+         // On AArch64, each operand stack slot is 16 bytes (value + 8-byte padding),
+         // so native_value elements are spaced 2 apart.  On x86_64 they are packed.
+#ifdef __aarch64__
+         constexpr uint32_t stack_stride = 2;
+#else
+         constexpr uint32_t stack_stride = 1;
+#endif
          for(uint32_t i = 0; i < ft.param_types.size(); ++i) {
+            uint32_t slot = (num_params - i - 1) * stack_stride;
             switch(ft.param_types[i]) {
-             case i32: get_operand_stack().push(i32_const_t{stack[num_params - i - 1].i32}); break;
-             case i64: get_operand_stack().push(i64_const_t{stack[num_params - i - 1].i64}); break;
-             case f32: get_operand_stack().push(f32_const_t{stack[num_params - i - 1].f32}); break;
-             case f64: get_operand_stack().push(f64_const_t{stack[num_params - i - 1].f64}); break;
+             case i32: get_operand_stack().push(i32_const_t{stack[slot].i32}); break;
+             case i64: get_operand_stack().push(i64_const_t{stack[slot].i64}); break;
+             case f32: get_operand_stack().push(f32_const_t{stack[slot].f32}); break;
+             case f64: get_operand_stack().push(f64_const_t{stack[slot].f64}); break;
              default: assert(!"Unexpected type in param_types.");
             }
          }
