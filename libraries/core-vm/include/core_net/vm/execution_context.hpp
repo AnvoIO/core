@@ -286,6 +286,18 @@ namespace core_net { namespace vm {
          // so native_value elements are spaced 2 apart. But when called from C++
          // execute(), the args array is packed at stride 1.
          const uint32_t stack_stride = jit_call ? 2 : 1;
+         // DEBUG: trace jit_call path
+         {
+            static int jc_dbg = 0;
+            if(jc_dbg < 20) {
+               jc_dbg++;
+               fprintf(stderr, "call_host_function: jit_call=%d stack=%p index=%u stride=%u\n",
+                       (int)jit_call, (void*)stack, index, stack_stride);
+               for(uint32_t d = 0; d < std::min(num_params * stack_stride + 2, 6u); d++) {
+                  fprintf(stderr, "  stack[%u] = 0x%016lx\n", d, stack[d].i64);
+               }
+            }
+         }
 #else
          constexpr uint32_t stack_stride = 1;
          (void)jit_call;
