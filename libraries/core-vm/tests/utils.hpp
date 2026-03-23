@@ -52,7 +52,7 @@ inline core_net::vm::wasm_allocator* get_wasm_allocator() {
    return &alloc;
 }
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(__aarch64__)
 #define BACKEND_TEST_CASE(name, tags) \
   TEMPLATE_TEST_CASE(name, tags, core_net::vm::interpreter, core_net::vm::jit)
 #else
