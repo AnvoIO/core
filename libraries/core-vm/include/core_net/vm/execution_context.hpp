@@ -127,6 +127,10 @@ namespace core_net { namespace vm {
                return -1;
             _wasm_alloc->alloc<char>(pages);
          }
+         if(pages != 0) {
+            static int gt = 0;
+            if(gt < 50) { gt++; fprintf(stderr, "GROW: req=%d was=%d now=%d\n", pages, sz, _wasm_alloc->get_current_page()); }
+         }
          return sz;
       }
 
@@ -286,18 +290,7 @@ namespace core_net { namespace vm {
          // so native_value elements are spaced 2 apart. But when called from C++
          // execute(), the args array is packed at stride 1.
          const uint32_t stack_stride = jit_call ? 2 : 1;
-         // DEBUG: trace jit_call path
-         {
-            static int jc_dbg = 0;
-            if(jc_dbg < 20) {
-               jc_dbg++;
-               fprintf(stderr, "call_host_function: jit_call=%d stack=%p index=%u stride=%u\n",
-                       (int)jit_call, (void*)stack, index, stack_stride);
-               for(uint32_t d = 0; d < std::min(num_params * stack_stride + 2, 6u); d++) {
-                  fprintf(stderr, "  stack[%u] = 0x%016lx\n", d, stack[d].i64);
-               }
-            }
-         }
+         // (debug traces removed)
 #else
          constexpr uint32_t stack_stride = 1;
          (void)jit_call;
@@ -314,13 +307,7 @@ namespace core_net { namespace vm {
          }
          try {
             _rhf(_host, get_interface(), _mod->jit_mod->import_functions[index]);
-         } catch(std::exception& e) {
-            static int rhf_exc = 0;
-            if(rhf_exc < 5) { rhf_exc++; fprintf(stderr, "  _rhf exception: %s\n", e.what()); }
-            throw;
          } catch(...) {
-            static int rhf_exc2 = 0;
-            if(rhf_exc2 < 5) { rhf_exc2++; fprintf(stderr, "  _rhf unknown exception\n"); }
             throw;
          }
          native_value result{uint64_t{0}};
@@ -404,22 +391,6 @@ namespace core_net { namespace vm {
                auto offset = _mod->jit_mod->jit_code_offset[jit_idx];
                auto code_base = _mod->allocator._code_base;
                auto fn = reinterpret_cast<native_value (*)(void*, void*)>(offset + code_base);
-#ifdef __aarch64__
-               {
-                  static int fn_dbg = 0;
-                  if(fn_dbg < 10) {
-                     fn_dbg++;
-                     fprintf(stderr, "JIT execute: func_index=%u jit_idx=%u offset=%td code_base=%p fn=%p\n",
-                             func_index, jit_idx, offset, (void*)code_base, (void*)fn);
-                     // Dump first 20 instructions of the JIT function
-                     auto* insn = reinterpret_cast<const uint32_t*>(fn);
-                     fprintf(stderr, "  JIT code at %p:\n", (void*)fn);
-                     for(int k = 0; k < 20; k++) {
-                        fprintf(stderr, "    [%d] 0x%08x\n", k, insn[k]);
-                     }
-                  }
-               }
-#endif
 
                if constexpr(EnableBacktrace) {
                   sigset_t block_mask;

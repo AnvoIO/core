@@ -535,6 +535,13 @@ namespace core_net { namespace vm {
       // \post get_current_page() == new_pages
       // \post all allocated pages are zero-filled.
       void reset(uint32_t new_pages) {
+         {
+            static int rt = 0;
+            if(rt < 50 && static_cast<uint32_t>(page) != new_pages) {
+               rt++;
+               fprintf(stderr, "RESET: page=%d -> new_pages=%u\n", page, new_pages);
+            }
+         }
          if (page >= 0) {
             memset(raw, '\0', page_size * page); // zero the memory
          } else {

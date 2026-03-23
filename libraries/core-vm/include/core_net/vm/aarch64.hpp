@@ -420,8 +420,9 @@ namespace core_net { namespace vm {
                   uint32_t mid = min + (max - min)/2;
                   // cmp w9, #mid  -- compare index to midpoint
                   if (mid < 4096) {
-                     // cmp w9, #mid
-                     _this->emit_a64(0x7100001F | (mid << 10));
+                     // cmp w9, #mid  — SUBS wzr, w9, #mid
+                     // Encoding: SF=0 op=1 S=1 | shift=00 | imm12 | Rn=9 | Rd=31(wzr)
+                     _this->emit_a64(0x7100013F | (mid << 10));
                   } else {
                      // mov w10, #mid
                      _this->emit_a64(0x52800000 | ((mid & 0xFFFF) << 5) | 10);
