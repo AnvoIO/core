@@ -105,7 +105,20 @@ struct cnv : type_converter<Host> {
    auto to_wasm(T*&& ptr) -> const volatile void* {
       return ptr;
    }
+   // Convert a pointer lvalue to a WASM pointer (return the pointer value itself)
    template<typename T>
+   auto to_wasm(T*& ptr) -> const volatile void* {
+      return ptr;
+   }
+   template<typename T>
+   auto to_wasm(T* const& ptr) -> const volatile void* {
+      return ptr;
+   }
+   // Convert a non-pointer, non-WASM-native reference to a WASM pointer
+   // Excludes 4/8-byte arithmetic types which map directly to WASM i32/i64/f32/f64
+   template<typename T, typename = std::enable_if_t<
+      !std::is_pointer_v<std::remove_cv_t<T>> &&
+      !(std::is_arithmetic_v<std::remove_cv_t<T>> && (sizeof(T) == 4 || sizeof(T) == 8))>>
    auto to_wasm(T& ref) -> const volatile void* {
       return &ref;
    }
@@ -127,17 +140,7 @@ maybe_ref<T> global_test_value;
 
 struct static_host_function {
    template<typename T>
-   static void put(T t) {
-      static int put_dbg = 0;
-      if(put_dbg < 20) {
-         put_dbg++;
-         if constexpr (std::is_integral_v<T>)
-            fprintf(stderr, "put<%s>(%lld) addr=%p\n", typeid(T).name(), (long long)t, (void*)&global_test_value<T>);
-         else
-            fprintf(stderr, "put<%s> addr=%p\n", typeid(T).name(), (void*)&global_test_value<T>);
-      }
-      global_test_value<T> = t;
-   }
+   static void put(T t) { global_test_value<T> = t; }
    template<typename T>
    static T get() { return global_test_value<T>; }
 };

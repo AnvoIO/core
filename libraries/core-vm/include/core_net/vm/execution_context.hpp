@@ -711,16 +711,16 @@ namespace core_net { namespace vm {
             "mov x1, %[mem_reg]\n"                                       \
             before                                                       \
             "blr %[fun]\n"                                               \
-            /* Result is in x0 — move to result register */              \
-            "mov %[result], x0\n"                                        \
+            /* Save result in x9 (scratch) — x0 will be clobbered */    \
+            "mov x9, x0\n"                                              \
             after                                                        \
             /* Clean up argument stack */                                 \
             "add sp, sp, %[StackOffset]\n"                               \
             /* Restore FPCR and stack */                                 \
-            "ldr x9, [sp, #16]\n"                                        \
-            "msr fpcr, x9\n"                                             \
-            "ldr x9, [sp]\n"                                              \
-            "mov sp, x9\n"                                               \
+            "ldr x10, [sp, #16]\n"                                       \
+            "msr fpcr, x10\n"                                            \
+            "ldr x10, [sp]\n"                                            \
+            "mov sp, x10\n"                                              \
             /* Restore callee-saved registers */                         \
             "ldp x27, x28, [sp, #80]\n"                                  \
             "ldp x25, x26, [sp, #64]\n"                                  \
@@ -728,6 +728,8 @@ namespace core_net { namespace vm {
             "ldp x21, x22, [sp, #32]\n"                                  \
             "ldp x19, x20, [sp, #16]\n"                                  \
             "ldp x29, x30, [sp], #96\n"                                  \
+            /* NOW move result to output — after all restores */         \
+            "mov %[result], x9\n"                                        \
             : [result] "=&r" (result),                                   \
               [data] "+r" (data), [fun] "+r" (fun), [stack_top] "+r" (stack_top) \
             : [ctx_reg] "r" (ctx_reg), [mem_reg] "r" (mem_reg),          \
