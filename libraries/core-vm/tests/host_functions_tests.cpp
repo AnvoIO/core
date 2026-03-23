@@ -129,7 +129,13 @@ struct static_host_function {
    template<typename T>
    static void put(T t) {
       static int put_dbg = 0;
-      if(put_dbg < 10) { put_dbg++; fprintf(stderr, "put<%s> called, sizeof(t)=%zu\n", typeid(T).name(), sizeof(T)); }
+      if(put_dbg < 20) {
+         put_dbg++;
+         if constexpr (std::is_integral_v<T>)
+            fprintf(stderr, "put<%s>(%lld) addr=%p\n", typeid(T).name(), (long long)t, (void*)&global_test_value<T>);
+         else
+            fprintf(stderr, "put<%s> addr=%p\n", typeid(T).name(), (void*)&global_test_value<T>);
+      }
       global_test_value<T> = t;
    }
    template<typename T>
