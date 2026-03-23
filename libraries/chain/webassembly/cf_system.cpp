@@ -1,5 +1,7 @@
 #include <core_net/chain/webassembly/interface.hpp>
 #include <core_net/chain/apply_context.hpp>
+#include <core_net/vm/allocator.hpp>
+#include <cstdio>
 
 namespace core_net { namespace chain { namespace webassembly {
    inline static constexpr size_t max_assert_message = 1024;
@@ -19,6 +21,28 @@ namespace core_net { namespace chain { namespace webassembly {
       if( BOOST_UNLIKELY( !condition ) ) {
          const size_t sz = msg.size() > max_assert_message ? max_assert_message : msg.size();
          std::string message( msg.data(), sz );
+
+         // DEBUG: dump WASM linear memory when base64 decode size assertion fires
+         if( message.find("decoded size") != std::string::npos ) {
+            fprintf(stderr, "\n=== JIT DEBUG: assertion fired: %s ===\n", message.c_str());
+            try {
+               auto* base = context.control.get_wasm_allocator().get_base_ptr<const unsigned char>();
+               // Dump first 8KB of WASM linear memory
+               constexpr size_t dump_size = 8192;
+               fprintf(stderr, "WASM_MEM_DUMP (first %zu bytes):\n", dump_size);
+               for(size_t i = 0; i < dump_size; i += 32) {
+                  fprintf(stderr, "%04zx: ", i);
+                  for(size_t j = 0; j < 32 && (i+j) < dump_size; j++) {
+                     fprintf(stderr, "%02x", base[i+j]);
+                  }
+                  fprintf(stderr, "\n");
+               }
+               fprintf(stderr, "=== END WASM_MEM_DUMP ===\n\n");
+            } catch(...) {
+               fprintf(stderr, "DEBUG: failed to dump wasm memory\n");
+            }
+         }
+
          EOS_THROW( core_net_assert_message_exception, "assertion failure with message: ${s}", ("s",message) );
       }
    }
