@@ -284,7 +284,7 @@ namespace core_net { namespace vm {
          // DEBUG: dump stack args on aarch64
          {
             static int dbg_count = 0;
-            if(dbg_count < 20) {
+            if(dbg_count < 100) {
                dbg_count++;
                fprintf(stderr, "call_host_function: this=%p stack=%p index=%u num_params=%u\n",
                        (void*)this, (void*)stack, index, num_params);
