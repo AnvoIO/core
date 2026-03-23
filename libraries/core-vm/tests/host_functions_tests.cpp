@@ -127,7 +127,11 @@ maybe_ref<T> global_test_value;
 
 struct static_host_function {
    template<typename T>
-   static void put(T t) { global_test_value<T> = t; }
+   static void put(T t) {
+      static int put_dbg = 0;
+      if(put_dbg < 10) { put_dbg++; fprintf(stderr, "put<%s> called, sizeof(t)=%zu\n", typeid(T).name(), sizeof(T)); }
+      global_test_value<T> = t;
+   }
    template<typename T>
    static T get() { return global_test_value<T>; }
 };
