@@ -146,10 +146,11 @@ namespace core_net { namespace vm {
 
          // Emit host function stubs.
          // Each host function stub:
-         //   Without backtrace: 14 instructions = 56 bytes
-         //   With backtrace:    14 + 4 = 18 instructions = 72 bytes
+         //   Without backtrace: 14 instructions = 56 bytes (max 15 = 60 if funcnum > 0xFFFF)
+         //   With backtrace:    16 instructions = 64 bytes (max 17 = 68 if funcnum > 0xFFFF)
+         // Allocate 64 bytes base + 8 for backtrace to cover worst case.
          const uint32_t num_imported = mod.get_imported_functions_size();
-         const std::size_t host_fn_size = (56 + 16 * Context::async_backtrace()) * num_imported;
+         const std::size_t host_fn_size = (64 + 8 * Context::async_backtrace()) * num_imported;
          _code_start = _allocator.alloc<unsigned char>(host_fn_size);
          _code_end = _code_start + host_fn_size;
          // code already set (continues from previous allocation)
@@ -157,7 +158,7 @@ namespace core_net { namespace vm {
             start_function(code, i);
             emit_host_call(i);
          }
-         assert(code == _code_end);
+         assert(code <= _code_end);
 
          // Emit jump table for call_indirect.
          jmp_table = code;
@@ -2138,9 +2139,12 @@ namespace core_net { namespace vm {
       //   x0 = return value
 
       void emit_host_call(uint32_t funcnum) {
+         // Always save x29/x30: blr clobbers x30 (link register) and we
+         // need it intact for ret to return to the calling JIT function.
+         // stp x29, x30, [sp, #-16]!  -- save frame
+         emit_a64(0xA9BF7BFD);
+
          if constexpr (Context::async_backtrace()) {
-            // stp x29, x30, [sp, #-16]!  -- save frame
-            emit_a64(0xA9BF7BFD);
             // mov x9, sp
             emit_a64(0x910003E9);
             // str x9, [x0]  -- *(context) = sp
@@ -2156,13 +2160,9 @@ namespace core_net { namespace vm {
          // stp x0, x1, [sp, #-16]!  -- save context (x0) and memory base (x1)
          emit_a64(0xA9BF07E0);
 
-         // add x1, sp, #16  -- x1 = pointer to args on stack (above our saved pair)
-         //   With backtrace: add x1, sp, #32
-         if constexpr (Context::async_backtrace()) {
-            emit_a64(0x910083E1); // add x1, sp, #32
-         } else {
-            emit_a64(0x910043E1); // add x1, sp, #16
-         }
+         // add x1, sp, #32  -- x1 = pointer to args on stack
+         //   (above saved x0/x1 pair AND saved x29/x30 pair)
+         emit_a64(0x910083E1); // add x1, sp, #32
 
          // Load address of call_host_function into x9
          auto addr = reinterpret_cast<uint64_t>(&call_host_function);
@@ -2178,11 +2178,8 @@ namespace core_net { namespace vm {
          // mov x0, x9  -- put return value back in x0 for ret to trampoline
          emit_a64(0xAA0903E0);
 
-         if constexpr (Context::async_backtrace()) {
-            emit_a64(0xD503201F); // nop
-            // ldp x29, x30, [sp], #16  -- restore frame
-            emit_a64(0xA8C17BFD);
-         }
+         // ldp x29, x30, [sp], #16  -- restore frame (including link register)
+         emit_a64(0xA8C17BFD);
 
          // ret
          emit_a64(0xD65F03C0);
