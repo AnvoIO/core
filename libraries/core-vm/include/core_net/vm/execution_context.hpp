@@ -646,7 +646,7 @@ namespace core_net { namespace vm {
             "cbz x9, 2f\n"                                               \
             "1:\n"                                                       \
             "ldr x10, [%[data]], #8\n"                                   \
-            "str x10, [sp, #-16]!\n"                                     \
+            "stp x10, xzr, [sp, #-16]!\n"                               \
             "subs x9, x9, #1\n"                                          \
             "b.ne 1b\n"                                                  \
             "2:\n"                                                       \
