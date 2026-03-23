@@ -22,32 +22,22 @@ namespace core_net { namespace chain { namespace webassembly {
          const size_t sz = msg.size() > max_assert_message ? max_assert_message : msg.size();
          std::string message( msg.data(), sz );
 
-         // DEBUG: dump WASM linear memory when base64 decode size assertion fires
+         // DEBUG: trap into debugger when base64 decode size assertion fires
          if( message.find("decoded size") != std::string::npos ) {
             fprintf(stderr, "\n=== JIT DEBUG: assertion fired: %s ===\n", message.c_str());
             try {
                auto* base = context.control.get_wasm_allocator().get_base_ptr<const unsigned char>();
-               // Dump non-zero regions of first 256KB of WASM linear memory
-               constexpr size_t dump_size = 256 * 1024;
-               fprintf(stderr, "WASM_MEM_DUMP (non-zero regions of first %zu bytes):\n", dump_size);
-               for(size_t i = 0; i < dump_size; i += 32) {
-                  // Check if this 32-byte line has any non-zero bytes
-                  bool has_data = false;
-                  for(size_t j = 0; j < 32 && (i+j) < dump_size; j++) {
-                     if(base[i+j] != 0) { has_data = true; break; }
+               fprintf(stderr, "WASM linear memory base: %p\n", (void*)base);
+               // Dump the string metadata area and decoded data
+               // The decoded string data is near 0x34a0 based on previous dumps
+               for(size_t start : {(size_t)0x3020, (size_t)0x3480, (size_t)0x34a0}) {
+                  fprintf(stderr, "%06zx: ", start);
+                  for(size_t j = 0; j < 64; j++) {
+                     fprintf(stderr, "%02x", base[start+j]);
                   }
-                  if(has_data) {
-                     fprintf(stderr, "%06zx: ", i);
-                     for(size_t j = 0; j < 32 && (i+j) < dump_size; j++) {
-                        fprintf(stderr, "%02x", base[i+j]);
-                     }
-                     fprintf(stderr, "\n");
-                  }
+                  fprintf(stderr, "\n");
                }
-               fprintf(stderr, "=== END WASM_MEM_DUMP ===\n\n");
-            } catch(...) {
-               fprintf(stderr, "DEBUG: failed to dump wasm memory\n");
-            }
+            } catch(...) {}
          }
 
          EOS_THROW( core_net_assert_message_exception, "assertion failure with message: ${s}", ("s",message) );
