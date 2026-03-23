@@ -159,6 +159,9 @@ namespace core_net { namespace vm {
             emit_host_call(i);
          }
          assert(code <= _code_end);
+         // Advance code pointer past any unused padding in the host stub allocation
+         // so that the jump table starts at the correct position.
+         code = _code_end;
 
          // Emit jump table for call_indirect.
          jmp_table = code;
@@ -547,11 +550,10 @@ namespace core_net { namespace vm {
             emit_a64(0x54000002); // b.hs placeholder
             fix_branch(br, call_indirect_handler);
          }
-         // Load address of jump table into x10
-         // adr is PC-relative but limited range; use movz/movk for safety
+         // Load address of jump table into x10 (PC-relative, survives code copy)
          {
-            auto addr = reinterpret_cast<uint64_t>(jmp_table);
-            emit_mov_imm64(10, addr);
+            void* adr_loc = emit_adr(10);
+            fix_adr(adr_loc, jmp_table);
          }
          // Compute offset into jump table: x9 = x9 * _table_element_size
          // mov w11, #_table_element_size
@@ -2020,6 +2022,32 @@ namespace core_net { namespace vm {
          // B #0 (unconditional branch to self, will be patched)
          emit_a64(0x14000000);
          return result;
+      }
+
+      // Emit ADR Xd, #0 (placeholder) and return its address for fixup via fix_adr().
+      // ADR computes a PC-relative address into Xd. Range: ±1MB.
+      void* emit_adr(uint8_t rd) {
+         void* result = code;
+         // ADR Xd, #0:  0x10000000 | Rd
+         emit_a64(0x10000000 | rd);
+         return result;
+      }
+
+      // Patch an ADR instruction at `adr_loc` to compute the address of `target`.
+      // ADR encoding: immlo (bits [30:29]) | 10000 | immhi (bits [23:5]) | Rd (bits [4:0])
+      // offset = (immhi << 2) | immlo, signed 21-bit, byte-granular.
+      static void fix_adr(void* adr_loc, void* target) {
+         auto adr_ = static_cast<uint8_t*>(adr_loc);
+         auto target_ = static_cast<uint8_t*>(target);
+         intptr_t offset = target_ - adr_;
+         assert(offset >= -(1 << 20) && offset < (1 << 20)); // ±1MB
+         uint32_t uoffset = static_cast<uint32_t>(offset) & 0x1FFFFF; // 21 bits
+         uint32_t immlo = uoffset & 0x3;          // bits [1:0]
+         uint32_t immhi = (uoffset >> 2) & 0x7FFFF; // bits [20:2]
+         uint32_t instr;
+         memcpy(&instr, adr_loc, 4);
+         instr = (instr & 0x9F00001F) | (immlo << 29) | (immhi << 5);
+         memcpy(adr_loc, &instr, 4);
       }
 
       // Emit multipop: adjust stack pointer up by count * 16 bytes.
