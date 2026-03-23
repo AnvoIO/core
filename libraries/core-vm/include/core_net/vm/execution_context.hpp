@@ -281,6 +281,19 @@ namespace core_net { namespace vm {
          // so native_value elements are spaced 2 apart.  On x86_64 they are packed.
 #ifdef __aarch64__
          constexpr uint32_t stack_stride = 2;
+         // DEBUG: dump stack args on aarch64
+         {
+            static int dbg_count = 0;
+            if(dbg_count < 20) {
+               dbg_count++;
+               fprintf(stderr, "call_host_function: this=%p stack=%p index=%u num_params=%u\n",
+                       (void*)this, (void*)stack, index, num_params);
+               for(uint32_t d = 0; d < std::min(num_params * stack_stride + 2, 8u); d++) {
+                  fprintf(stderr, "  stack[%u] = 0x%016lx (i32=0x%08x)\n",
+                          d, stack[d].i64, stack[d].i32);
+               }
+            }
+         }
 #else
          constexpr uint32_t stack_stride = 1;
 #endif
