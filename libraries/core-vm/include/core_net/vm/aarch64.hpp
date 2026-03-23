@@ -774,13 +774,16 @@ namespace core_net { namespace vm {
       }
 
       void emit_i32_load8_s(uint32_t /*alignment*/, uint32_t offset) {
-         // LDRSB Xt, [Xn, Xm] = 0x38A06800 -- sign-extend byte to 64 bits
-         emit_load_impl(offset, 0x38A06800);
+         // LDRSB Wt, [Xn, Xm] = 0x38E06800 -- sign-extend byte to 32 bits (upper 32 zeroed)
+         // Note: LDRSB Xt (0x38A06800) would sign-extend to 64 bits, leaving dirty upper bits
+         // that break i64.extend_u_i32 (which is a no-op on x86_64 but must zero-extend here).
+         emit_load_impl(offset, 0x38E06800);
       }
 
       void emit_i32_load16_s(uint32_t /*alignment*/, uint32_t offset) {
-         // LDRSH Xt, [Xn, Xm] = 0x78A06800 -- sign-extend halfword to 64 bits
-         emit_load_impl(offset, 0x78A06800);
+         // LDRSH Wt, [Xn, Xm] = 0x78E06800 -- sign-extend halfword to 32 bits (upper 32 zeroed)
+         // Note: LDRSH Xt (0x78A06800) would sign-extend to 64 bits, same issue as above.
+         emit_load_impl(offset, 0x78E06800);
       }
 
       void emit_i32_load8_u(uint32_t /*alignment*/, uint32_t offset) {
@@ -1816,13 +1819,20 @@ namespace core_net { namespace vm {
       }
 
       void emit_i64_extend_u_i32() {
-         // Nothing to do -- upper 32 bits should already be zero from i32 ops
-         // But to be safe, zero-extend explicitly:
-         // Actually, like x86_64, this is a no-op. The upper bits should already be 0.
-         // However, we use 16-byte slots and always push full 64-bit values.
-         // For safety, do the same as i32_wrap_i64:
-         // peek, mov w9,w9 (zero-extend), store back
-         // Actually x86_64 does nothing here, so we follow suit.
+         // On x86_64, writing to a 32-bit register (e.g., movl) always zeroes the
+         // upper 32 bits, so i32 ops always leave clean values and this can be a no-op.
+         // On AArch64, i32 ops that use Wd also zero the upper 32 bits. HOWEVER,
+         // i32.load8_s / i32.load16_s use LDRSB Xt / LDRSH Xt which sign-extend to
+         // the full 64-bit register. If a negative value is loaded with i32.load8_s
+         // and then directly used with i64.extend_u_i32 (no intervening i32 op),
+         // the upper 32 bits would be 0xFFFFFFFF instead of 0x00000000.
+         // We must explicitly zero-extend here.
+         // ldr x9, [sp]   -- peek
+         emit_a64(0xF94003E9);
+         // mov w9, w9      -- zero-extend (ORR Wd, WZR, Wn zeroes upper 32 bits)
+         emit_a64(0x2A0903E9);
+         // str x9, [sp]
+         emit_a64(0xF90003E9);
       }
 
       void emit_i64_trunc_s_f32() {
