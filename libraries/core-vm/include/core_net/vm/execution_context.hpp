@@ -385,10 +385,16 @@ namespace core_net { namespace vm {
 #ifdef __aarch64__
                {
                   static int fn_dbg = 0;
-                  if(fn_dbg < 5) {
+                  if(fn_dbg < 10) {
                      fn_dbg++;
                      fprintf(stderr, "JIT execute: func_index=%u jit_idx=%u offset=%td code_base=%p fn=%p\n",
                              func_index, jit_idx, offset, (void*)code_base, (void*)fn);
+                     // Dump first 20 instructions of the JIT function
+                     auto* insn = reinterpret_cast<const uint32_t*>(fn);
+                     fprintf(stderr, "  JIT code at %p:\n", (void*)fn);
+                     for(int k = 0; k < 20; k++) {
+                        fprintf(stderr, "    [%d] 0x%08x\n", k, insn[k]);
+                     }
                   }
                }
 #endif
