@@ -2384,7 +2384,7 @@ namespace core_net { namespace vm {
             // Use x10 as scratch for the address calculation
             emit_mov_imm64(10, static_cast<uint64_t>(static_cast<int64_t>(offset)));
             // add x10, x29, x10
-            emit_a64(0x8B0A03CA);
+            emit_a64(0x8B0A03AA);
             // str Xs, [x10]
             emit_a64(0xF9000000 | (10 << 5) | rs);
          }
