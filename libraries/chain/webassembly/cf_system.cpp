@@ -27,15 +27,22 @@ namespace core_net { namespace chain { namespace webassembly {
             fprintf(stderr, "\n=== JIT DEBUG: assertion fired: %s ===\n", message.c_str());
             try {
                auto* base = context.control.get_wasm_allocator().get_base_ptr<const unsigned char>();
-               // Dump first 8KB of WASM linear memory
-               constexpr size_t dump_size = 8192;
-               fprintf(stderr, "WASM_MEM_DUMP (first %zu bytes):\n", dump_size);
+               // Dump non-zero regions of first 256KB of WASM linear memory
+               constexpr size_t dump_size = 256 * 1024;
+               fprintf(stderr, "WASM_MEM_DUMP (non-zero regions of first %zu bytes):\n", dump_size);
                for(size_t i = 0; i < dump_size; i += 32) {
-                  fprintf(stderr, "%04zx: ", i);
+                  // Check if this 32-byte line has any non-zero bytes
+                  bool has_data = false;
                   for(size_t j = 0; j < 32 && (i+j) < dump_size; j++) {
-                     fprintf(stderr, "%02x", base[i+j]);
+                     if(base[i+j] != 0) { has_data = true; break; }
                   }
-                  fprintf(stderr, "\n");
+                  if(has_data) {
+                     fprintf(stderr, "%06zx: ", i);
+                     for(size_t j = 0; j < 32 && (i+j) < dump_size; j++) {
+                        fprintf(stderr, "%02x", base[i+j]);
+                     }
+                     fprintf(stderr, "\n");
+                  }
                }
                fprintf(stderr, "=== END WASM_MEM_DUMP ===\n\n");
             } catch(...) {
