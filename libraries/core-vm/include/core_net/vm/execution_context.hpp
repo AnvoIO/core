@@ -337,11 +337,25 @@ namespace core_net { namespace vm {
                std::size_t maximum_stack_usage =
                   (_mod->maximum_stack + 2 /*frame ptr + return ptr*/) * (_remaining_call_depth + 1) +
                  sizeof...(Args) + 4 /* scratch space */;
-               stack_allocator alt_stack(maximum_stack_usage * sizeof(native_value));
-               // reserve 24 bytes for data accessed by inline assembly
+               // On AArch64, each operand stack slot is 16 bytes (stp/ldp pairs for alignment)
+               // vs 8 bytes on x86_64. Scale the allocation accordingly.
+#ifdef __aarch64__
+               constexpr std::size_t stack_slot_size = 16;
+#else
+               constexpr std::size_t stack_slot_size = sizeof(native_value);
+#endif
+               stack_allocator alt_stack(maximum_stack_usage * stack_slot_size);
+               // Reserve space at the top of the alternate stack for data
+               // accessed by inline assembly (saved sp, saved FPCR).
                void* stack = alt_stack.top();
                if(stack) {
+#ifdef __aarch64__
+                  // AArch64 requires 16-byte stack alignment. Reserve 32 bytes
+                  // (2 x 16-byte slots) for saved sp and FPCR, keeping alignment.
+                  stack = static_cast<char*>(stack) - 32;
+#else
                   stack = static_cast<char*>(stack) - 24;
+#endif
                }
                auto fn = reinterpret_cast<native_value (*)(void*, void*)>(_mod->jit_mod->jit_code_offset[func_index - _mod->jit_mod->get_imported_functions_size()] + _mod->allocator._code_base);
 

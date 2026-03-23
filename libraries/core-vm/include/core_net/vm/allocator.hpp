@@ -53,9 +53,28 @@ namespace core_net { namespace vm {
    class stack_allocator {
     public:
       explicit stack_allocator(std::size_t min_size) {
+#ifdef __aarch64__
+         // AArch64 JIT uses 16-byte operand stack slots (vs 8 on x86_64) and has
+         // no red zone, so always allocate a separate execution stack to avoid
+         // overflowing the C++ stack during re-entrant host calls.
+         if(min_size > 0) {
+#else
          if(min_size > 4*1024*1024) {
+#endif
             std::size_t pagesize = static_cast<std::size_t>(::sysconf(_SC_PAGESIZE));
-            _size = ((min_size + pagesize - 1) & ~(pagesize - 1)) + 4*1024*1024;
+            // The padding covers C++ stack frames used during re-entrant host calls
+            // (call_host_function → chain runtime → inner execute()).
+            // AArch64 JIT needs more headroom: 16-byte operand slots + larger C++ frames.
+            constexpr std::size_t stack_padding =
+#ifdef __aarch64__
+               // AArch64 JIT needs significantly more stack: 16-byte operand slots
+               // (vs 8 on x86), larger C++ frames, and re-entrant host calls that
+               // nest full chain runtime + trampoline + JIT execution.
+               32*1024*1024;
+#else
+               4*1024*1024;
+#endif
+            _size = ((min_size + pagesize - 1) & ~(pagesize - 1)) + stack_padding;
             int flags = MAP_PRIVATE | MAP_ANONYMOUS;
 #ifdef MAP_STACK
             flags |= MAP_STACK;
