@@ -2189,11 +2189,13 @@ namespace core_net { namespace vm {
             emit_a64(0xF9000009);
          }
 
-         // mov w2, #funcnum  -- function index as third argument
+         // mov w2, #funcnum  -- function index (second explicit param)
          emit_a64(0x52800000 | ((funcnum & 0xFFFF) << 5) | 2);
          if (funcnum > 0xFFFF) {
             emit_a64(0x72A00000 | (((funcnum >> 16) & 0xFFFF) << 5) | 2);
          }
+         // mov w3, #1  -- jit_call = true (third explicit param)
+         emit_a64(0x52800023); // movz w3, #1
 
          // stp x0, x1, [sp, #-16]!  -- save context (x0) and memory base (x1)
          emit_a64(0xA9BF07E0);

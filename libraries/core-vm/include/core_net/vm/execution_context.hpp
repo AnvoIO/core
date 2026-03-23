@@ -271,31 +271,24 @@ namespace core_net { namespace vm {
          _remaining_call_depth = max_call_depth;
       }
 
-      inline native_value call_host_function(native_value* stack, uint32_t index) {
+      // call_host_function is called from two sites:
+      //   1. execute() in C++: args_raw is a packed native_value[] (stride 1)
+      //   2. JIT host stub: stack points to JIT operand stack (stride 2 on aarch64)
+      // The jit_call parameter distinguishes the two cases.
+      inline native_value call_host_function(native_value* stack, uint32_t index, bool jit_call = false) {
          const auto& ft = _mod->jit_mod->get_function_type(index);
          uint32_t num_params = ft.param_types.size();
 #ifndef NDEBUG
          uint32_t original_operands = get_operand_stack().size();
 #endif
-         // On AArch64, each operand stack slot is 16 bytes (value + 8-byte padding),
-         // so native_value elements are spaced 2 apart.  On x86_64 they are packed.
 #ifdef __aarch64__
-         constexpr uint32_t stack_stride = 2;
-         // DEBUG: dump stack args on aarch64
-         {
-            static int dbg_count = 0;
-            if(dbg_count < 100) {
-               dbg_count++;
-               fprintf(stderr, "call_host_function: this=%p stack=%p index=%u num_params=%u\n",
-                       (void*)this, (void*)stack, index, num_params);
-               for(uint32_t d = 0; d < std::min(num_params * stack_stride + 2, 8u); d++) {
-                  fprintf(stderr, "  stack[%u] = 0x%016lx (i32=0x%08x)\n",
-                          d, stack[d].i64, stack[d].i32);
-               }
-            }
-         }
+         // On AArch64, JIT operand stack slots are 16 bytes (value + 8-byte padding),
+         // so native_value elements are spaced 2 apart. But when called from C++
+         // execute(), the args array is packed at stride 1.
+         const uint32_t stack_stride = jit_call ? 2 : 1;
 #else
          constexpr uint32_t stack_stride = 1;
+         (void)jit_call;
 #endif
          for(uint32_t i = 0; i < ft.param_types.size(); ++i) {
             uint32_t slot = (num_params - i - 1) * stack_stride;
