@@ -10,10 +10,12 @@
 //
 // ---- AArch64 Register Convention ----
 //
-//   x0  = context pointer  (first arg per AAPCS64, preserved across WASM ops)
-//   x1  = linear memory base  (second arg, preserved across WASM ops)
+//   x0  = context pointer  (first arg per AAPCS64, restored from x21 after calls)
+//   x1  = linear memory base  (second arg, restored from x22 after calls)
 //   x19 = call depth counter  (callee-saved)
-//   x20 = alt stack pointer / scratch (callee-saved)
+//   x20 = alt stack pointer (callee-saved, set by trampoline)
+//   x21 = context pointer backup (callee-saved, set by trampoline)
+//   x22 = linear memory backup (callee-saved, set by trampoline)
 //   x29 = frame pointer (fp)
 //   x30 = link register (lr)
 //   x9-x15 = scratch registers (caller-saved)
@@ -440,11 +442,19 @@ namespace core_net { namespace vm {
          // bl TARGET  (branch with link, placeholder)
          void* branch = code;
          emit_a64(0x94000000); // BL #0 placeholder
+         // Callee clobbers x0 with return value. Save it in x9, then
+         // restore x0/x1 from callee-saved x21/x22 (set by trampoline).
+         // mov x9, x0
+         emit_a64(0xAA0003E9);
+         // mov x0, x21  -- restore context
+         emit_a64(0xAA1503E0);
+         // mov x1, x22  -- restore linear_memory
+         emit_a64(0xAA1603E1);
          emit_multipop(ft.param_types.size());
          register_call(branch, funcnum);
          if(ft.return_count != 0) {
-            // stp x0, xzr, [sp, #-16]!  -- push return value
-            emit_a64(0xA9BF7FE0);
+            // stp x9, xzr, [sp, #-16]!  -- push return value (saved in x9)
+            emit_a64(0xA9BF7FE9);
          }
          emit_check_call_depth_end();
       }
@@ -510,12 +520,20 @@ namespace core_net { namespace vm {
          // blr x10  -- call table entry (which will compare w9 and branch to function)
          // BLR Xn = 0xD63F0000 | (Xn<<5)
          emit_a64(0xD63F0000 | (10 << 5));
+         // Callee clobbers x0 with return value. Save it in x9, then
+         // restore x0/x1 from callee-saved x21/x22 (set by trampoline).
+         // mov x9, x0
+         emit_a64(0xAA0003E9);
+         // mov x0, x21  -- restore context
+         emit_a64(0xAA1503E0);
+         // mov x1, x22  -- restore linear_memory
+         emit_a64(0xAA1603E1);
          // The jump table entry will either branch to the target function or error.
          // After the call returns, clean up params and push result.
          emit_multipop(ft.param_types.size());
          if(ft.return_count != 0) {
-            // stp x0, xzr, [sp, #-16]!  -- push return value
-            emit_a64(0xA9BF7FE0);
+            // stp x9, xzr, [sp, #-16]!  -- push return value (saved in x9)
+            emit_a64(0xA9BF7FE9);
          }
          emit_check_call_depth_end();
       }
