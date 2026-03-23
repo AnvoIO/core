@@ -629,11 +629,18 @@ namespace core_net { namespace vm {
          //   x19 = call depth counter (callee-saved)
          //   x20 = alt stack pointer (callee-saved)
          //   x29 = frame pointer, x30 = link register
+         // Pin callee-saved registers used explicitly by the asm block.
+         // The compiler must not assign other operands to these registers.
+         // x19 = call depth counter (loaded by asm from stack_check_reg)
+         // x20 = alt stack pointer
+         // x21 = context backup
+         // x22 = linear_memory backup
+         // x23 = stack_check value (source for mov x19, ...)
+         register unsigned call_depth_pin asm ("x19") = stack_check; // reserve x19
          register void* stack_top asm ("x20") = stack;
-         // Pin context and linear_memory to specific registers so the asm
-         // block can reference them without clobbering x0/x1 early.
          register void* ctx_reg asm ("x21") = context;
          register void* mem_reg asm ("x22") = linear_memory;
+         register unsigned stack_check_reg asm ("x23") = stack_check;
 #define ASM_CODE_A64(before, after)                                     \
          asm volatile(                                                  \
             /* Save callee-saved registers */                            \
@@ -697,7 +704,8 @@ namespace core_net { namespace vm {
               [data] "+r" (data), [fun] "+r" (fun), [stack_top] "+r" (stack_top) \
             : [ctx_reg] "r" (ctx_reg), [mem_reg] "r" (mem_reg),          \
               [StackOffset] "n" (Count*16), [Count] "n" (Count),         \
-              [stack_check] "r" (stack_check)                            \
+              [stack_check] "r" (stack_check_reg),                       \
+              [_x19_reserve] "r" (call_depth_pin) /* pin x19 */          \
             : "memory", "cc",                                            \
               "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8",   \
               "x9", "x10", "x11", "x12", "x13", "x14", "x15",          \
