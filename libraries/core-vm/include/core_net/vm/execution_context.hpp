@@ -338,13 +338,20 @@ namespace core_net { namespace vm {
                   (_mod->maximum_stack + 2 /*frame ptr + return ptr*/) * (_remaining_call_depth + 1) +
                  sizeof...(Args) + 4 /* scratch space */;
                // On AArch64, each operand stack slot is 16 bytes (stp/ldp pairs for alignment)
-               // vs 8 bytes on x86_64. Scale the allocation accordingly.
+               // vs 8 bytes on x86_64. Scale the allocation accordingly. Additionally,
+               // re-entrant host calls consume C++ stack frames at each nesting level
+               // (call_host_function → chain runtime → execute → trampoline). Budget
+               // ~64KB per re-entrant level for these C++ frames on AArch64.
 #ifdef __aarch64__
                constexpr std::size_t stack_slot_size = 16;
+               constexpr std::size_t cpp_frame_budget_per_level = 64 * 1024;
+               std::size_t alt_stack_size = maximum_stack_usage * stack_slot_size
+                  + (_remaining_call_depth + 1) * cpp_frame_budget_per_level;
 #else
                constexpr std::size_t stack_slot_size = sizeof(native_value);
+               std::size_t alt_stack_size = maximum_stack_usage * stack_slot_size;
 #endif
-               stack_allocator alt_stack(maximum_stack_usage * stack_slot_size);
+               stack_allocator alt_stack(alt_stack_size);
                // Reserve space at the top of the alternate stack for data
                // accessed by inline assembly (saved sp, saved FPCR).
                void* stack = alt_stack.top();

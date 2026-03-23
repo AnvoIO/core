@@ -1,17 +1,74 @@
 #pragma once
 
+// ============================================================================
 // AArch64 (ARM64) JIT backend for core-vm
+// ============================================================================
 //
-// Phase 1 scaffold: full public interface matching x86_64.hpp.
-// Implemented: constructor, prologue/epilogue, error handlers, host calls,
-//              control flow basics (block/loop/end/return/nop/unreachable),
-//              register_call/start_function, finalize, helpers.
-// Phase 2: all arithmetic, loads/stores, conversions, float ops.
+// This file implements the machine_code_writer for AArch64, generating native
+// ARM64 instructions from WASM bytecode. It mirrors the x86_64.hpp interface
+// exactly — same public methods, same calling conventions with the host runtime.
 //
-// ---- AArch64 Register Convention ----
+// ---- Design Decisions & Tradeoffs ----
 //
-//   x0  = context pointer  (first arg per AAPCS64, restored from x21 after calls)
-//   x1  = linear memory base  (second arg, restored from x22 after calls)
+// 1. OPERAND STACK: 16-byte slots on sp
+//
+//    AArch64 (AAPCS64) requires sp to be 16-byte aligned for ALL sp-relative
+//    memory accesses. Unlike x86_64 which uses 8-byte pushq/popq for the
+//    operand stack, we use 16-byte stp/ldp pairs:
+//
+//      Push:  stp reg, xzr, [sp, #-16]!    (8 bytes value + 8 bytes padding)
+//      Pop:   ldp reg, xzr, [sp], #16
+//
+//    This doubles per-slot overhead vs x86 but keeps the design simple:
+//    one stack pointer (sp) serves params, locals, operand stack, and call
+//    frames — matching the x86 pattern where rsp does everything.
+//
+//    Alternative considered: using a dedicated register (x28) as a separate
+//    operand stack pointer with 8-byte slots. Rejected because it splits
+//    the stack into two domains, complicating every C++ call site (host
+//    functions, softfloat, globals) which must bridge between the two.
+//    The 16-byte approach is simpler and follows the ISA's natural alignment.
+//
+//    Consequence: the stack_allocator in allocator.hpp always allocates a
+//    separate execution stack on AArch64 (threshold=0 vs 4MB on x86) and
+//    uses stack_slot_size=16 when computing the required size. Without this,
+//    small WASM modules overflow the C++ thread stack.
+//
+// 2. REGISTER CONVENTION: x0/x1 as working registers, x21/x22 as backups
+//
+//    x86_64 uses rdi=context and rsi=linear_memory, relying on the fact that
+//    x86 JIT code never writes to rdi/rsi. On AArch64, function returns put
+//    the result in x0 (clobbering the context pointer). Rather than avoiding
+//    x0/x1 writes (impossible with AAPCS64), we:
+//
+//      - Pin context and linear_memory to callee-saved x21/x22 in the trampoline
+//      - Set x0=x21, x1=x22 before entering JIT code
+//      - After every WASM-to-WASM call, restore: mov x0,x21 / mov x1,x22
+//      - Around C++ calls (host, softfloat, globals), save/restore x0/x1 on stack
+//
+//    x21/x22 survive all function calls (callee-saved) so they're always valid.
+//
+// 3. INSTRUCTION CACHE COHERENCY
+//
+//    AArch64 has non-coherent instruction and data caches. After writing JIT
+//    code via memcpy (in allocator.hpp), we must call __builtin___clear_cache
+//    to flush the D-cache and invalidate the I-cache. Without this, the CPU
+//    may execute stale instructions. This is a no-op on x86 (coherent caches).
+//
+// 4. ALTERNATE STACK ALLOCATION
+//
+//    The stack_allocator always provides a separate mmap'd execution stack on
+//    AArch64 (vs only when >4MB on x86). This is necessary because:
+//      - 16-byte slots double the operand stack footprint
+//      - AArch64 has no red zone (vs 128 bytes on x86)
+//      - Re-entrant host calls consume C++ stack frames between JIT levels
+//    The alt stack top is reserved with 32-byte alignment (vs 24 on x86)
+//    to satisfy AAPCS64's 16-byte sp alignment requirement.
+//
+// ---- Register Convention ----
+//
+//   x0  = context pointer  (AAPCS64 arg0, restored from x21 after calls)
+//   x1  = linear memory base  (AAPCS64 arg1, restored from x22 after calls)
 //   x19 = call depth counter  (callee-saved)
 //   x20 = alt stack pointer (callee-saved, set by trampoline)
 //   x21 = context pointer backup (callee-saved, set by trampoline)
@@ -19,7 +76,7 @@
 //   x29 = frame pointer (fp)
 //   x30 = link register (lr)
 //   x9-x15 = scratch registers (caller-saved)
-//   sp  = stack pointer (must stay 16-byte aligned per AAPCS64)
+//   sp  = stack pointer (16-byte aligned, carries everything)
 //
 // ---- Operand Stack Model ----
 //

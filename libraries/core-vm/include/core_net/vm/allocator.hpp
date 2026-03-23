@@ -53,26 +53,43 @@ namespace core_net { namespace vm {
    class stack_allocator {
     public:
       explicit stack_allocator(std::size_t min_size) {
-         if(min_size > 4*1024*1024) {
-            std::size_t pagesize = static_cast<std::size_t>(::sysconf(_SC_PAGESIZE));
-            // The padding covers C++ stack frames used during re-entrant host calls
-            // (call_host_function → chain runtime → inner execute()).
-            // AArch64 JIT needs more headroom: 16-byte operand slots + larger C++ frames.
-            constexpr std::size_t stack_padding =
+         // AArch64 JIT uses 16-byte operand stack slots (vs 8 on x86_64),
+         // so even small WASM modules can overflow the C++ thread stack.
+         // Always allocate a separate execution stack on AArch64.
 #ifdef __aarch64__
-               // AArch64 JIT needs significantly more stack: 16-byte operand slots
-               // (vs 8 on x86), larger C++ frames, and re-entrant host calls that
-               // nest full chain runtime + trampoline + JIT execution.
-               32*1024*1024;
+         constexpr std::size_t alloc_threshold = 0;
+         constexpr std::size_t stack_padding = 8*1024*1024;
 #else
-               4*1024*1024;
+         constexpr std::size_t alloc_threshold = 4*1024*1024;
+         constexpr std::size_t stack_padding = 4*1024*1024;
 #endif
+         if(min_size > alloc_threshold) {
+            std::size_t pagesize = static_cast<std::size_t>(::sysconf(_SC_PAGESIZE));
             _size = ((min_size + pagesize - 1) & ~(pagesize - 1)) + stack_padding;
             int flags = MAP_PRIVATE | MAP_ANONYMOUS;
+            // MAP_STACK sets VM_GROWSDOWN on the VMA, which triggers the
+            // kernel's stack guard gap: a ~64KB PROT_NONE page inserted
+            // inside the mapping when downward growth is detected, limiting
+            // contiguous usable stack to ~8MB. On AArch64 where 16-byte
+            // operand slots and re-entrant C++ frames require >8MB, this
+            // is fatal. Skip MAP_STACK on AArch64 to get a plain anonymous
+            // mapping without guard gap enforcement.
+            //
+            // As a belt-and-suspenders defense (matching Wasmtime's pattern),
+            // map as PROT_NONE first then mprotect to RW. The kernel skips
+            // PROT_NONE VMAs during guard gap checks, so even if MAP_STACK
+            // semantics change in future kernels, this remains safe.
+#ifdef __aarch64__
+            _ptr = ::mmap(nullptr, _size, PROT_NONE, flags, -1, 0);
+            if(_ptr != MAP_FAILED) {
+               ::mprotect(_ptr, _size, PROT_READ | PROT_WRITE);
+            }
+#else
 #ifdef MAP_STACK
             flags |= MAP_STACK;
 #endif
             _ptr = ::mmap(nullptr, _size, PROT_READ | PROT_WRITE, flags, -1, 0);
+#endif
          }
       }
       ~stack_allocator() {
