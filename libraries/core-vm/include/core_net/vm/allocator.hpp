@@ -354,6 +354,13 @@ namespace core_net { namespace vm {
             int err = mprotect(executable_code, _code_size, PROT_READ | PROT_WRITE);
             CORE_NET_VM_ASSERT(err == 0, wasm_bad_alloc, "mprotect failed");
             std::memcpy(executable_code, _code_base, _code_size);
+#ifdef __aarch64__
+            // AArch64 has separate instruction and data caches.
+            // After writing JIT code, flush D-cache and invalidate I-cache
+            // so the CPU executes the actual instructions we wrote.
+            __builtin___clear_cache(static_cast<char*>(executable_code),
+                                    static_cast<char*>(executable_code) + _code_size);
+#endif
             _code_base = (char*)executable_code;
             enable_code(IsJit);
             _is_jit = true;
@@ -364,6 +371,12 @@ namespace core_net { namespace vm {
       // Sets protection on code pages to allow them to be executed.
       void enable_code(bool is_jit) {
          mprotect(_code_base, _code_size, is_jit?PROT_EXEC:(PROT_READ|PROT_WRITE));
+#ifdef __aarch64__
+         if (is_jit) {
+            // Ensure I-cache coherency after permission change on AArch64.
+            __builtin___clear_cache(_code_base, _code_base + _code_size);
+         }
+#endif
       }
       // Make code pages unexecutable so deadline timer can kill an
       // execution (in both JIT and Interpreter)
