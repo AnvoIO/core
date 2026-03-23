@@ -312,7 +312,17 @@ namespace core_net { namespace vm {
              default: assert(!"Unexpected type in param_types.");
             }
          }
-         _rhf(_host, get_interface(), _mod->jit_mod->import_functions[index]);
+         try {
+            _rhf(_host, get_interface(), _mod->jit_mod->import_functions[index]);
+         } catch(std::exception& e) {
+            static int rhf_exc = 0;
+            if(rhf_exc < 5) { rhf_exc++; fprintf(stderr, "  _rhf exception: %s\n", e.what()); }
+            throw;
+         } catch(...) {
+            static int rhf_exc2 = 0;
+            if(rhf_exc2 < 5) { rhf_exc2++; fprintf(stderr, "  _rhf unknown exception\n"); }
+            throw;
+         }
          native_value result{uint64_t{0}};
          // guarantee that the junk bits are zero, to avoid problems.
          auto set_result = [&result](auto val) { std::memcpy(&result, &val, sizeof(val)); };
