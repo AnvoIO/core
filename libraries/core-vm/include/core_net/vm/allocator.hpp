@@ -53,14 +53,7 @@ namespace core_net { namespace vm {
    class stack_allocator {
     public:
       explicit stack_allocator(std::size_t min_size) {
-#ifdef __aarch64__
-         // AArch64 JIT uses 16-byte operand stack slots (vs 8 on x86_64) and has
-         // no red zone, so always allocate a separate execution stack to avoid
-         // overflowing the C++ stack during re-entrant host calls.
-         if(min_size > 0) {
-#else
          if(min_size > 4*1024*1024) {
-#endif
             std::size_t pagesize = static_cast<std::size_t>(::sysconf(_SC_PAGESIZE));
             // The padding covers C++ stack frames used during re-entrant host calls
             // (call_host_function → chain runtime → inner execute()).
