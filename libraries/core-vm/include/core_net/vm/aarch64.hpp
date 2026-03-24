@@ -1946,7 +1946,7 @@ namespace core_net { namespace vm {
          auto target_ = static_cast<uint8_t*>(target);
          intptr_t byte_offset = target_ - branch_;
          // Must be aligned to 4 bytes
-         assert((byte_offset & 0x3) == 0);
+         CORE_NET_VM_ASSERT((byte_offset & 0x3) == 0, wasm_parse_exception, "branch target not 4-byte aligned");
          int32_t instr_offset = static_cast<int32_t>(byte_offset >> 2);
 
          uint32_t instr;
@@ -1955,7 +1955,8 @@ namespace core_net { namespace vm {
          uint32_t op = instr >> 26;
          if (op == 0x05 || op == 0x25) {
             // B (000101) or BL (100101): imm26
-            assert(instr_offset >= -(1 << 25) && instr_offset < (1 << 25));
+            CORE_NET_VM_ASSERT(instr_offset >= -(1 << 25) && instr_offset < (1 << 25),
+                               wasm_parse_exception, "branch target exceeds 26-bit range");
             uint32_t imm26 = static_cast<uint32_t>(instr_offset) & 0x03FFFFFF;
             instr = (instr & 0xFC000000) | imm26;
             memcpy(branch, &instr, 4);
@@ -1969,13 +1970,14 @@ namespace core_net { namespace vm {
             // The emit site reserved a NOP at branch+4. Convert to:
             //   branch:   <inverted_cond> +8   (skip over the long B)
             //   branch+4: B target              (unconditional, 26-bit range)
-            assert(instr_offset >= -(1 << 25) && instr_offset < (1 << 25) &&
-                   "Branch target exceeds even 26-bit range");
+            CORE_NET_VM_ASSERT(instr_offset >= -(1 << 25) && instr_offset < (1 << 25),
+                               wasm_parse_exception, "branch target exceeds even 26-bit range");
 
             // Verify the reserved NOP is present
             uint32_t nop;
             memcpy(&nop, branch_ + 4, 4);
-            assert(nop == 0xD503201F && "Expected reserved NOP at branch+4 for long branch");
+            CORE_NET_VM_ASSERT(nop == 0xD503201F, wasm_parse_exception,
+                               "expected reserved NOP at branch+4 for long branch");
 
             // Invert the condition and branch +8 (skip one instruction)
             uint32_t short_offset_imm19 = 2; // +8 bytes = +2 instructions
