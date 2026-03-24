@@ -1,7 +1,5 @@
 #include <core_net/chain/webassembly/interface.hpp>
 #include <core_net/chain/apply_context.hpp>
-#include <core_net/vm/allocator.hpp>
-#include <cstdio>
 
 namespace core_net { namespace chain { namespace webassembly {
    inline static constexpr size_t max_assert_message = 1024;

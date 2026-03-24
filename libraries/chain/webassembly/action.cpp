@@ -1,7 +1,6 @@
 #include <core_net/chain/webassembly/interface.hpp>
 #include <core_net/chain/apply_context.hpp>
 #include <core_net/chain/global_property_object.hpp>
-#include <cstdio>
 
 namespace core_net { namespace chain { namespace webassembly {
    int32_t interface::read_action_data(legacy_span<char> memory) const {

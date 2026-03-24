@@ -7,13 +7,11 @@
 #include <core_net/chain/apply_context.hpp>
 #include <core_net/chain/finalizer_policy.hpp>
 #include <core_net/chain/finalizer_authority.hpp>
-#include <core_net/vm/allocator.hpp>
 
 #include <fc/io/datastream.hpp>
 
 #include <vector>
 #include <set>
-#include <cstdio>
 
 namespace core_net { namespace chain { namespace webassembly {
 
