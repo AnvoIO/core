@@ -1274,14 +1274,16 @@ BOOST_AUTO_TEST_CASE(named_thread_pool_test) {
 
 BOOST_AUTO_TEST_CASE(public_key_from_hash) {
    auto private_key_string = std::string("5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3");
-   auto expected_public_key = std::string("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV");
+   auto expected_public_key = std::string("PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5BoDq63");
+   auto legacy_public_key = std::string("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV");
    auto test_private_key = fc::crypto::private_key(private_key_string);
    auto test_public_key = test_private_key.get_public_key();
-   fc::crypto::public_key eos_pk(expected_public_key);
+   fc::crypto::public_key legacy_pk(legacy_public_key);
 
    BOOST_CHECK_EQUAL(private_key_string, test_private_key.to_string({}));
    BOOST_CHECK_EQUAL(expected_public_key, test_public_key.to_string({}));
-   BOOST_CHECK_EQUAL(expected_public_key, eos_pk.to_string({}));
+   BOOST_CHECK_EQUAL(expected_public_key, legacy_pk.to_string({}));
+   BOOST_CHECK(test_public_key == legacy_pk); // legacy EOS prefix still parses to same key
 
    fc::ecc::public_key_data data;
    data.data[0] = 0x80; // not necessary, 0 also works
