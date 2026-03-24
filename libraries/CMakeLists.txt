@@ -33,7 +33,7 @@ set(ENABLE_PROFILE OFF CACHE BOOL "Enable for profile builds")
 if(vm IN_LIST CORE_NET_WASM_RUNTIMES OR vm-jit IN_LIST CORE_NET_WASM_RUNTIMES)
    # CMP0077 NEW: option() honors normal variables, so our overrides stick.
    set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-   set(ENABLE_TESTS OFF)
+   set(ENABLE_TESTS ON)
    set(ENABLE_TOOLS OFF)
    add_subdirectory( core-vm )
    unset(ENABLE_TESTS)

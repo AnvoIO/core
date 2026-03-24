@@ -53,14 +53,43 @@ namespace core_net { namespace vm {
    class stack_allocator {
     public:
       explicit stack_allocator(std::size_t min_size) {
-         if(min_size > 4*1024*1024) {
+         // AArch64 JIT uses 16-byte operand stack slots (vs 8 on x86_64),
+         // so even small WASM modules can overflow the C++ thread stack.
+         // Always allocate a separate execution stack on AArch64.
+#ifdef __aarch64__
+         constexpr std::size_t alloc_threshold = 0;
+         constexpr std::size_t stack_padding = 8*1024*1024;
+#else
+         constexpr std::size_t alloc_threshold = 4*1024*1024;
+         constexpr std::size_t stack_padding = 4*1024*1024;
+#endif
+         if(min_size > alloc_threshold) {
             std::size_t pagesize = static_cast<std::size_t>(::sysconf(_SC_PAGESIZE));
-            _size = ((min_size + pagesize - 1) & ~(pagesize - 1)) + 4*1024*1024;
+            _size = ((min_size + pagesize - 1) & ~(pagesize - 1)) + stack_padding;
             int flags = MAP_PRIVATE | MAP_ANONYMOUS;
+            // MAP_STACK sets VM_GROWSDOWN on the VMA, which triggers the
+            // kernel's stack guard gap: a ~64KB PROT_NONE page inserted
+            // inside the mapping when downward growth is detected, limiting
+            // contiguous usable stack to ~8MB. On AArch64 where 16-byte
+            // operand slots and re-entrant C++ frames require >8MB, this
+            // is fatal. Skip MAP_STACK on AArch64 to get a plain anonymous
+            // mapping without guard gap enforcement.
+            //
+            // As a belt-and-suspenders defense (matching Wasmtime's pattern),
+            // map as PROT_NONE first then mprotect to RW. The kernel skips
+            // PROT_NONE VMAs during guard gap checks, so even if MAP_STACK
+            // semantics change in future kernels, this remains safe.
+#ifdef __aarch64__
+            _ptr = ::mmap(nullptr, _size, PROT_NONE, flags, -1, 0);
+            if(_ptr != MAP_FAILED) {
+               ::mprotect(_ptr, _size, PROT_READ | PROT_WRITE);
+            }
+#else
 #ifdef MAP_STACK
             flags |= MAP_STACK;
 #endif
             _ptr = ::mmap(nullptr, _size, PROT_READ | PROT_WRITE, flags, -1, 0);
+#endif
          }
       }
       ~stack_allocator() {
@@ -354,6 +383,13 @@ namespace core_net { namespace vm {
             int err = mprotect(executable_code, _code_size, PROT_READ | PROT_WRITE);
             CORE_NET_VM_ASSERT(err == 0, wasm_bad_alloc, "mprotect failed");
             std::memcpy(executable_code, _code_base, _code_size);
+#ifdef __aarch64__
+            // AArch64 has separate instruction and data caches.
+            // After writing JIT code, flush D-cache and invalidate I-cache
+            // so the CPU executes the actual instructions we wrote.
+            __builtin___clear_cache(static_cast<char*>(executable_code),
+                                    static_cast<char*>(executable_code) + _code_size);
+#endif
             _code_base = (char*)executable_code;
             enable_code(IsJit);
             _is_jit = true;
@@ -364,6 +400,12 @@ namespace core_net { namespace vm {
       // Sets protection on code pages to allow them to be executed.
       void enable_code(bool is_jit) {
          mprotect(_code_base, _code_size, is_jit?PROT_EXEC:(PROT_READ|PROT_WRITE));
+#ifdef __aarch64__
+         if (is_jit) {
+            // Ensure I-cache coherency after permission change on AArch64.
+            __builtin___clear_cache(_code_base, _code_base + _code_size);
+         }
+#endif
       }
       // Make code pages unexecutable so deadline timer can kill an
       // execution (in both JIT and Interpreter)
