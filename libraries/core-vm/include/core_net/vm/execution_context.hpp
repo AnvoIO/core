@@ -127,10 +127,6 @@ namespace core_net { namespace vm {
                return -1;
             _wasm_alloc->alloc<char>(pages);
          }
-         if(pages != 0) {
-            static int gt = 0;
-            if(gt < 50) { gt++; fprintf(stderr, "GROW: req=%d was=%d now=%d\n", pages, sz, _wasm_alloc->get_current_page()); }
-         }
          return sz;
       }
 
@@ -305,11 +301,7 @@ namespace core_net { namespace vm {
              default: assert(!"Unexpected type in param_types.");
             }
          }
-         try {
-            _rhf(_host, get_interface(), _mod->jit_mod->import_functions[index]);
-         } catch(...) {
-            throw;
-         }
+         _rhf(_host, get_interface(), _mod->jit_mod->import_functions[index]);
          native_value result{uint64_t{0}};
          // guarantee that the junk bits are zero, to avoid problems.
          auto set_result = [&result](auto val) { std::memcpy(&result, &val, sizeof(val)); };

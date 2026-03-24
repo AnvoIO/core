@@ -40,23 +40,6 @@ namespace core_net { namespace vm {
       if (dest) {
          const void* addr = info->si_addr;
 
-#ifdef __aarch64__
-         // DEBUG: log faulting address and branch taken
-         {
-            static int sig_trace = 0;
-            if(sig_trace < 5) {
-               sig_trace++;
-               const char* signame = sig == SIGSEGV ? "SIGSEGV" : sig == SIGBUS ? "SIGBUS" : "SIGFPE";
-               ptrdiff_t offset = (const char*)addr - (const char*)memory_range.data();
-               bool in_mem = addr >= memory_range.data() && addr < memory_range.data() + memory_range.size();
-               bool in_code = addr >= code_memory_range.data() && addr < code_memory_range.data() + code_memory_range.size();
-               bool both_empty = code_memory_range.empty() && memory_range.empty();
-               fprintf(stderr, "SIGNAL %s addr=%p offset=0x%tx in_mem=%d in_code=%d both_empty=%d dest=%p\n",
-                       signame, addr, offset, in_mem, in_code, both_empty, (void*)dest);
-            }
-         }
-#endif
-
          //neither range set means legacy catch-all behavior; useful for some of the old tests
          if (code_memory_range.empty() && memory_range.empty())
             siglongjmp(*dest, sig);

@@ -171,46 +171,6 @@ namespace core_net { namespace chain { namespace webassembly {
          EOS_THROW(wasm_execution_error, "Finalizer policy is in an unknown format!");
       }
 
-      // DEBUG: dump packed finalizer policy on success path (interpreter reference)
-      {
-         static bool dumped = false;
-         if (!dumped) {
-            dumped = true;
-            fprintf(stderr, "\n=== INTERP DEBUG: set_finalizers called, packed size=%zu ===\n",
-                    packed_finalizer_policy.size());
-            const auto* data = reinterpret_cast<const unsigned char*>(packed_finalizer_policy.data());
-            for(size_t i = 0; i < packed_finalizer_policy.size(); i += 32) {
-               fprintf(stderr, "%04zx: ", i);
-               for(size_t j = 0; j < 32 && (i+j) < packed_finalizer_policy.size(); j++) {
-                  fprintf(stderr, "%02x", data[i+j]);
-               }
-               fprintf(stderr, "\n");
-            }
-            // Also dump non-zero regions of WASM memory for comparison
-            try {
-               auto* base = context.control.get_wasm_allocator().get_base_ptr<const unsigned char>();
-               constexpr size_t dump_size = 256 * 1024;
-               fprintf(stderr, "WASM_MEM_DUMP (non-zero regions of first %zu bytes):\n", dump_size);
-               for(size_t i = 0; i < dump_size; i += 32) {
-                  bool has_data = false;
-                  for(size_t j = 0; j < 32 && (i+j) < dump_size; j++) {
-                     if(base[i+j] != 0) { has_data = true; break; }
-                  }
-                  if(has_data) {
-                     fprintf(stderr, "%06zx: ", i);
-                     for(size_t j = 0; j < 32 && (i+j) < dump_size; j++) {
-                        fprintf(stderr, "%02x", base[i+j]);
-                     }
-                     fprintf(stderr, "\n");
-                  }
-               }
-               fprintf(stderr, "=== END INTERP WASM_MEM_DUMP ===\n\n");
-            } catch(...) {
-               fprintf(stderr, "DEBUG: failed to dump wasm memory\n");
-            }
-         }
-      }
-
       fc::datastream<const char*> ds( packed_finalizer_policy.data(), packed_finalizer_policy.size() );
       finalizer_policy abi_finpol;
       fc::raw::unpack(ds, abi_finpol);

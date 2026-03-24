@@ -21,25 +21,6 @@ namespace core_net { namespace chain { namespace webassembly {
       if( BOOST_UNLIKELY( !condition ) ) {
          const size_t sz = msg.size() > max_assert_message ? max_assert_message : msg.size();
          std::string message( msg.data(), sz );
-
-         // DEBUG: trap into debugger when base64 decode size assertion fires
-         if( message.find("decoded size") != std::string::npos ) {
-            fprintf(stderr, "\n=== JIT DEBUG: assertion fired: %s ===\n", message.c_str());
-            try {
-               auto* base = context.control.get_wasm_allocator().get_base_ptr<const unsigned char>();
-               fprintf(stderr, "WASM linear memory base: %p\n", (void*)base);
-               // Dump the string metadata area and decoded data
-               // The decoded string data is near 0x34a0 based on previous dumps
-               for(size_t start : {(size_t)0x3020, (size_t)0x3480, (size_t)0x34a0}) {
-                  fprintf(stderr, "%06zx: ", start);
-                  for(size_t j = 0; j < 64; j++) {
-                     fprintf(stderr, "%02x", base[start+j]);
-                  }
-                  fprintf(stderr, "\n");
-               }
-            } catch(...) {}
-         }
-
          EOS_THROW( core_net_assert_message_exception, "assertion failure with message: ${s}", ("s",message) );
       }
    }
