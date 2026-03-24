@@ -193,20 +193,20 @@ namespace core_net { namespace vm {
                   }
                   // cmp w9, w10  (w9 = actual type from call_indirect)
                   emit_a64(0x6B0A013F);
-                  // b.eq target_function  (will be fixed up)
-                  {
-                     void* branch = code;
-                     emit_a64(0x54000000); // b.eq placeholder (cond=EQ=0x0)
-                     register_call(branch, fn_idx);
-                  }
-                  // b type_error_handler
+                  // b.ne type_error_handler  (short branch, error handler is nearby)
                   {
                      void* te_branch = code;
-                     emit_a64(0x14000000); // B placeholder
+                     emit_a64(0x54000001); // b.ne placeholder
+                     emit_a64(0xD503201F); // nop (reserved for long branch)
                      fix_branch(te_branch, type_error_handler);
                   }
-                  // nop padding to fill 28 bytes (7 instrs total, used 5 so far)
-                  emit_a64(0xD503201F);
+                  // b target_function  (unconditional, 26-bit range, can reach far)
+                  {
+                     void* branch = code;
+                     emit_a64(0x14000000); // B placeholder
+                     register_call(branch, fn_idx);
+                  }
+                  // nop padding to fill 28 bytes (7 instrs total, used 6 so far)
                   emit_a64(0xD503201F);
                } else {
                   // Out-of-range function: branch to call_indirect_handler
@@ -248,12 +248,15 @@ namespace core_net { namespace vm {
       static constexpr std::size_t max_epilogue_size = 24;
 
       void emit_prologue(const func_type& /*ft*/, const guarded_vector<local_entry>& locals, uint32_t funcnum) {
+         _current_funcnum = funcnum;
          _ft = &_mod.types[_mod.functions[funcnum]];
 
          // A64 instructions are fixed 4 bytes each but we need more instructions
          // per WASM op than x86 (no variable-length encoding, no complex addressing modes).
+         // Extra NOPs reserved at conditional branch sites for long-branch trampolines
+         // add ~4 bytes per if/br_if/call/call_indirect instruction.
          const std::size_t instruction_size_ratio_upper_bound =
-            use_softfloat ? (Context::async_backtrace() ? 80 : 64) : 80;
+            use_softfloat ? (Context::async_backtrace() ? 84 : 68) : 84;
 
          std::size_t code_size = max_prologue_size
                                + _mod.code[funcnum].size * instruction_size_ratio_upper_bound
@@ -364,8 +367,11 @@ namespace core_net { namespace vm {
          // ldp x9, xzr, [sp], #16
          emit_a64(0xA8C17FE9);
          // cbz w9, DEST  (branch if zero -- "else" or "end")
+         // Reserve 2 instructions: cbz + nop. If the target is out of 19-bit
+         // range, fix_branch will convert to: cbnz w9, +8; b FAR_TARGET
          void* result = code;
-         emit_a64(0x34000009); // cbz w9, placeholder (will be fixed up)
+         emit_a64(0x34000009); // cbz w9, placeholder
+         emit_a64(0xD503201F); // nop (reserved for long branch)
          return result;
       }
 
@@ -388,11 +394,15 @@ namespace core_net { namespace vm {
 
          if(depth_change == 0u || depth_change == 0x80000001u) {
             // cbnz w9, DEST
+            // Reserve 2 instructions for long branch support
             void* result = code;
             emit_a64(0x35000009); // cbnz w9, placeholder
+            emit_a64(0xD503201F); // nop (reserved for long branch)
             return result;
          } else {
             // cbz w9, SKIP
+            // This is a short-range branch (skip is just a few instructions ahead),
+            // so no long branch reservation needed.
             void* skip = code;
             emit_a64(0x34000009); // cbz w9, placeholder
             // add sp, sp, #(depth_change * 16)
@@ -435,6 +445,7 @@ namespace core_net { namespace vm {
                   // b.hs MID  (unsigned higher or same)
                   void* mid_label = _this->code;
                   _this->emit_a64(0x54000002); // b.hs placeholder
+                  _this->emit_a64(0xD503201F); // nop (reserved for long branch)
                   stack.push_back({mid, max, mid_label});
                   stack.push_back({min, mid, nullptr});
                } else {
@@ -549,6 +560,7 @@ namespace core_net { namespace vm {
          {
             void* br = code;
             emit_a64(0x54000002); // b.hs placeholder
+            emit_a64(0xD503201F); // nop (reserved for long branch)
             fix_branch(br, call_indirect_handler);
          }
          // Load address of jump table into x10 (PC-relative, survives code copy)
@@ -1946,19 +1958,51 @@ namespace core_net { namespace vm {
             assert(instr_offset >= -(1 << 25) && instr_offset < (1 << 25));
             uint32_t imm26 = static_cast<uint32_t>(instr_offset) & 0x03FFFFFF;
             instr = (instr & 0xFC000000) | imm26;
-         } else {
-            // B.cond (01010100), CBZ (x0110100), CBNZ (x0110101): imm19
-            assert(instr_offset >= -(1 << 18) && instr_offset < (1 << 18));
+            memcpy(branch, &instr, 4);
+         } else if (instr_offset >= -(1 << 18) && instr_offset < (1 << 18)) {
+            // B.cond / CBZ / CBNZ: offset fits in imm19
             uint32_t imm19 = static_cast<uint32_t>(instr_offset) & 0x7FFFF;
             instr = (instr & 0xFF00001F) | (imm19 << 5);
-         }
+            memcpy(branch, &instr, 4);
+         } else {
+            // Long branch: offset exceeds 19-bit range.
+            // The emit site reserved a NOP at branch+4. Convert to:
+            //   branch:   <inverted_cond> +8   (skip over the long B)
+            //   branch+4: B target              (unconditional, 26-bit range)
+            assert(instr_offset >= -(1 << 25) && instr_offset < (1 << 25) &&
+                   "Branch target exceeds even 26-bit range");
 
-         memcpy(branch, &instr, 4);
+            // Verify the reserved NOP is present
+            uint32_t nop;
+            memcpy(&nop, branch_ + 4, 4);
+            assert(nop == 0xD503201F && "Expected reserved NOP at branch+4 for long branch");
+
+            // Invert the condition and branch +8 (skip one instruction)
+            uint32_t short_offset_imm19 = 2; // +8 bytes = +2 instructions
+            if ((instr & 0xFE000000) == 0x34000000 || (instr & 0xFE000000) == 0x36000000) {
+               // CBZ → CBNZ or CBNZ → CBZ: flip bit 24
+               uint32_t inverted = instr ^ (1u << 24);
+               inverted = (inverted & 0xFF00001F) | (short_offset_imm19 << 5);
+               memcpy(branch, &inverted, 4);
+            } else {
+               // B.cond: invert condition by flipping bit 0 of the cond field
+               uint32_t inverted = instr ^ 1u;
+               inverted = (inverted & 0xFF00001F) | (short_offset_imm19 << 5);
+               memcpy(branch, &inverted, 4);
+            }
+
+            // Replace the NOP with an unconditional B to the real target
+            // The B instruction offset is relative to branch+4
+            int32_t long_offset = static_cast<int32_t>((target_ - (branch_ + 4)) >> 2);
+            uint32_t b_instr = 0x14000000 | (static_cast<uint32_t>(long_offset) & 0x03FFFFFF);
+            memcpy(branch_ + 4, &b_instr, 4);
+         }
       }
 
       using fn_type = native_value(*)(void* context, void* memory);
 
       void finalize(function_body& body) {
+         auto code_len = (unsigned char*)code - (unsigned char*)_code_start;
          _allocator.reclaim(code, _code_end - code);
          body.jit_code_offset = _code_start - (unsigned char*)_code_segment_base;
       }
@@ -2009,6 +2053,7 @@ namespace core_net { namespace vm {
       void* stack_overflow_handler;
       void* jmp_table;
       uint32_t _local_count;
+      uint32_t _current_funcnum = 0;
       uint32_t _table_element_size;
 
       // ---- Low-level A64 emission helpers ----
@@ -2035,30 +2080,40 @@ namespace core_net { namespace vm {
          return result;
       }
 
-      // Emit ADR Xd, #0 (placeholder) and return its address for fixup via fix_adr().
-      // ADR computes a PC-relative address into Xd. Range: ±1MB.
+      // Emit ADRP Xd + ADD Xd placeholder (2 instructions) and return address for fixup.
+      // ADRP + ADD gives ±4GB PC-relative addressing, replacing the old ADR (±1MB).
       void* emit_adr(uint8_t rd) {
          void* result = code;
-         // ADR Xd, #0:  0x10000000 | Rd
-         emit_a64(0x10000000 | rd);
+         // ADRP Xd, #0:  0x90000000 | Rd
+         emit_a64(0x90000000 | rd);
+         // ADD Xd, Xd, #0:  0x91000000 | (Rd << 5) | Rd
+         emit_a64(0x91000000 | (static_cast<uint32_t>(rd) << 5) | rd);
          return result;
       }
 
-      // Patch an ADR instruction at `adr_loc` to compute the address of `target`.
-      // ADR encoding: immlo (bits [30:29]) | 10000 | immhi (bits [23:5]) | Rd (bits [4:0])
-      // offset = (immhi << 2) | immlo, signed 21-bit, byte-granular.
+      // Patch an ADRP+ADD pair at `adr_loc` to compute the address of `target`.
+      // ADRP loads a 4KB-aligned page address (±4GB), ADD adds the 12-bit page offset.
       static void fix_adr(void* adr_loc, void* target) {
          auto adr_ = static_cast<uint8_t*>(adr_loc);
          auto target_ = static_cast<uint8_t*>(target);
-         intptr_t offset = target_ - adr_;
-         assert(offset >= -(1 << 20) && offset < (1 << 20)); // ±1MB
-         uint32_t uoffset = static_cast<uint32_t>(offset) & 0x1FFFFF; // 21 bits
-         uint32_t immlo = uoffset & 0x3;          // bits [1:0]
-         uint32_t immhi = (uoffset >> 2) & 0x7FFFF; // bits [20:2]
-         uint32_t instr;
-         memcpy(&instr, adr_loc, 4);
-         instr = (instr & 0x9F00001F) | (immlo << 29) | (immhi << 5);
-         memcpy(adr_loc, &instr, 4);
+
+         // ADRP: page-relative offset
+         intptr_t page_offset = ((intptr_t)target_ >> 12) - ((intptr_t)adr_ >> 12);
+         assert(page_offset >= -(1LL << 20) && page_offset < (1LL << 20)); // ±4GB in pages
+         uint32_t upage = static_cast<uint32_t>(page_offset) & 0x1FFFFF; // 21 bits
+         uint32_t immlo = upage & 0x3;
+         uint32_t immhi = (upage >> 2) & 0x7FFFF;
+         uint32_t adrp_instr;
+         memcpy(&adrp_instr, adr_, 4);
+         adrp_instr = (adrp_instr & 0x9F00001F) | (immlo << 29) | (immhi << 5);
+         memcpy(adr_, &adrp_instr, 4);
+
+         // ADD: 12-bit page offset
+         uint32_t page_lo = static_cast<uint32_t>((intptr_t)target_) & 0xFFF;
+         uint32_t add_instr;
+         memcpy(&add_instr, adr_ + 4, 4);
+         add_instr = (add_instr & 0xFFC003FF) | (page_lo << 10);
+         memcpy(adr_ + 4, &add_instr, 4);
       }
 
       // Emit multipop: adjust stack pointer up by count * 16 bytes.
@@ -2133,6 +2188,7 @@ namespace core_net { namespace vm {
          {
             void* br = code;
             emit_a64(0x54000000); // b.eq placeholder
+            emit_a64(0xD503201F); // nop (reserved for long branch)
             fix_branch(br, stack_overflow_handler);
          }
       }
