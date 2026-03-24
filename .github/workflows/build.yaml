@@ -39,6 +39,8 @@ jobs:
           chown -R $(id -u):$(id -g) $PWD
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DLLVM_DIR=/usr/lib/llvm-14/lib/cmake/llvm -GNinja
           cmake --build build
+          # Replace symlinks with real files so the archive is self-contained
+          find build/tests -type l -exec sh -c 'target=$(readlink "$1") && [ -f "$target" ] && rm "$1" && cp "$target" "$1"' _ {} \;
           tar -pc --exclude "*.o" build | zstd --long -T0 -9 > build.tar.zst
       - name: Upload builddir
         uses: actions/upload-artifact@v4
@@ -105,6 +107,9 @@ jobs:
         run: |
           chown -R $(id -u):$(id -g) $PWD
           zstdcat build.tar.zst | tar x
+          # Patch CTest configs: replace build-time source dir with current workspace
+          find build -name 'CTestTestfile.cmake' -exec sed -i "s|WORKING_DIRECTORY \"[^\"]*\"|WORKING_DIRECTORY \"$PWD/build\"|g" {} +
+          find build -name 'CTestTestfile.cmake' -exec sed -i "s|CMAKE_SOURCE_DIR \"[^\"]*\"|CMAKE_SOURCE_DIR \"$PWD\"|g" {} +
           cd build
           ctest --output-on-failure -j $(nproc) -LE "nonparallelizable_tests|long_running_tests" --timeout 480
 
@@ -132,6 +137,8 @@ jobs:
         run: |
           chown -R $(id -u):$(id -g) $PWD
           zstdcat build.tar.zst | tar x
+          find build -name 'CTestTestfile.cmake' -exec sed -i "s|WORKING_DIRECTORY \"[^\"]*\"|WORKING_DIRECTORY \"$PWD/build\"|g" {} +
+          find build -name 'CTestTestfile.cmake' -exec sed -i "s|CMAKE_SOURCE_DIR \"[^\"]*\"|CMAKE_SOURCE_DIR \"$PWD\"|g" {} +
           cd build
           ctest --output-on-failure -j 1 -L nonparallelizable_tests --timeout 420
 
@@ -160,6 +167,8 @@ jobs:
         run: |
           chown -R $(id -u):$(id -g) $PWD
           zstdcat build.tar.zst | tar x
+          find build -name 'CTestTestfile.cmake' -exec sed -i "s|WORKING_DIRECTORY \"[^\"]*\"|WORKING_DIRECTORY \"$PWD/build\"|g" {} +
+          find build -name 'CTestTestfile.cmake' -exec sed -i "s|CMAKE_SOURCE_DIR \"[^\"]*\"|CMAKE_SOURCE_DIR \"$PWD\"|g" {} +
           cd build
           # ARM64 runners have 4 vCPUs — limit parallelism to avoid OOM
           ctest --output-on-failure -j 4 -LE "nonparallelizable_tests|long_running_tests" --timeout 480
@@ -188,6 +197,8 @@ jobs:
         run: |
           chown -R $(id -u):$(id -g) $PWD
           zstdcat build.tar.zst | tar x
+          find build -name 'CTestTestfile.cmake' -exec sed -i "s|WORKING_DIRECTORY \"[^\"]*\"|WORKING_DIRECTORY \"$PWD/build\"|g" {} +
+          find build -name 'CTestTestfile.cmake' -exec sed -i "s|CMAKE_SOURCE_DIR \"[^\"]*\"|CMAKE_SOURCE_DIR \"$PWD\"|g" {} +
           cd build
           ctest --output-on-failure -j 1 -L nonparallelizable_tests --timeout 420
 
