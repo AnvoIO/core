@@ -96,7 +96,7 @@ jobs:
       - name: Install runtime deps
         run: |
           apt-get update && apt-get install -y \
-            libcurl4-openssl-dev libgmp-dev llvm-14-dev zstd python3-numpy
+            cmake libcurl4-openssl-dev libgmp-dev libssl-dev llvm-14-dev zstd python3 python3-numpy
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
@@ -123,7 +123,7 @@ jobs:
       - name: Install runtime deps
         run: |
           apt-get update && apt-get install -y \
-            libcurl4-openssl-dev libgmp-dev llvm-14-dev zstd python3-numpy
+            cmake libcurl4-openssl-dev libgmp-dev libssl-dev llvm-14-dev zstd python3 python3-numpy
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
@@ -151,7 +151,7 @@ jobs:
       - name: Install runtime deps
         run: |
           apt-get update && apt-get install -y \
-            libcurl4-openssl-dev libgmp-dev llvm-14-dev zstd python3-numpy
+            cmake libcurl4-openssl-dev libgmp-dev libssl-dev llvm-14-dev zstd python3 python3-numpy
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
@@ -179,7 +179,7 @@ jobs:
       - name: Install runtime deps
         run: |
           apt-get update && apt-get install -y \
-            libcurl4-openssl-dev libgmp-dev llvm-14-dev zstd python3-numpy
+            cmake libcurl4-openssl-dev libgmp-dev libssl-dev llvm-14-dev zstd python3 python3-numpy
       - name: Download builddir
         uses: actions/download-artifact@v4
         with:
