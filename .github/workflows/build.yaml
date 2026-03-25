@@ -104,12 +104,15 @@ jobs:
         with:
           name: ubuntu24-x86-build
       - name: Run Parallel Tests
+        env:
+          BUILDKITE_COMMIT: ${{ github.sha }}
         run: |
           chown -R $(id -u):$(id -g) $PWD
           zstdcat build.tar.zst | tar x
-          # Patch CTest configs: replace build-time source dir with current workspace
-          find build -name 'CTestTestfile.cmake' -exec sed -i "s|WORKING_DIRECTORY \"[^\"]*\"|WORKING_DIRECTORY \"$PWD/build\"|g" {} +
-          find build -name 'CTestTestfile.cmake' -exec sed -i "s|CMAKE_SOURCE_DIR \"[^\"]*\"|CMAKE_SOURCE_DIR \"$PWD\"|g" {} +
+          BUILD_SRC=$(sed -n 's/^# Source directory: //p' build/CTestTestfile.cmake)
+          if [ -n "$BUILD_SRC" ] && [ "$BUILD_SRC" != "$PWD" ]; then
+            find build -name 'CTestTestfile.cmake' -exec sed -i "s|$BUILD_SRC|$PWD|g" {} +
+          fi
           cd build
           ctest --output-on-failure -j $(nproc) -LE "nonparallelizable_tests|long_running_tests" --timeout 480
 
@@ -134,11 +137,15 @@ jobs:
         with:
           name: ubuntu24-x86-build
       - name: Run Non-Parallelizable Tests
+        env:
+          BUILDKITE_COMMIT: ${{ github.sha }}
         run: |
           chown -R $(id -u):$(id -g) $PWD
           zstdcat build.tar.zst | tar x
-          find build -name 'CTestTestfile.cmake' -exec sed -i "s|WORKING_DIRECTORY \"[^\"]*\"|WORKING_DIRECTORY \"$PWD/build\"|g" {} +
-          find build -name 'CTestTestfile.cmake' -exec sed -i "s|CMAKE_SOURCE_DIR \"[^\"]*\"|CMAKE_SOURCE_DIR \"$PWD\"|g" {} +
+          BUILD_SRC=$(sed -n 's/^# Source directory: //p' build/CTestTestfile.cmake)
+          if [ -n "$BUILD_SRC" ] && [ "$BUILD_SRC" != "$PWD" ]; then
+            find build -name 'CTestTestfile.cmake' -exec sed -i "s|$BUILD_SRC|$PWD|g" {} +
+          fi
           cd build
           ctest --output-on-failure -j 1 -L nonparallelizable_tests --timeout 420
 
@@ -164,11 +171,15 @@ jobs:
         with:
           name: ubuntu24-arm64-build
       - name: Run Parallel Tests
+        env:
+          BUILDKITE_COMMIT: ${{ github.sha }}
         run: |
           chown -R $(id -u):$(id -g) $PWD
           zstdcat build.tar.zst | tar x
-          find build -name 'CTestTestfile.cmake' -exec sed -i "s|WORKING_DIRECTORY \"[^\"]*\"|WORKING_DIRECTORY \"$PWD/build\"|g" {} +
-          find build -name 'CTestTestfile.cmake' -exec sed -i "s|CMAKE_SOURCE_DIR \"[^\"]*\"|CMAKE_SOURCE_DIR \"$PWD\"|g" {} +
+          BUILD_SRC=$(sed -n 's/^# Source directory: //p' build/CTestTestfile.cmake)
+          if [ -n "$BUILD_SRC" ] && [ "$BUILD_SRC" != "$PWD" ]; then
+            find build -name 'CTestTestfile.cmake' -exec sed -i "s|$BUILD_SRC|$PWD|g" {} +
+          fi
           cd build
           # ARM64 runners have 4 vCPUs — limit parallelism to avoid OOM
           ctest --output-on-failure -j 4 -LE "nonparallelizable_tests|long_running_tests" --timeout 480
@@ -194,11 +205,15 @@ jobs:
         with:
           name: ubuntu24-arm64-build
       - name: Run Non-Parallelizable Tests
+        env:
+          BUILDKITE_COMMIT: ${{ github.sha }}
         run: |
           chown -R $(id -u):$(id -g) $PWD
           zstdcat build.tar.zst | tar x
-          find build -name 'CTestTestfile.cmake' -exec sed -i "s|WORKING_DIRECTORY \"[^\"]*\"|WORKING_DIRECTORY \"$PWD/build\"|g" {} +
-          find build -name 'CTestTestfile.cmake' -exec sed -i "s|CMAKE_SOURCE_DIR \"[^\"]*\"|CMAKE_SOURCE_DIR \"$PWD\"|g" {} +
+          BUILD_SRC=$(sed -n 's/^# Source directory: //p' build/CTestTestfile.cmake)
+          if [ -n "$BUILD_SRC" ] && [ "$BUILD_SRC" != "$PWD" ]; then
+            find build -name 'CTestTestfile.cmake' -exec sed -i "s|$BUILD_SRC|$PWD|g" {} +
+          fi
           cd build
           ctest --output-on-failure -j 1 -L nonparallelizable_tests --timeout 420
 

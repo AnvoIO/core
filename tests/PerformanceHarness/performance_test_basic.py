@@ -645,7 +645,7 @@ class PerformanceTestBasic:
         chainPluginArgs = ChainPluginArgs(signatureCpuBillablePct=args.signature_cpu_billable_pct,
                                         chainThreads=args.chain_threads, databaseMapMode=args.database_map_mode,
                                         wasmRuntime=args.wasm_runtime, contractsConsole=args.contracts_console,
-                                        coreVmOcCacheSizeMb=args.eos_vm_oc_cache_size_mb, coreVmOcCompileThreads=args.eos_vm_oc_compile_threads,
+                                        vmOcCacheSizeMb=args.eos_vm_oc_cache_size_mb, vmOcCompileThreads=args.eos_vm_oc_compile_threads,
                                         blockLogRetainBlocks=args.block_log_retain_blocks,
                                         chainStateDbSizeMb=args.chain_state_db_size_mb, abiSerializerMaxTimeMs=990000)
 
