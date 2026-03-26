@@ -46,6 +46,13 @@ endif()
 if("vm" IN_LIST CORE_NET_WASM_RUNTIMES OR "vm-jit" IN_LIST CORE_NET_WASM_RUNTIMES)
    set(CHAIN_COREVM_SOURCES "webassembly/runtimes/core-vm.cpp")
    set(CHAIN_COREVM_LIBRARIES core-vm)
+   # Files that include signals.hpp (via backend.hpp) use siglongjmp from a SIGSEGV
+   # handler to jump across stacks (JIT execution stack -> thread stack). glibc's
+   # __longjmp_chk (_FORTIFY_SOURCE) treats cross-stack longjmp as stack corruption
+   # and aborts on AArch64. Disable fortification for all affected translation units.
+   set_source_files_properties(webassembly/runtimes/core-vm.cpp PROPERTIES COMPILE_FLAGS "-U_FORTIFY_SOURCE")
+   set_source_files_properties(webassembly/softfloat.cpp PROPERTIES COMPILE_FLAGS "-U_FORTIFY_SOURCE")
+   set_source_files_properties(wasm_interface.cpp PROPERTIES COMPILE_FLAGS "-U_FORTIFY_SOURCE")
 endif()
 
 set(CHAIN_WEBASSEMBLY_SOURCES
