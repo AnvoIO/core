@@ -411,6 +411,12 @@ namespace core_net { namespace vm {
       // execution (in both JIT and Interpreter)
       void disable_code() {
          mprotect(_code_base, _code_size, PROT_NONE);
+#ifdef __aarch64__
+         // Ensure TLB invalidation from mprotect is fully visible to all cores.
+         // Some ARM64 hypervisors delay the broadcast, allowing other vCPUs to
+         // continue executing from stale TLB entries.
+         asm volatile("dsb ish\n\tisb" ::: "memory");
+#endif
       }
 
       const void* get_code_start() const { return _code_base; }
