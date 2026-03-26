@@ -399,24 +399,7 @@ def timeoutTest():
 
     # Send a forever readonly transaction. It should timeout
     Print("Sending a forever read only transaction")
-    start_time = time.time()
     results = sendReadOnlyForeverPayloadless()
-    elapsed = time.time() - start_time
-    Print(f"forever transaction returned in {elapsed:.3f}s, success={results[0]}, type(results[1])={type(results[1]).__name__}")
-    if isinstance(results[1], str):
-        Print(f"  ERROR: got string instead of dict: {results[1][:200]}")
-        # Dump the API node's stderr log for debugging
-        try:
-            err_path = apiNode.popenProc.errfile.name
-            Print(f"  --- API node stderr tail ({err_path}) ---")
-            with open(err_path, 'r') as f:
-                lines = f.readlines()
-                for line in lines[-30:]:
-                    Print(f"  LOG: {line.rstrip()}")
-        except Exception as e:
-            Print(f"  Could not read API node log: {e}")
-    elif isinstance(results[1], dict):
-        Print(f"  result keys: {list(results[1].keys())}")
     # Results look like
     '''
     ( False,
@@ -431,7 +414,6 @@ def timeoutTest():
     '''
     if Utils.Debug: Utils.Print(f"result: {results}")
     assert(results[0] == False)
-    assert isinstance(results[1], dict), f"Expected dict but got {type(results[1]).__name__}: {str(results[1])[:200]}"
     assert('except' in results[1]['processed'])
     assert(results[1]['processed']['except']['code'] == 3080004)
     assert(results[1]['processed']['except']['name'] == "tx_cpu_usage_exceeded")

@@ -1,3 +1,13 @@
+// Disable _FORTIFY_SOURCE for this file. The OC executor uses siglongjmp from
+// a SIGSEGV handler to jump from the JIT's custom execution stack back to the
+// sigsetjmp on the thread's regular stack. glibc's __longjmp_chk (enabled by
+// _FORTIFY_SOURCE) detects the cross-stack jump as "uninitialized stack frame"
+// and aborts. This is a false positive — the jump is intentional and correct.
+#ifdef _FORTIFY_SOURCE
+#undef _FORTIFY_SOURCE
+#endif
+#define _FORTIFY_SOURCE 0
+
 #include <core_net/chain/webassembly/core-vm-oc/executor.hpp>
 #include <core_net/chain/webassembly/core-vm-oc/code_cache.hpp>
 #include <core_net/chain/webassembly/core-vm-oc/memory.hpp>
@@ -23,7 +33,6 @@
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 #include <sys/mman.h>
-#include <unistd.h>
 #if defined(__aarch64__)
 #include <ucontext.h>
 #endif
@@ -69,11 +78,8 @@ static void segv_handler(int sig, siginfo_t* info, void* ctx)  {
 
    //was the segfault within code?
    if((uintptr_t)info->si_addr >= cb_in_main_segment->execution_thread_code_start &&
-      (uintptr_t)info->si_addr < cb_in_main_segment->execution_thread_code_start+cb_in_main_segment->execution_thread_code_length) {
-         static const char msg[] = "OC_SEGV_CODE: checktime fail\n";
-         [[maybe_unused]] auto r = write(STDERR_FILENO, msg, sizeof(msg)-1);
+      (uintptr_t)info->si_addr < cb_in_main_segment->execution_thread_code_start+cb_in_main_segment->execution_thread_code_length)
          siglongjmp(*cb_in_main_segment->jmp, COREVMOC_EXIT_CHECKTIME_FAIL);
-   }
 
    //was the segfault within data?
    if((uintptr_t)info->si_addr >= cb_in_main_segment->execution_thread_memory_start &&
@@ -246,9 +252,6 @@ void executor::execute(const code_descriptor& code, memory& mem, apply_context& 
 
    context.trx_context.transaction_timer.set_expiration_callback([](void* user) {
       executor* self = (executor*)user;
-      // Diagnostic: write is async-signal-safe, will appear in node's stderr
-      static const char msg[] = "OC_TIMER_EXPIRED: mprotect(PROT_NONE)\n";
-      [[maybe_unused]] auto r = write(STDERR_FILENO, msg, sizeof(msg)-1);
       syscall(SYS_mprotect, self->code_mapping, self->code_mapping_size, PROT_NONE);
 #ifdef __aarch64__
       asm volatile("dsb ish\n\tisb" ::: "memory");
