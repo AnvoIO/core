@@ -23,6 +23,7 @@
 #include <sys/prctl.h>
 #include <sys/syscall.h>
 #include <sys/mman.h>
+#include <unistd.h>
 #if defined(__aarch64__)
 #include <ucontext.h>
 #endif
@@ -68,8 +69,11 @@ static void segv_handler(int sig, siginfo_t* info, void* ctx)  {
 
    //was the segfault within code?
    if((uintptr_t)info->si_addr >= cb_in_main_segment->execution_thread_code_start &&
-      (uintptr_t)info->si_addr < cb_in_main_segment->execution_thread_code_start+cb_in_main_segment->execution_thread_code_length)
+      (uintptr_t)info->si_addr < cb_in_main_segment->execution_thread_code_start+cb_in_main_segment->execution_thread_code_length) {
+         static const char msg[] = "OC_SEGV_CODE: checktime fail\n";
+         [[maybe_unused]] auto r = write(STDERR_FILENO, msg, sizeof(msg)-1);
          siglongjmp(*cb_in_main_segment->jmp, COREVMOC_EXIT_CHECKTIME_FAIL);
+   }
 
    //was the segfault within data?
    if((uintptr_t)info->si_addr >= cb_in_main_segment->execution_thread_memory_start &&
@@ -242,15 +246,11 @@ void executor::execute(const code_descriptor& code, memory& mem, apply_context& 
 
    context.trx_context.transaction_timer.set_expiration_callback([](void* user) {
       executor* self = (executor*)user;
+      // Diagnostic: write is async-signal-safe, will appear in node's stderr
+      static const char msg[] = "OC_TIMER_EXPIRED: mprotect(PROT_NONE)\n";
+      [[maybe_unused]] auto r = write(STDERR_FILENO, msg, sizeof(msg)-1);
       syscall(SYS_mprotect, self->code_mapping, self->code_mapping_size, PROT_NONE);
 #ifdef __aarch64__
-      // After mprotect(PROT_NONE), the kernel updates page tables and broadcasts
-      // TLB invalidations (TLBI + DSB ISH). Under some ARM64 hypervisors the
-      // invalidation may not immediately reach the vCPU executing WASM code,
-      // allowing it to continue via stale TLB entries. Issue DSB ISH (ensure
-      // all prior cache/TLB maintenance is visible to all cores) followed by
-      // ISB (synchronize the instruction stream on this core) to tighten the
-      // window. This is async-signal-safe (pure instructions, no library calls).
       asm volatile("dsb ish\n\tisb" ::: "memory");
 #endif
       self->mapping_is_executable = false;
