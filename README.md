@@ -1,17 +1,30 @@
 # Anvo Network Core
 
-> **[What's New in Anvo Core](WHATS_NEW.md)** — Breaking changes, CDT 5.x compatibility, and migration guide
+> **[v0.1.0-alpha released](https://github.com/AnvoIO/core/releases/tag/v0.1.0-alpha)** — Ubuntu 24.04 packages for x86_64 and ARM64
 
-High-performance Layer 1 blockchain node software. A fork of [Spring](https://github.com/AntelopeIO/spring) (Antelope/EOSIO) rebranded for Anvo Network, featuring Savanna consensus -- a HotStuff-based BFT protocol delivering 2-3 second finality. Full smart contract compatibility with existing EOSIO chains; no recompilation required.
+High-performance Layer 1 blockchain node software. A fork of [Spring](https://github.com/AntelopeIO/spring) (Antelope/EOSIO) rebranded for Anvo Network, featuring Savanna consensus — a HotStuff-based BFT protocol delivering 2-3 second finality. Full smart contract compatibility with existing EOSIO chains; no recompilation required.
 
 ## Key Features
 
 - **Savanna consensus** with BLS12-381 finality (HotStuff-based BFT)
-- **WASM smart contract runtime** -- interpreter and JIT execution
-- **Full EOSIO contract compatibility** -- existing contracts run unmodified, no recompilation needed
-- **Genesis-configurable system accounts** -- deploy with `core.*` or `eosio.*` prefixes
-- **Plugin-based architecture** -- 22+ plugins for modular node configuration
-- **REST API infrastructure** for chain interaction and monitoring
+- **WASM smart contract runtime** — interpreter, JIT, and VM OC (Optimized Compiler) on both x86_64 and ARM64
+- **Native AArch64 support** — full test parity on ARM64 including VM OC with LLVM-based tier-up
+- **Full EOSIO contract compatibility** — existing contracts run unmodified, `eosio::` namespace aliases maintained
+- **Genesis-configurable system accounts** — deploy with `core.*` or `eosio.*` prefixes
+- **Modernized dependencies** — Boost 1.90, secp256k1 v0.7.1, BoringSSL Feb 2026, musl 1.2.5 (CDT)
+- **Plugin-based architecture** — 22+ plugins for modular node configuration
+
+## Install
+
+Ubuntu 24.04 `.deb` packages for x86_64 and ARM64 are available from the [releases page](https://github.com/AnvoIO/core/releases):
+
+```bash
+# x86_64
+sudo apt install ./anvo-core_0.1.0-alpha-ubuntu24.04_amd64.deb
+
+# ARM64
+sudo apt install ./anvo-core_0.1.0-alpha-ubuntu24.04_arm64.deb
+```
 
 ## Executables
 
@@ -19,29 +32,27 @@ High-performance Layer 1 blockchain node software. A fork of [Spring](https://gi
 |---|---|
 | `core_netd` | Blockchain node daemon. Runs the chain, processes blocks, and serves API requests. |
 | `core-cli` | Command-line interface for interacting with the node (transactions, queries, account management). |
-| `core-wallet` | Key management and transaction signing daemon (keosd replacement). |
+| `core-wallet` | Key management and transaction signing daemon. |
 | `core-util` | Blockchain utility tools: block log operations, snapshots, BLS key generation. |
 
-## Quick Start
-
-### Build from Source
+## Build from Source
 
 ```bash
-git clone --recursive https://github.com/Anvo-Network/core.git
+git clone --recursive https://github.com/AnvoIO/core.git
 cd core
-mkdir build && cd build
-cmake -DENABLE_OC=OFF -DCMAKE_BUILD_TYPE=Release ..
-make -j$(nproc)
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr \
+      -DLLVM_DIR=/usr/lib/llvm-14/lib/cmake/llvm -GNinja
+cmake --build build
+sudo cmake --install build
 ```
-
-> **Note:** `-DENABLE_OC=OFF` disables the OC tier compiler, which requires LLVM 7-11. The OC dependency is being modernized to support current LLVM versions. Interpreter and JIT modes remain fully functional without it.
 
 ### Build Requirements
 
-- C++20 compiler and standard library
+- Ubuntu 24.04 (primary) or 22.04
+- GCC 13+ (C++20)
 - CMake 3.16+
-- libcurl 7.40.0+
-- git, GMP, Python 3, python3-numpy, zlib
+- LLVM 14–19
+- libcurl, libgmp, zstd, python3-numpy, zlib
 
 ### Verify Installation
 
@@ -51,33 +62,49 @@ core_netd --full-version
 
 ## Supported Platforms
 
-| Platform | Status | Tested With |
+| Platform | Architecture | Status |
 |---|---|---|
-| Ubuntu 24.04 Noble | Primary | GCC 13.3, CMake 3.28 |
-| Ubuntu 22.04 Jammy | Supported | GCC 11+ |
-| Other Linux distributions | Best-effort | -- |
+| Ubuntu 24.04 Noble | x86_64 | Primary — CI tested, packages available |
+| Ubuntu 24.04 Noble | ARM64 (AArch64) | Primary — CI tested, packages available |
+| Ubuntu 22.04 Jammy | x86_64 | Supported |
+| Other Linux | — | Best-effort |
 
 ## Genesis Configuration
 
-New chains can configure system account names via the `system_account_prefix` field in `genesis.json`. Setting the prefix to `core` produces system accounts like `core.token`, `core.msig`, etc. Setting it to `eosio` (or omitting) preserves standard EOSIO account names for backward compatibility.
+New chains configure system account names via `system_account_prefix` in `genesis.json`:
 
-See the `_research/` directory for detailed documentation.
+```json
+{
+  "initial_timestamp": "2026-01-01T00:00:00.000",
+  "initial_key": "PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV",
+  "system_account_prefix": "core"
+}
+```
+
+- `"core"` — system accounts are `core`, `core.token`, `core.msig`, etc.
+- Omitted — defaults to `eosio` for backward compatibility with existing chains
 
 ## EOSIO Compatibility
 
 Anvo Network maintains full backward compatibility with existing EOSIO smart contracts:
 
-- **WASM intrinsics** are dual-registered under both names (`eosio_assert` and `core_net_assert`), so contracts compiled for either convention execute correctly.
-- **ABI version strings** are accepted in both `eosio::abi/1.x` and `core_net::abi/1.x` formats.
-- **System contracts** compiled for `eosio.*` accounts work without modification when the genesis is configured with the `eosio` prefix.
+- **C++ namespace aliases** — `eosio::` is aliased to `core_net::` throughout; existing code compiles without changes
+- **WASM intrinsics** are dual-registered (`eosio_assert` / `core_net_assert`), so contracts compiled for either convention execute correctly
+- **ABI version strings** accepted in both `eosio::abi/1.x` and `core_net::abi/1.x` formats
+- **Key formats** — modern `PUB_K1_`/`PVT_K1_`/`SIG_K1_` is the default output; legacy `EOS`-prefixed keys are accepted as input everywhere
 
-No contract recompilation is needed to migrate from an EOSIO-based chain.
+All new development is in the `core_net::` namespace. The `eosio::` aliases are frozen — maintained for compatibility but will not receive new additions.
 
 ## License
 
-[Business Source License 1.1](LICENSE) (BSL 1.1). Source-available; converts to Apache License 2.0 after 3 years. See the `LICENSE` file for full terms.
+[Business Source License 1.1](LICENSE) (BSL 1.1). Existing EOSIO/Antelope chains are expressly permitted to adopt this codebase. Converts to Apache License 2.0 three years after v1.0.0. See [LICENSE](LICENSE) for full terms.
+
+## Community
+
+We welcome collaboration — reach out at **community@anvo.io**.
 
 ## Links
 
-- **GitHub:** https://github.com/Anvo-Network/core
-- **Research docs:** [`_research/`](_research/) directory
+- **Releases:** https://github.com/AnvoIO/core/releases
+- **CDT (Contract Development Toolkit):** https://github.com/AnvoIO/cdt
+- **Issue tracker:** https://github.com/AnvoIO/core/issues
