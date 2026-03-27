@@ -1,53 +1,77 @@
-name: Release Actions
+name: Build Release Packages
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'v*'
 
 jobs:
-  eb:
-    name: experimental-binaries
+  build-packages:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            artifact: ubuntu24-x86_64
+          - os: ubuntu-24.04-arm
+            artifact: ubuntu24-arm64
+    name: Package ${{ matrix.artifact }}
+    runs-on: ${{ matrix.os }}
+    container: ubuntu:noble
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      TZ: Etc/UTC
+    steps:
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get upgrade -y && apt-get install -y \
+            build-essential cmake git jq libcurl4-openssl-dev libgmp-dev \
+            llvm-14-dev libzstd-dev ninja-build python3-numpy file zlib1g-dev dpkg-dev
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build
+        run: |
+          chown -R $(id -u):$(id -g) $PWD
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DLLVM_DIR=/usr/lib/llvm-14/lib/cmake/llvm -GNinja
+          cmake --build build
+      - name: Package
+        run: |
+          cd build
+          cpack -G DEB
+          cpack -G TZST
+          echo "=== Built packages ==="
+          ls -la *.deb *.tar.zst 2>/dev/null || true
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ matrix.artifact }}
+          path: |
+            build/*.deb
+            build/*.tar.zst
+
+  create-release:
+    name: Create Release
+    needs: build-packages
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
-      actions: read
+      contents: write
     steps:
-      - name: Get ubuntu24 antelope-spring-dev.deb
-        uses: AntelopeIO/asset-artifact-download-action@v3
+      - name: Download all packages
+        uses: actions/download-artifact@v4
         with:
-          owner: ${{github.repository_owner}}
-          repo: ${{github.event.repository.name}}
-          file: 'antelope-spring-dev.*amd64.deb'
-          target: ${{github.sha}}
-          artifact-name: antelope-spring-dev-ubuntu24-amd64
-          wait-for-exact-target: true
-      - name: Get ubuntu22 antelope-spring-dev.deb
-        uses: AntelopeIO/asset-artifact-download-action@v3
-        with:
-          owner: ${{github.repository_owner}}
-          repo: ${{github.event.repository.name}}
-          file: 'antelope-spring-dev.*amd64.deb'
-          target: ${{github.sha}}
-          artifact-name: antelope-spring-dev-ubuntu22-amd64
-          wait-for-exact-target: true
-      - name: Create Dockerfile
+          path: packages
+          merge-multiple: false
+      - name: Collect packages
         run: |
-          cat <<EOF > Dockerfile
-          FROM scratch
-          LABEL org.opencontainers.image.description="A collection of experimental Spring binary packages"
-          COPY *.deb /
-          EOF
-      - name: Login to ghcr
-        uses: docker/login-action@v3
+          mkdir -p release
+          find packages -name '*.deb' -o -name '*.tar.zst' | while read f; do
+            cp "$f" release/
+          done
+          echo "=== Release artifacts ==="
+          ls -la release/
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          registry: ghcr.io
-          username: ${{github.repository_owner}}
-          password: ${{github.token}}
-      - run: echo "REPOSITORY_OWNER_LOWER=${GITHUB_REPOSITORY_OWNER,,}" >> "${GITHUB_ENV}"
-      - name: Build and push antelope-spring-experimental-binaries
-        uses: docker/build-push-action@v5
-        with:
-          push: true
-          tags: ghcr.io/${{env.REPOSITORY_OWNER_LOWER}}/antelope-spring-experimental-binaries:${{github.ref_name}}
-          context: .
+          files: release/*
+          prerelease: true
+          generate_release_notes: true
