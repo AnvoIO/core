@@ -1318,55 +1318,114 @@ namespace core_net { namespace vm {
          emit_i32_binop(0x1B007C00);
       }
 
+      // Helper: emit unconditional branch to fpe_handler (integer trap).
+      void emit_fpe_trap() {
+         void* br = code;
+         emit_a64(0x14000000); // b fpe_handler
+         fix_branch(br, fpe_handler);
+      }
+
       void emit_i32_div_s() {
-         // SDIV Wd, Wn, Wm = 0x1AC00C00
-         emit_i32_binop(0x1AC00C00);
+         // AArch64 SDIV returns 0 on div-by-zero (no trap) and doesn't trap
+         // on INT32_MIN / -1 overflow. WASM requires both to trap.
+         emit_a64(0xA8C17FEA); // ldp x10, xzr, [sp], #16  (pop rhs)
+         emit_a64(0xA8C17FE9); // ldp x9, xzr, [sp], #16   (pop lhs)
+         // Trap if divisor == 0
+         void* zero_check = code;
+         emit_a64(0x34000000 | 10); // cbz w10, ZERO_TRAP
+         emit_a64(0xD503201F);      // nop (long branch slot)
+         // Check for INT32_MIN / -1 overflow
+         emit_a64(0x3100055F); // cmn w10, #1  (w10 == -1?)
+         void* not_neg1 = code;
+         emit_a64(0x54000001); // b.ne OK
+         emit_a64(0xD503201F); // nop (long branch slot)
+         // w10 == -1: trap if w9 == INT32_MIN
+         // adds wzr, w9, w9 sets overflow flag V iff w9 == INT32_MIN
+         emit_a64(0x2B09013F); // adds wzr, w9, w9
+         void* no_overflow = code;
+         emit_a64(0x54000007); // b.vc OK
+         emit_a64(0xD503201F); // nop (long branch slot)
+         emit_fpe_trap();
+         // OK:
+         fix_branch(no_overflow, code);
+         fix_branch(not_neg1, code);
+         emit_a64(0x1AC00C00 | (10 << 16) | (9 << 5) | 9); // sdiv w9, w9, w10
+         emit_a64(0xA9BF7FE9); // push x9
+         void* done = code;
+         emit_a64(0x14000000); // b END
+         // ZERO_TRAP:
+         fix_branch(zero_check, code);
+         emit_fpe_trap();
+         // END:
+         fix_branch(done, code);
       }
 
       void emit_i32_div_u() {
-         // UDIV Wd, Wn, Wm = 0x1AC00800
-         emit_i32_binop(0x1AC00800);
+         emit_a64(0xA8C17FEA); // pop rhs -> x10
+         emit_a64(0xA8C17FE9); // pop lhs -> x9
+         // Trap if divisor == 0
+         void* zero_check = code;
+         emit_a64(0x34000000 | 10); // cbz w10, ZERO_TRAP
+         emit_a64(0xD503201F);      // nop (long branch slot)
+         emit_a64(0x1AC00800 | (10 << 16) | (9 << 5) | 9); // udiv w9, w9, w10
+         emit_a64(0xA9BF7FE9); // push x9
+         void* done = code;
+         emit_a64(0x14000000); // b END
+         // ZERO_TRAP:
+         fix_branch(zero_check, code);
+         emit_fpe_trap();
+         // END:
+         fix_branch(done, code);
       }
 
       void emit_i32_rem_s() {
-         // Pop rhs (x10), pop lhs (x9)
-         emit_a64(0xA8C17FEA); // ldp x10, xzr, [sp], #16
-         emit_a64(0xA8C17FE9); // ldp x9, xzr, [sp], #16
-         // Handle -1 divisor to avoid overflow: if rhs == -1, result = 0
-         // cmn w10, #1  (compare w10 with -1, i.e. add w10, 1 and check Z)
-         emit_a64(0x3100055F);
-         // b.ne NORMAL
+         emit_a64(0xA8C17FEA); // pop rhs -> x10
+         emit_a64(0xA8C17FE9); // pop lhs -> x9
+         // Trap if divisor == 0
+         void* zero_check = code;
+         emit_a64(0x34000000 | 10); // cbz w10, ZERO_TRAP
+         emit_a64(0xD503201F);      // nop (long branch slot)
+         // Handle -1 divisor: rem(x, -1) == 0 for all x (avoids INT32_MIN overflow)
+         emit_a64(0x3100055F); // cmn w10, #1
          void* normal = code;
-         emit_a64(0x54000001); // b.ne placeholder
-         // Result is 0 for rem -1
-         // mov w9, #0
-         emit_a64(0x52800009);
-         // b END
+         emit_a64(0x54000001); // b.ne NORMAL
+         emit_a64(0xD503201F); // nop (long branch slot)
+         emit_a64(0x52800009); // mov w9, #0
          void* end = code;
-         emit_a64(0x14000000); // b placeholder
+         emit_a64(0x14000000); // b END
          // NORMAL:
          fix_branch(normal, code);
-         // sdiv w11, w9, w10 = 0x1AC00C00 | (10<<16) | (9<<5) | 11
-         emit_a64(0x1AC00C00 | (10 << 16) | (9 << 5) | 11);
-         // msub w9, w11, w10, w9  = w9 = w9 - w11*w10
-         // MSUB Wd, Wn, Wm, Wa = 0x1B008000 | (Wm<<16) | (Wa<<10) | (Wn<<5) | Wd
-         emit_a64(0x1B008000 | (10 << 16) | (9 << 10) | (11 << 5) | 9);
+         emit_a64(0x1AC00C00 | (10 << 16) | (9 << 5) | 11); // sdiv w11, w9, w10
+         emit_a64(0x1B008000 | (10 << 16) | (9 << 10) | (11 << 5) | 9); // msub w9, w11, w10, w9
          // END:
          fix_branch(end, code);
-         // stp x9, xzr, [sp, #-16]!
-         emit_a64(0xA9BF7FE9);
+         emit_a64(0xA9BF7FE9); // push x9
+         void* done = code;
+         emit_a64(0x14000000); // b DONE
+         // ZERO_TRAP:
+         fix_branch(zero_check, code);
+         emit_fpe_trap();
+         // DONE:
+         fix_branch(done, code);
       }
 
       void emit_i32_rem_u() {
-         // Pop rhs (x10), pop lhs (x9)
-         emit_a64(0xA8C17FEA); // ldp x10, xzr, [sp], #16
-         emit_a64(0xA8C17FE9); // ldp x9, xzr, [sp], #16
-         // udiv w11, w9, w10
-         emit_a64(0x1AC00800 | (10 << 16) | (9 << 5) | 11);
-         // msub w9, w11, w10, w9
-         emit_a64(0x1B008000 | (10 << 16) | (9 << 10) | (11 << 5) | 9);
-         // stp x9, xzr, [sp, #-16]!
-         emit_a64(0xA9BF7FE9);
+         emit_a64(0xA8C17FEA); // pop rhs -> x10
+         emit_a64(0xA8C17FE9); // pop lhs -> x9
+         // Trap if divisor == 0
+         void* zero_check = code;
+         emit_a64(0x34000000 | 10); // cbz w10, ZERO_TRAP
+         emit_a64(0xD503201F);      // nop (long branch slot)
+         emit_a64(0x1AC00800 | (10 << 16) | (9 << 5) | 11); // udiv w11, w9, w10
+         emit_a64(0x1B008000 | (10 << 16) | (9 << 10) | (11 << 5) | 9); // msub w9, w11, w10, w9
+         emit_a64(0xA9BF7FE9); // push x9
+         void* done = code;
+         emit_a64(0x14000000); // b DONE
+         // ZERO_TRAP:
+         fix_branch(zero_check, code);
+         emit_fpe_trap();
+         // DONE:
+         fix_branch(done, code);
       }
 
       void emit_i32_and() {
@@ -1474,52 +1533,101 @@ namespace core_net { namespace vm {
       }
 
       void emit_i64_div_s() {
-         // SDIV Xd, Xn, Xm = 0x9AC00C00
-         emit_i64_binop(0x9AC00C00);
+         emit_a64(0xA8C17FEA); // pop rhs -> x10
+         emit_a64(0xA8C17FE9); // pop lhs -> x9
+         // Trap if divisor == 0 (use x10 width: cbz x10)
+         void* zero_check = code;
+         emit_a64(0xB4000000 | 10); // cbz x10, ZERO_TRAP
+         emit_a64(0xD503201F);      // nop (long branch slot)
+         // Check for INT64_MIN / -1 overflow
+         emit_a64(0xB100055F); // cmn x10, #1  (x10 == -1?)
+         void* not_neg1 = code;
+         emit_a64(0x54000001); // b.ne OK
+         emit_a64(0xD503201F); // nop (long branch slot)
+         // x10 == -1: trap if x9 == INT64_MIN
+         emit_a64(0xAB09013F); // adds xzr, x9, x9  (V set iff x9 == INT64_MIN)
+         void* no_overflow = code;
+         emit_a64(0x54000007); // b.vc OK
+         emit_a64(0xD503201F); // nop (long branch slot)
+         emit_fpe_trap();
+         // OK:
+         fix_branch(no_overflow, code);
+         fix_branch(not_neg1, code);
+         emit_a64(0x9AC00C00 | (10 << 16) | (9 << 5) | 9); // sdiv x9, x9, x10
+         emit_a64(0xA9BF7FE9); // push x9
+         void* done = code;
+         emit_a64(0x14000000); // b END
+         // ZERO_TRAP:
+         fix_branch(zero_check, code);
+         emit_fpe_trap();
+         // END:
+         fix_branch(done, code);
       }
 
       void emit_i64_div_u() {
-         // UDIV Xd, Xn, Xm = 0x9AC00800
-         emit_i64_binop(0x9AC00800);
+         emit_a64(0xA8C17FEA); // pop rhs -> x10
+         emit_a64(0xA8C17FE9); // pop lhs -> x9
+         void* zero_check = code;
+         emit_a64(0xB4000000 | 10); // cbz x10, ZERO_TRAP
+         emit_a64(0xD503201F);      // nop (long branch slot)
+         emit_a64(0x9AC00800 | (10 << 16) | (9 << 5) | 9); // udiv x9, x9, x10
+         emit_a64(0xA9BF7FE9); // push x9
+         void* done = code;
+         emit_a64(0x14000000); // b END
+         // ZERO_TRAP:
+         fix_branch(zero_check, code);
+         emit_fpe_trap();
+         // END:
+         fix_branch(done, code);
       }
 
       void emit_i64_rem_s() {
-         // Pop rhs (x10), pop lhs (x9)
-         emit_a64(0xA8C17FEA); // ldp x10, xzr, [sp], #16
-         emit_a64(0xA8C17FE9); // ldp x9, xzr, [sp], #16
-         // Handle -1 divisor: if rhs == -1, result = 0
-         // cmn x10, #1
-         emit_a64(0xB100055F);
-         // b.ne NORMAL
+         emit_a64(0xA8C17FEA); // pop rhs -> x10
+         emit_a64(0xA8C17FE9); // pop lhs -> x9
+         // Trap if divisor == 0
+         void* zero_check = code;
+         emit_a64(0xB4000000 | 10); // cbz x10, ZERO_TRAP
+         emit_a64(0xD503201F);      // nop (long branch slot)
+         // Handle -1 divisor: rem(x, -1) == 0 for all x
+         emit_a64(0xB100055F); // cmn x10, #1
          void* normal = code;
-         emit_a64(0x54000001); // b.ne placeholder
-         // mov x9, #0
-         emit_a64(0xD2800009);
-         // b END
+         emit_a64(0x54000001); // b.ne NORMAL
+         emit_a64(0xD503201F); // nop (long branch slot)
+         emit_a64(0xD2800009); // mov x9, #0
          void* end = code;
-         emit_a64(0x14000000); // b placeholder
+         emit_a64(0x14000000); // b END
          // NORMAL:
          fix_branch(normal, code);
-         // sdiv x11, x9, x10
-         emit_a64(0x9AC00C00 | (10 << 16) | (9 << 5) | 11);
-         // msub x9, x11, x10, x9
-         emit_a64(0x9B008000 | (10 << 16) | (9 << 10) | (11 << 5) | 9);
+         emit_a64(0x9AC00C00 | (10 << 16) | (9 << 5) | 11); // sdiv x11, x9, x10
+         emit_a64(0x9B008000 | (10 << 16) | (9 << 10) | (11 << 5) | 9); // msub x9, x11, x10, x9
          // END:
          fix_branch(end, code);
-         // stp x9, xzr, [sp, #-16]!
-         emit_a64(0xA9BF7FE9);
+         emit_a64(0xA9BF7FE9); // push x9
+         void* done = code;
+         emit_a64(0x14000000); // b DONE
+         // ZERO_TRAP:
+         fix_branch(zero_check, code);
+         emit_fpe_trap();
+         // DONE:
+         fix_branch(done, code);
       }
 
       void emit_i64_rem_u() {
-         // Pop rhs (x10), pop lhs (x9)
-         emit_a64(0xA8C17FEA);
-         emit_a64(0xA8C17FE9);
-         // udiv x11, x9, x10
-         emit_a64(0x9AC00800 | (10 << 16) | (9 << 5) | 11);
-         // msub x9, x11, x10, x9
-         emit_a64(0x9B008000 | (10 << 16) | (9 << 10) | (11 << 5) | 9);
-         // stp x9, xzr, [sp, #-16]!
-         emit_a64(0xA9BF7FE9);
+         emit_a64(0xA8C17FEA); // pop rhs -> x10
+         emit_a64(0xA8C17FE9); // pop lhs -> x9
+         void* zero_check = code;
+         emit_a64(0xB4000000 | 10); // cbz x10, ZERO_TRAP
+         emit_a64(0xD503201F);      // nop (long branch slot)
+         emit_a64(0x9AC00800 | (10 << 16) | (9 << 5) | 11); // udiv x11, x9, x10
+         emit_a64(0x9B008000 | (10 << 16) | (9 << 10) | (11 << 5) | 9); // msub x9, x11, x10, x9
+         emit_a64(0xA9BF7FE9); // push x9
+         void* done = code;
+         emit_a64(0x14000000); // b DONE
+         // ZERO_TRAP:
+         fix_branch(zero_check, code);
+         emit_fpe_trap();
+         // DONE:
+         fix_branch(done, code);
       }
 
       void emit_i64_and() {
@@ -1946,7 +2054,7 @@ namespace core_net { namespace vm {
          auto target_ = static_cast<uint8_t*>(target);
          intptr_t byte_offset = target_ - branch_;
          // Must be aligned to 4 bytes
-         assert((byte_offset & 0x3) == 0);
+         CORE_NET_VM_ASSERT((byte_offset & 0x3) == 0, wasm_parse_exception, "branch target not 4-byte aligned");
          int32_t instr_offset = static_cast<int32_t>(byte_offset >> 2);
 
          uint32_t instr;
@@ -1955,7 +2063,8 @@ namespace core_net { namespace vm {
          uint32_t op = instr >> 26;
          if (op == 0x05 || op == 0x25) {
             // B (000101) or BL (100101): imm26
-            assert(instr_offset >= -(1 << 25) && instr_offset < (1 << 25));
+            CORE_NET_VM_ASSERT(instr_offset >= -(1 << 25) && instr_offset < (1 << 25),
+                               wasm_parse_exception, "branch target exceeds 26-bit range");
             uint32_t imm26 = static_cast<uint32_t>(instr_offset) & 0x03FFFFFF;
             instr = (instr & 0xFC000000) | imm26;
             memcpy(branch, &instr, 4);
@@ -1969,13 +2078,14 @@ namespace core_net { namespace vm {
             // The emit site reserved a NOP at branch+4. Convert to:
             //   branch:   <inverted_cond> +8   (skip over the long B)
             //   branch+4: B target              (unconditional, 26-bit range)
-            assert(instr_offset >= -(1 << 25) && instr_offset < (1 << 25) &&
-                   "Branch target exceeds even 26-bit range");
+            CORE_NET_VM_ASSERT(instr_offset >= -(1 << 25) && instr_offset < (1 << 25),
+                               wasm_parse_exception, "branch target exceeds even 26-bit range");
 
             // Verify the reserved NOP is present
             uint32_t nop;
             memcpy(&nop, branch_ + 4, 4);
-            assert(nop == 0xD503201F && "Expected reserved NOP at branch+4 for long branch");
+            CORE_NET_VM_ASSERT(nop == 0xD503201F, wasm_parse_exception,
+                               "expected reserved NOP at branch+4 for long branch");
 
             // Invert the condition and branch +8 (skip one instruction)
             uint32_t short_offset_imm19 = 2; // +8 bytes = +2 instructions

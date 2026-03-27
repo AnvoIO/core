@@ -13,20 +13,18 @@ target_include_directories( plugin_test PUBLIC
                             ${CMAKE_SOURCE_DIR}/unittests
                             ${CMAKE_BINARY_DIR}/unittests/include/ )
 
-# Symlink test scripts (.py, .sh, .json) to build dir so edits are reflected
-# immediately without re-running cmake. The p2p_tests subdirectory is handled separately.
+# Copy test scripts (.py, .sh, .json) to build dir.
+# Symlinks break Python's package resolution: Python resolves symlink targets
+# and looks for sibling modules in the source directory, missing generated files
+# like core_symbol.py that only exist in the build directory.
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_CURRENT_BINARY_DIR)
    file(GLOB _test_files RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
         "${CMAKE_CURRENT_SOURCE_DIR}/*.py" "${CMAKE_CURRENT_SOURCE_DIR}/*.sh" "${CMAKE_CURRENT_SOURCE_DIR}/*.json")
    foreach(_f ${_test_files})
-      if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/${_f})
-         file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/${_f} ${CMAKE_CURRENT_BINARY_DIR}/${_f} SYMBOLIC)
-      endif()
+      configure_file(${_f} ${_f} COPYONLY)
    endforeach()
    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/p2p_tests/dawn_515)
-   if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/p2p_tests/dawn_515/test.sh)
-      file(CREATE_LINK ${CMAKE_CURRENT_SOURCE_DIR}/p2p_tests/dawn_515/test.sh ${CMAKE_CURRENT_BINARY_DIR}/p2p_tests/dawn_515/test.sh SYMBOLIC)
-   endif()
+   configure_file(p2p_tests/dawn_515/test.sh p2p_tests/dawn_515/test.sh COPYONLY)
 endif()
 
 if(DEFINED ENV{GITHUB_ACTIONS})

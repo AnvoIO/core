@@ -98,7 +98,8 @@ inline void* array_ptr_impl (size_t ptr, size_t length)
       if((int64_t)end > cb->first_invalid_memory_address) {
          end = cb->first_invalid_memory_address + wasm_constraints::wasm_page_size;
          // trigger SEGV by reading from invalid address (same as x86_64 path)
-         ptr = *(size_t*)((char*)core_vm_oc_getgs() + end);
+         // volatile to prevent the compiler from optimizing away this intentional faulting read
+         ptr = *(volatile size_t*)((char*)core_vm_oc_getgs() + end);
       }
       ptr += (size_t)cb->full_linear_memory_start;
    }

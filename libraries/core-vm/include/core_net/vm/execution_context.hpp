@@ -360,12 +360,12 @@ namespace core_net { namespace vm {
 #ifdef __aarch64__
                constexpr std::size_t stack_slot_size = 16;
                constexpr std::size_t jit_frame_overhead = 48; // stp x29/x30 + call depth check + alignment
-               std::size_t alt_stack_size = maximum_stack_usage * stack_slot_size
-                  + (_remaining_call_depth + 1) * jit_frame_overhead;
 #else
                constexpr std::size_t stack_slot_size = sizeof(native_value);
-               std::size_t alt_stack_size = maximum_stack_usage * stack_slot_size;
+               constexpr std::size_t jit_frame_overhead = 16; // push rbp + return address
 #endif
+               std::size_t alt_stack_size = maximum_stack_usage * stack_slot_size
+                  + (_remaining_call_depth + 1) * jit_frame_overhead;
                stack_allocator alt_stack(alt_stack_size);
                // Reserve space at the top of the alternate stack for data
                // accessed by inline assembly (saved sp, saved FPCR).

@@ -11,10 +11,16 @@ struct test_exception {};
 TEST_CASE("Testing signals", "[invoke_with_signal_handler]") {
    core_net::vm::growable_allocator alloc(1024);
    core_net::vm::wasm_allocator wa;
+   // Trigger a real SIGSEGV by writing to the wasm_allocator's read-only
+   // guard page, so that si_addr falls within memory_range. Using
+   // std::raise(SIGSEGV) does not set si_addr, causing the signal handler
+   // to fall through to SIG_DFL on AArch64.
+   auto mem_span = wa.get_span();
+   volatile char* guard_page = reinterpret_cast<volatile char*>(mem_span.data());
    bool okay = false;
    try {
-      core_net::vm::invoke_with_signal_handler([]() {
-         std::raise(SIGSEGV);
+      core_net::vm::invoke_with_signal_handler([guard_page]() {
+         *guard_page = 0; // write to PROT_READ guard page → SIGSEGV
       }, [](int sig) {
          throw test_exception{};
       }, alloc, &wa);
