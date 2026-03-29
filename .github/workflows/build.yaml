@@ -117,9 +117,13 @@ jobs:
           ctest --output-on-failure -j $(nproc) -LE "nonparallelizable_tests|long_running_tests" --timeout 480
 
   np-tests-x86:
-    name: NP Tests x86_64
+    name: NP Tests x86_64 (${{ matrix.shard }}/8)
     needs: [build-x86]
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     container:
       image: ubuntu:noble
       options: --security-opt seccomp=unconfined
@@ -136,7 +140,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ubuntu24-x86-build
-      - name: Run Non-Parallelizable Tests
+      - name: Run Non-Parallelizable Tests (shard ${{ matrix.shard }})
         env:
           BUILDKITE_COMMIT: ${{ github.sha }}
         run: |
@@ -147,7 +151,7 @@ jobs:
             find build -name 'CTestTestfile.cmake' -exec sed -i "s|$BUILD_SRC|$PWD|g" {} +
           fi
           cd build
-          ctest --output-on-failure -j 1 -L nonparallelizable_tests --timeout 420
+          ctest --output-on-failure -j 1 -L nonparallelizable_tests -I ${{ matrix.shard }},,8 --timeout 420
 
   # ---- ARM64 Tests ----
   tests-arm64:
@@ -185,9 +189,13 @@ jobs:
           ctest --output-on-failure -j 4 -LE "nonparallelizable_tests|long_running_tests" --timeout 480
 
   np-tests-arm64:
-    name: NP Tests ARM64
+    name: NP Tests ARM64 (${{ matrix.shard }}/8)
     needs: [build-arm64]
     runs-on: ubuntu-24.04-arm
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     container:
       image: ubuntu:noble
       options: --security-opt seccomp=unconfined
@@ -204,7 +212,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: ubuntu24-arm64-build
-      - name: Run Non-Parallelizable Tests
+      - name: Run Non-Parallelizable Tests (shard ${{ matrix.shard }})
         env:
           BUILDKITE_COMMIT: ${{ github.sha }}
         run: |
@@ -215,8 +223,7 @@ jobs:
             find build -name 'CTestTestfile.cmake' -exec sed -i "s|$BUILD_SRC|$PWD|g" {} +
           fi
           cd build
-          ctest --output-on-failure -j 1 -L nonparallelizable_tests \
-            --timeout 420
+          ctest --output-on-failure -j 1 -L nonparallelizable_tests -I ${{ matrix.shard }},,8 --timeout 420
 
   # ---- Gate ----
   all-passing:
