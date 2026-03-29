@@ -1484,7 +1484,8 @@ namespace core_net::testing {
          // from full protocol feature list such that existing tests can run.
          if(   f == builtin_protocol_feature_t::disable_deferred_trxs_stage_1
             || f == builtin_protocol_feature_t::disable_deferred_trxs_stage_2
-            || f == builtin_protocol_feature_t::savanna ) { // savanna depends on disable_deferred_trxs_stage_1 & 2
+            || f == builtin_protocol_feature_t::savanna              // savanna depends on disable_deferred_trxs_stage_1 & 2
+            || f == builtin_protocol_feature_t::core_consensus_v2 ) { // core_consensus_v2 also depends on them
             continue;
          }
 

@@ -6473,7 +6473,8 @@ void controller_impl::on_activation<builtin_protocol_feature_t::savanna>() {
 template<>
 void controller_impl::on_activation<builtin_protocol_feature_t::core_consensus_v2>() {
    db.modify( db.get<protocol_state_object>(), [&]( auto& ps ) {
-      add_intrinsic_to_whitelist( ps.whitelisted_intrinsics, "set_finalizers" );
+      if( !is_intrinsic_whitelisted( ps.whitelisted_intrinsics, "set_finalizers" ) )
+         add_intrinsic_to_whitelist( ps.whitelisted_intrinsics, "set_finalizers" );
    } );
 }
 
