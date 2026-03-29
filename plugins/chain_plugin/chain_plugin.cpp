@@ -255,6 +255,7 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
 #endif
 
    wasm_runtime_opt += ")\n" + wasm_runtime_desc;
+   wasm_runtime_opt += "Legacy aliases also accepted: \"eos-vm-jit\", \"eos-vm\", \"eos-vm-oc-forced\".\n";
 
    std::string default_wasm_runtime_str= core_net::chain::wasm_interface::vm_type_string(core_net::chain::config::default_wasm_runtime);
 
