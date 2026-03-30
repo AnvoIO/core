@@ -1,12 +1,12 @@
 # Anvo Network Core
 
-> **[v0.1.0-alpha released](https://github.com/AnvoIO/core/releases/tag/v0.1.0-alpha)** — Ubuntu 24.04 packages for x86_64 and ARM64
+> **[v0.1.1-alpha released](https://github.com/AnvoIO/core/releases/tag/v0.1.1-alpha)** — Ubuntu 24.04 packages for x86_64 and ARM64
 
-High-performance Layer 1 blockchain node software. A fork of [Spring](https://github.com/AntelopeIO/spring) (Antelope/EOSIO) rebranded for Anvo Network, featuring Savanna consensus — a HotStuff-based BFT protocol delivering 2-3 second finality. Full smart contract compatibility with existing EOSIO chains; no recompilation required.
+High-performance Layer 1 blockchain node software. A fork of [Spring](https://github.com/AntelopeIO/spring) (Antelope/EOSIO) rebranded for Anvo Network, featuring BFT consensus with BLS12-381 finality delivering 2-3 second finality. Full smart contract compatibility with existing EOSIO chains; no recompilation required.
 
 ## Key Features
 
-- **Savanna consensus** with BLS12-381 finality (HotStuff-based BFT)
+- **BFT consensus** with BLS12-381 finality (HotStuff-based)
 - **WASM smart contract runtime** — interpreter, JIT, and VM OC (Optimized Compiler) on both x86_64 and ARM64
 - **Native AArch64 support** — full test parity on ARM64 including VM OC with LLVM-based tier-up
 - **Full EOSIO contract compatibility** — existing contracts run unmodified, `eosio::` namespace aliases maintained
@@ -20,11 +20,13 @@ Ubuntu 24.04 `.deb` packages for x86_64 and ARM64 are available from the [releas
 
 ```bash
 # x86_64
-sudo apt install ./anvo-core_0.1.0-alpha-ubuntu24.04_amd64.deb
+sudo apt install ./anvo-core_0.1.1-alpha-ubuntu24.04_amd64.deb
 
 # ARM64
-sudo apt install ./anvo-core_0.1.0-alpha-ubuntu24.04_arm64.deb
+sudo apt install ./anvo-core_0.1.1-alpha-ubuntu24.04_arm64.deb
 ```
+
+For Docker-based deployment with automated configuration, snapshot management, and monitoring, see **[core-node](https://github.com/AnvoIO/core-node)**.
 
 ## Executables
 
@@ -106,5 +108,6 @@ We welcome collaboration — reach out at **community@anvo.io**.
 ## Links
 
 - **Releases:** https://github.com/AnvoIO/core/releases
+- **Node Deployment (Docker):** https://github.com/AnvoIO/core-node
 - **CDT (Contract Development Toolkit):** https://github.com/AnvoIO/cdt
 - **Issue tracker:** https://github.com/AnvoIO/core/issues
