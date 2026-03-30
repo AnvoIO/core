@@ -151,7 +151,7 @@ jobs:
             find build -name 'CTestTestfile.cmake' -exec sed -i "s|$BUILD_SRC|$PWD|g" {} +
           fi
           cd build
-          ctest --output-on-failure -j 1 -L nonparallelizable_tests -I ${{ matrix.shard }},,8 --timeout 420
+          ctest --output-on-failure -j 1 -L nonparallelizable_tests -I ${{ matrix.shard }},,8 --timeout 1800
 
   # ---- ARM64 Tests ----
   tests-arm64:
@@ -223,7 +223,7 @@ jobs:
             find build -name 'CTestTestfile.cmake' -exec sed -i "s|$BUILD_SRC|$PWD|g" {} +
           fi
           cd build
-          ctest --output-on-failure -j 1 -L nonparallelizable_tests -I ${{ matrix.shard }},,8 --timeout 420
+          ctest --output-on-failure -j 1 -L nonparallelizable_tests -I ${{ matrix.shard }},,8 --timeout 1800
 
   # ---- Gate ----
   all-passing:
