@@ -377,8 +377,9 @@ class Transactions(NodeosQueries):
             for spec in protocolFeature["specification"]:
                 if (spec["name"] == "builtin_feature_codename"):
                     codename = spec["value"]
-                    # Filter out "PREACTIVATE_FEATURE"
-                    if codename != "PREACTIVATE_FEATURE":
+                    # Filter out "PREACTIVATE_FEATURE" (activated separately) and CORE_* variants
+                    # (mutually exclusive with their upstream equivalents — only used on new Core chains)
+                    if codename != "PREACTIVATE_FEATURE" and not codename.startswith("CORE_"):
                         protocolFeatures[protocolFeature["feature_digest"]] = protocolFeature["dependencies"]
                     break
         return dep(protocolFeatures)

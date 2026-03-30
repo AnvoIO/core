@@ -145,14 +145,19 @@ class PluginHttpTest(unittest.TestCase):
         # activate the builtin protocol features and get some useful data
         self.activateAllBuiltinProtocolFeatures()
         allProtocolFeatures = self.nodeos.getSupportedProtocolFeatures()
-        allFeatureDigests = [d['feature_digest'] for d in allProtocolFeatures["payload"]]
+        # CORE_* features are supported but not activated in standard tests
+        # (they are mutually exclusive with their upstream equivalents). Filter them out.
+        allFeatureDigests = []
         allFeatureCodenames = []
         for s in allProtocolFeatures["payload"]:
-           if 'specification' in s and len(s['specification']) > 0 and 'name' in s['specification'][0] and s['specification'][0]['name'] == 'builtin_feature_codename':
-              allFeatureCodenames.append(s['specification'][0]['value'])
+            codename = ""
+            if 'specification' in s and len(s['specification']) > 0 and 'name' in s['specification'][0] and s['specification'][0]['name'] == 'builtin_feature_codename':
+                codename = s['specification'][0]['value']
+            if codename.startswith("CORE_"):
+                continue
+            allFeatureDigests.append(s["feature_digest"])
+            allFeatureCodenames.append(codename)
         self.assertEqual(len(allFeatureDigests), len(allFeatureCodenames))
-
-        # Actual expected activated features total
         ACT_FEATURE_CURRENT_EXPECTED_TOTAL = len(allFeatureCodenames)
 
         # get_consensus_parameters without parameter

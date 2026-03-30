@@ -1459,6 +1459,12 @@ namespace core_net::testing {
    std::vector<builtin_protocol_feature_t> base_tester::get_all_builtin_protocol_features() {
       std::vector<builtin_protocol_feature_t> builtins;
       for( const auto& f : builtin_protocol_feature_codenames ) {
+         // Skip CORE_* features — they are mutually exclusive with their upstream
+         // equivalents (e.g. CORE_CONSENSUS_V2 vs SAVANNA) and only used on new Core chains.
+         if( f.first == builtin_protocol_feature_t::core_fix_linkauth_restriction ||
+             f.first == builtin_protocol_feature_t::core_forward_setcode ||
+             f.first == builtin_protocol_feature_t::core_consensus_v2 )
+            continue;
          builtins.push_back( f.first );
       }
 
