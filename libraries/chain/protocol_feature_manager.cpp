@@ -1047,6 +1047,21 @@ host function call will trigger a transition to the BFT consensus algorithm.
 
             if( !f ) continue;
 
+            // Validate the description_digest against the builtin codename map.
+            // Stale JSON files from prior versions may have wrong digests.
+            auto builtin_itr = builtin_protocol_feature_codenames.find( f->get_codename() );
+            if( builtin_itr != builtin_protocol_feature_codenames.end() &&
+                f->description_digest != builtin_itr->second.description_digest ) {
+               wlog( "Protocol feature '${codename}' in ${path} has stale description_digest "
+                     "${file_digest} (expected ${expected_digest}). Removing file so it will be regenerated.",
+                     ("codename", builtin_protocol_feature_codename(f->get_codename()))
+                     ("path", file_path)
+                     ("file_digest", f->description_digest)
+                     ("expected_digest", builtin_itr->second.description_digest) );
+               std::filesystem::remove( file_path );
+               continue;
+            }
+
             auto res = found_builtin_protocol_features.emplace( f->get_codename(), file_path );
 
             EOS_ASSERT( res.second, plugin_exception,
