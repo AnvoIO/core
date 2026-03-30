@@ -101,9 +101,25 @@ struct corevmoc_tier {
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          if(corevmoc_tierup != wasm_interface::vm_oc_enable::oc_none) {
             EOS_ASSERT(vm != wasm_interface::vm_type::core_vm_oc, wasm_exception, "You can't use Core VM OC as the base runtime when tier up is activated");
-            corevmoc = std::make_unique<corevmoc_tier>(data_dir, corevmoc_config, d, [this](boost::asio::io_context& ctx, const digest_type& code_id, fc::time_point queued_time) {
-               async_compile_complete(ctx, code_id, queued_time);
-            });
+            try {
+               corevmoc = std::make_unique<corevmoc_tier>(data_dir, corevmoc_config, d, [this](boost::asio::io_context& ctx, const digest_type& code_id, fc::time_point queued_time) {
+                  async_compile_complete(ctx, code_id, queued_time);
+               });
+            } catch(const fc::exception& e) {
+               if(corevmoc_tierup == wasm_interface::vm_oc_enable::oc_auto) {
+                  wlog("VM OC tier-up disabled due to initialization failure: ${m}", ("m", e.to_detail_string()));
+                  corevmoc_tierup = wasm_interface::vm_oc_enable::oc_none;
+               } else {
+                  throw;
+               }
+            } catch(const std::exception& e) {
+               if(corevmoc_tierup == wasm_interface::vm_oc_enable::oc_auto) {
+                  wlog("VM OC tier-up disabled due to initialization failure: ${m}", ("m", e.what()));
+                  corevmoc_tierup = wasm_interface::vm_oc_enable::oc_none;
+               } else {
+                  throw;
+               }
+            }
          }
 #endif
       }

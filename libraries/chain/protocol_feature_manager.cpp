@@ -65,12 +65,12 @@ Also allows a contract to send a deferred transaction in a manner that enables t
          } )
          (  builtin_protocol_feature_t::fix_linkauth_restriction, builtin_protocol_feature_spec{
             "FIX_LINKAUTH_RESTRICTION",
-            fc::variant("414ed72762a15b045bc1d7fc774314b3828cd87c0acb182eb662b3d6fc4d1288").as<digest_type>(),
+            fc::variant("a98241c83511dc86c857221b9372b4aa7cea3aaebc567a48604e1d3db3557050").as<digest_type>(),
             // SHA256 hash of the raw message below within the comment delimiters (exclude newline after /*) (do not modify message below).
 /*
 Builtin protocol feature: FIX_LINKAUTH_RESTRICTION
 
-Removes the restriction on core_net::linkauth for non-native actions named one of the five special action names:
+Removes the restriction on eosio::linkauth for non-native actions named one of the five special action names:
 updateauth, deleteauth, linkauth, unlinkauth, or canceldelay.
 */
             {}
@@ -112,12 +112,12 @@ Adds CPU and network bandwidth usage to only the first authorizer of a transacti
          } )
          (  builtin_protocol_feature_t::forward_setcode, builtin_protocol_feature_spec{
             "FORWARD_SETCODE",
-            fc::variant("aa88176806ba864700b6f2b7e32f59993644ebc25a04fd70c113a2fbd5aadd9e").as<digest_type>(),
+            fc::variant("898082c59f921d0042e581f00a59d5ceb8be6f1d9c7a45b6f07c0e26eaee0222").as<digest_type>(),
             // SHA256 hash of the raw message below within the comment delimiters (exclude newline after /*) (do not modify message below).
 /*
 Builtin protocol feature: FORWARD_SETCODE
 
-Forward core_net::setcode actions to the WebAssembly code deployed on the eosio account.
+Forward eosio::setcode actions to the WebAssembly code deployed on the eosio account.
 */
             {}
          } )
@@ -348,6 +348,86 @@ host function call will trigger a transition to the Savanna consensus algorithm.
               builtin_protocol_feature_t::restrict_action_to_self,
               builtin_protocol_feature_t::only_bill_first_authorizer,
               builtin_protocol_feature_t::forward_setcode,
+              builtin_protocol_feature_t::get_sender,
+              builtin_protocol_feature_t::ram_restrictions,
+              builtin_protocol_feature_t::webauthn_key,
+              builtin_protocol_feature_t::wtmsig_block_signatures,
+              builtin_protocol_feature_t::action_return_value,
+              builtin_protocol_feature_t::configurable_wasm_limits,
+              builtin_protocol_feature_t::blockchain_parameters,
+              builtin_protocol_feature_t::get_code_hash,
+              builtin_protocol_feature_t::crypto_primitives,
+              builtin_protocol_feature_t::get_block_num,
+              builtin_protocol_feature_t::bls_primitives,
+              builtin_protocol_feature_t::disable_deferred_trxs_stage_1,
+              builtin_protocol_feature_t::disable_deferred_trxs_stage_2
+            }
+         } )
+         // core_net:: namespace variants of features whose descriptions reference eosio::
+         // These produce different digests and are activated on new Core chains.
+         (  builtin_protocol_feature_t::core_fix_linkauth_restriction, builtin_protocol_feature_spec{
+            "CORE_FIX_LINKAUTH_RESTRICTION",
+            fc::variant("3e70906f376e34d9db76e73d1184533ab29201ede51c9c465cc778dc5a37051e").as<digest_type>(),
+            // SHA256 hash of the raw message below within the comment delimiters (exclude newline after /*) (do not modify message below).
+/*
+Builtin protocol feature: CORE_FIX_LINKAUTH_RESTRICTION
+
+Removes the restriction on core_net::linkauth for non-native actions named one of the five special action names:
+updateauth, deleteauth, linkauth, unlinkauth, or canceldelay.
+*/
+            {}
+         } )
+         (  builtin_protocol_feature_t::core_forward_setcode, builtin_protocol_feature_spec{
+            "CORE_FORWARD_SETCODE",
+            fc::variant("fa262d23cb94172f567cb105aca475be4e4dcbf1474a77b26582f9674de1f8e3").as<digest_type>(),
+            // SHA256 hash of the raw message below within the comment delimiters (exclude newline after /*) (do not modify message below).
+/*
+Builtin protocol feature: CORE_FORWARD_SETCODE
+
+Forward core_net::setcode actions to the WebAssembly code deployed on the eosio account.
+*/
+            {}
+         } )
+         (  builtin_protocol_feature_t::core_consensus_v2, builtin_protocol_feature_spec{
+            "CORE_CONSENSUS_V2",
+            fc::variant("b0704e4531694629967c8be65580c9bea1f4cf7b5d79583ee4b363abfa728355").as<digest_type>(),
+            // SHA256 hash of the raw message below within the comment delimiters (exclude newline after /*) (do not modify message below).
+/*
+Builtin protocol feature: CORE_CONSENSUS_V2
+Depends on all previous protocol features:
+            ONLY_LINK_TO_EXISTING_PERMISSION
+            REPLACE_DEFERRED
+            NO_DUPLICATE_DEFERRED_ID
+            CORE_FIX_LINKAUTH_RESTRICTION
+            DISALLOW_EMPTY_PRODUCER_SCHEDULE
+            RESTRICT_ACTION_TO_SELF
+            ONLY_BILL_FIRST_AUTHORIZER
+            CORE_FORWARD_SETCODE
+            GET_SENDER
+            RAM_RESTRICTIONS
+            WEBAUTHN_KEY
+            WTMSIG_BLOCK_SIGNATURES
+            ACTION_RETURN_VALUE
+            CONFIGURABLE_WASM_LIMITS2
+            BLOCKCHAIN_PARAMETERS
+            GET_CODE_HASH
+            CRYPTO_PRIMITIVES
+            GET_BLOCK_NUM
+            BLS_PRIMITIVES2
+            DISABLE_DEFERRED_TRXS_STAGE_1
+            DISABLE_DEFERRED_TRXS_STAGE_2
+
+Once this protocol feature is activated, the first subsequent block including a `set_finalizers`
+host function call will trigger a transition to the BFT consensus algorithm.
+*/
+            { builtin_protocol_feature_t::only_link_to_existing_permission,
+              builtin_protocol_feature_t::replace_deferred,
+              builtin_protocol_feature_t::no_duplicate_deferred_id,
+              builtin_protocol_feature_t::core_fix_linkauth_restriction,
+              builtin_protocol_feature_t::disallow_empty_producer_schedule,
+              builtin_protocol_feature_t::restrict_action_to_self,
+              builtin_protocol_feature_t::only_bill_first_authorizer,
+              builtin_protocol_feature_t::core_forward_setcode,
               builtin_protocol_feature_t::get_sender,
               builtin_protocol_feature_t::ram_restrictions,
               builtin_protocol_feature_t::webauthn_key,

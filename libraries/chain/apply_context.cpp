@@ -97,6 +97,7 @@ void apply_context::exec_one()
                         && act->name == "setcode"_n
                         && receiver == config::system_account_name() )
                      || control.is_builtin_activated( builtin_protocol_feature_t::forward_setcode )
+                     || control.is_builtin_activated( builtin_protocol_feature_t::core_forward_setcode )
                   )
             ) {
                if( trx_context.enforce_whiteblacklist && control.is_speculative_block() ) {

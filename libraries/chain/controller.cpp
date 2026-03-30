@@ -1368,6 +1368,7 @@ struct controller_impl {
       set_activation_handler<builtin_protocol_feature_t::bls_primitives>();
       set_activation_handler<builtin_protocol_feature_t::disable_deferred_trxs_stage_2>();
       set_activation_handler<builtin_protocol_feature_t::savanna>();
+      set_activation_handler<builtin_protocol_feature_t::core_consensus_v2>();
 
       irreversible_block.connect([this](const block_signal_params& t) {
          const auto& [ block, id] = t;
@@ -6464,8 +6465,22 @@ void controller_impl::on_activation<builtin_protocol_feature_t::disable_deferred
 
 template<>
 void controller_impl::on_activation<builtin_protocol_feature_t::savanna>() {
+   EOS_ASSERT( !is_builtin_activated( builtin_protocol_feature_t::core_consensus_v2 ),
+               protocol_feature_exception,
+               "SAVANNA and CORE_CONSENSUS_V2 are mutually exclusive — cannot activate both on the same chain" );
    db.modify( db.get<protocol_state_object>(), [&]( auto& ps ) {
       add_intrinsic_to_whitelist( ps.whitelisted_intrinsics, "set_finalizers" );
+   } );
+}
+
+template<>
+void controller_impl::on_activation<builtin_protocol_feature_t::core_consensus_v2>() {
+   EOS_ASSERT( !is_builtin_activated( builtin_protocol_feature_t::savanna ),
+               protocol_feature_exception,
+               "CORE_CONSENSUS_V2 and SAVANNA are mutually exclusive — cannot activate both on the same chain" );
+   db.modify( db.get<protocol_state_object>(), [&]( auto& ps ) {
+      if( !is_intrinsic_whitelisted( ps.whitelisted_intrinsics, "set_finalizers" ) )
+         add_intrinsic_to_whitelist( ps.whitelisted_intrinsics, "set_finalizers" );
    } );
 }
 

@@ -39,6 +39,15 @@ enum class builtin_protocol_feature_t : uint32_t {
    disable_deferred_trxs_stage_1 = 22,
    disable_deferred_trxs_stage_2 = 23,
    savanna = 24,
+   // core_net:: namespace variants of features whose descriptions reference eosio::
+   // These produce different digests and are used by new Core chains.
+   // Legacy chains use the original eosio:: variants above.
+   // core_net:: namespace variants of features whose descriptions reference eosio::
+   // These produce different digests and are used by new Core chains.
+   // Legacy chains use the original eosio:: variants above.
+   core_fix_linkauth_restriction = 25,
+   core_forward_setcode = 26,
+   core_consensus_v2 = 27,
    reserved_private_fork_protocol_features = 500000,
 };
 
