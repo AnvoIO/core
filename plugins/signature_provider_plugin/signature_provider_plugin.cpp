@@ -45,9 +45,15 @@ class signature_provider_plugin_impl {
          auto pubkey = chain::public_key_type(pub_key_str);
 
          if(spec_type_str == "KEY") {
-            chain::private_key_type priv(spec_data);
-            EOS_ASSERT(pubkey == priv.get_public_key(), chain::plugin_config_exception, "Private key does not match given public key for ${pub}", ("pub", pubkey));
-            return std::make_pair(pubkey, make_key_signature_provider(priv));
+            try {
+               chain::private_key_type priv(spec_data);
+               EOS_ASSERT(pubkey == priv.get_public_key(), chain::plugin_config_exception, "Private key does not match given public key for ${pub}", ("pub", pubkey));
+               return std::make_pair(pubkey, make_key_signature_provider(priv));
+            } catch( const fc::exception& ) {
+               EOS_THROW(chain::plugin_config_exception, "Invalid private key for public key ${pub}", ("pub", pubkey));
+            } catch( const std::exception& ) {
+               EOS_THROW(chain::plugin_config_exception, "Invalid private key for public key ${pub}", ("pub", pubkey));
+            }
          }
          else if(spec_type_str == "KEOSD")
             return std::make_pair(pubkey, make_core_wallet_signature_provider(spec_data, pubkey));

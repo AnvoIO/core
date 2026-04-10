@@ -82,8 +82,12 @@ namespace fc { namespace crypto {
       fc::sha256 check = fc::sha256::hash(wif_bytes.data(), wif_bytes.size() - 4);
       fc::sha256 check2 = fc::sha256::hash(check);
 
-      FC_ASSERT(memcmp( (char*)&check, wif_bytes.data() + wif_bytes.size() - 4, 4 ) == 0 ||
-                memcmp( (char*)&check2, wif_bytes.data() + wif_bytes.size() - 4, 4 ) == 0 );
+      const char* expected = wif_bytes.data() + wif_bytes.size() - 4;
+      uint32_t c1, c2, e;
+      memcpy(&c1, (const char*)&check, 4);
+      memcpy(&c2, (const char*)&check2, 4);
+      memcpy(&e, expected, 4);
+      FC_ASSERT( c1 == e || c2 == e );
 
       return Data(fc::variant(key_bytes).as<typename Data::data_type>());
    }

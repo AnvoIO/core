@@ -6,7 +6,10 @@
 #include <fc/variant.hpp>
 #include <fc/io/json.hpp>
 
+#include <boost/program_options.hpp>
 #include <chrono>
+
+namespace bpo = boost::program_options;
 
 namespace core_net { namespace detail {
   struct wallet_api_plugin_empty {};
@@ -119,10 +122,17 @@ void wallet_api_plugin::plugin_startup() {
    }, appbase::exec_queue::read_write);
 }
 
+void wallet_api_plugin::set_program_options(options_description& cli, options_description& cfg) {
+   cfg.add_options()
+      ("wallet-allow-network", bpo::bool_switch(&_allow_network)->default_value(false),
+       "Allow wallet API to bind to non-loopback addresses. USE WITH EXTREME CAUTION — passwords and private keys will be transmitted in plaintext.");
+}
+
 void wallet_api_plugin::plugin_initialize(const variables_map& options) {
    try {
       const auto& _http_plugin = app().get_plugin<http_plugin>();
       if( !_http_plugin.is_on_loopback(api_category::node)) {
+         if( !_allow_network ) {
             elog( "\n"
                   "********!!!SECURITY ERROR!!!********\n"
                   "*                                  *\n"
@@ -132,7 +142,16 @@ void wallet_api_plugin::plugin_initialize(const variables_map& options) {
                   "* - Password and/or Private Keys - *\n"
                   "* - are at HIGH risk of exposure - *\n"
                   "*                                  *\n"
+                  "* Pass --wallet-allow-network to   *\n"
+                  "* override this safety check.      *\n"
+                  "*                                  *\n"
                   "************************************\n" );
+            EOS_ASSERT( false, chain::plugin_config_exception,
+                        "Wallet API refuses to bind to non-loopback address without --wallet-allow-network" );
+         } else {
+            wlog( "Wallet API is exposed to the network — --wallet-allow-network is set. "
+                  "Ensure this node is behind a firewall or VPN." );
+         }
       }
    } FC_LOG_AND_RETHROW()
 }

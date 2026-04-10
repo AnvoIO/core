@@ -107,6 +107,8 @@ Options:
 #include "config.hpp"
 #include "httpc.hpp"
 
+#include <sys/stat.h>
+
 using namespace std;
 using namespace core_net;
 using namespace core_net::chain;
@@ -144,7 +146,9 @@ std::filesystem::path determine_home_directory()
       home = pwd->pw_dir;
    }
    else {
-      home = getenv("HOME");
+      const char* home_env = getenv("HOME");
+      if(home_env)
+         home = home_env;
    }
    if(home.empty())
       home = "./";
@@ -2919,11 +2923,14 @@ int main( int argc, char** argv ) {
       auto privs = pk.to_string({});
       auto pubs  = pk.get_public_key().to_string({});
       if (print_console) {
+         std::cerr << localized("WARNING: Keys are being printed to the console. Ensure no one can see your screen.") << std::endl;
          std::cout << localized("Private key: ${key}", ("key",  privs) ) << std::endl;
          std::cout << localized("Public key: ${key}", ("key", pubs ) ) << std::endl;
       } else {
          std::cerr << localized("saving keys to ${filename}", ("filename", key_file)) << std::endl;
+         mode_t old_umask = umask(S_IRWXG | S_IRWXO);
          std::ofstream out( key_file.c_str() );
+         umask(old_umask);
          out << localized("Private key: ${key}", ("key",  privs) ) << std::endl;
          out << localized("Public key: ${key}", ("key", pubs ) ) << std::endl;
       }

@@ -14,6 +14,7 @@
 #include <fc/io/json.hpp>
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/hex.hpp>
+#include <openssl/crypto.h>
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -340,11 +341,11 @@ void soft_wallet::lock()
 { try {
    EOS_ASSERT( !is_locked(), wallet_locked_exception, "Unable to lock a locked wallet" );
    encrypt_keys();
-   for( auto key : my->_keys )
+   for( auto& key : my->_keys )
       key.second = private_key_type();
 
    my->_keys.clear();
-   my->_checksum = fc::sha512();
+   OPENSSL_cleanse(my->_checksum.data(), my->_checksum.data_size());
 } FC_CAPTURE_AND_RETHROW() }
 
 void soft_wallet::unlock(string password)

@@ -55,14 +55,6 @@ int snapshot_actions::run_info() {
 }
 
 int snapshot_actions::run_tojson() {
-   if(!opt->input_file.empty()) {
-      if(!std::filesystem::exists(opt->input_file)) {
-         std::cerr << "cannot load snapshot, " << opt->input_file
-                   << " does not exist" << std::endl;
-         return -1;
-      }
-   }
-
    std::filesystem::path snapshot_path = opt->input_file;
    std::filesystem::path json_path = opt->output_file.empty()
                                ? snapshot_path.generic_string() + ".json"
