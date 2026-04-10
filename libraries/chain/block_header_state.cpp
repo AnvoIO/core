@@ -512,8 +512,12 @@ block_header_state block_header_state::next(const signed_block_header& h, valida
 
    const auto& exts = next_header_state.header_exts;
 
-   // retrieve protocol_feature_activation from incoming block header extension
-   // -------------------------------------------------------------------------
+   // SEC-020: Protocol feature dependency validation occurs here, before any finality extension
+   // processing or proposer/finalizer policy evaluation. The validator (check_protocol_features)
+   // verifies recognition, timing, prior activation, and dependency satisfaction. This is the
+   // earliest practical point where the required context (activated features, protocol feature set)
+   // is available. Structural validation (duplicates, non-empty) happens during deserialization
+   // in protocol_feature_activation::reflector_init() called by validate_and_extract_header_extensions().
    vector<digest_type> new_protocol_feature_activations;
    if (auto  pfa_entry = exts.find(protocol_feature_activation::extension_id()); pfa_entry != exts.end()) {
       auto& pfa_ext   = std::get<protocol_feature_activation>(pfa_entry->second);
