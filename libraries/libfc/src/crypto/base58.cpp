@@ -241,6 +241,7 @@ public:
     unsigned int GetCompact() const
     {
         unsigned int nSize = BN_bn2mpi(bn, NULL);
+        FC_ASSERT(nSize >= 4, "BN_bn2mpi returned unexpected size: ${s}", ("s", nSize));
         std::vector<unsigned char> vch(nSize);
         nSize -= 4;
         BN_bn2mpi(bn, &vch[0]);

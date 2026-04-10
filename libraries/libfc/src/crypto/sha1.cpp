@@ -80,10 +80,14 @@ bool operator < ( const sha1& h1, const sha1& h2 ) {
   return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) < 0;
 }
 bool operator != ( const sha1& h1, const sha1& h2 ) {
-  return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) != 0;
+  return !(h1 == h2);
 }
 bool operator == ( const sha1& h1, const sha1& h2 ) {
-  return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) == 0;
+  return h1._hash[0] == h2._hash[0] &&
+         h1._hash[1] == h2._hash[1] &&
+         h1._hash[2] == h2._hash[2] &&
+         h1._hash[3] == h2._hash[3] &&
+         h1._hash[4] == h2._hash[4];
 }
 
   void to_variant( const sha1& bi, variant& v )

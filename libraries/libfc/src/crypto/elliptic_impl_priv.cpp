@@ -2,6 +2,7 @@
 
 #include <secp256k1.h>
 #include <secp256k1_recovery.h>
+#include <openssl/crypto.h>
 
 #include "_elliptic_impl_priv.hpp"
 
@@ -15,6 +16,11 @@ namespace fc { namespace ecc {
         private_key_impl::private_key_impl( const private_key_impl& cpy ) BOOST_NOEXCEPT
         {
             this->_key = cpy._key;
+        }
+
+        private_key_impl::~private_key_impl() BOOST_NOEXCEPT
+        {
+            OPENSSL_cleanse(_key.data(), _key.data_size());
         }
 
         private_key_impl& private_key_impl::operator=( const private_key_impl& pk ) BOOST_NOEXCEPT

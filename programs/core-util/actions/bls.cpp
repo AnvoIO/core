@@ -6,6 +6,8 @@
 
 #include <boost/program_options.hpp>
 
+#include <sys/stat.h>
+
 using namespace fc::crypto::blslib;
 namespace bpo = boost::program_options;
 using bpo::options_description;
@@ -65,8 +67,18 @@ int bls_actions::create_key() {
       std::cout << out_str;
    } else {
       std::cout << "saving keys to " << opt->key_file << "\n";
+      mode_t old_umask = umask(S_IRWXG | S_IRWXO);
       std::ofstream out( opt->key_file.c_str() );
+      umask(old_umask);
+      if (!out.is_open()) {
+         std::cerr << "ERROR: Failed to open " << opt->key_file << " for writing\n";
+         return -1;
+      }
       out << out_str;
+      if (!out.good()) {
+         std::cerr << "ERROR: Failed to write keys to " << opt->key_file << "\n";
+         return -1;
+      }
    }
 
    return 0;

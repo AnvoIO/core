@@ -4,6 +4,7 @@
 #include <fc/crypto/common.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/crypto/bls_common.hpp>
+#include <openssl/crypto.h>
 
 namespace fc::crypto::blslib {
 
@@ -30,7 +31,9 @@ namespace fc::crypto::blslib {
    bls_private_key bls_private_key::generate() {
       std::vector<uint8_t> v(32);
       rand_bytes(reinterpret_cast<char*>(&v[0]), 32);
-      return bls_private_key(v);
+      bls_private_key key(v);
+      OPENSSL_cleanse(v.data(), v.size());
+      return key;
    }
 
    static std::array<uint64_t, 4> priv_parse_base64url(const std::string& base64urlstr)

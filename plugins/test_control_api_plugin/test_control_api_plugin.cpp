@@ -40,6 +40,16 @@ void test_control_api_plugin::plugin_initialize(const variables_map&) {}
 #define TEST_CONTROL_RW_CALL(call_name, http_response_code, params_type) CALL_WITH_API_400(test_control, rw_api, test_control_apis::read_write, call_name, http_response_code, params_type)
 
 void test_control_api_plugin::plugin_startup() {
+   wlog( "\n"
+         "**********!!!WARNING!!!**********\n"
+         "*                              *\n"
+         "* -- Test Control API loaded -- *\n"
+         "* This plugin exposes endpoints *\n"
+         "* that can TERMINATE this node. *\n"
+         "* Do NOT use in production.     *\n"
+         "*                              *\n"
+         "********************************\n" );
+
    my.reset(new test_control_api_plugin_impl(app().get_plugin<chain_plugin>().chain()));
    auto rw_api = app().get_plugin<test_control_plugin>().get_read_write_api();
 

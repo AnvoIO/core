@@ -64,7 +64,9 @@ std::filesystem::path determine_home_directory()
       home = pwd->pw_dir;
    }
    else {
-      home = getenv("HOME");
+      const char* home_env = getenv("HOME");
+      if(home_env)
+         home = home_env;
    }
    if(home.empty())
       home = "./";

@@ -82,10 +82,17 @@ namespace fc {
       return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) < 0;
     }
     bool operator != ( const sha512& h1, const sha512& h2 ) {
-      return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) != 0;
+      return !(h1 == h2);
     }
     bool operator == ( const sha512& h1, const sha512& h2 ) {
-      return memcmp( h1._hash, h2._hash, sizeof(h1._hash) ) == 0;
+      return h1._hash[0] == h2._hash[0] &&
+             h1._hash[1] == h2._hash[1] &&
+             h1._hash[2] == h2._hash[2] &&
+             h1._hash[3] == h2._hash[3] &&
+             h1._hash[4] == h2._hash[4] &&
+             h1._hash[5] == h2._hash[5] &&
+             h1._hash[6] == h2._hash[6] &&
+             h1._hash[7] == h2._hash[7];
     }
 
   void to_variant( const sha512& bi, variant& v )
