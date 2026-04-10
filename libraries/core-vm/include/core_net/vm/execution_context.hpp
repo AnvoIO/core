@@ -166,7 +166,8 @@ namespace core_net { namespace vm {
 
          for (uint32_t i = 0; i < mod.data.size(); i++) {
             const auto& data_seg = mod.data[i];
-            uint32_t offset = data_seg.offset.value.i32; // force to unsigned
+            CORE_NET_VM_ASSERT(data_seg.offset.value.i32 >= 0, wasm_memory_exception, "negative data segment offset");
+            uint32_t offset = data_seg.offset.value.i32;
             auto available_memory =  mod.memories[0].limits.initial * static_cast<uint64_t>(page_size);
             auto required_memory = static_cast<uint64_t>(offset) + data_seg.data.size();
             CORE_NET_VM_ASSERT(required_memory <= available_memory, wasm_memory_exception, "data out of range");

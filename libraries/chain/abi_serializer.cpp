@@ -425,8 +425,8 @@ namespace core_net::chain {
          for( fc::unsigned_int::base_uint i = 0; i < sz; ++i ) {
             ctx.set_array_index_of_path_back(i);
             auto v = _binary_to_variant(ftype, stream, ctx);
-            // The exception below is commented out to allow array of optional as input data
-            //EOS_ASSERT( !v.is_null(), unpack_exception, "Invalid packed array '${p}'", ("p", ctx.get_path_string()) );
+            if( !is_optional(ftype) )
+               EOS_ASSERT( !v.is_null(), unpack_exception, "Invalid packed array element '${p}'", ("p", ctx.get_path_string()) );
             vars.emplace_back(std::move(v));
          }
          return fc::variant(std::move(vars));

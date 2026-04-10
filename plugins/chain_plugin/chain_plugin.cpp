@@ -644,11 +644,16 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
                      "The maximum supported size for the chain state db (chain-state-db-size-mb) is 8TiB" );
       }
 
-      if( options.count( "chain-state-db-guard-size-mb" ))
+      if( options.count( "chain-state-db-guard-size-mb" )) {
          chain_config->state_guard_size = options.at( "chain-state-db-guard-size-mb" ).as<uint64_t>() * 1024 * 1024;
+         EOS_ASSERT( chain_config->state_guard_size <= 1ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
+                     "chain-state-db-guard-size-mb too large" );
+      }
 
       if( options.count( "transaction-finality-status-max-storage-size-gb" )) {
          const uint64_t max_storage_size = options.at( "transaction-finality-status-max-storage-size-gb" ).as<uint64_t>() * 1024 * 1024 * 1024;
+         EOS_ASSERT( max_storage_size <= 1ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
+                     "transaction-finality-status-max-storage-size-gb too large" );
          if (max_storage_size > 0) {
             const fc::microseconds success_duration = fc::seconds(options.at( "transaction-finality-status-success-duration-sec" ).as<uint64_t>());
             const fc::microseconds failure_duration = fc::seconds(options.at( "transaction-finality-status-failure-duration-sec" ).as<uint64_t>());
@@ -967,8 +972,11 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
       chain_config->db_map_mode = options.at("database-map-mode").as<pinnable_mapped_file::map_mode>();
 
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
-      if( options.count("vm-oc-cache-size-mb") )
+      if( options.count("vm-oc-cache-size-mb") ) {
          chain_config->corevmoc_config.cache_size = options.at( "vm-oc-cache-size-mb" ).as<uint64_t>() * 1024u * 1024u;
+         EOS_ASSERT( chain_config->corevmoc_config.cache_size <= 8ull * 1024 * 1024 * 1024, plugin_config_exception,
+                     "vm-oc-cache-size-mb too large" );
+      }
       if( options.count("vm-oc-compile-threads") )
          chain_config->corevmoc_config.threads = options.at("vm-oc-compile-threads").as<uint64_t>();
       chain_config->corevmoc_tierup = options["vm-oc-enable"].as<chain::wasm_interface::vm_oc_enable>();
@@ -985,6 +993,8 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
          EOS_ASSERT( !options.count( "producer-name"), plugin_config_exception,
                      "Transaction retry not allowed on producer nodes." );
          const uint64_t max_storage_size = options.at( "transaction-retry-max-storage-size-gb" ).as<uint64_t>() * 1024 * 1024 * 1024;
+         EOS_ASSERT( max_storage_size <= 1ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
+                     "transaction-retry-max-storage-size-gb too large" );
          if( max_storage_size > 0 ) {
             const uint32_t p2p_dedup_time_s = options.at( "p2p-dedup-cache-expire-time-sec" ).as<uint32_t>();
             const uint32_t trx_retry_interval = options.at( "transaction-retry-interval-sec" ).as<uint32_t>();
