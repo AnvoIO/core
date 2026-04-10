@@ -586,6 +586,8 @@ class cluster_generator:
 
         if '--http-server-address' not in eosdcmd:
             a(a(eosdcmd, '--http-server-address'), f'{instance.host_name}:{instance.http_port}')
+        if '--unix-socket-path' not in eosdcmd:
+            a(a(eosdcmd, '--unix-socket-path'), '')
 
         # Always enable a history query plugin on the bios node
         if is_bios:
