@@ -61,17 +61,18 @@ Config Options for eosio::producer_plugin:
                                            <provider-spec> is a string in the
                                                            form <provider-type>
                                                            :<data>
-                                           <provider-type> is KEY, KEOSD, or SE
+                                           <provider-type> is KEY, CORE_WALLET
+                                                           (or KEOSD), or SE
                                            KEY:<data>      is a string form of
                                                            a valid Antelope
                                                            private key which
                                                            maps to the provided
                                                            public key
-                                           KEOSD:<data>    is the URL where
-                                                           keosd is available
-                                                           and the appropriate
-                                                           wallet(s) are
-                                                           unlocked
+                                           CORE_WALLET:<data> is the URL where
+                                                           core-wallet is
+                                                           available and the
+                                                           appropriate wallet(s)
+                                                           are unlocked
 
 
   --greylist-account arg                account that can not access to extended
