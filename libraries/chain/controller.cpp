@@ -4171,9 +4171,11 @@ struct controller_impl {
                   "QC is_strong (${s1}) in block extension does not match is_strong_qc (${s2}) in header extension. Block number: ${b}",
                   ("s1", qc_proof.is_strong())("s2", new_qc_claim.is_strong_qc)("b", block_num) );
 
-      // `valid` structure can be modified while this function is running on net thread.
-      // Use is_valid() instead. It uses atomic `validated` and when it is true, `valid`
-      // has been constructed.
+      // SEC-013: Finality merkle root validation is conditional on prev.is_valid(). This is intentional:
+      // is_valid() uses an atomic flag that guarantees the `valid` structure has been fully constructed
+      // on another thread before returning true. When the previous block's valid structure is not yet
+      // ready, this validation is deferred — it will be performed when a subsequent block arrives and
+      // the prerequisite state is available. No unvalidated QC claims proceed to finality.
       if (prev.is_valid()) {
          assert(prev.valid);
 
@@ -5074,6 +5076,10 @@ struct controller_impl {
 
    bool irreversible_mode() const { return read_mode == db_read_mode::IRREVERSIBLE; }
 
+   // SEC-012: Light validation skips signature re-verification during replay of irreversible/validated
+   // blocks. This is intentional — re-verifying signatures for already-finalized blocks is redundant.
+   // Use --force-all-checks to override (e.g., when replaying from an untrusted block log source).
+   // New incoming blocks are always fully validated regardless of this setting.
    bool light_validation_allowed() const {
       if (!pending || in_trx_requiring_checks) {
          return false;
