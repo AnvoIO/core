@@ -828,7 +828,7 @@ namespace core_net::chain {
             }
 
             default:
-               assert(0);
+               EOS_ASSERT( false, fork_database_exception, "unsupported fork database version ${v}", ("v", version) );
                break;
             }
          } FC_CAPTURE_AND_RETHROW( (fork_db_file) );
@@ -857,9 +857,12 @@ namespace core_net::chain {
          }
       } else if (in_use == in_use_t::both) {
          dlog("Switching fork_db from legacy, already both root ${rid}, fork_db root ${fid}", ("rid", root->id())("fid", fork_db_s.root()->id()));
-         assert(fork_db_s.root()->id() == root->id()); // should always set the same root
+         EOS_ASSERT( fork_db_s.root()->id() == root->id(), fork_database_exception,
+                     "switch_from_legacy root mismatch: expected ${e}, got ${g}",
+                     ("e", root->id())("g", fork_db_s.root()->id()) );
       } else {
-         assert(false);
+         EOS_ASSERT( false, fork_database_exception,
+                     "unexpected fork database state during switch_from_legacy" );
       }
    }
 

@@ -220,9 +220,7 @@ struct completed_block {
    }
 
    const block_signing_authority& pending_block_signing_authority() const {
-      // this should never be called on completed_block because `controller::is_building_block()` returns false
-      assert(0); 
-      static block_signing_authority bsa; return bsa; // just so it builds
+      EOS_THROW( misc_exception, "pending_block_signing_authority called on completed_block" );
    }
 };
 
@@ -473,8 +471,8 @@ struct building_block {
                                  for (const auto& pa : pas.producers)
                                     if (pa.producer_name == input.producer)
                                        return pa.authority;
-                                 assert(0); // we should find the authority
-                                 return {};
+                                 EOS_THROW( misc_exception,
+                                            "producer ${p} not found in proposer schedule", ("p", input.producer) );
                               }()}
          , prev_activated_protocol_features(parent.activated_protocol_features)
          , active_proposer_policy(parent.get_active_proposer_policy_for_block_at(input.timestamp))

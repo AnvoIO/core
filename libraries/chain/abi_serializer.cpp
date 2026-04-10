@@ -234,7 +234,10 @@ namespace core_net::chain {
       while(pos < pos2) {
          if( ! (type[pos] >= '0' && type[pos] <= '9') )
             return {};
+         auto prev = sz.value;
          sz = 10 * sz +  (type[pos] - '0');
+         EOS_ASSERT( sz.value >= prev, abi_serialization_deadline_exception,
+                     "integer overflow parsing fixed-size array type" );
          ++pos;
       }
       return  std::optional<fc::unsigned_int>{sz};
@@ -412,6 +415,9 @@ namespace core_net::chain {
       auto fixed_array_sz = is_szarray(rtype);
 
       auto read_array = [&](fc::unsigned_int::base_uint sz) {
+         EOS_ASSERT( sz <= max_array_size, unpack_exception,
+                     "ABI array size ${s} exceeds maximum ${m} while processing '${p}'",
+                     ("s", sz)("m", max_array_size)("p", ctx.get_path_string()) );
          ctx.hint_array_type_if_in_array();
          fc::variants vars;
          vars.reserve(std::min(sz, 1024u)); // limit the maximum size that can be reserved before data is read

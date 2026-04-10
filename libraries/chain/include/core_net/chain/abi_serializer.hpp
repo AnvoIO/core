@@ -116,6 +116,7 @@ struct abi_serializer {
    void add_specialized_unpack_pack( const string& name, std::pair<abi_serializer::unpack_function, abi_serializer::pack_function> unpack_pack );
 
    static constexpr size_t max_recursion_depth = 32; // arbitrary depth to prevent infinite recursion
+   static constexpr size_t max_array_size = 8192; // maximum elements in a deserialized array
 
    // create standard yield function that checks for max_serialization_time and max_recursion_depth.
    // restricts serialization time from creation of yield function until serialization is complete.

@@ -791,7 +791,10 @@ namespace core_net { namespace vm {
          std::cout << " }\n";
       }
 
-      inline uint32_t       table_elem(uint32_t i) { return _mod->tables[0].table[i]; }
+      inline uint32_t       table_elem(uint32_t i) {
+         CORE_NET_VM_ASSERT(i < _mod->tables[0].table.size(), wasm_interpreter_exception, "table index out of range");
+         return _mod->tables[0].table[i];
+      }
       inline void           push_operand(operand_stack_elem el) { get_operand_stack().push(std::move(el)); }
       inline operand_stack_elem get_operand(uint32_t index) const { return get_operand_stack().get(_last_op_index + index); }
       inline void           eat_operands(uint32_t index) { get_operand_stack().eat(index); }
