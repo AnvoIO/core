@@ -349,7 +349,14 @@ void finish_next(const block_header_state& prev,
    evaluate_proposer_policies_for_promotion(prev, next_header_state);
 
    if (f_ext.new_proposer_policy_diff) {
-      // called when assembling the block
+      // SEC-022: Validate that the proposer schedule version increments by exactly 1,
+      // mirroring the legacy path validation in block_header_state_legacy.cpp:270,284.
+      // The block production path (get_next_proposer_schedule_version) always sets version
+      // to previous + 1; this assertion catches malformed blocks from peers.
+      EOS_ASSERT(f_ext.new_proposer_policy_diff->version == prev.get_last_proposed_proposer_policy().proposer_schedule.version + 1,
+                 invalid_block_header_extension,
+                 "proposer schedule version ${n} must be one greater than previous ${p}",
+                 ("n", f_ext.new_proposer_policy_diff->version)("p", prev.get_last_proposed_proposer_policy().proposer_schedule.version));
       next_header_state.latest_proposed_proposer_policy =
          std::make_shared<proposer_policy>(prev.get_last_proposed_proposer_policy().apply_diff(*f_ext.new_proposer_policy_diff));
    }
