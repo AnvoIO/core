@@ -129,8 +129,11 @@ namespace fc { namespace ecc {
             key = o2i_ECPublicKey( &key, (const unsigned char**)&front, sizeof(dat) );
             FC_ASSERT( key );
             EC_KEY_set_conv_form( key, POINT_CONVERSION_COMPRESSED );
+            int encoded_len = i2o_ECPublicKey( key, NULL );
+            FC_ASSERT( encoded_len == static_cast<int>(my->_key.size()),
+                       "unexpected EC public key encoding size: ${s}", ("s", encoded_len) );
             unsigned char* buffer = (unsigned char*) my->_key.begin();
-            i2o_ECPublicKey( key, &buffer ); // FIXME: questionable memory handling
+            i2o_ECPublicKey( key, &buffer );
             EC_KEY_free( key );
         }
     }
