@@ -420,13 +420,14 @@ void prompt_for_wallet_password(string& pw, const string& name) {
 }
 
 fc::variant determine_required_keys(const signed_transaction& trx) {
-   // TODO better error checking
-   //wdump((trx));
    const auto& public_keys = call(wallet_url, wallet_public_keys);
+   FC_ASSERT( public_keys.is_array(), "Wallet returned unexpected format for public keys (is the wallet locked?)" );
    auto get_arg = fc::mutable_variant_object
            ("transaction", (transaction)trx)
            ("available_keys", public_keys);
    const auto& required_keys = call(get_required_keys, get_arg);
+   FC_ASSERT( required_keys.is_object() && required_keys.get_object().contains("required_keys"),
+              "Chain returned unexpected format for required keys" );
    return required_keys["required_keys"];
 }
 
@@ -593,12 +594,6 @@ void print_action( const fc::variant& at ) {
    auto args = fc::json::to_string( act["data"], fc::time_point::maximum() );
    auto console = at["console"].as_string();
 
-   /*
-   if( code == "eosio" && func == "setcode" )
-      args = args.substr(40)+"...";
-   if( name(code) == config::system_account_name() && func == "setabi" )
-      args = args.substr(40)+"...";
-   */
    if( args.size() > 100 ) args = args.substr(0,100) + "...";
    cout << "#" << std::setw(14) << right << receiver << " <= " << std::setw(28) << std::left << (code +"::" + func) << " " << args << "\n";
    print_return_value(at);

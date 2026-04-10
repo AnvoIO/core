@@ -68,21 +68,6 @@ uint32_t aes_encoder::encode( const char* plaintxt, uint32_t plaintext_len, char
     FC_ASSERT( ciphertext_len == static_cast<int>(plaintext_len), "", ("ciphertext_len",ciphertext_len)("plaintext_len",plaintext_len) );
     return ciphertext_len;
 }
-#if 0
-uint32_t aes_encoder::final_encode( char* ciphertxt )
-{
-    int ciphertext_len = 0;
-    /* Finalise the encryption. Further ciphertext bytes may be written at
-    *    * this stage.
-    *       */
-    if(1 != EVP_EncryptFinal_ex(my->ctx, (unsigned char*)ciphertxt, &ciphertext_len))
-    {
-        FC_THROW_EXCEPTION( exception, "error during aes 256 cbc encryption final",
-                           ("s", ERR_error_string( ERR_get_error(), nullptr) ) );
-    }
-    return ciphertext_len;
-}
-#endif
 
 
 struct aes_decoder::impl
@@ -127,22 +112,6 @@ uint32_t aes_decoder::decode( const char* ciphertxt, uint32_t ciphertxt_len, cha
     FC_ASSERT( ciphertxt_len == static_cast<unsigned>(plaintext_len), "", ("ciphertxt_len",ciphertxt_len)("plaintext_len",plaintext_len) );
 	return plaintext_len;
 }
-#if 0
-uint32_t aes_decoder::final_decode( char* plaintext )
-{
-    return 0;
-    int ciphertext_len = 0;
-    /* Finalise the encryption. Further ciphertext bytes may be written at
-    *    * this stage.
-    *       */
-    if(1 != EVP_DecryptFinal_ex(my->ctx, (unsigned char*)plaintext, &ciphertext_len))
-    {
-        FC_THROW_EXCEPTION( exception, "error during aes 256 cbc encryption final",
-                           ("s", ERR_error_string( ERR_get_error(), nullptr) ) );
-    }
-    return ciphertext_len;
-}
-#endif
 
 
 

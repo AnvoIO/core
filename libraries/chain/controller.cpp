@@ -275,7 +275,6 @@ struct assembled_block {
       // In fact for now it isn't even implemented.
       EOS_THROW( misc_exception,
                  "checking if protocol feature is activated in the assembled_block stage is not yet supported" );
-      // TODO: implement this
    }
 
    const block_id_type& id() const {

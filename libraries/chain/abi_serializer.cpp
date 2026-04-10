@@ -100,7 +100,7 @@ namespace core_net::chain {
       built_in_types.emplace("varint32",                  pack_unpack<fc::signed_int>());
       built_in_types.emplace("varuint32",                 pack_unpack<fc::unsigned_int>());
 
-      // TODO: Add proper support for floating point types. For now this is good enough.
+      // Float types use raw pack/unpack. Changing float handling requires a consensus upgrade.
       built_in_types.emplace("float32",                   pack_unpack<float>());
       built_in_types.emplace("float64",                   pack_unpack<double>());
       built_in_types.emplace("float128",                  pack_unpack<float128_t>());
