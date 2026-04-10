@@ -13,6 +13,7 @@ namespace core_net { namespace wallet {
 struct wallet_data
 {
    vector<char>              cipher_keys; /** encrypted keys */
+   vector<char>              kdf_salt;    /** PBKDF2 salt — empty for legacy (v1) wallets */
 };
 
 namespace detail {
@@ -187,6 +188,6 @@ struct plain_keys {
 
 } }
 
-FC_REFLECT( core_net::wallet::wallet_data, (cipher_keys) )
+FC_REFLECT( core_net::wallet::wallet_data, (cipher_keys)(kdf_salt) )
 
 FC_REFLECT( core_net::wallet::plain_keys, (checksum)(keys) )
