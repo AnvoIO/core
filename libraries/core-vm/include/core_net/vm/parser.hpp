@@ -918,6 +918,8 @@ namespace core_net { namespace vm {
                case opcodes::call: {
                   check_in_bounds();
                   uint32_t funcnum = parse_varuint32(code);
+                  CORE_NET_VM_ASSERT(funcnum < _mod->get_functions_total(), wasm_parse_exception,
+                                     "call function index out of range");
                   const func_type& ft = _mod->get_function_type(funcnum);
                   for(uint32_t i = 0; i < ft.param_types.size(); ++i)
                      op_stack.pop(ft.param_types[ft.param_types.size() - i - 1]);
@@ -1296,6 +1298,8 @@ namespace core_net { namespace vm {
       inline void parse_section(wasm_code_ptr&                                                        code,
                                 typename std::enable_if_t<id == section_id::start_section, uint32_t>& start) {
          start = parse_varuint32(code);
+         CORE_NET_VM_ASSERT(start < _mod->get_functions_total(), wasm_parse_exception,
+                            "start function index out of range");
          const func_type& ft = _mod->get_function_type(start);
          CORE_NET_VM_ASSERT(ft.return_count == 0 && ft.param_types.size() == 0, wasm_parse_exception, "wrong type for start");
       }

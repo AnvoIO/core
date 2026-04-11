@@ -100,7 +100,7 @@ namespace core_net::chain {
       built_in_types.emplace("varint32",                  pack_unpack<fc::signed_int>());
       built_in_types.emplace("varuint32",                 pack_unpack<fc::unsigned_int>());
 
-      // TODO: Add proper support for floating point types. For now this is good enough.
+      // Float types use raw pack/unpack. Changing float handling requires a consensus upgrade.
       built_in_types.emplace("float32",                   pack_unpack<float>());
       built_in_types.emplace("float64",                   pack_unpack<double>());
       built_in_types.emplace("float128",                  pack_unpack<float128_t>());
@@ -234,7 +234,10 @@ namespace core_net::chain {
       while(pos < pos2) {
          if( ! (type[pos] >= '0' && type[pos] <= '9') )
             return {};
+         auto prev = sz.value;
          sz = 10 * sz +  (type[pos] - '0');
+         EOS_ASSERT( sz.value >= prev, abi_serialization_deadline_exception,
+                     "integer overflow parsing fixed-size array type" );
          ++pos;
       }
       return  std::optional<fc::unsigned_int>{sz};
@@ -412,6 +415,9 @@ namespace core_net::chain {
       auto fixed_array_sz = is_szarray(rtype);
 
       auto read_array = [&](fc::unsigned_int::base_uint sz) {
+         EOS_ASSERT( sz <= max_array_size, unpack_exception,
+                     "ABI array size ${s} exceeds maximum ${m} while processing '${p}'",
+                     ("s", sz)("m", max_array_size)("p", ctx.get_path_string()) );
          ctx.hint_array_type_if_in_array();
          fc::variants vars;
          vars.reserve(std::min(sz, 1024u)); // limit the maximum size that can be reserved before data is read
@@ -419,8 +425,8 @@ namespace core_net::chain {
          for( fc::unsigned_int::base_uint i = 0; i < sz; ++i ) {
             ctx.set_array_index_of_path_back(i);
             auto v = _binary_to_variant(ftype, stream, ctx);
-            // The exception below is commented out to allow array of optional as input data
-            //EOS_ASSERT( !v.is_null(), unpack_exception, "Invalid packed array '${p}'", ("p", ctx.get_path_string()) );
+            if( !is_optional(resolve_type(ftype)) )
+               EOS_ASSERT( !v.is_null(), unpack_exception, "Invalid packed array element '${p}'", ("p", ctx.get_path_string()) );
             vars.emplace_back(std::move(v));
          }
          return fc::variant(std::move(vars));

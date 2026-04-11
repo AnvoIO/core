@@ -10,11 +10,13 @@
 #include <list>
 
 #include <fc/crypto/elliptic.hpp>
+#include <fc/crypto/rand.hpp>
 #include <fc/git_revision.hpp>
 #include <fc/io/json.hpp>
 #include <fc/crypto/aes.hpp>
 #include <fc/crypto/hex.hpp>
 #include <openssl/crypto.h>
+#include <openssl/evp.h>
 
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -27,6 +29,26 @@
 #endif
 
 namespace core_net { namespace wallet {
+
+static constexpr int    kdf_iterations = 100000;
+static constexpr size_t kdf_salt_size  = 16;
+
+static fc::sha512 derive_key_pbkdf2(const std::string& password, const std::vector<char>& salt) {
+   fc::sha512 result;
+   int rc = PKCS5_PBKDF2_HMAC(password.c_str(), password.size(),
+                               reinterpret_cast<const unsigned char*>(salt.data()), salt.size(),
+                               kdf_iterations, EVP_sha512(),
+                               static_cast<int>(result.data_size()),
+                               reinterpret_cast<unsigned char*>(result.data()));
+   FC_ASSERT(rc == 1, "PKCS5_PBKDF2_HMAC failed");
+   return result;
+}
+
+static std::vector<char> generate_salt() {
+   std::vector<char> salt(kdf_salt_size);
+   fc::rand_bytes(salt.data(), kdf_salt_size);
+   return salt;
+}
 
 namespace detail {
 
@@ -67,6 +89,10 @@ public:
    {
       if( !is_locked() )
       {
+         // generate salt on first encryption if not already set (new wallet or migration)
+         if( _wallet.kdf_salt.empty() )
+            _wallet.kdf_salt = generate_salt();
+
          plain_keys data;
          data.keys = _keys;
          data.checksum = _checksum;
@@ -188,8 +214,6 @@ public:
 
    bool load_wallet_file(string wallet_filename = "")
    {
-      // TODO:  Merge imported wallet with existing wallet,
-      //        instead of replacing it
       if( wallet_filename == "" )
          wallet_filename = _wallet_filename;
 
@@ -351,19 +375,47 @@ void soft_wallet::lock()
 void soft_wallet::unlock(string password)
 { try {
    FC_ASSERT(password.size() > 0);
-   auto pw = fc::sha512::hash(password.c_str(), password.size());
+
+   fc::sha512 pw;
+   bool migrating = false;
+   if( !my->_wallet.kdf_salt.empty() ) {
+      // v2: PBKDF2 key derivation
+      pw = derive_key_pbkdf2(password, my->_wallet.kdf_salt);
+   } else {
+      // v1 (legacy): direct hash — will auto-migrate after successful unlock
+      pw = fc::sha512::hash(password.c_str(), password.size());
+      migrating = true;
+   }
+
    vector<char> decrypted = fc::aes_decrypt(pw, my->_wallet.cipher_keys);
    auto pk = fc::raw::unpack<plain_keys>(decrypted);
    FC_ASSERT(pk.checksum == pw);
    my->_keys = std::move(pk.keys);
    my->_checksum = pk.checksum;
+
+   if( migrating ) {
+      // auto-migrate: re-derive key with PBKDF2 and re-encrypt
+      wlog("Migrating wallet \"${w}\" from legacy password hashing to PBKDF2",
+           ("w", get_wallet_filename()));
+      my->_wallet.kdf_salt = generate_salt();
+      my->_checksum = derive_key_pbkdf2(password, my->_wallet.kdf_salt);
+      // re-encrypt keys with new checksum and save
+      encrypt_keys();
+      // update plain_keys checksum to match new derived key
+      save_wallet_file();
+      wlog("Wallet \"${w}\" migration complete", ("w", get_wallet_filename()));
+   }
 } EOS_RETHROW_EXCEPTIONS(chain::wallet_invalid_password_exception,
                           "Invalid password for wallet: \"${wallet_name}\"", ("wallet_name", get_wallet_filename())) }
 
 void soft_wallet::check_password(string password)
 { try {
    FC_ASSERT(password.size() > 0);
-   auto pw = fc::sha512::hash(password.c_str(), password.size());
+   fc::sha512 pw;
+   if( !my->_wallet.kdf_salt.empty() )
+      pw = derive_key_pbkdf2(password, my->_wallet.kdf_salt);
+   else
+      pw = fc::sha512::hash(password.c_str(), password.size());
    vector<char> decrypted = fc::aes_decrypt(pw, my->_wallet.cipher_keys);
    auto pk = fc::raw::unpack<plain_keys>(decrypted);
    FC_ASSERT(pk.checksum == pw);
@@ -374,7 +426,8 @@ void soft_wallet::set_password( string password )
 {
    if( !is_new() )
       EOS_ASSERT( !is_locked(), wallet_locked_exception, "The wallet must be unlocked before the password can be set" );
-   my->_checksum = fc::sha512::hash( password.c_str(), password.size() );
+   my->_wallet.kdf_salt = generate_salt();
+   my->_checksum = derive_key_pbkdf2(password, my->_wallet.kdf_salt);
    lock();
 }
 

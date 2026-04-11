@@ -9,6 +9,7 @@
 #include <fc/io/json.hpp>
 #include <fc/utf8.hpp>
 #include <algorithm>
+#include <limits>
 
 namespace fc
 {
@@ -109,7 +110,6 @@ variant::variant( const char* str )
    set_variant_type( this, string_type );
 }
 
-// TODO: do a proper conversion to utf8
 variant::variant( wchar_t* str )
 {
    size_t len = wcslen(str);
@@ -120,7 +120,6 @@ variant::variant( wchar_t* str )
    set_variant_type( this, string_type );
 }
 
-// TODO: do a proper conversion to utf8
 variant::variant( const wchar_t* str )
 {
    size_t len = wcslen(str);
@@ -643,25 +642,41 @@ void from_variant( const variant& var,  variants& vo )
 void from_variant( const variant& var,  variant& vo ) { vo = var; }
 
 void to_variant( const uint8_t& var,  variant& vo )  { vo = uint64_t(var); }
-// TODO: warn on overflow?
-void from_variant( const variant& var,  uint8_t& vo ){ vo = static_cast<uint8_t>(var.as_uint64()); }
+void from_variant( const variant& var,  uint8_t& vo ){
+   auto v = var.as_uint64();
+   FC_ASSERT( v <= std::numeric_limits<uint8_t>::max(), "value ${v} exceeds uint8 range", ("v", v) );
+   vo = static_cast<uint8_t>(v);
+}
 
 void to_variant( const int8_t& var,  variant& vo )  { vo = int64_t(var); }
-// TODO: warn on overflow?
-void from_variant( const variant& var,  int8_t& vo ){ vo = static_cast<int8_t>(var.as_int64()); }
+void from_variant( const variant& var,  int8_t& vo ){
+   auto v = var.as_int64();
+   FC_ASSERT( v >= std::numeric_limits<int8_t>::min() && v <= std::numeric_limits<int8_t>::max(),
+              "value ${v} exceeds int8 range", ("v", v) );
+   vo = static_cast<int8_t>(v);
+}
 
 void to_variant( const uint16_t& var,  variant& vo )  { vo = uint64_t(var); }
-// TODO: warn on overflow?
-void from_variant( const variant& var,  uint16_t& vo ){ vo = static_cast<uint16_t>(var.as_uint64()); }
+void from_variant( const variant& var,  uint16_t& vo ){
+   auto v = var.as_uint64();
+   FC_ASSERT( v <= std::numeric_limits<uint16_t>::max(), "value ${v} exceeds uint16 range", ("v", v) );
+   vo = static_cast<uint16_t>(v);
+}
 
 void to_variant( const int16_t& var,  variant& vo )  { vo = int64_t(var); }
-// TODO: warn on overflow?
-void from_variant( const variant& var,  int16_t& vo ){ vo = static_cast<int16_t>(var.as_int64()); }
+void from_variant( const variant& var,  int16_t& vo ){
+   auto v = var.as_int64();
+   FC_ASSERT( v >= std::numeric_limits<int16_t>::min() && v <= std::numeric_limits<int16_t>::max(),
+              "value ${v} exceeds int16 range", ("v", v) );
+   vo = static_cast<int16_t>(v);
+}
 
 void to_variant( const uint32_t& var,  variant& vo )  { vo = uint64_t(var); }
 void from_variant( const variant& var,  uint32_t& vo )
 {
-   vo = static_cast<uint32_t>(var.as_uint64());
+   auto v = var.as_uint64();
+   FC_ASSERT( v <= std::numeric_limits<uint32_t>::max(), "value ${v} exceeds uint32 range", ("v", v) );
+   vo = static_cast<uint32_t>(v);
 }
 
 void to_variant( const int32_t& var,  variant& vo )  {
@@ -670,7 +685,10 @@ void to_variant( const int32_t& var,  variant& vo )  {
 
 void from_variant( const variant& var,  int32_t& vo )
 {
-   vo = static_cast<int32_t>(var.as_int64());
+   auto v = var.as_int64();
+   FC_ASSERT( v >= std::numeric_limits<int32_t>::min() && v <= std::numeric_limits<int32_t>::max(),
+              "value ${v} exceeds int32 range", ("v", v) );
+   vo = static_cast<int32_t>(v);
 }
 
 void to_variant( const unsigned __int128& var,  variant& vo )  {

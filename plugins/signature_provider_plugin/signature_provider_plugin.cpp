@@ -4,8 +4,38 @@
 #include <fc/time.hpp>
 #include <fc/network/url.hpp>
 
+#include <fstream>
+#include <filesystem>
+#include <sys/stat.h>
+
 namespace core_net {
    static auto _signature_provider_plugin = application::register_plugin<signature_provider_plugin>();
+
+static std::string read_key_from_file(const std::string& file_path) {
+   std::filesystem::path key_file(file_path);
+   EOS_ASSERT(std::filesystem::exists(key_file), chain::plugin_config_exception,
+              "Signature provider key file does not exist: ${f}", ("f", file_path));
+   EOS_ASSERT(std::filesystem::is_regular_file(key_file), chain::plugin_config_exception,
+              "Signature provider key file is not a regular file: ${f}", ("f", file_path));
+
+   struct stat st;
+   EOS_ASSERT(::stat(file_path.c_str(), &st) == 0, chain::plugin_config_exception,
+              "Cannot stat signature provider key file: ${f}", ("f", file_path));
+   EOS_ASSERT((st.st_mode & (S_IRWXG | S_IRWXO)) == 0, chain::plugin_config_exception,
+              "Signature provider key file ${f} has insecure permissions ${p} — must not be accessible by group or others",
+              ("f", file_path)("p", st.st_mode & 0777));
+
+   std::ifstream ifs(key_file);
+   EOS_ASSERT(ifs.is_open(), chain::plugin_config_exception,
+              "Cannot open signature provider key file: ${f}", ("f", file_path));
+   std::string key_str;
+   std::getline(ifs, key_str);
+   while(!key_str.empty() && (key_str.back() == '\n' || key_str.back() == '\r' || key_str.back() == ' '))
+      key_str.pop_back();
+   EOS_ASSERT(!key_str.empty(), chain::plugin_config_exception,
+              "Signature provider key file is empty: ${f}", ("f", file_path));
+   return key_str;
+}
 
 class signature_provider_plugin_impl {
    public:
@@ -39,12 +69,14 @@ class signature_provider_plugin_impl {
       std::optional<std::pair<chain::public_key_type,signature_provider_plugin::signature_provider_type>>
       signature_provider_for_specification(const std::string& spec) const {
          auto [pub_key_str, spec_type_str, spec_data] = signature_provider_plugin::parse_signature_provider_spec(spec);
-         if( pub_key_str.starts_with("PUB_BLS") && spec_type_str == "KEY" )
+         if( pub_key_str.starts_with("PUB_BLS") && (spec_type_str == "KEY" || spec_type_str == "FILE") )
             return {};
 
          auto pubkey = chain::public_key_type(pub_key_str);
 
          if(spec_type_str == "KEY") {
+            wlog("Signature provider for ${pub} uses KEY: — private key is visible in process arguments. "
+                 "Consider using FILE:<path> or KEOSD:<url> for production nodes.", ("pub", pubkey));
             try {
                chain::private_key_type priv(spec_data);
                EOS_ASSERT(pubkey == priv.get_public_key(), chain::plugin_config_exception, "Private key does not match given public key for ${pub}", ("pub", pubkey));
@@ -55,7 +87,20 @@ class signature_provider_plugin_impl {
                EOS_THROW(chain::plugin_config_exception, "Invalid private key for public key ${pub}", ("pub", pubkey));
             }
          }
-         else if(spec_type_str == "KEOSD")
+         else if(spec_type_str == "FILE") {
+            auto key_str = read_key_from_file(spec_data);
+            try {
+               chain::private_key_type priv(key_str);
+               EOS_ASSERT(pubkey == priv.get_public_key(), chain::plugin_config_exception,
+                          "Private key in file ${f} does not match given public key ${pub}", ("f", spec_data)("pub", pubkey));
+               return std::make_pair(pubkey, make_key_signature_provider(priv));
+            } catch( const fc::exception& ) {
+               EOS_THROW(chain::plugin_config_exception, "Invalid private key in file ${f} for public key ${pub}", ("f", spec_data)("pub", pubkey));
+            } catch( const std::exception& ) {
+               EOS_THROW(chain::plugin_config_exception, "Invalid private key in file ${f} for public key ${pub}", ("f", spec_data)("pub", pubkey));
+            }
+         }
+         else if(spec_type_str == "CORE_WALLET" || spec_type_str == "KEOSD")
             return std::make_pair(pubkey, make_core_wallet_signature_provider(spec_data, pubkey));
          EOS_THROW(chain::plugin_config_exception, "Unsupported key provider type \"${t}\"", ("t", spec_type_str));
       }
@@ -76,9 +121,11 @@ const char* const signature_provider_plugin::signature_provider_help_text() cons
           "Where:\n"
           "   <public-key>    \tis a string form of a valid Antelope public key, including BLS finalizer key\n"
           "   <provider-spec> \tis a string in the form <provider-type>:<data>\n"
-          "   <provider-type> \tis KEY, KEOSD, or SE\n"
+"   <provider-type> \tis KEY, FILE, CORE_WALLET (or KEOSD), or SE\n"
           "   KEY:<data>      \tis a string form of a valid Antelope private key which maps to the provided public key\n"
-          "   KEOSD:<data>    \tis the URL where keosd is available and the appropriate wallet(s) are unlocked\n\n"
+          "                   \tWARNING: exposes the private key in process arguments — use FILE: or CORE_WALLET: for production\n"
+          "   FILE:<path>     \tis a path to a file containing the private key (file must have 0600 or 0400 permissions)\n"
+          "   CORE_WALLET:<data> \tis the URL where core-wallet is available and the appropriate wallet(s) are unlocked\n\n"
           ;
 
 }
@@ -101,10 +148,20 @@ signature_provider_plugin::signature_provider_for_private_key(const chain::priva
 std::optional<std::pair<fc::crypto::blslib::bls_public_key, fc::crypto::blslib::bls_private_key>>
 signature_provider_plugin::bls_public_key_for_specification(const std::string& spec) const {
    auto [pub_key_str, spec_type_str, spec_data] = parse_signature_provider_spec(spec);
-   if( pub_key_str.starts_with("PUB_BLS") && spec_type_str == "KEY" ) {
-      return std::make_pair(fc::crypto::blslib::bls_public_key{pub_key_str}, fc::crypto::blslib::bls_private_key{spec_data});
+   if( !pub_key_str.starts_with("PUB_BLS") )
+      return {};
+
+   std::string key_str;
+   if( spec_type_str == "KEY" ) {
+      wlog("BLS signature provider for ${pub} uses KEY: — private key is visible in process arguments. "
+           "Consider using FILE:<path> for production nodes.", ("pub", pub_key_str));
+      key_str = spec_data;
+   } else if( spec_type_str == "FILE" ) {
+      key_str = read_key_from_file(spec_data);
+   } else {
+      return {};
    }
-   return {};
+   return std::make_pair(fc::crypto::blslib::bls_public_key{pub_key_str}, fc::crypto::blslib::bls_private_key{key_str});
 }
 
 //         public_key   spec_type    spec_data

@@ -375,16 +375,6 @@ namespace fc { namespace crypto { namespace r1 {
 
        }
 
-#if 0
-          = bigint( EC_KEY_get0_private_key( k );
-       EC_POINT* pub   = EC_KEY_get0_public_key( k );
-       EC_GROUP* group = EC_KEY_get0_group( k );
-
-       EC_POINT_get_affine_coordinates_GFp( group, pub, self.my->_pub_x.get(), self.my->_pub_y.get(), nullptr/*ctx*/ );
-
-       EC_KEY_free(k);
-#endif
-
        return self;
     }
 

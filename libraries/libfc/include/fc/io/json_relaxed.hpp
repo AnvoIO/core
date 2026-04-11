@@ -5,13 +5,8 @@
 
 #include <fc/io/json.hpp>
 #include <fc/exception/exception.hpp>
-//#include <fc/io/iostream.hpp>
-//#include <fc/io/buffered_iostream.hpp>
-//#include <fc/io/fstream.hpp>
-//#include <fc/io/sstream.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/string.hpp>
-//#include <utfcpp/utf8.h>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -440,7 +435,6 @@ namespace fc { namespace json_relaxed
                case '5': case '6': case '7': case '8': case '9':
                    break;
                case '.':
-                   return fc::variant(token);
                    if( dot_ok )
                    {
                        dot_ok = false;

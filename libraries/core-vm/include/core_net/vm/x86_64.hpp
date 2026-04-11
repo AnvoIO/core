@@ -2205,14 +2205,11 @@ namespace core_net { namespace vm {
                // mov (%rsp), %rax
                emit_bytes(0x48, 0x8b, 0x04, 0x24);
             }
-            if(count & 0x70000000) {
-               // This code is probably unreachable.
-               // int3
-               emit_bytes(0xCC);
-            }
+            CORE_NET_VM_ASSERT((count & 0x70000000) == 0, wasm_parse_exception,
+                               "stack depth too large for multipop");
             // add depth_change*8, %rsp
             emit_bytes(0x48, 0x81, 0xc4); // TODO: Prefer imm8 where appropriate
-            emit_operand32(count * 8); // FIXME: handle overflow
+            emit_operand32(count * 8);
             if (count & 0x80000000) {
                // push %rax
                emit_bytes(0x50);

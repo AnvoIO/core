@@ -356,8 +356,9 @@ qc_sig_t aggregating_qc_sig_t::extract_qc_sig_from_aggregating() const {
       qc_sig.weak_votes   = weak_votes.bitset;
       qc_sig.sig          = strong_votes.sig;
       qc_sig.sig.aggregate(weak_votes.sig);
-   } else
-      assert(0); // this should be called only when we have an aggregating_qc_sig_t with a quorum
+   } else {
+      EOS_ASSERT( false, invalid_qc, "extract_qc_sig_from_aggregating called without quorum" );
+   }
 
    return qc_sig;
 }

@@ -166,7 +166,8 @@ namespace core_net { namespace vm {
 
          for (uint32_t i = 0; i < mod.data.size(); i++) {
             const auto& data_seg = mod.data[i];
-            uint32_t offset = data_seg.offset.value.i32; // force to unsigned
+            CORE_NET_VM_ASSERT(data_seg.offset.value.i32 >= 0, wasm_memory_exception, "negative data segment offset");
+            uint32_t offset = data_seg.offset.value.i32;
             auto available_memory =  mod.memories[0].limits.initial * static_cast<uint64_t>(page_size);
             auto required_memory = static_cast<uint64_t>(offset) + data_seg.data.size();
             CORE_NET_VM_ASSERT(required_memory <= available_memory, wasm_memory_exception, "data out of range");
@@ -791,7 +792,10 @@ namespace core_net { namespace vm {
          std::cout << " }\n";
       }
 
-      inline uint32_t       table_elem(uint32_t i) { return _mod->tables[0].table[i]; }
+      inline uint32_t       table_elem(uint32_t i) {
+         CORE_NET_VM_ASSERT(i < _mod->tables[0].table.size(), wasm_interpreter_exception, "table index out of range");
+         return _mod->tables[0].table[i];
+      }
       inline void           push_operand(operand_stack_elem el) { get_operand_stack().push(std::move(el)); }
       inline operand_stack_elem get_operand(uint32_t index) const { return get_operand_stack().get(_last_op_index + index); }
       inline void           eat_operands(uint32_t index) { get_operand_stack().eat(index); }

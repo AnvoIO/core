@@ -358,7 +358,8 @@ my_finalizers_t::fsi_map my_finalizers_t::load_finalizer_safety_info() {
          load_finalizer_safety_info_v1(res);
          break;
       default:
-         assert(0);
+         EOS_ASSERT( false, finalizer_safety_exception,
+                     "unsupported finalizer safety file version ${v}", ("v", file_version) );
       }
 
       if (verify_checksum) {

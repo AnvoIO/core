@@ -95,8 +95,8 @@ const static uint32_t   default_max_block_net_usage                  = 1024 * 10
 const static uint32_t   default_target_block_net_usage_pct           = 10 * percent_1; /// we target 1000 TPS
 const static uint32_t   default_max_transaction_net_usage            = default_max_block_net_usage / 2;
 const static uint32_t   default_base_per_transaction_net_usage       = 12;  // 12 bytes (11 bytes for worst case of transaction_receipt_header + 1 byte for static_variant tag)
-const static uint32_t   default_net_usage_leeway                     = 500; // TODO: is this reasonable?
-const static uint32_t   default_context_free_discount_net_usage_num  = 20; // TODO: is this reasonable?
+const static uint32_t   default_net_usage_leeway                     = 500;
+const static uint32_t   default_context_free_discount_net_usage_num  = 20;
 const static uint32_t   default_context_free_discount_net_usage_den  = 100;
 const static uint32_t   transaction_id_net_usage                     = 32; // 32 bytes for the size of a transaction id
 

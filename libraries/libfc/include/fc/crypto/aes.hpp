@@ -12,7 +12,6 @@ namespace fc {
        public:
          void init( const fc::sha256& key, const fc::uint128& init_value );
          uint32_t encode( const char* plaintxt, uint32_t len, char* ciphertxt );
- //        uint32_t final_encode( char* ciphertxt );
 
        private:
          struct      impl;
@@ -23,7 +22,6 @@ namespace fc {
        public:
          void     init( const fc::sha256& key, const fc::uint128& init_value );
          uint32_t decode( const char* ciphertxt, uint32_t len, char* plaintext );
-//         uint32_t final_decode( char* plaintext );
 
        private:
          struct      impl;
