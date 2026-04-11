@@ -62,6 +62,13 @@ namespace core_net { namespace client { namespace http {
    const string net_disconnect = net_func_base + "/disconnect";
    const string net_status = net_func_base + "/status";
    const string net_connections = net_func_base + "/connections";
+   const string net_add_deny_key = net_func_base + "/add_deny_key";
+   const string net_remove_deny_key = net_func_base + "/remove_deny_key";
+   const string net_add_deny_ip = net_func_base + "/add_deny_ip";
+   const string net_remove_deny_ip = net_func_base + "/remove_deny_ip";
+   const string net_access_rules = net_func_base + "/access_rules";
+   const string net_peer_reputation = net_func_base + "/peer_reputation";
+   const string net_bans = net_func_base + "/bans";
 
 
    const string wallet_func_base = "/v1/wallet";
