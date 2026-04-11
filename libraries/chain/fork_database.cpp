@@ -257,12 +257,13 @@ namespace core_net::chain {
             // it is not possible to claim a future block, skip if pending is already a higher height
             block_num_type current_lib = block_header::num_from_id(pending_savanna_lib_id);
             if (qc_claim.block_num > current_lib) {
-               // claim has already been verified, update LIB even if unable to verify block
-               // We evaluate a block extension qc and advance lib if strong.
-               // This is done before evaluating the block. It is possible the block
-               // will not be valid or forked out. This is safe because the block is
-               // just acting as a carrier of this info. It doesn't matter if the block
-               // is actually valid as it simply is used as a network message for this data.
+               // SEC-008: LIB update intentionally occurs before block index insertion.
+               // The QC claim has already been cryptographically verified in controller.cpp
+               // (verify_qc() + future.get()) before reaching fork_db.add(). The block acts
+               // only as a carrier of the QC data — even if the block itself fails validation
+               // or is forked out, the QC information it carries is independently valid and
+               // LIB should still advance. Reordering after insertion would incorrectly skip
+               // the LIB update for duplicate blocks (which return early at index.insert).
                if (auto claimed = search_on_branch_impl(n->previous(), qc_claim.block_num, include_root_t::no)) {
                   auto& latest_qc_claim__block_ref = claimed->core.get_block_reference(claimed->core.latest_qc_claim().block_num);
                   set_pending_savanna_lib_id_impl(latest_qc_claim__block_ref.block_id);

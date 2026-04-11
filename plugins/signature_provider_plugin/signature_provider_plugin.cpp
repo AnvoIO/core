@@ -100,7 +100,7 @@ class signature_provider_plugin_impl {
                EOS_THROW(chain::plugin_config_exception, "Invalid private key in file ${f} for public key ${pub}", ("f", spec_data)("pub", pubkey));
             }
          }
-         else if(spec_type_str == "KEOSD")
+         else if(spec_type_str == "CORE_WALLET" || spec_type_str == "KEOSD")
             return std::make_pair(pubkey, make_core_wallet_signature_provider(spec_data, pubkey));
          EOS_THROW(chain::plugin_config_exception, "Unsupported key provider type \"${t}\"", ("t", spec_type_str));
       }
@@ -121,11 +121,11 @@ const char* const signature_provider_plugin::signature_provider_help_text() cons
           "Where:\n"
           "   <public-key>    \tis a string form of a valid Antelope public key, including BLS finalizer key\n"
           "   <provider-spec> \tis a string in the form <provider-type>:<data>\n"
-          "   <provider-type> \tis KEY, FILE, KEOSD, or SE\n"
+          "   <provider-type> \tis KEY, FILE, CORE_WALLET (or KEOSD), or SE\n"
           "   KEY:<data>      \tis a string form of a valid Antelope private key which maps to the provided public key\n"
-          "                   \tWARNING: exposes the private key in process arguments — use FILE: or KEOSD: for production\n"
+          "                   \tWARNING: exposes the private key in process arguments — use FILE: or CORE_WALLET: for production\n"
           "   FILE:<path>     \tis a path to a file containing the private key (file must have 0600 or 0400 permissions)\n"
-          "   KEOSD:<data>    \tis the URL where keosd is available and the appropriate wallet(s) are unlocked\n\n"
+          "   CORE_WALLET:<data> \tis the URL where core-wallet is available and the appropriate wallet(s) are unlocked\n\n"
           ;
 
 }

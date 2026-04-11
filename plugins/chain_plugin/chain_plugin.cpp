@@ -2497,7 +2497,6 @@ read_only::get_account_return_t read_only::get_account( const get_account_params
    const auto& permissions = d.get_index<permission_index,by_owner>();
    auto perm = permissions.lower_bound( boost::make_tuple( params.account_name ) );
    while( perm != permissions.end() && perm->owner == params.account_name ) {
-      /// TODO: lookup perm->parent name
       name parent;
 
       // Don't lookup parent if null

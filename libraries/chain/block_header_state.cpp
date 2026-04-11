@@ -349,7 +349,14 @@ void finish_next(const block_header_state& prev,
    evaluate_proposer_policies_for_promotion(prev, next_header_state);
 
    if (f_ext.new_proposer_policy_diff) {
-      // called when assembling the block
+      // SEC-022: Validate that the proposer schedule version increments by exactly 1,
+      // mirroring the legacy path validation in block_header_state_legacy.cpp:270,284.
+      // The block production path (get_next_proposer_schedule_version) always sets version
+      // to previous + 1; this assertion catches malformed blocks from peers.
+      EOS_ASSERT(f_ext.new_proposer_policy_diff->version == prev.get_last_proposed_proposer_policy().proposer_schedule.version + 1,
+                 invalid_block_header_extension,
+                 "proposer schedule version ${n} must be one greater than previous ${p}",
+                 ("n", f_ext.new_proposer_policy_diff->version)("p", prev.get_last_proposed_proposer_policy().proposer_schedule.version));
       next_header_state.latest_proposed_proposer_policy =
          std::make_shared<proposer_policy>(prev.get_last_proposed_proposer_policy().apply_diff(*f_ext.new_proposer_policy_diff));
    }
@@ -505,8 +512,12 @@ block_header_state block_header_state::next(const signed_block_header& h, valida
 
    const auto& exts = next_header_state.header_exts;
 
-   // retrieve protocol_feature_activation from incoming block header extension
-   // -------------------------------------------------------------------------
+   // SEC-020: Protocol feature dependency validation occurs here, before any finality extension
+   // processing or proposer/finalizer policy evaluation. The validator (check_protocol_features)
+   // verifies recognition, timing, prior activation, and dependency satisfaction. This is the
+   // earliest practical point where the required context (activated features, protocol feature set)
+   // is available. Structural validation (duplicates, non-empty) happens during deserialization
+   // in protocol_feature_activation::reflector_init() called by validate_and_extract_header_extensions().
    vector<digest_type> new_protocol_feature_activations;
    if (auto  pfa_entry = exts.find(protocol_feature_activation::extension_id()); pfa_entry != exts.end()) {
       auto& pfa_ext   = std::get<protocol_feature_activation>(pfa_entry->second);

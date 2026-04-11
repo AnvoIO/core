@@ -15,14 +15,6 @@
 
 #include <chrono>
 
-#ifndef _WIN32
-#define FOPEN(p, m) fopen(p, m)
-#else
-#define CAT(s1, s2) s1##s2
-#define PREL(s) CAT(L, s)
-#define FOPEN(p, m) _wfopen(p, PREL(m))
-#endif
-
 using namespace core_net::chain;
 namespace bpo = boost::program_options;
 using bpo::options_description;
