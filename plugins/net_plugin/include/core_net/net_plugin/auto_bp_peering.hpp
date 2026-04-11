@@ -104,6 +104,43 @@ class bp_connection_manager {
          active_schedule.insert(auth.producer_name);
    }
 
+   /// Identify producers within `radius` positions of any of our producers in the schedule.
+   /// Returns the set of adjacent producer account names (excluding our own).
+   name_set_t adjacent_producers(const std::vector<chain::producer_authority>& schedule, uint32_t radius) const {
+      name_set_t result;
+      if (schedule.empty() || radius == 0) return result;
+
+      // Find our positions in the schedule
+      std::vector<size_t> my_positions;
+      for (size_t i = 0; i < schedule.size(); ++i) {
+         if (config.auto_bp_addresses.contains(schedule[i].producer_name) ||
+             config.my_bp_gossip_accounts.contains(schedule[i].producer_name)) {
+            my_positions.push_back(i);
+         }
+      }
+      if (my_positions.empty()) return result;
+
+      const size_t n = schedule.size();
+      for (size_t pos : my_positions) {
+         for (uint32_t d = 1; d <= radius; ++d) {
+            // Forward direction
+            size_t fwd = (pos + d) % n;
+            if (fwd != pos) result.insert(schedule[fwd].producer_name);
+            // Backward direction
+            size_t bwd = (pos + n - d) % n;
+            if (bwd != pos) result.insert(schedule[bwd].producer_name);
+         }
+      }
+
+      // Remove our own accounts
+      for (const auto& [acct, _] : config.auto_bp_addresses)
+         result.erase(acct);
+      for (const auto& [acct, _] : config.my_bp_gossip_accounts)
+         result.erase(acct);
+
+      return result;
+   }
+
    // for testing
    name_set_t get_active_bps() {
       fc::lock_guard g(mtx);
@@ -564,6 +601,14 @@ public:
 
                auto pending_connections = active_bp_accounts(schedule.producers);
 
+               // Phase 4: if producer-peer-radius is configured, also connect to adjacent producers
+               if (self()->producer_peer_radius > 0) {
+                  auto adjacent = adjacent_producers(schedule.producers, self()->producer_peer_radius);
+                  pending_connections.insert(adjacent.begin(), adjacent.end());
+                  fc_dlog(p2p_conn_log, "adjacent producers within radius ${r}: ${a}",
+                          ("r", self()->producer_peer_radius)("a", to_string(adjacent)));
+               }
+
                fc_dlog(p2p_conn_log, "pending_connections: ${c}", ("c", to_string(pending_connections)));
 
                // do not hold mutexes when calling resolve_and_connect which acquires connections mutex since other threads
@@ -602,6 +647,17 @@ public:
          }
 
          active_bps = active_bp_accounts(schedule.producers);
+
+         // Phase 4: include adjacent producers within radius.
+         // This ensures connections are established to nearby producers in the schedule.
+         // Future: add sub-second pre-warming timer that promotes connection priority
+         // ~500ms before an adjacent producer's slot for lower block relay latency.
+         if (self()->producer_peer_radius > 0) {
+            auto adjacent = adjacent_producers(schedule.producers, self()->producer_peer_radius);
+            active_bps.insert(adjacent.begin(), adjacent.end());
+            fc_dlog(p2p_conn_log, "adjacent producers within radius ${r}: ${a}",
+                    ("r", self()->producer_peer_radius)("a", to_string(adjacent)));
+         }
 
          fc_dlog(p2p_conn_log, "active_bps: ${a}", ("a", to_string(active_bps)));
 

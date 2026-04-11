@@ -46,6 +46,11 @@ struct mock_net_plugin : core_net::auto_bp_peering::bp_connection_manager<mock_n
    mock_connections_manager     connections;
    std::vector<std::string>     p2p_addresses{"0.0.0.0:9876"};
    const std::string&           get_first_p2p_address() const { return *p2p_addresses.begin(); }
+   uint32_t                     producer_peer_radius = 0;  // default off for existing tests
+   fc::crypto::public_key       family_public_key;         // empty = no family key configured
+   struct { fc::crypto::public_key public_key; } mock_node_key;
+   std::optional<decltype(mock_node_key)> node_key;        // empty = no node key
+   core_net::p2p_node_role      node_role = core_net::p2p_node_role::peer;
 
    bool is_lib_catchup() { return lib_catchup; }
 

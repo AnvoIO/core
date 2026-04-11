@@ -455,6 +455,7 @@ namespace core_net {
       std::string                            family_id;           // human-readable label
       p2p_node_role                          node_role = p2p_node_role::peer;  // this node's role
       uint32_t                               producer_peer_radius = 3;         // connect to N adjacent producers
+      uint32_t                               pre_warm_threshold_ms = 2000;     // ms before slot to pre-warm connections
       access_control                         acl;                 // access control rule set
 
       // P2P peer reputation (Phase 3)
@@ -5042,6 +5043,9 @@ namespace core_net {
          ( "p2p-producer-peer-radius", bpo::value<uint32_t>()->default_value(3),
            "Number of adjacent producers in each direction to connect to for schedule-aware peering. "
            "Default 3 covers ~29%% of a 21-producer schedule. Only applies when auto-bp-peering is active.")
+         ( "p2p-pre-warm-threshold-ms", bpo::value<uint32_t>()->default_value(2000),
+           "Milliseconds before an adjacent producer's slot to ensure connections are pre-warmed. "
+           "Default 2000ms. Wider windows accommodate slower networks.")
 
         ;
    }
@@ -5236,6 +5240,7 @@ namespace core_net {
                             "Invalid p2p-node-role: ${r}. Must be 'peer', 'seed', or 'producer'.", ("r", role_str));
          }
          producer_peer_radius = options.at("p2p-producer-peer-radius").as<uint32_t>();
+         pre_warm_threshold_ms = options.at("p2p-pre-warm-threshold-ms").as<uint32_t>();
 
          // Access control config (Phase 2)
          {
@@ -5371,6 +5376,17 @@ namespace core_net {
 
       incoming_transaction_ack_subscription = app().get_channel<compat::channels::transaction_ack>().subscribe(
             [this](auto&& t) { transaction_ack(std::forward<decltype(t)>(t)); });
+
+      // Phase 4: producer nodes never accept inbound connections
+      if (node_role == p2p_node_role::producer && !p2p_addresses.empty()) {
+         fc_ilog(p2p_conn_log, "\n"
+               "**********************************\n"
+               "* Node role: PRODUCER            *\n"
+               "* Outbound connections only      *\n"
+               "* Not listening for inbound P2P  *\n"
+               "**********************************\n" );
+         listen_addresses.clear();
+      }
 
       const boost::posix_time::milliseconds accept_timeout(100);
       std::string extra_listening_log_info = ", max clients is " + std::to_string(connections.get_max_client_count());
