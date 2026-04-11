@@ -121,7 +121,7 @@ const char* const signature_provider_plugin::signature_provider_help_text() cons
           "Where:\n"
           "   <public-key>    \tis a string form of a valid Antelope public key, including BLS finalizer key\n"
           "   <provider-spec> \tis a string in the form <provider-type>:<data>\n"
-"   <provider-type> \tis KEY, FILE, CORE_WALLET (or KEOSD), or SE\n"
+          "   <provider-type> \tis KEY, FILE, CORE_WALLET (or KEOSD), or SE\n"
           "   KEY:<data>      \tis a string form of a valid Antelope private key which maps to the provided public key\n"
           "                   \tWARNING: exposes the private key in process arguments — use FILE: or CORE_WALLET: for production\n"
           "   FILE:<path>     \tis a path to a file containing the private key (file must have 0600 or 0400 permissions)\n"
