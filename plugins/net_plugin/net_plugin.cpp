@@ -5492,6 +5492,8 @@ namespace core_net {
          e.connection_drops = r.connection_drops;
          e.sync_failures = r.sync_failures;
          e.uptime_hours = r.uptime_hours;
+         e.blocks_relayed = r.blocks_relayed;
+         e.avg_block_latency_ms = r.avg_block_latency_ms;
          result.push_back(std::move(e));
       }
       return result;

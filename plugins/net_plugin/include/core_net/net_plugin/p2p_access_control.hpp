@@ -204,6 +204,7 @@ public:
       return evaluate_locked(node_key, family_key, ip);
    }
 
+private:
    /// Internal evaluation without locking — caller must hold mtx_.
    access_decision evaluate_locked(const fc::crypto::public_key& node_key,
                                     const fc::crypto::public_key& family_key,
@@ -247,6 +248,7 @@ public:
       return access_decision::no_match;
    }
 
+public:
    /// Convenience: evaluate and apply default policy.
    /// Thread-safe — single lock covers both evaluation and default policy read.
    bool is_allowed(const fc::crypto::public_key& node_key,

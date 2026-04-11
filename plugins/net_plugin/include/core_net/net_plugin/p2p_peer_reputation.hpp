@@ -286,6 +286,8 @@ public:
       uint32_t        connection_drops = 0;
       uint32_t        sync_failures = 0;
       double          uptime_hours = 0.0;
+      uint64_t        blocks_relayed = 0;
+      double          avg_block_latency_ms = 0.0;
    };
 
    std::vector<peer_reputation_info> get_all_reputations() {
@@ -304,6 +306,9 @@ public:
          info.connection_drops = metrics.connection_drops;
          info.sync_failures = metrics.sync_failures;
          info.uptime_hours = metrics.total_uptime_hours;
+         info.blocks_relayed = metrics.blocks_relayed;
+         info.avg_block_latency_ms = metrics.blocks_relayed > 0
+            ? metrics.total_block_latency_ms / metrics.blocks_relayed : 0.0;
          result.push_back(std::move(info));
       }
       return result;
@@ -360,6 +365,8 @@ public:
             node("sync_failures", metrics.sync_failures);
             node("uptime_hours", metrics.total_uptime_hours);
             node("unique_txns_relayed", metrics.unique_txns_relayed);
+            node("blocks_relayed", metrics.blocks_relayed);
+            node("total_block_latency_ms", metrics.total_block_latency_ms);
             nodes(key, node);
          }
          root("nodes", nodes);
@@ -415,6 +422,8 @@ public:
                if (node.contains("sync_failures"))      m.sync_failures = node["sync_failures"].as_uint64();
                if (node.contains("uptime_hours"))       m.total_uptime_hours = node["uptime_hours"].as_double();
                if (node.contains("unique_txns_relayed")) m.unique_txns_relayed = node["unique_txns_relayed"].as_uint64();
+               if (node.contains("blocks_relayed"))     m.blocks_relayed = node["blocks_relayed"].as_uint64();
+               if (node.contains("total_block_latency_ms")) m.total_block_latency_ms = node["total_block_latency_ms"].as_double();
                m.last_seen = std::chrono::steady_clock::now();
             }
          }

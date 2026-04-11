@@ -79,6 +79,8 @@ namespace core_net {
            uint32_t        connection_drops = 0;
            uint32_t        sync_failures = 0;
            double          uptime_hours = 0.0;
+           uint64_t        blocks_relayed = 0;
+           double          avg_block_latency_ms = 0.0;
         };
         struct ban_entry_result {
            string          identifier;
@@ -160,5 +162,5 @@ FC_REFLECT( core_net::gossip_peer, (producer_name)(server_endpoint)(outbound_ip_
 FC_REFLECT( core_net::net_plugin::acl_key_param, (key) )
 FC_REFLECT( core_net::net_plugin::acl_ip_param, (ip) )
 FC_REFLECT( core_net::net_plugin::acl_rules_result, (default_policy)(deny_keys)(deny_families)(deny_ips)(allow_keys)(allow_families)(allow_ips) )
-FC_REFLECT( core_net::net_plugin::peer_reputation_entry, (node_key)(score)(tier)(invalid_blocks)(invalid_txns)(connection_drops)(sync_failures)(uptime_hours) )
+FC_REFLECT( core_net::net_plugin::peer_reputation_entry, (node_key)(score)(tier)(invalid_blocks)(invalid_txns)(connection_drops)(sync_failures)(uptime_hours)(blocks_relayed)(avg_block_latency_ms) )
 FC_REFLECT( core_net::net_plugin::ban_entry_result, (identifier)(type)(reason)(ban_count)(seconds_remaining) )
