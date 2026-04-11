@@ -2,6 +2,7 @@ add_executable( test_net_plugin
         auto_bp_peering_unittest.cpp
         rate_limit_parse_unittest.cpp
         p2p_transport_encryption_unittest.cpp
+        p2p_access_control_unittest.cpp
         main.cpp
 )
 target_link_libraries( test_net_plugin net_plugin core_net_testing core_net_chain_wrap )

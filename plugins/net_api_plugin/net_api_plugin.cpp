@@ -65,6 +65,16 @@ void net_api_plugin::plugin_startup() {
             INVOKE_R_V(net_mgr, connections), 201),
        CALL_WITH_400(net, net_ro, net_mgr, bp_gossip_peers,
             INVOKE_R_V(net_mgr, bp_gossip_peers), 201),
+       CALL_WITH_400(net, net_rw, net_mgr, add_deny_key,
+            INVOKE_V_R(net_mgr, add_deny_key, net_plugin::acl_key_param), 201),
+       CALL_WITH_400(net, net_rw, net_mgr, remove_deny_key,
+            INVOKE_V_R(net_mgr, remove_deny_key, net_plugin::acl_key_param), 201),
+       CALL_WITH_400(net, net_rw, net_mgr, add_deny_ip,
+            INVOKE_V_R(net_mgr, add_deny_ip, net_plugin::acl_ip_param), 201),
+       CALL_WITH_400(net, net_rw, net_mgr, remove_deny_ip,
+            INVOKE_V_R(net_mgr, remove_deny_ip, net_plugin::acl_ip_param), 201),
+       CALL_WITH_400(net, net_ro, net_mgr, access_rules,
+            INVOKE_R_V(net_mgr, access_rules), 201),
   } );
 }
 

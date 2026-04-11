@@ -23,6 +23,7 @@
 #include <fc/variant_object.hpp>
 #include <fc/crypto/rand.hpp>
 #include <core_net/net_plugin/p2p_transport_encryption.hpp>
+#include <core_net/net_plugin/p2p_access_control.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/time.hpp>
 #include <fc/mutex.hpp>
@@ -447,6 +448,12 @@ namespace core_net {
       uint64_t                              p2p_max_total_buffer_bytes = 0;        // SEC-025: 0 = unlimited
       std::atomic<uint64_t>                 p2p_total_buffer_bytes{0};             // current aggregate buffer usage
 
+      // P2P access control (Phase 2)
+      std::optional<fc::crypto::private_key> family_private_key;  // loaded from p2p-family-key config
+      fc::crypto::public_key                 family_public_key;   // derived from family_private_key
+      std::string                            family_id;           // human-readable label
+      access_control                         acl;                 // access control rule set
+
       chain_plugin*                         chain_plug = nullptr;
       producer_plugin*                      producer_plug = nullptr;
       bool                                  use_socket_read_watermark = false;
@@ -845,6 +852,10 @@ namespace core_net {
       std::size_t                      outstanding_read_bytes{0}; // accessed only from strand threads
 
       queued_buffer           buffer_queue;
+
+      // Peer's verified family key (set after encrypted_key_exchange, accessed from strand)
+      fc::crypto::public_key                 peer_family_key;    // empty if peer has no family
+      std::string                            peer_family_id;
 
       // Per-connection encryption state (accessed only from connection strand)
       std::unique_ptr<aead_context>          encryption_ctx;
@@ -3726,6 +3737,17 @@ namespace core_net {
             return;
          }
 
+         // Phase 2 ACL: evaluate node key + IP (family key checked after key exchange)
+         if (my_impl->acl.has_rules()) {
+            fc::lock_guard g(conn_mtx);
+            if (!my_impl->acl.is_allowed(msg.key, fc::crypto::public_key(), remote_endpoint_ip_array)) {
+               peer_wlog( p2p_conn_log, this, "Peer rejected by access control rules" );
+               no_retry = go_away_reason::authentication;
+               enqueue( go_away_message( go_away_reason::authentication ) );
+               return;
+            }
+         }
+
          uint32_t peer_fork_db_root_num = msg.fork_db_root_num;
          uint32_t fork_db_root_num = my_impl->get_fork_db_root_num();
 
@@ -4170,6 +4192,40 @@ namespace core_net {
          }
       }
 
+      // Verify and store peer's family key attestation
+      if (msg.family_key.valid() && msg.family_sig != chain::signature_type()) {
+         fc::lock_guard g(conn_mtx);
+         auto peer_handshake_key = last_handshake_recv.key;
+         if (peer_handshake_key.valid()) {
+            auto family_digest = compute_family_sig_digest(msg.family_key);
+            try {
+               auto recovered = fc::crypto::public_key(msg.family_sig, family_digest, true);
+               if (recovered == peer_handshake_key) {
+                  peer_family_key = msg.family_key;
+                  peer_family_id = msg.family_id;
+                  peer_dlog( p2p_msg_log, this, "Peer family verified: ${id} (${key})",
+                             ("id", msg.family_id)("key", msg.family_key.to_string(fc::yield_function_t())) );
+               } else {
+                  peer_wlog( p2p_msg_log, this, "Peer family attestation signature mismatch — ignoring family claim" );
+               }
+            } catch (...) {
+               peer_wlog( p2p_msg_log, this, "Peer family attestation signature recovery failed — ignoring family claim" );
+            }
+         }
+      }
+
+      // Re-evaluate ACL with family key (now available from key exchange)
+      if (my_impl->acl.has_rules() && peer_family_key.valid()) {
+         fc::lock_guard g(conn_mtx);
+         auto peer_handshake_key = last_handshake_recv.key;
+         if (!my_impl->acl.is_allowed(peer_handshake_key, peer_family_key, remote_endpoint_ip_array)) {
+            peer_wlog( p2p_conn_log, this, "Peer rejected by access control rules (family key check)" );
+            no_retry = go_away_reason::authentication;
+            enqueue( go_away_message( go_away_reason::authentication ) );
+            return;
+         }
+      }
+
       // Compute shared secret
       auto shared_secret = compute_x25519_shared_secret(ephemeral_ecdh_key->private_key, peer_ecdh);
       if (!shared_secret) {
@@ -4232,7 +4288,16 @@ namespace core_net {
          msg.ecdh_sig = my_impl->node_key->private_key.sign(ecdh_digest);
       }
 
-      // family_key and family_sig left empty for Phase 1 (Phase 2: access control)
+      // Attach family key attestation if configured
+      if (my_impl->family_private_key && my_impl->family_public_key.valid()) {
+         msg.family_key = my_impl->family_public_key;
+         msg.family_id = my_impl->family_id;
+         // Sign: proves this node's operator controls both the node key and the family key
+         if (my_impl->node_key) {
+            auto family_digest = compute_family_sig_digest(my_impl->family_public_key);
+            msg.family_sig = my_impl->node_key->private_key.sign(family_digest);
+         }
+      }
 
       enqueue( net_message(msg) );
       encryption_handshake_sent = true;
@@ -4647,6 +4712,18 @@ namespace core_net {
    }
 
    bool net_plugin_impl::authenticate_peer(const handshake_message& msg) const {
+      // Phase 2 ACL: if new-style rules are configured, use them instead of legacy auth.
+      // At handshake time, we have the node key and IP but not yet the family key.
+      // Family key ACL evaluation happens after encrypted_key_exchange.
+      if (acl.has_rules()) {
+         // We need the peer's IP for ACL evaluation. The caller should have set
+         // remote_endpoint_ip_array on the connection before calling authenticate_peer.
+         // For now, use an empty IP (ACL key/family rules still work, IP rules skip).
+         // Full IP-based ACL is evaluated in the connection's handshake handler.
+         return true;  // defer to ACL check in handshake handler where IP is available
+      }
+
+      // Legacy authentication
       if(allowed_connections == None)
          return false;
 
@@ -4858,6 +4935,25 @@ namespace core_net {
          ( "p2p-max-total-buffer-bytes", bpo::value<uint64_t>()->default_value(0),
            "Maximum aggregate P2P buffer memory across all connections in bytes. 0 = unlimited. "
            "When exceeded, the newest non-block-producer connections are closed. (SEC-025: global memory cap)")
+         ( "p2p-family-key", bpo::value<string>(),
+           "Path to the family key file (secp256k1 WIF private key). Identifies this node as belonging to "
+           "an organization. All nodes in the same family share the same key. Example: FILE:/etc/anvo/family-key.pem")
+         ( "p2p-family-id", bpo::value<string>()->default_value(""),
+           "Human-readable label for this node's family (max 64 chars). Example: acme-producer")
+         ( "p2p-default-policy", bpo::value<string>()->default_value("allow"),
+           "Default access control policy when no rule matches. Values: 'allow' or 'deny'.")
+         ( "p2p-allow-key", bpo::value<vector<string>>()->composing()->multitoken(),
+           "Public key of a node allowed to connect. May be specified multiple times.")
+         ( "p2p-deny-key", bpo::value<vector<string>>()->composing()->multitoken(),
+           "Public key of a node denied from connecting. May be specified multiple times. Deny rules override allow rules.")
+         ( "p2p-allow-family", bpo::value<vector<string>>()->composing()->multitoken(),
+           "Family public key — all nodes in this family are allowed. May be specified multiple times.")
+         ( "p2p-deny-family", bpo::value<vector<string>>()->composing()->multitoken(),
+           "Family public key — all nodes in this family are denied. May be specified multiple times.")
+         ( "p2p-allow-ip", bpo::value<vector<string>>()->composing()->multitoken(),
+           "IP address or CIDR range allowed to connect. Examples: 10.0.0.0/8, 192.168.1.50. May be specified multiple times.")
+         ( "p2p-deny-ip", bpo::value<vector<string>>()->composing()->multitoken(),
+           "IP address or CIDR range denied from connecting. May be specified multiple times. Deny rules override allow rules.")
 
         ;
    }
@@ -5017,6 +5113,70 @@ namespace core_net {
          if (p2p_require_encryption) p2p_enable_encryption = true;  // require implies enable
          p2p_incomplete_msg_timeout_ms = options.at("p2p-incomplete-message-timeout-ms").as<uint32_t>();
          p2p_max_total_buffer_bytes = options.at("p2p-max-total-buffer-bytes").as<uint64_t>();
+
+         // Family key config (Phase 2)
+         if (options.count("p2p-family-key")) {
+            auto key_path_str = options.at("p2p-family-key").as<string>();
+            // Strip "FILE:" prefix if present
+            if (key_path_str.starts_with("FILE:")) key_path_str = key_path_str.substr(5);
+            std::filesystem::path key_path(key_path_str);
+            EOS_ASSERT(std::filesystem::exists(key_path), chain::plugin_config_exception,
+                       "Family key file not found: ${f}", ("f", key_path_str));
+            std::ifstream ifs(key_path);
+            std::string wif;
+            std::getline(ifs, wif);
+            while (!wif.empty() && (wif.back() == '\n' || wif.back() == '\r' || wif.back() == ' '))
+               wif.pop_back();
+            EOS_ASSERT(!wif.empty(), chain::plugin_config_exception,
+                       "Family key file is empty: ${f}", ("f", key_path_str));
+            family_private_key = fc::crypto::private_key(wif);
+            family_public_key = family_private_key->get_public_key();
+            fc_ilog(p2p_conn_log, "P2P family key loaded: ${k}",
+                    ("k", family_public_key.to_string(fc::yield_function_t())));
+         }
+         family_id = options.at("p2p-family-id").as<string>();
+         EOS_ASSERT(family_id.size() <= 64, chain::plugin_config_exception,
+                    "p2p-family-id too long (max 64 chars)");
+
+         // Access control config (Phase 2)
+         {
+            auto policy_str = options.at("p2p-default-policy").as<string>();
+            if (policy_str == "deny")
+               acl.set_default_policy(access_default_policy::deny);
+            else if (policy_str == "allow")
+               acl.set_default_policy(access_default_policy::allow);
+            else
+               EOS_ASSERT(false, chain::plugin_config_exception,
+                          "Invalid p2p-default-policy: ${p}. Must be 'allow' or 'deny'.", ("p", policy_str));
+         }
+         if (options.count("p2p-deny-key")) {
+            for (const auto& s : options["p2p-deny-key"].as<vector<string>>())
+               acl.add_deny_key(fc::crypto::public_key(s));
+         }
+         if (options.count("p2p-deny-family")) {
+            for (const auto& s : options["p2p-deny-family"].as<vector<string>>())
+               acl.add_deny_family(fc::crypto::public_key(s));
+         }
+         if (options.count("p2p-deny-ip")) {
+            for (const auto& s : options["p2p-deny-ip"].as<vector<string>>()) {
+               EOS_ASSERT(acl.add_deny_ip(s), chain::plugin_config_exception,
+                          "Invalid p2p-deny-ip: ${ip}", ("ip", s));
+            }
+         }
+         if (options.count("p2p-allow-key")) {
+            for (const auto& s : options["p2p-allow-key"].as<vector<string>>())
+               acl.add_allow_key(fc::crypto::public_key(s));
+         }
+         if (options.count("p2p-allow-family")) {
+            for (const auto& s : options["p2p-allow-family"].as<vector<string>>())
+               acl.add_allow_family(fc::crypto::public_key(s));
+         }
+         if (options.count("p2p-allow-ip")) {
+            for (const auto& s : options["p2p-allow-ip"].as<vector<string>>()) {
+               EOS_ASSERT(acl.add_allow_ip(s), chain::plugin_config_exception,
+                          "Invalid p2p-allow-ip: ${ip}", ("ip", s));
+            }
+         }
 
          if( p2p_accept_transactions ) {
             chain_plug->enable_accept_transactions();
@@ -5192,6 +5352,42 @@ namespace core_net {
 
    vector<gossip_peer> net_plugin::bp_gossip_peers()const {
       return my->bp_gossip_peers();
+   }
+
+   // ── Phase 2: Access control runtime API ──────────────────────────
+
+   void net_plugin::add_deny_key( acl_key_param params ) {
+      my->acl.add_deny_key(params.key);
+      fc_ilog(p2p_conn_log, "ACL: added deny-key ${k}", ("k", params.key.to_string(fc::yield_function_t())));
+   }
+
+   void net_plugin::remove_deny_key( acl_key_param params ) {
+      my->acl.remove_deny_key(params.key);
+      fc_ilog(p2p_conn_log, "ACL: removed deny-key ${k}", ("k", params.key.to_string(fc::yield_function_t())));
+   }
+
+   void net_plugin::add_deny_ip( acl_ip_param params ) {
+      EOS_ASSERT(my->acl.add_deny_ip(params.ip), chain::plugin_exception,
+                 "Invalid IP/CIDR: ${ip}", ("ip", params.ip));
+      fc_ilog(p2p_conn_log, "ACL: added deny-ip ${ip}", ("ip", params.ip));
+   }
+
+   void net_plugin::remove_deny_ip( acl_ip_param params ) {
+      my->acl.remove_deny_ip(params.ip);
+      fc_ilog(p2p_conn_log, "ACL: removed deny-ip ${ip}", ("ip", params.ip));
+   }
+
+   net_plugin::acl_rules_result net_plugin::access_rules() const {
+      auto summary = my->acl.get_rules();
+      acl_rules_result result;
+      result.default_policy = summary.default_policy;
+      result.deny_keys = std::move(summary.deny_keys);
+      result.deny_families = std::move(summary.deny_families);
+      result.deny_ips = std::move(summary.deny_ips);
+      result.allow_keys = std::move(summary.allow_keys);
+      result.allow_families = std::move(summary.allow_families);
+      result.allow_ips = std::move(summary.allow_ips);
+      return result;
    }
 
    constexpr proto_version_t net_plugin_impl::to_protocol_version(uint16_t v) {
