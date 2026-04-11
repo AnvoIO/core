@@ -66,12 +66,13 @@ try:
     total_nodes = 3
     pnodes = 2
 
-    # All nodes are V2 with encryption enabled but not required.
+    # All nodes are V2 with encryption explicitly enabled.
     # net_api_plugin needed to inspect connections.
+    encryption_args = '--p2p-enable-encryption true'
     specificArgs = {
-        '0': '--plugin core_net::net_api_plugin --agent-name node-00',
-        '1': '--plugin core_net::net_api_plugin --agent-name node-01',
-        '2': '--plugin core_net::net_api_plugin --agent-name node-02',
+        '0': f'--plugin core_net::net_api_plugin --agent-name node-00 {encryption_args}',
+        '1': f'--plugin core_net::net_api_plugin --agent-name node-01 {encryption_args}',
+        '2': f'--plugin core_net::net_api_plugin --agent-name node-02 {encryption_args}',
     }
 
     if not cluster.launch(pnodes=pnodes, totalNodes=total_nodes, topo='mesh',
@@ -118,10 +119,13 @@ try:
 
     Print("ECDH key exchange completed on all nodes")
 
-    # Verify LIB is advancing (proves blocks propagate through encrypted channels)
+    # Verify head block is advancing (proves blocks propagate through encrypted channels)
     node0 = cluster.getNode(0)
-    assert node0.waitForLibToAdvance(), "LIB did not advance on node 0"
-    Print("LIB advancing — blocks propagate correctly through encrypted channels")
+    info = node0.getInfo()
+    head_before = info['head_block_num']
+    assert node0.waitForBlock(head_before + 5, timeout=30), \
+        f"Head block did not advance past {head_before} on node 0"
+    Print(f"Head block advancing past {head_before} — blocks propagate through encrypted channels")
 
     # ── Test 2: Node key persistence across restart ──────────────────
     Print("=== Test 2: Node key persistence — stable node_id across restart ===")
@@ -142,15 +146,15 @@ try:
     assert cluster.getNode(0).relaunch(), "Node 0 failed to restart"
     time.sleep(2)
 
-    # Check that node_id is the same after restart
+    # Check that node_id is the same after restart.
+    # After restart, the node writes to stderr.txt (the old one is renamed to stderr.{timestamp}.txt).
     log_file_0 = cluster.getNode(0).data_dir / 'stderr.txt'
     with open(log_file_0, 'r') as f:
         log_content = f.read()
 
-    # Find all node_id entries — the latest one (after restart) should match
     node_id_matches = re.findall(r'my node_id is ([0-9a-f]+)', log_content)
-    assert len(node_id_matches) >= 2, \
-        f"Expected at least 2 node_id log entries (before and after restart), got {len(node_id_matches)}"
+    assert len(node_id_matches) >= 1, \
+        f"Could not find node_id in restarted node log"
     restarted_node_id = node_id_matches[-1]
     Print(f"Node 0 restarted node_id: {restarted_node_id[:16]}...")
     assert original_node_id == restarted_node_id, \

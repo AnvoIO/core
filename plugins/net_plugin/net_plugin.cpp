@@ -441,7 +441,8 @@ namespace core_net {
 
       // P2P transport encryption (Phase 1)
       std::optional<node_key_t>             node_key;           // persistent node identity
-      bool                                  p2p_require_encryption = false;
+      bool                                  p2p_enable_encryption = false;  // enable encrypted transport negotiation
+      bool                                  p2p_require_encryption = false; // reject plaintext-only peers (implies enable)
       uint32_t                              p2p_incomplete_msg_timeout_ms = 30000; // SEC-024: slow-loris timeout
       uint64_t                              p2p_max_total_buffer_bytes = 0;        // SEC-025: 0 = unlimited
       std::atomic<uint64_t>                 p2p_total_buffer_bytes{0};             // current aggregate buffer usage
@@ -1268,6 +1269,7 @@ namespace core_net {
       listen_address = host + ":" + port; // do not include type in listen_address to avoid peer setting type on connection
       set_connection_type( peer_address() );
       my_impl->mark_configured_bp_connection(this);
+      if (!my_impl->p2p_enable_encryption) net_version = proto_version_t::trx_notice; // don't advertise V2
       fc_ilog( p2p_conn_log, "created connection - ${c} to ${n}", ("c", connection_id)("n", endpoint) );
    }
 
@@ -1282,6 +1284,7 @@ namespace core_net {
         last_handshake_recv(),
         last_handshake_sent()
    {
+      if (!my_impl->p2p_enable_encryption) net_version = proto_version_t::trx_notice; // don't advertise V2
       fc_dlog( p2p_conn_log, "new connection - ${c} object created for peer ${address}:${port} from listener ${addr}",
                ("c", connection_id)("address", log_remote_endpoint_ip)("port", log_remote_endpoint_port)("addr", listen_address) );
    }
@@ -4843,8 +4846,12 @@ namespace core_net {
            "   _agent \tfirst 15 characters of agent-name of peer\n\n"
            "   _nver  \tp2p protocol version\n\n")
          ( "p2p-keepalive-interval-ms", bpo::value<int>()->default_value(def_keepalive_interval), "peer heartbeat keepalive message interval in milliseconds")
+         ( "p2p-enable-encryption", bpo::value<bool>()->default_value(false),
+           "Enable encrypted transport negotiation. When true, the node advertises V2 protocol support and "
+           "negotiates ECDH key exchange with compatible peers. When false, all connections remain plaintext.")
          ( "p2p-require-encryption", bpo::value<bool>()->default_value(false),
-           "Require encrypted transport for all P2P connections. When true, plaintext-only (V1) peers are rejected.")
+           "Require encrypted transport for all P2P connections. When true, plaintext-only (V1) peers are rejected. "
+           "Implies p2p-enable-encryption=true.")
          ( "p2p-incomplete-message-timeout-ms", bpo::value<uint32_t>()->default_value(30000),
            "Timeout in milliseconds for receiving a complete P2P message after the header arrives. "
            "Connections that do not deliver the full message within this window are closed. (SEC-024: slow-loris mitigation)")
@@ -5005,7 +5012,9 @@ namespace core_net {
          node_id = node_key->node_id;
 
          // Transport encryption config
+         p2p_enable_encryption = options.at("p2p-enable-encryption").as<bool>();
          p2p_require_encryption = options.at("p2p-require-encryption").as<bool>();
+         if (p2p_require_encryption) p2p_enable_encryption = true;  // require implies enable
          p2p_incomplete_msg_timeout_ms = options.at("p2p-incomplete-message-timeout-ms").as<uint32_t>();
          p2p_max_total_buffer_bytes = options.at("p2p-max-total-buffer-bytes").as<uint64_t>();
 
