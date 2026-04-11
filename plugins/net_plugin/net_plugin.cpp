@@ -22,6 +22,7 @@
 #include <fc/io/datastream.hpp>
 #include <fc/variant_object.hpp>
 #include <fc/crypto/rand.hpp>
+#include <core_net/net_plugin/p2p_transport_encryption.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/time.hpp>
 #include <fc/mutex.hpp>
@@ -267,10 +268,11 @@ namespace core_net {
       savanna = 9,                   // savanna, adds vote_message
       block_nack = 10,               // adds block_nack_message & block_notice_message
       gossip_bp_peers = 11,          // adds gossip_bp_peers_message
-      trx_notice = 12                // adds transaction_notice_message
+      trx_notice = 12,               // adds transaction_notice_message
+      encrypted_transport = 13       // adds encrypted_key_exchange, ECDH transport encryption
    };
 
-   constexpr proto_version_t net_version_max = proto_version_t::trx_notice;
+   constexpr proto_version_t net_version_max = proto_version_t::encrypted_transport;
 
    /**
     * default value initializers
@@ -436,6 +438,13 @@ namespace core_net {
       chain_id_type                         chain_id;
       fc::sha256                            node_id;
       string                                user_agent_name;
+
+      // P2P transport encryption (Phase 1)
+      std::optional<node_key_t>             node_key;           // persistent node identity
+      bool                                  p2p_require_encryption = false;
+      uint32_t                              p2p_incomplete_msg_timeout_ms = 30000; // SEC-024: slow-loris timeout
+      uint64_t                              p2p_max_total_buffer_bytes = 0;        // SEC-025: 0 = unlimited
+      std::atomic<uint64_t>                 p2p_total_buffer_bytes{0};             // current aggregate buffer usage
 
       chain_plugin*                         chain_plug = nullptr;
       producer_plugin*                      producer_plug = nullptr;
@@ -836,6 +845,17 @@ namespace core_net {
 
       queued_buffer           buffer_queue;
 
+      // Per-connection encryption state (accessed only from connection strand)
+      std::unique_ptr<aead_context>          encryption_ctx;
+      std::optional<x25519_keypair>          ephemeral_ecdh_key;  // generated per-connection
+      bool                                   encryption_active = false;
+      bool                                   encryption_handshake_sent = false;
+      std::chrono::steady_clock::time_point  encryption_start_time{};
+
+      // SEC-024: incomplete message read deadline timer
+      boost::asio::steady_timer              incomplete_msg_timer{strand};
+      bool                                   incomplete_msg_timer_active = false;
+
       fc::sha256              conn_node_id;
       string                  short_conn_node_id;
       string                  listen_address; // address sent to peer in handshake
@@ -1052,6 +1072,8 @@ namespace core_net {
       void handle_message( gossip_bp_peers_message& msg);
       void handle_message( const gossip_bp_peers_message& msg) = delete;
       void handle_message( const transaction_notice_message& msg);
+      void handle_message( const encrypted_key_exchange& msg);
+      void send_encrypted_key_exchange();
 
       // returns calculated number of blocks combined latency
       uint32_t calc_block_latency();
@@ -1149,6 +1171,12 @@ namespace core_net {
       void operator()( gossip_bp_peers_message& msg ) const {
          // continue call to handle_message on connection strand
          peer_dlog( p2p_msg_log, c, "handle gossip_bp_peers_message ${m}", ("m", msg) );
+         c->handle_message( msg );
+      }
+
+      void operator()( const encrypted_key_exchange& msg ) const {
+         // continue call to handle_message on connection strand
+         peer_dlog( p2p_msg_log, c, "handle encrypted_key_exchange" );
          c->handle_message( msg );
       }
    };
@@ -1868,8 +1896,40 @@ namespace core_net {
                                     const send_buffer_type& send_buffer,
                                     go_away_reason close_after_send)
    {
+      // If encryption is active, encrypt the payload portion of the send buffer.
+      // Input format:  [4-byte message_length][plaintext_payload]
+      // Output format: [4-byte message_length'][12-byte nonce][encrypted_payload][16-byte tag]
+      // where message_length' = nonce_len + encrypted_payload + tag_len
+      send_buffer_type actual_send_buffer = send_buffer;
+      if (encryption_active && encryption_ctx && encryption_ctx->is_initialized()) {
+         const char* buf = send_buffer->data();
+         const size_t buf_size = send_buffer->size();
+         if (buf_size > message_header_size) {
+            const char* plaintext = buf + message_header_size;
+            const size_t plaintext_len = buf_size - message_header_size;
+
+            // Original message_length as AAD
+            uint32_t orig_msg_len;
+            std::memcpy(&orig_msg_len, buf, sizeof(orig_msg_len));
+
+            auto encrypted = encryption_ctx->seal(plaintext, plaintext_len, orig_msg_len);
+            if (encrypted) {
+               // Build new buffer: [new_message_length][encrypted_data]
+               const uint32_t new_msg_len = static_cast<uint32_t>(encrypted->size());
+               auto new_buf = std::make_shared<std::vector<char>>(message_header_size + new_msg_len);
+               std::memcpy(new_buf->data(), &new_msg_len, message_header_size);
+               std::memcpy(new_buf->data() + message_header_size, encrypted->data(), encrypted->size());
+               actual_send_buffer = new_buf;
+            } else {
+               peer_elog( p2p_conn_log, this, "Encryption failed, closing connection" );
+               close();
+               return;
+            }
+         }
+      }
+
       connection_ptr self = shared_from_this();
-      queue_write(net_msg, block_num, queue, send_buffer,
+      queue_write(net_msg, block_num, queue, actual_send_buffer,
             [conn{std::move(self)}, close_after_send, net_msg, block_num](boost::system::error_code ec, std::size_t s) {
                         if (ec) {
                            if (ec != boost::asio::error::operation_aborted && ec != boost::asio::error::connection_reset && conn->socket_is_open()) {
@@ -3040,11 +3100,29 @@ namespace core_net {
                               break;
                            }
 
+                           // SEC-025: check global P2P buffer memory cap before allocating
+                           if (my_impl->p2p_max_total_buffer_bytes > 0) {
+                              uint64_t current_total = my_impl->p2p_total_buffer_bytes.load(std::memory_order_relaxed);
+                              if (current_total + message_length > my_impl->p2p_max_total_buffer_bytes) {
+                                 peer_wlog( p2p_conn_log, conn,
+                                    "Global P2P buffer cap exceeded (${cur} + ${msg} > ${max}), closing connection",
+                                    ("cur", current_total)("msg", message_length)("max", my_impl->p2p_max_total_buffer_bytes) );
+                                 close_connection = true;
+                                 break;
+                              }
+                              my_impl->p2p_total_buffer_bytes.fetch_add(message_length, std::memory_order_relaxed);
+                           }
+
                            auto total_message_bytes = message_length + message_header_size;
 
                            if (bytes_in_buffer >= total_message_bytes) {
                               conn->pending_message_buffer.advance_read_ptr(message_header_size);
                               conn->consecutive_immediate_connection_close = 0;
+                              // SEC-024: cancel incomplete message timer — full message received
+                              if (conn->incomplete_msg_timer_active) {
+                                 conn->incomplete_msg_timer.cancel();
+                                 conn->incomplete_msg_timer_active = false;
+                              }
                               if (!conn->process_next_message(message_length)) {
                                  return;
                               }
@@ -3056,6 +3134,25 @@ namespace core_net {
                               }
 
                               conn->outstanding_read_bytes = outstanding_message_bytes;
+
+                              // SEC-024: start incomplete message deadline timer.
+                              // If the peer has sent a message header but the full payload
+                              // doesn't arrive within the timeout, close the connection.
+                              if (my_impl->p2p_incomplete_msg_timeout_ms > 0 && !conn->incomplete_msg_timer_active) {
+                                 conn->incomplete_msg_timer_active = true;
+                                 conn->incomplete_msg_timer.expires_after(
+                                    std::chrono::milliseconds(my_impl->p2p_incomplete_msg_timeout_ms));
+                                 conn->incomplete_msg_timer.async_wait(
+                                    boost::asio::bind_executor(conn->strand,
+                                       [weak_conn = std::weak_ptr<connection>(conn)](boost::system::error_code ec) {
+                                          if (ec) return;  // timer cancelled (message completed)
+                                          auto conn = weak_conn.lock();
+                                          if (!conn) return;
+                                          peer_wlog(p2p_conn_log, conn, "Incomplete message timeout (slow-loris), closing");
+                                          conn->close();
+                                       }));
+                              }
+
                               break;
                            }
                         }
@@ -3107,9 +3204,63 @@ namespace core_net {
    bool connection::process_next_message( uint32_t message_length ) {
       bytes_received += message_length;
       last_bytes_received = get_time();
+      // SEC-025: release the buffer accounting for this message
+      if (my_impl->p2p_max_total_buffer_bytes > 0) {
+         my_impl->p2p_total_buffer_bytes.fetch_sub(
+            std::min(static_cast<uint64_t>(message_length), my_impl->p2p_total_buffer_bytes.load(std::memory_order_relaxed)),
+            std::memory_order_relaxed);
+      }
       try {
          auto now = latest_msg_time = std::chrono::steady_clock::now();
 
+         // ── Encrypted receive path ─────────────────────────────────────────
+         // If encryption is active, the payload is [nonce][ciphertext][tag].
+         // Decrypt the entire payload, then dispatch from decrypted data.
+         if (encryption_active && encryption_ctx && encryption_ctx->is_initialized()) {
+            if (message_length < encrypted_overhead) {
+               peer_elog( p2p_conn_log, this, "Encrypted message too short (${len} bytes)", ("len", message_length) );
+               close();
+               return false;
+            }
+
+            // Read the encrypted payload from the buffer
+            std::vector<char> encrypted_data(message_length);
+            auto ds_consume = pending_message_buffer.create_datastream();
+            ds_consume.read(encrypted_data.data(), message_length);
+
+            // Decrypt — the original plaintext message_length is used as AAD.
+            // Since the sender encrypted with orig_msg_len as AAD, we need to reconstruct it:
+            // plaintext_len = message_length - encrypted_overhead
+            uint32_t plaintext_msg_len = message_length - static_cast<uint32_t>(encrypted_overhead);
+            auto decrypted = encryption_ctx->open(encrypted_data.data(), encrypted_data.size(), plaintext_msg_len);
+            if (!decrypted) {
+               peer_elog( p2p_conn_log, this, "Message decryption/authentication failed, closing" );
+               close();
+               return false;
+            }
+
+            // Parse the decrypted plaintext as a net_message
+            fc::datastream<const char*> dec_ds(decrypted->data(), decrypted->size());
+            unsigned_int which{};
+            fc::raw::unpack(dec_ds, which);
+            msg_type_t net_msg = to_msg_type_t(which.value);
+
+            // For encrypted connections, we don't use the specialized peek-and-optimize
+            // handlers. All messages go through full deserialization.
+            if (net_msg == msg_type_t::signed_block) {
+               latest_blk_time = now;
+            }
+
+            fc::datastream<const char*> dec_ds2(decrypted->data(), decrypted->size());
+            net_message msg;
+            fc::raw::unpack(dec_ds2, msg);
+            msg_handler m(shared_from_this());
+            std::visit(m, msg);
+
+            return true;
+         }
+
+         // ── Plaintext receive path (unchanged) ─────────────────────────────
          // if next message is a block we already have, exit early
          auto peek_ds = pending_message_buffer.create_peek_datastream();
          unsigned_int which{};
@@ -3589,6 +3740,16 @@ namespace core_net {
             send_handshake();
          }
 
+         // Initiate encrypted transport if both sides support V2
+         if (protocol_version >= proto_version_t::encrypted_transport && !encryption_handshake_sent) {
+            send_encrypted_key_exchange();
+         } else if (protocol_version < proto_version_t::encrypted_transport && my_impl->p2p_require_encryption) {
+            peer_ilog( p2p_conn_log, this, "Peer does not support encryption and p2p-require-encryption is set. Closing." );
+            no_retry = go_away_reason::authentication;
+            enqueue( go_away_message( go_away_reason::authentication ) );
+            return;
+         }
+
          send_gossip_bp_peers_initial_message();
       }
 
@@ -3933,6 +4094,131 @@ namespace core_net {
    // called from connection strand
    void connection::handle_message( const transaction_notice_message& msg ) {
       peer_dlog( p2p_trx_log, this, "received transaction_notice_message ${id}", ("id", msg.id) );
+   }
+
+   // called from connection strand
+   void connection::handle_message( const encrypted_key_exchange& msg ) {
+      peer_dlog( p2p_msg_log, this, "received encrypted_key_exchange" );
+
+      if (protocol_version < proto_version_t::encrypted_transport) {
+         peer_wlog( p2p_msg_log, this, "received encrypted_key_exchange from V1 peer, ignoring" );
+         return;
+      }
+
+      if (encryption_active) {
+         peer_wlog( p2p_msg_log, this, "received duplicate encrypted_key_exchange, ignoring" );
+         return;
+      }
+
+      if (!ephemeral_ecdh_key) {
+         peer_wlog( p2p_msg_log, this, "received encrypted_key_exchange but no ephemeral key generated" );
+         no_retry = go_away_reason::fatal_other;
+         enqueue( go_away_message( go_away_reason::fatal_other ) );
+         return;
+      }
+
+      // Validate peer's ECDH public key is not all zeros
+      const auto& peer_ecdh = msg.ecdh_pubkey;
+      bool all_zero = true;
+      for (auto b : peer_ecdh) { if (b != 0) { all_zero = false; break; } }
+      if (all_zero) {
+         peer_wlog( p2p_msg_log, this, "peer sent zero ECDH public key, closing" );
+         no_retry = go_away_reason::fatal_other;
+         enqueue( go_away_message( go_away_reason::fatal_other ) );
+         return;
+      }
+
+      // Verify the ECDH signature — proves the peer who authenticated in the handshake
+      // is the same entity providing this ECDH key (prevents active MITM substitution).
+      {
+         fc::lock_guard g(conn_mtx);
+         auto peer_handshake_key = last_handshake_recv.key;
+         if (peer_handshake_key.valid() && msg.ecdh_sig != chain::signature_type()) {
+            auto ecdh_digest = compute_ecdh_sig_digest(msg.ecdh_pubkey);
+            auto recovered = fc::crypto::public_key(msg.ecdh_sig, ecdh_digest, true);
+            if (recovered != peer_handshake_key) {
+               peer_wlog( p2p_msg_log, this, "ECDH signature verification failed — key does not match handshake identity, closing" );
+               no_retry = go_away_reason::authentication;
+               enqueue( go_away_message( go_away_reason::authentication ) );
+               return;
+            }
+         } else if (msg.ecdh_sig == chain::signature_type()) {
+            // Peer did not sign the ECDH key — reject if we require authenticated encryption
+            if (my_impl->p2p_require_encryption) {
+               peer_wlog( p2p_msg_log, this, "Peer did not sign ECDH key and p2p-require-encryption is set, closing" );
+               no_retry = go_away_reason::authentication;
+               enqueue( go_away_message( go_away_reason::authentication ) );
+               return;
+            }
+            peer_dlog( p2p_msg_log, this, "Peer did not sign ECDH key, proceeding without MITM protection" );
+         }
+      }
+
+      // Compute shared secret
+      auto shared_secret = compute_x25519_shared_secret(ephemeral_ecdh_key->private_key, peer_ecdh);
+      if (!shared_secret) {
+         peer_wlog( p2p_msg_log, this, "ECDH shared secret computation failed (invalid peer key), closing" );
+         no_retry = go_away_reason::fatal_other;
+         enqueue( go_away_message( go_away_reason::fatal_other ) );
+         return;
+      }
+
+      // Derive session key
+      auto session_key = derive_session_key(*shared_secret, my_impl->node_id, conn_node_id);
+
+      // Zero the shared secret from memory
+      OPENSSL_cleanse(shared_secret->data(), shared_secret->size());
+
+      // Zero ephemeral private key — no longer needed
+      OPENSSL_cleanse(ephemeral_ecdh_key->private_key.data(), ephemeral_ecdh_key->private_key.size());
+      ephemeral_ecdh_key.reset();
+
+      // Initialize AEAD context
+      // Initiator = the side with the lower node_id
+      bool is_initiator = (my_impl->node_id < conn_node_id);
+      encryption_ctx = std::make_unique<aead_context>();
+      if (!encryption_ctx->init(session_key, is_initiator)) {
+         peer_wlog( p2p_msg_log, this, "AEAD context initialization failed, closing" );
+         OPENSSL_cleanse(session_key.data(), session_key.size());
+         encryption_ctx.reset();
+         no_retry = go_away_reason::fatal_other;
+         enqueue( go_away_message( go_away_reason::fatal_other ) );
+         return;
+      }
+
+      // Zero the session key from stack
+      OPENSSL_cleanse(session_key.data(), session_key.size());
+
+      encryption_active = true;
+      encryption_start_time = std::chrono::steady_clock::now();
+
+      peer_ilog( p2p_conn_log, this, "Encrypted transport activated (ChaCha20-Poly1305)" );
+   }
+
+   // called from connection strand — send our side of the key exchange
+   void connection::send_encrypted_key_exchange() {
+      if (protocol_version < proto_version_t::encrypted_transport) return;
+      if (encryption_handshake_sent) return;
+
+      // Generate ephemeral X25519 keypair for this connection
+      ephemeral_ecdh_key = generate_x25519_keypair();
+
+      encrypted_key_exchange msg;
+      msg.ecdh_pubkey = ephemeral_ecdh_key->public_key;
+
+      // Sign the ECDH public key with our node key to prevent MITM substitution.
+      // The signature binds this ephemeral key to our authenticated identity.
+      if (my_impl->node_key) {
+         auto ecdh_digest = compute_ecdh_sig_digest(msg.ecdh_pubkey);
+         msg.ecdh_sig = my_impl->node_key->private_key.sign(ecdh_digest);
+      }
+
+      // family_key and family_sig left empty for Phase 1 (Phase 2: access control)
+
+      enqueue( net_message(msg) );
+      encryption_handshake_sent = true;
+
+      peer_dlog( p2p_msg_log, this, "sent encrypted_key_exchange" );
    }
 
    digest_type gossip_bp_peers_message::bp_peer::digest(const chain_id_type& chain_id) const {
@@ -4533,6 +4819,14 @@ namespace core_net {
            "   _agent \tfirst 15 characters of agent-name of peer\n\n"
            "   _nver  \tp2p protocol version\n\n")
          ( "p2p-keepalive-interval-ms", bpo::value<int>()->default_value(def_keepalive_interval), "peer heartbeat keepalive message interval in milliseconds")
+         ( "p2p-require-encryption", bpo::value<bool>()->default_value(false),
+           "Require encrypted transport for all P2P connections. When true, plaintext-only (V1) peers are rejected.")
+         ( "p2p-incomplete-message-timeout-ms", bpo::value<uint32_t>()->default_value(30000),
+           "Timeout in milliseconds for receiving a complete P2P message after the header arrives. "
+           "Connections that do not deliver the full message within this window are closed. (SEC-024: slow-loris mitigation)")
+         ( "p2p-max-total-buffer-bytes", bpo::value<uint64_t>()->default_value(0),
+           "Maximum aggregate P2P buffer memory across all connections in bytes. 0 = unlimited. "
+           "When exceeded, the newest non-block-producer connections are closed. (SEC-025: global memory cap)")
 
         ;
    }
@@ -4680,7 +4974,16 @@ namespace core_net {
          }
 
          chain_id = chain_plug->get_chain_id();
-         fc::rand_pseudo_bytes( node_id.data(), node_id.data_size());
+
+         // Load or generate persistent node key; derive deterministic node_id
+         auto key_file = app().data_dir() / "p2p-node-key";
+         node_key = load_or_generate_node_key(key_file);
+         node_id = node_key->node_id;
+
+         // Transport encryption config
+         p2p_require_encryption = options.at("p2p-require-encryption").as<bool>();
+         p2p_incomplete_msg_timeout_ms = options.at("p2p-incomplete-message-timeout-ms").as<uint32_t>();
+         p2p_max_total_buffer_bytes = options.at("p2p-max-total-buffer-bytes").as<uint64_t>();
 
          if( p2p_accept_transactions ) {
             chain_plug->enable_accept_transactions();

@@ -3,6 +3,9 @@
 #include <core_net/chain/vote_message.hpp>
 #include <core_net/chain/types.hpp>
 
+#include <array>
+#include <cstdint>
+
 namespace core_net {
    using namespace chain;
    using namespace fc;
@@ -167,6 +170,19 @@ namespace core_net {
       std::vector<signed_bp_peer> peers;
    };
 
+   /// Sent after handshake when both sides signal V2 (encrypted_transport) via network_version.
+   /// Carries ephemeral X25519 ECDH public key for session key derivation.
+   /// The ecdh_sig field binds the ephemeral key to the node's authenticated identity,
+   /// preventing active MITM substitution of the ECDH public key.
+   /// V1 nodes never receive this message (V2 nodes check peer version first).
+   struct encrypted_key_exchange {
+      std::array<uint8_t, 32>    ecdh_pubkey{};     // ephemeral X25519 public key (raw 32 bytes)
+      chain::signature_type      ecdh_sig;          // sign(node_key, SHA256("anvo-ecdh:" || ecdh_pubkey))
+      chain::public_key_type     family_key;        // family public key (empty if none configured)
+      chain::signature_type      family_sig;        // sign(node_key, "family:" || family_key)
+      string                     family_id;         // human-readable family label (max 64 chars)
+   };
+
    using net_message = std::variant<handshake_message,
                                     chain_size_message,
                                     go_away_message,
@@ -180,7 +196,8 @@ namespace core_net {
                                     block_nack_message,
                                     block_notice_message,
                                     gossip_bp_peers_message,
-                                    transaction_notice_message>;
+                                    transaction_notice_message,
+                                    encrypted_key_exchange>;
 
    // see protocol net_message
    enum class msg_type_t {
@@ -198,6 +215,7 @@ namespace core_net {
       block_notice_message   = fc::get_index<net_message, block_notice_message>(),
       gossip_bp_peers_message    = fc::get_index<net_message, gossip_bp_peers_message>(),
       transaction_notice_message = fc::get_index<net_message, transaction_notice_message>(),
+      encrypted_key_exchange     = fc::get_index<net_message, encrypted_key_exchange>(),
       unknown
    };
 
@@ -236,6 +254,7 @@ FC_REFLECT( core_net::gossip_bp_peers_message::bp_peer_info_v1, (server_endpoint
 FC_REFLECT( core_net::gossip_bp_peers_message::bp_peer, (version)(producer_name)(bp_peer_info) )
 FC_REFLECT_DERIVED(core_net::gossip_bp_peers_message::signed_bp_peer, (core_net::gossip_bp_peers_message::bp_peer), (sig) )
 FC_REFLECT( core_net::gossip_bp_peers_message, (peers) )
+FC_REFLECT( core_net::encrypted_key_exchange, (ecdh_pubkey)(ecdh_sig)(family_key)(family_sig)(family_id) )
 
 /**
  *
