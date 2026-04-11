@@ -100,12 +100,12 @@ endif()
 
 if( APPLE AND UNIX )
 # Apple Specific Options Here
-    message( STATUS "Configuring Spring on macOS" )
+    message( STATUS "Configuring Anvo Core on macOS" )
     set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall -Wno-deprecated-declarations" )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-deprecated-declarations" )
 else()
     # Linux Specific Options Here
-    message( STATUS "Configuring Spring on Linux" )
+    message( STATUS "Configuring Anvo Core on Linux" )
     set( CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}   -Wall" )
     set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall" )
     if ( FULL_STATIC_BUILD )
@@ -135,13 +135,13 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_VERSION VERSION_
   set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wthread-safety" )
 endif()
 
-option(CORE_NET_ENABLE_DEVELOPER_OPTIONS "enable developer options for Spring" OFF)
+option(CORE_NET_ENABLE_DEVELOPER_OPTIONS "enable developer options for Anvo Core" OFF)
 
 # based on http://www.delorie.com/gnu/docs/gdb/gdb_70.html
 # uncomment this line to tell GDB about macros (slows compile times)
 # set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -gdwarf-2 -g3" )
 
-set(ENABLE_COVERAGE_TESTING FALSE CACHE BOOL "Build Spring for code coverage analysis")
+set(ENABLE_COVERAGE_TESTING FALSE CACHE BOOL "Build Anvo Core for code coverage analysis")
 
 if(ENABLE_COVERAGE_TESTING)
   SET(CMAKE_C_FLAGS   "--coverage ${CMAKE_C_FLAGS}")
@@ -174,7 +174,7 @@ message( STATUS "Using '${CORE_NET_ROOT_KEY}' as public key for 'eosio' account"
 option(ENABLE_TCMALLOC "use tcmalloc (requires gperftools)" OFF)
 if( ENABLE_TCMALLOC )
     find_package( Gperftools REQUIRED )
-    message( STATUS "Compiling Spring with TCMalloc")
+    message( STATUS "Compiling Anvo Core with TCMalloc")
     #if doing this by the book, simply link_libraries( ${GPERFTOOLS_TCMALLOC} ) here. That will
     #give the performance benefits of tcmalloc but since it won't be linked last
     #the heap profiler & checker may not be accurate. This here is rather undocumented behavior
@@ -183,7 +183,7 @@ if( ENABLE_TCMALLOC )
     set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} ${GPERFTOOLS_TCMALLOC}")
 endif()
 
-# spring includes a bundled BoringSSL which conflicts with OpenSSL. Make sure any other bundled libraries (such as boost)
+# core includes a bundled BoringSSL which conflicts with OpenSSL. Make sure any other bundled libraries (such as boost)
 # do not attempt to use an external OpenSSL in any manner
 set(CMAKE_DISABLE_FIND_PACKAGE_OpenSSL On)
 
@@ -300,7 +300,7 @@ install(FILES libraries/cli11/bash-completion/completions/core-cli DESTINATION $
 
 # Add the boost submodule we used to build to our install package, so headers can be found for libtester
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/libraries/boost/"
-        DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/spring_boost
+        DESTINATION ${CMAKE_INSTALL_FULL_DATAROOTDIR}/core_boost
         COMPONENT dev EXCLUDE_FROM_ALL
         PATTERN ".git/*" EXCLUDE
         PATTERN "example/*" EXCLUDE

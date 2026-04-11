@@ -61,13 +61,17 @@ Config Options for eosio::producer_plugin:
                                            <provider-spec> is a string in the
                                                            form <provider-type>
                                                            :<data>
-                                           <provider-type> is KEY, CORE_WALLET
-                                                           (or KEOSD), or SE
-                                           KEY:<data>      is a string form of
-                                                           a valid Antelope
-                                                           private key which
-                                                           maps to the provided
-                                                           public key
+                                           <provider-type> is FILE, CORE_WALLET
+                                                           (or KEOSD), KEY
+                                                           (deprecated), or SE
+                                           FILE:<path>     loads the private key
+                                                           from a file (must have
+                                                           0600 or 0400 perms)
+                                           KEY:<data>      (DEPRECATED) a string
+                                                           form of a valid
+                                                           Antelope private key.
+                                                           Exposes key in process
+                                                           args. Use FILE: instead.
                                            CORE_WALLET:<data> is the URL where
                                                            core-wallet is
                                                            available and the

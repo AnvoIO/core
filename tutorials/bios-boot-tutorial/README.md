@@ -12,7 +12,7 @@ The `bios-boot-tutorial.py` script simulates the bios boot sequence.
 
 ## Steps
 
-1. Install the latest [Spring binaries](https://github.com/AntelopeIO/spring/releases) by following the steps provided in the README.
+1. Install the latest [Anvo Core binaries](https://github.com/AnvoIO/core/releases) by following the steps provided in the README.
 
 2. Install the latest [CDT binaries](https://github.com/AntelopeIO/cdt/releases) by following the steps provided in the README.
 
@@ -58,7 +58,7 @@ The last command in the previous step printed the vaulta contracts directory. Ma
 ```bash
 $ pip install numpy
 $ cd ~
-$ git clone -b release/*latest* https://github.com/AntelopeIO/spring
-$ cd ./spring/tutorials/bios-boot-tutorial/
-$ python3 bios-boot-tutorial.py --cleos=cleos --nodeos=nodeos --keosd=keosd --core-contracts-dir="${CORE_CONTRACTS_DIRECTORY}" --vaulta-contracts-dir="${VAULTA_CONTRACTS_DIRECTOR}" --symbol="EOS" -w -a
+$ git clone -b release/*latest* https://github.com/AnvoIO/core
+$ cd ./core/tutorials/bios-boot-tutorial/
+$ python3 bios-boot-tutorial.py --cleos=core-cli --nodeos=core_netd --keosd=core-wallet --core-contracts-dir="${CORE_CONTRACTS_DIRECTORY}" --vaulta-contracts-dir="${VAULTA_CONTRACTS_DIRECTOR}" --symbol="EOS" -w -a
 ```

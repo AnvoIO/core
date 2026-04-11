@@ -11,6 +11,68 @@ Anvo Core is a high-performance Layer 1 blockchain node, forked from [Spring](ht
 - **Savanna consensus** — HotStuff-based BFT with BLS12-381 finality (inherited from Spring)
 - **AArch64 support** — Full ARM64 OC-compiled WASM execution
 
+## Security Improvements
+
+### Persistent node identity
+
+Nodes now have a persistent cryptographic identity. On first startup, a secp256k1 keypair is generated and saved to `data-dir/p2p-node-key` (0600 permissions). The `node_id` used in P2P handshakes is derived deterministically as `SHA256(public_key)`, making it stable across restarts and cryptographically bound to the key.
+
+Previously, `node_id` was a random value regenerated on every startup — it couldn't be used to verify a node's identity and changed on each restart. Now the private key signs the ECDH ephemeral key during encrypted handshake, proving the node owns its advertised identity. This is the foundation for future authenticated peering ([#92](https://github.com/AnvoIO/core/issues/92)).
+
+### P2P encrypted transport
+
+All P2P connections now support AES-256-GCM encrypted transport with ECDH key exchange. Enable with:
+
+```ini
+p2p-enable-encryption = true        # enable encryption (negotiate with peers)
+p2p-require-encryption = true       # reject unencrypted connections
+```
+
+Encrypted nodes automatically negotiate with peers — if both sides support encryption, the connection is encrypted; otherwise it falls back to plaintext (unless `require-encryption` is set). Fully backward compatible with Spring V1 nodes.
+
+### API listener separation
+
+Sensitive management APIs (`producer_api_plugin`, `net_api_plugin`) now bind to a separate listener from public read-only APIs by default. This prevents accidental exposure of admin endpoints to the public internet.
+
+### Cryptographic hardening
+
+- Constant-time comparison for all signature and key operations (prevents timing side-channels)
+- Automatic key erasure — private keys are securely zeroed from memory after use
+- Wallet auto-lock timeout and CLI input guards
+- Plugin shutdown ordering hardened to prevent key material leaks
+
+### `FILE:` signature provider
+
+A new `FILE:` signature provider type loads block signing keys from a file instead of passing them on the command line:
+
+```ini
+signature-provider = PUB_KEY=FILE:/path/to/private.key
+```
+
+The key file must have owner-only permissions (0600 or 0400). This replaces the `KEY:` provider, which exposes private keys in process arguments visible via `ps`, `/proc/PID/cmdline`, shell history, and audit logs.
+
+### `KEY:` signature provider deprecated
+
+The `KEY:` signature provider now logs an **error-level** warning at startup. It will be removed in a future release. Migrate to `FILE:` or `CORE_WALLET:` before then.
+
+### Consensus validation
+
+Proposer schedule version is now validated in the Instant Finality (IF) code path, preventing blocks with stale or incorrect schedule versions from being accepted.
+
+### JIT hardening
+
+The core-vm JIT compiler includes additional safety checks: branch target overflow validation, corrected stack size formula, signal handling tests, and OC bounds checking.
+
+### Protocol feature auto-detection
+
+Stale protocol feature JSON files are automatically detected and regenerated on startup, preventing nodes from failing to activate features after binary upgrades.
+
+## Protocol Features
+
+### Dual protocol feature digests
+
+Anvo Core maintains both the original `eosio::` protocol feature digests (for compatibility with existing chains) and new `CORE_*` variants. Both sets are recognized — existing chains continue to use the original digests, while new chains can activate features using either set. VM OC gracefully falls back to interpreted execution when OC compilation is unavailable.
+
 ## Breaking Changes
 
 ### Executable Renames

@@ -17,7 +17,7 @@ Options:
   -u,--url TEXT=http://localhost:8888/
                               the http URL where core_netd is running
   --wallet-url TEXT=http://localhost:8888/
-                              the http URL where keosd is running
+                              the http URL where core-wallet is running
   -r,--header                 pass specific HTTP header, repeat this option to pass multiple headers
   -n,--no-verify              don't verify peer certificate when using HTTPS
   -v,--verbose                output verbose errors and action output
@@ -137,7 +137,7 @@ FC_DECLARE_EXCEPTION( localized_exception, 10000000, "an error occured" );
     FC_MULTILINE_MACRO_END \
   )
 
-//copy pasta from keosd's main.cpp
+//copy pasta from core-wallet's main.cpp
 std::filesystem::path determine_home_directory()
 {
    std::filesystem::path home;
@@ -1156,7 +1156,7 @@ void try_local_port(uint32_t duration) {
 void ensure_core_wallet_running(CLI::App* app) {
     if (no_auto_core_wallet)
         return;
-    // get, version, net, convert do not require keosd
+    // get, version, net, convert do not require core-wallet
     if (tx_skip_sign || app->got_subcommand("get") || app->got_subcommand("version") || app->got_subcommand("net") || app->got_subcommand("convert"))
         return;
     if (app->get_subcommand("create")->got_subcommand("key")) // create key does not require wallet
@@ -2855,9 +2855,9 @@ int main( int argc, char** argv ) {
 
    wallet_url = default_wallet_url;
 
-   CLI::App app{"Command Line Interface to Spring Client"};
+   CLI::App app{"Command Line Interface to Anvo Core"};
 
-   // custom leap formatter
+   // custom CLI formatter
    auto fmt = std::make_shared<core_net::cli::CoreNetFormatter>();
    app.formatter(fmt);
 
@@ -4069,10 +4069,10 @@ int main( int argc, char** argv ) {
       std::cout << fc::json::to_pretty_string(v) << std::endl;
    });
 
-   auto stopKeosd = wallet->add_subcommand("stop", localized("Stop ${k}.", ("k", key_store_executable_name)));
-   stopKeosd->callback([] {
-      const auto& v = call(wallet_url, keosd_stop);
-      if ( !v.is_object() || v.get_object().size() != 0 ) { //on success keosd responds with empty object
+   auto stopWallet = wallet->add_subcommand("stop", localized("Stop ${k}.", ("k", key_store_executable_name)));
+   stopWallet->callback([] {
+      const auto& v = call(wallet_url, wallet_stop);
+      if ( !v.is_object() || v.get_object().size() != 0 ) { //on success core-wallet responds with empty object
          std::cerr << fc::json::to_pretty_string(v) << std::endl;
       } else {
          std::cout << "OK" << std::endl;

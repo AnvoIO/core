@@ -36,7 +36,7 @@ Currently, `appbase::initialize()` can:
      
 So an application should exit cleanly in cases 1 and 2 (without calling `app->startup();` or `app->exec();`), and continue in case 3.
 
-Unfortunately, when `appbase::initialize()` returns false, it is not clear whether it indicates a normal exit or an error, so for example in `nodeos` we do:
+Unfortunately, when `appbase::initialize()` returns false, it is not clear whether it indicates a normal exit or an error, so for example in `core_netd` we do:
 
 
 ```c++

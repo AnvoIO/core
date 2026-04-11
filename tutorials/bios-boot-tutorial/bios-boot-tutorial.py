@@ -449,9 +449,9 @@ commands = [
 
 parser.add_argument('--public-key', metavar='', help="Vaulta Public Key", default='EOS8Znrtgwt8TfpmbVpTKvA2oB8Nqey625CLN8bCN3TEbgx86Dsvr', dest="public_key")
 parser.add_argument('--private-Key', metavar='', help="Vaulta Private Key", default='5K463ynhZoCDDa4RDcr63cUwWLTnKqmdcoTKTHBjqoKfv4u5V7p', dest="private_key")
-parser.add_argument('--cleos', metavar='', help="Cleos command", default='../../build/programs/cleos/cleos --wallet-url http://127.0.0.1:6666 ')
-parser.add_argument('--nodeos', metavar='', help="Path to nodeos binary", default='../../build/programs/nodeos/nodeos')
-parser.add_argument('--keosd', metavar='', help="Path to keosd binary", default='../../build/programs/keosd/keosd')
+parser.add_argument('--cleos', metavar='', help="Path to core-cli command", default='../../build/programs/core-cli/core-cli --wallet-url http://127.0.0.1:6666 ')
+parser.add_argument('--nodeos', metavar='', help="Path to core_netd binary", default='../../build/programs/core_netd/core_netd')
+parser.add_argument('--keosd', metavar='', help="Path to core-wallet binary", default='../../build/programs/core-wallet/core-wallet')
 parser.add_argument('--core-contracts-dir', metavar='', help="Path to latest core & system contracts directory", default='../../build/contracts/')
 parser.add_argument('--vaulta-contracts-dir', metavar='', help="Path to latest vaulta contracts directory")
 parser.add_argument('--nodes-dir', metavar='', help="Path to nodes directory", default='./nodes/')

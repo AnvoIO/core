@@ -97,6 +97,19 @@ Anvo Network maintains full backward compatibility with existing EOSIO smart con
 
 All new development is in the `core_net::` namespace. The `eosio::` aliases are frozen — maintained for compatibility but will not receive new additions.
 
+## Security
+
+Anvo Core has undergone a comprehensive security audit covering all modules: cryptography, consensus, P2P networking, wallet, API, VM runtime, and CLI tools. The full audit report is available at [`security/AUDIT-2026-04.md`](security/AUDIT-2026-04.md).
+
+Key security features:
+
+- **P2P encrypted transport** — AES-256-GCM with ECDH key exchange, backward compatible with Spring V1
+- **API listener separation** — sensitive management APIs isolated from public endpoints
+- **`FILE:` signature provider** — load block signing keys from permission-checked files instead of command-line arguments
+- **Cryptographic hardening** — constant-time comparisons, secure key erasure, timing side-channel mitigations
+
+To report a security vulnerability, please open an issue at https://github.com/AnvoIO/core/issues.
+
 ## License
 
 [Business Source License 1.1](LICENSE) (BSL 1.1). Existing EOSIO/Antelope chains are expressly permitted to adopt this codebase. Converts to Apache License 2.0 three years after v1.0.0. See [LICENSE](LICENSE) for full terms.
