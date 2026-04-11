@@ -50,6 +50,49 @@ namespace core_net {
         vector<connection_status>         connections()const;
         vector<gossip_peer>               bp_gossip_peers()const;
 
+        // Phase 2: Access control runtime API
+        struct acl_key_param { chain::public_key_type key; };
+        struct acl_ip_param  { string ip; };
+        struct acl_rules_result {
+           string                default_policy;
+           vector<string>        deny_keys;
+           vector<string>        deny_families;
+           vector<string>        deny_ips;
+           vector<string>        allow_keys;
+           vector<string>        allow_families;
+           vector<string>        allow_ips;
+        };
+
+        void              add_deny_key( acl_key_param params );
+        void              remove_deny_key( acl_key_param params );
+        void              add_deny_ip( acl_ip_param params );
+        void              remove_deny_ip( acl_ip_param params );
+        acl_rules_result  access_rules() const;
+
+        // Phase 3: Reputation API
+        struct peer_reputation_entry {
+           string          node_key;
+           double          score = 0.0;
+           string          tier;
+           uint32_t        invalid_blocks = 0;
+           uint32_t        invalid_txns = 0;
+           uint32_t        connection_drops = 0;
+           uint32_t        sync_failures = 0;
+           double          uptime_hours = 0.0;
+           uint64_t        blocks_relayed = 0;
+           double          avg_block_latency_ms = 0.0;
+        };
+        struct ban_entry_result {
+           string          identifier;
+           string          type;
+           string          reason;
+           uint32_t        ban_count = 0;
+           int64_t         seconds_remaining = 0;
+        };
+
+        vector<peer_reputation_entry>  peer_reputation() const;
+        vector<ban_entry_result>       bans() const;
+
         struct p2p_per_connection_metrics {
             struct connection_metric {
                uint32_t connection_id{0};
@@ -116,3 +159,8 @@ FC_REFLECT( core_net::connection_status, (peer)(remote_ip)(remote_port)(connecti
                                       (is_bp_peer)(is_bp_gossip_peer)(is_socket_open)(is_blocks_only)(is_transactions_only)
                                       (last_vote_received)(last_handshake) )
 FC_REFLECT( core_net::gossip_peer, (producer_name)(server_endpoint)(outbound_ip_address)(expiration) )
+FC_REFLECT( core_net::net_plugin::acl_key_param, (key) )
+FC_REFLECT( core_net::net_plugin::acl_ip_param, (ip) )
+FC_REFLECT( core_net::net_plugin::acl_rules_result, (default_policy)(deny_keys)(deny_families)(deny_ips)(allow_keys)(allow_families)(allow_ips) )
+FC_REFLECT( core_net::net_plugin::peer_reputation_entry, (node_key)(score)(tier)(invalid_blocks)(invalid_txns)(connection_drops)(sync_failures)(uptime_hours)(blocks_relayed)(avg_block_latency_ms) )
+FC_REFLECT( core_net::net_plugin::ban_entry_result, (identifier)(type)(reason)(ban_count)(seconds_remaining) )

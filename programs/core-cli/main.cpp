@@ -3846,7 +3846,61 @@ int main( int argc, char** argv ) {
       std::cout << fc::json::to_pretty_string(v) << std::endl;
    });
 
+   // Access control subcommands
+   string acl_key, acl_ip;
+   auto deny_key = net->add_subcommand("deny-key", localized("Add a public key to the deny list"));
+   deny_key->add_option("key", acl_key, localized("The public key to deny"))->required();
+   deny_key->callback([&] {
+      fc::mutable_variant_object params;
+      params("key", acl_key);
+      call(::default_url, net_add_deny_key, fc::variant(params));
+      std::cout << "Added deny-key: " << acl_key << std::endl;
+   });
 
+   auto undeny_key = net->add_subcommand("undeny-key", localized("Remove a public key from the deny list"));
+   undeny_key->add_option("key", acl_key, localized("The public key to remove from deny list"))->required();
+   undeny_key->callback([&] {
+      fc::mutable_variant_object params;
+      params("key", acl_key);
+      call(::default_url, net_remove_deny_key, fc::variant(params));
+      std::cout << "Removed deny-key: " << acl_key << std::endl;
+   });
+
+   auto deny_ip_cmd = net->add_subcommand("deny-ip", localized("Add an IP or CIDR to the deny list"));
+   deny_ip_cmd->add_option("ip", acl_ip, localized("The IP address or CIDR range to deny (e.g., 10.0.0.0/8)"))->required();
+   deny_ip_cmd->callback([&] {
+      fc::mutable_variant_object params;
+      params("ip", acl_ip);
+      call(::default_url, net_add_deny_ip, fc::variant(params));
+      std::cout << "Added deny-ip: " << acl_ip << std::endl;
+   });
+
+   auto undeny_ip = net->add_subcommand("undeny-ip", localized("Remove an IP or CIDR from the deny list"));
+   undeny_ip->add_option("ip", acl_ip, localized("The IP address or CIDR range to remove"))->required();
+   undeny_ip->callback([&] {
+      fc::mutable_variant_object params;
+      params("ip", acl_ip);
+      call(::default_url, net_remove_deny_ip, fc::variant(params));
+      std::cout << "Removed deny-ip: " << acl_ip << std::endl;
+   });
+
+   auto rules = net->add_subcommand("rules", localized("Show current access control rules"));
+   rules->callback([&] {
+      const auto& v = call(::default_url, net_access_rules);
+      std::cout << fc::json::to_pretty_string(v) << std::endl;
+   });
+
+   auto reputation = net->add_subcommand("reputation", localized("Show peer reputation scores and tiers"));
+   reputation->callback([&] {
+      const auto& v = call(::default_url, net_peer_reputation);
+      std::cout << fc::json::to_pretty_string(v) << std::endl;
+   });
+
+   auto bans_cmd = net->add_subcommand("bans", localized("Show active peer bans"));
+   bans_cmd->callback([&] {
+      const auto& v = call(::default_url, net_bans);
+      std::cout << fc::json::to_pretty_string(v) << std::endl;
+   });
 
    // Wallet subcommand
    auto wallet = app.add_subcommand( "wallet", localized("Interact with local wallet"));

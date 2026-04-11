@@ -46,6 +46,11 @@ struct mock_net_plugin : core_net::auto_bp_peering::bp_connection_manager<mock_n
    mock_connections_manager     connections;
    std::vector<std::string>     p2p_addresses{"0.0.0.0:9876"};
    const std::string&           get_first_p2p_address() const { return *p2p_addresses.begin(); }
+   uint32_t                     producer_peer_radius = 0;  // default off for existing tests
+   fc::crypto::public_key       family_public_key;         // empty = no family key configured
+   struct { fc::crypto::public_key public_key; } mock_node_key;
+   std::optional<decltype(mock_node_key)> node_key;        // empty = no node key
+   core_net::p2p_node_role      node_role = core_net::p2p_node_role::peer;
 
    bool is_lib_catchup() { return lib_catchup; }
 
@@ -335,4 +340,109 @@ BOOST_AUTO_TEST_CASE(test_bp_peer_info_v2) {
    BOOST_TEST(v2b.expiration == core_net::block_timestamp_type{7});
    BOOST_TEST(v2b.expiration == core_net::block_timestamp_type{7});
    BOOST_TEST(v2b.extra == "extra");
+}
+
+// ─── Phase 4 Tests ──────────────────────────────────────────────────────────
+
+BOOST_AUTO_TEST_CASE(test_bp_peer_info_v2_with_family_key) {
+   // Test our actual bp_peer_info_v2 from protocol.hpp (with family_key, node_key, node_role)
+   const core_net::chain_id_type chain_id = core_net::chain_id_type::empty_chain_id();
+   fc::crypto::private_key pk = fc::crypto::private_key::generate();
+   auto public_key = pk.get_public_key();
+   auto family_key = fc::crypto::private_key::generate().get_public_key();
+   auto node_key = fc::crypto::private_key::generate().get_public_key();
+
+   core_net::gossip_bp_peers_message::bp_peer_info_v2 v2;
+   v2.server_endpoint = "p2p.acme.io:9876";
+   v2.outbound_ip_address = "10.0.1.5";
+   v2.expiration = core_net::block_timestamp_type{100};
+   v2.family_key = family_key;
+   v2.node_key = node_key;
+   v2.node_role = 1;  // seed
+
+   // Pack as v2
+   core_net::gossip_bp_peers_message::signed_bp_peer peer{{.version = 2, .producer_name = core_net::name("acmeprodr")}};
+   peer.bp_peer_info = fc::raw::pack(v2);
+   peer.sig = pk.sign(peer.digest(chain_id));
+
+   // V1 node unpacks only v1 fields — should work
+   auto v1 = fc::raw::unpack<core_net::gossip_bp_peers_message::bp_peer_info_v1>(peer.bp_peer_info);
+   BOOST_TEST(v1.server_endpoint == "p2p.acme.io:9876");
+   BOOST_TEST(v1.outbound_ip_address == "10.0.1.5");
+
+   // V2 node unpacks full v2 — should get family_key, node_key, node_role
+   auto v2_out = fc::raw::unpack<core_net::gossip_bp_peers_message::bp_peer_info_v2>(peer.bp_peer_info);
+   BOOST_TEST(v2_out.server_endpoint == "p2p.acme.io:9876");
+   BOOST_TEST(v2_out.family_key == family_key);
+   BOOST_TEST(v2_out.node_key == node_key);
+   BOOST_TEST(v2_out.node_role == 1u);
+
+   // Signature still valid
+   fc::crypto::public_key recovered(peer.sig, peer.digest(chain_id));
+   BOOST_TEST(recovered == public_key);
+}
+
+BOOST_AUTO_TEST_CASE(test_adjacent_producers_basic) {
+   mock_net_plugin plugin;
+   // Only configure proda as "our" producer (not all of them)
+   plugin.set_configured_bp_peers({"proda,127.0.0.1:8001"s}, {});
+   plugin.producer_peer_radius = 2;
+
+   // Schedule: proda through produ (21 producers)
+   std::vector<core_net::chain::producer_authority> schedule;
+   for (char c = 'a'; c <= 'u'; ++c) {
+      std::string name = "prod";
+      name += c;
+      schedule.push_back({core_net::name(name), {}});
+   }
+
+   // proda is at index 0. Adjacent within radius 2: produ, prodt (backward), prodb, prodc (forward)
+   auto adjacent = plugin.adjacent_producers(schedule, 2);
+   BOOST_CHECK(adjacent.contains(core_net::name("prodb")));
+   BOOST_CHECK(adjacent.contains(core_net::name("prodc")));
+   BOOST_CHECK(adjacent.contains(core_net::name("prodt")));
+   BOOST_CHECK(adjacent.contains(core_net::name("produ")));
+   // proda itself should NOT be in the result (it's our own)
+   BOOST_CHECK(!adjacent.contains(core_net::name("proda")));
+   // prodd is outside radius 2
+   BOOST_CHECK(!adjacent.contains(core_net::name("prodd")));
+}
+
+BOOST_AUTO_TEST_CASE(test_adjacent_producers_wraparound) {
+   mock_net_plugin plugin;
+   // Only configure proda as ours
+   plugin.set_configured_bp_peers({"proda,127.0.0.1:8001"s}, {});
+   plugin.producer_peer_radius = 1;
+
+   // Small schedule: 3 producers
+   std::vector<core_net::chain::producer_authority> schedule = {
+      {core_net::name("proda"), {}},
+      {core_net::name("prodb"), {}},
+      {core_net::name("prodc"), {}},
+   };
+
+   // proda at index 0, radius 1: prodc (backward wrap), prodb (forward)
+   auto adjacent = plugin.adjacent_producers(schedule, 1);
+   BOOST_CHECK(adjacent.contains(core_net::name("prodb")));
+   BOOST_CHECK(adjacent.contains(core_net::name("prodc")));
+   BOOST_CHECK(!adjacent.contains(core_net::name("proda")));
+}
+
+BOOST_AUTO_TEST_CASE(test_adjacent_producers_zero_radius) {
+   mock_net_plugin plugin;
+   plugin.set_configured_bp_peers({"proda,127.0.0.1:8001"s}, {});
+
+   std::vector<core_net::chain::producer_authority> schedule = {
+      {core_net::name("proda"), {}},
+      {core_net::name("prodb"), {}},
+   };
+
+   auto adjacent = plugin.adjacent_producers(schedule, 0);
+   BOOST_CHECK(adjacent.empty());
+}
+
+BOOST_AUTO_TEST_CASE(test_node_role_enum) {
+   BOOST_CHECK(static_cast<uint8_t>(core_net::p2p_node_role::peer) == 0);
+   BOOST_CHECK(static_cast<uint8_t>(core_net::p2p_node_role::seed) == 1);
+   BOOST_CHECK(static_cast<uint8_t>(core_net::p2p_node_role::producer) == 2);
 }

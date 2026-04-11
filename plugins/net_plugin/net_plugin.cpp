@@ -22,6 +22,9 @@
 #include <fc/io/datastream.hpp>
 #include <fc/variant_object.hpp>
 #include <fc/crypto/rand.hpp>
+#include <core_net/net_plugin/p2p_transport_encryption.hpp>
+#include <core_net/net_plugin/p2p_access_control.hpp>
+#include <core_net/net_plugin/p2p_peer_reputation.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/time.hpp>
 #include <fc/mutex.hpp>
@@ -267,10 +270,11 @@ namespace core_net {
       savanna = 9,                   // savanna, adds vote_message
       block_nack = 10,               // adds block_nack_message & block_notice_message
       gossip_bp_peers = 11,          // adds gossip_bp_peers_message
-      trx_notice = 12                // adds transaction_notice_message
+      trx_notice = 12,               // adds transaction_notice_message
+      encrypted_transport = 13       // adds encrypted_key_exchange, ECDH transport encryption
    };
 
-   constexpr proto_version_t net_version_max = proto_version_t::trx_notice;
+   constexpr proto_version_t net_version_max = proto_version_t::encrypted_transport;
 
    /**
     * default value initializers
@@ -436,6 +440,27 @@ namespace core_net {
       chain_id_type                         chain_id;
       fc::sha256                            node_id;
       string                                user_agent_name;
+
+      // P2P transport encryption (Phase 1)
+      std::optional<node_key_t>             node_key;           // persistent node identity
+      bool                                  p2p_enable_encryption = false;  // enable encrypted transport negotiation
+      bool                                  p2p_require_encryption = false; // reject plaintext-only peers (implies enable)
+      uint32_t                              p2p_incomplete_msg_timeout_ms = 30000; // SEC-024: slow-loris timeout
+      uint64_t                              p2p_max_total_buffer_bytes = 0;        // SEC-025: 0 = unlimited
+      std::atomic<uint64_t>                 p2p_total_buffer_bytes{0};             // current aggregate buffer usage
+
+      // P2P access control (Phase 2)
+      std::optional<fc::crypto::private_key> family_private_key;  // loaded from p2p-family-key config
+      fc::crypto::public_key                 family_public_key;   // derived from family_private_key
+      std::string                            family_id;           // human-readable label
+      p2p_node_role                          node_role = p2p_node_role::peer;  // this node's role
+      uint32_t                               producer_peer_radius = 3;         // connect to N adjacent producers
+      uint32_t                               pre_warm_threshold_ms = 2000;     // ms before slot to pre-warm connections
+      access_control                         acl;                 // access control rule set
+
+      // P2P peer reputation (Phase 3)
+      reputation_manager                     reputation;          // per-peer metrics and scoring
+      std::filesystem::path                  reputation_file;     // persistence path
 
       chain_plugin*                         chain_plug = nullptr;
       producer_plugin*                      producer_plug = nullptr;
@@ -836,6 +861,23 @@ namespace core_net {
 
       queued_buffer           buffer_queue;
 
+      // Peer's verified family key (set after encrypted_key_exchange, accessed from strand)
+      fc::crypto::public_key                 peer_family_key;    // empty if peer has no family
+      std::string                            peer_family_id;
+
+      // Per-connection encryption state (accessed only from connection strand)
+      std::unique_ptr<aead_context>          encryption_ctx;
+      std::optional<x25519_keypair>          ephemeral_ecdh_key;  // generated per-connection
+      bool                                   encryption_active = false;       // fully active — all msgs encrypted
+      bool                                   encryption_transitioning = false; // key exchange done, transitioning
+      bool                                   encryption_handshake_sent = false;
+      std::chrono::steady_clock::time_point  encryption_start_time{};
+      std::optional<encrypted_key_exchange>  pending_peer_key_exchange;       // buffered if received before ours sent
+
+      // SEC-024: incomplete message read deadline timer
+      boost::asio::steady_timer              incomplete_msg_timer{strand};
+      bool                                   incomplete_msg_timer_active = false;
+
       fc::sha256              conn_node_id;
       string                  short_conn_node_id;
       string                  listen_address; // address sent to peer in handshake
@@ -1052,6 +1094,8 @@ namespace core_net {
       void handle_message( gossip_bp_peers_message& msg);
       void handle_message( const gossip_bp_peers_message& msg) = delete;
       void handle_message( const transaction_notice_message& msg);
+      void handle_message( const encrypted_key_exchange& msg);
+      void send_encrypted_key_exchange();
 
       // returns calculated number of blocks combined latency
       uint32_t calc_block_latency();
@@ -1151,6 +1195,12 @@ namespace core_net {
          peer_dlog( p2p_msg_log, c, "handle gossip_bp_peers_message ${m}", ("m", msg) );
          c->handle_message( msg );
       }
+
+      void operator()( const encrypted_key_exchange& msg ) const {
+         // continue call to handle_message on connection strand
+         peer_dlog( p2p_msg_log, c, "handle encrypted_key_exchange" );
+         c->handle_message( msg );
+      }
    };
 
    template<typename Function>
@@ -1238,6 +1288,7 @@ namespace core_net {
       listen_address = host + ":" + port; // do not include type in listen_address to avoid peer setting type on connection
       set_connection_type( peer_address() );
       my_impl->mark_configured_bp_connection(this);
+      if (!my_impl->p2p_enable_encryption) net_version = proto_version_t::trx_notice; // don't advertise V2
       fc_ilog( p2p_conn_log, "created connection - ${c} to ${n}", ("c", connection_id)("n", endpoint) );
    }
 
@@ -1252,6 +1303,7 @@ namespace core_net {
         last_handshake_recv(),
         last_handshake_sent()
    {
+      if (!my_impl->p2p_enable_encryption) net_version = proto_version_t::trx_notice; // don't advertise V2
       fc_dlog( p2p_conn_log, "new connection - ${c} object created for peer ${address}:${port} from listener ${addr}",
                ("c", connection_id)("address", log_remote_endpoint_ip)("port", log_remote_endpoint_port)("addr", listen_address) );
    }
@@ -1437,8 +1489,20 @@ namespace core_net {
 
    // called from connection strand
    void connection::_close( bool reconnect, bool shutdown ) {
-      if (socket_open)
+      if (socket_open) {
          peer_ilog(p2p_conn_log, this, "closing");
+         // Phase 3: record connection drop for reputation (only for established connections)
+         if (!shutdown && conn_node_id != fc::sha256()) {
+            my_impl->reputation.record_connection_drop(conn_node_id.str());
+            // Record uptime from latest_msg_time (a steady_clock time_point)
+            auto now = std::chrono::steady_clock::now();
+            if (latest_msg_time > std::chrono::steady_clock::time_point::min()) {
+               auto connected_duration = now - latest_msg_time;
+               double hours = std::chrono::duration<double, std::ratio<3600>>(connected_duration).count();
+               if (hours > 0) my_impl->reputation.record_uptime(conn_node_id.str(), hours);
+            }
+         }
+      }
       else
          peer_dlog(p2p_conn_log, this, "close called on already closed socket");
       socket_open = false;
@@ -1868,8 +1932,40 @@ namespace core_net {
                                     const send_buffer_type& send_buffer,
                                     go_away_reason close_after_send)
    {
+      // If encryption is active (or transitioning), encrypt the payload.
+      // Input format:  [4-byte message_length][plaintext_payload]
+      // Output format: [4-byte message_length'][12-byte nonce][encrypted_payload][16-byte tag]
+      // where message_length' = nonce_len + encrypted_payload + tag_len
+      send_buffer_type actual_send_buffer = send_buffer;
+      if ((encryption_active || encryption_transitioning) && encryption_ctx && encryption_ctx->is_initialized()) {
+         const char* buf = send_buffer->data();
+         const size_t buf_size = send_buffer->size();
+         if (buf_size > message_header_size) {
+            const char* plaintext = buf + message_header_size;
+            const size_t plaintext_len = buf_size - message_header_size;
+
+            // Original message_length as AAD
+            uint32_t orig_msg_len;
+            std::memcpy(&orig_msg_len, buf, sizeof(orig_msg_len));
+
+            auto encrypted = encryption_ctx->seal(plaintext, plaintext_len, orig_msg_len);
+            if (encrypted) {
+               // Build new buffer: [new_message_length][encrypted_data]
+               const uint32_t new_msg_len = static_cast<uint32_t>(encrypted->size());
+               auto new_buf = std::make_shared<std::vector<char>>(message_header_size + new_msg_len);
+               std::memcpy(new_buf->data(), &new_msg_len, message_header_size);
+               std::memcpy(new_buf->data() + message_header_size, encrypted->data(), encrypted->size());
+               actual_send_buffer = new_buf;
+            } else {
+               peer_elog( p2p_conn_log, this, "Encryption failed, closing connection" );
+               close();
+               return;
+            }
+         }
+      }
+
       connection_ptr self = shared_from_this();
-      queue_write(net_msg, block_num, queue, send_buffer,
+      queue_write(net_msg, block_num, queue, actual_send_buffer,
             [conn{std::move(self)}, close_after_send, net_msg, block_num](boost::system::error_code ec, std::size_t s) {
                         if (ec) {
                            if (ec != boost::asio::error::operation_aborted && ec != boost::asio::error::connection_reset && conn->socket_is_open()) {
@@ -2237,6 +2333,10 @@ namespace core_net {
    void sync_manager::sync_timeout(const connection_ptr& c, const boost::system::error_code& ec) {
       if( !ec ) {
          peer_dlog(p2p_blk_log, c, "sync timed out");
+         // Phase 3: record sync failure for reputation
+         if (c->conn_node_id != fc::sha256()) {
+            my_impl->reputation.record_sync_failure(c->conn_node_id.str());
+         }
          sync_reassign_fetch( c );
          c->close(true);
       } else if( ec != boost::asio::error::operation_aborted ) { // don't log on operation_aborted, called on destroy
@@ -2454,6 +2554,10 @@ namespace core_net {
    // called from connection strand
    void sync_manager::rejected_block( const connection_ptr& c, uint32_t blk_num, closing_mode mode ) {
       c->block_status_monitor_.rejected();
+      // Phase 3: record invalid block metric for reputation
+      if (c->conn_node_id != fc::sha256()) {
+         my_impl->reputation.record_invalid_block(c->conn_node_id.str());
+      }
       {
          // reset sync on rejected block
          fc::lock_guard g( sync_mtx );
@@ -3040,11 +3144,29 @@ namespace core_net {
                               break;
                            }
 
+                           // SEC-025: check global P2P buffer memory cap before allocating
+                           if (my_impl->p2p_max_total_buffer_bytes > 0) {
+                              uint64_t current_total = my_impl->p2p_total_buffer_bytes.load(std::memory_order_relaxed);
+                              if (current_total + message_length > my_impl->p2p_max_total_buffer_bytes) {
+                                 peer_wlog( p2p_conn_log, conn,
+                                    "Global P2P buffer cap exceeded (${cur} + ${msg} > ${max}), closing connection",
+                                    ("cur", current_total)("msg", message_length)("max", my_impl->p2p_max_total_buffer_bytes) );
+                                 close_connection = true;
+                                 break;
+                              }
+                              my_impl->p2p_total_buffer_bytes.fetch_add(message_length, std::memory_order_relaxed);
+                           }
+
                            auto total_message_bytes = message_length + message_header_size;
 
                            if (bytes_in_buffer >= total_message_bytes) {
                               conn->pending_message_buffer.advance_read_ptr(message_header_size);
                               conn->consecutive_immediate_connection_close = 0;
+                              // SEC-024: cancel incomplete message timer — full message received
+                              if (conn->incomplete_msg_timer_active) {
+                                 conn->incomplete_msg_timer.cancel();
+                                 conn->incomplete_msg_timer_active = false;
+                              }
                               if (!conn->process_next_message(message_length)) {
                                  return;
                               }
@@ -3056,6 +3178,25 @@ namespace core_net {
                               }
 
                               conn->outstanding_read_bytes = outstanding_message_bytes;
+
+                              // SEC-024: start incomplete message deadline timer.
+                              // If the peer has sent a message header but the full payload
+                              // doesn't arrive within the timeout, close the connection.
+                              if (my_impl->p2p_incomplete_msg_timeout_ms > 0 && !conn->incomplete_msg_timer_active) {
+                                 conn->incomplete_msg_timer_active = true;
+                                 conn->incomplete_msg_timer.expires_after(
+                                    std::chrono::milliseconds(my_impl->p2p_incomplete_msg_timeout_ms));
+                                 conn->incomplete_msg_timer.async_wait(
+                                    boost::asio::bind_executor(conn->strand,
+                                       [weak_conn = std::weak_ptr<connection>(conn)](boost::system::error_code ec) {
+                                          if (ec) return;  // timer cancelled (message completed)
+                                          auto conn = weak_conn.lock();
+                                          if (!conn) return;
+                                          peer_wlog(p2p_conn_log, conn, "Incomplete message timeout (slow-loris), closing");
+                                          conn->close();
+                                       }));
+                              }
+
                               break;
                            }
                         }
@@ -3107,9 +3248,102 @@ namespace core_net {
    bool connection::process_next_message( uint32_t message_length ) {
       bytes_received += message_length;
       last_bytes_received = get_time();
+      // SEC-025: release the buffer accounting for this message
+      if (my_impl->p2p_max_total_buffer_bytes > 0) {
+         my_impl->p2p_total_buffer_bytes.fetch_sub(
+            std::min(static_cast<uint64_t>(message_length), my_impl->p2p_total_buffer_bytes.load(std::memory_order_relaxed)),
+            std::memory_order_relaxed);
+      }
       try {
          auto now = latest_msg_time = std::chrono::steady_clock::now();
 
+         // ── Encrypted/transitioning receive path ─────────────────────────
+         // After key exchange, we enter a transition period where the peer may
+         // still have plaintext messages in-flight. During transition, try to
+         // decrypt; if that fails, process as plaintext. Once the first
+         // successful decryption occurs, switch to fully encrypted mode.
+         if ((encryption_active || encryption_transitioning) && encryption_ctx && encryption_ctx->is_initialized()) {
+            // Read the payload from the buffer (we need it regardless of encrypt/plaintext)
+            std::vector<char> payload_data(message_length);
+            auto ds_consume = pending_message_buffer.create_datastream();
+            ds_consume.read(payload_data.data(), message_length);
+
+            // Try decryption if payload is large enough to be encrypted
+            bool decrypted_ok = false;
+            std::vector<char> plaintext_data;
+
+            if (message_length >= encrypted_overhead) {
+               uint32_t plaintext_msg_len = message_length - static_cast<uint32_t>(encrypted_overhead);
+               auto decrypted = encryption_ctx->open(payload_data.data(), payload_data.size(), plaintext_msg_len);
+               if (decrypted) {
+                  plaintext_data = std::move(*decrypted);
+                  decrypted_ok = true;
+                  if (encryption_transitioning) {
+                     // First successful decryption — transition complete
+                     encryption_transitioning = false;
+                     encryption_active = true;
+                     peer_dlog( p2p_conn_log, this, "Encryption transition complete — fully encrypted" );
+                  }
+               }
+            }
+
+            if (!decrypted_ok) {
+               if (encryption_active) {
+                  // Fully encrypted mode — decryption failure is fatal
+                  peer_elog( p2p_conn_log, this, "Message decryption/authentication failed, closing" );
+                  close();
+                  return false;
+               }
+               // Transitioning — fall back to plaintext for this message
+               peer_dlog( p2p_conn_log, this, "Transition: processing plaintext message before encryption" );
+               plaintext_data = std::move(payload_data);
+            }
+
+            // Parse the plaintext as a net_message
+            fc::datastream<const char*> dec_ds(plaintext_data.data(), plaintext_data.size());
+            unsigned_int which{};
+            fc::raw::unpack(dec_ds, which);
+            msg_type_t net_msg = to_msg_type_t(which.value);
+
+            // Route message types that need special handling (signed_block,
+            // packed_transaction, vote_message have deleted msg_handler operators
+            // and require ptr-based dispatch).
+            if (net_msg == msg_type_t::signed_block) {
+               latest_blk_time = now;
+               fc::datastream<const char*> blk_ds(plaintext_data.data(), plaintext_data.size());
+               unsigned_int skip_which{};
+               fc::raw::unpack(blk_ds, skip_which);
+               auto ptr = std::make_shared<signed_block>();
+               fc::raw::unpack(blk_ds, *ptr);
+               auto blk_id = ptr->calculate_id();
+               handle_message(blk_id, std::move(ptr));
+            } else if (net_msg == msg_type_t::packed_transaction) {
+               fc::datastream<const char*> trx_ds(plaintext_data.data(), plaintext_data.size());
+               unsigned_int skip_which{};
+               fc::raw::unpack(trx_ds, skip_which);
+               auto ptr = std::make_shared<packed_transaction>();
+               fc::raw::unpack(trx_ds, *ptr);
+               handle_message(ptr);
+            } else if (net_msg == msg_type_t::vote_message) {
+               fc::datastream<const char*> vote_ds(plaintext_data.data(), plaintext_data.size());
+               unsigned_int skip_which{};
+               fc::raw::unpack(vote_ds, skip_which);
+               auto ptr = std::make_shared<chain::vote_message>();
+               fc::raw::unpack(vote_ds, *ptr);
+               handle_message(ptr);
+            } else {
+               // All other message types go through the generic visitor
+               fc::datastream<const char*> dec_ds2(plaintext_data.data(), plaintext_data.size());
+               net_message msg;
+               fc::raw::unpack(dec_ds2, msg);
+               msg_handler m(shared_from_this());
+               std::visit(m, msg);
+            }
+
+            return true;
+         }
+
+         // ── Plaintext receive path (unchanged) ─────────────────────────────
          // if next message is a block we already have, exit early
          auto peek_ds = pending_message_buffer.create_peek_datastream();
          unsigned_int which{};
@@ -3154,6 +3388,12 @@ namespace core_net {
       const fc::time_point now = fc::time_point::now();
       my_impl->last_block_received_time = last_received_block_time = now;
       const fc::microseconds age(now - bh.timestamp);
+
+      // Phase 3: record block relay latency for reputation (for all blocks, including duplicates)
+      if (conn_node_id != fc::sha256()) {
+         my_impl->reputation.record_block_latency(conn_node_id.str(), static_cast<double>(age.count()) / 1000.0);
+      }
+
       if( my_impl->dispatcher.have_block( blk_id ) ) {
          pending_message_buffer.advance_read_ptr( message_length ); // advance before any send
 
@@ -3348,6 +3588,14 @@ namespace core_net {
    }
 
    void net_plugin_impl::plugin_shutdown() {
+      // Save reputation data before shutdown
+      if (!reputation_file.empty()) {
+         if (reputation.save(reputation_file)) {
+            fc_ilog(p2p_conn_log, "Peer reputation data saved to ${f}", ("f", reputation_file.string()));
+         } else {
+            fc_wlog(p2p_conn_log, "Failed to save peer reputation data to ${f}", ("f", reputation_file.string()));
+         }
+      }
       thread_pool.stop();
    }
 
@@ -3551,9 +3799,24 @@ namespace core_net {
 
          if( !my_impl->authenticate_peer( msg ) ) {
             peer_wlog( p2p_conn_log, this, "Peer not authenticated.  Closing connection." );
+            if (conn_node_id != fc::sha256())
+               my_impl->reputation.record_handshake_failure(conn_node_id.str());
             no_retry = go_away_reason::authentication;
             enqueue( go_away_message( go_away_reason::authentication ) );
             return;
+         }
+
+         // Phase 2 ACL: evaluate node key + IP (family key checked after key exchange)
+         if (my_impl->acl.has_rules()) {
+            fc::lock_guard g(conn_mtx);
+            if (!my_impl->acl.is_allowed(msg.key, fc::crypto::public_key(), remote_endpoint_ip_array)) {
+               peer_wlog( p2p_conn_log, this, "Peer rejected by access control rules" );
+               if (conn_node_id != fc::sha256())
+                  my_impl->reputation.record_handshake_failure(conn_node_id.str());
+               no_retry = go_away_reason::authentication;
+               enqueue( go_away_message( go_away_reason::authentication ) );
+               return;
+            }
          }
 
          uint32_t peer_fork_db_root_num = msg.fork_db_root_num;
@@ -3587,6 +3850,16 @@ namespace core_net {
 
          if( sent_handshake_count == 0 ) {
             send_handshake();
+         }
+
+         // Initiate encrypted transport if both sides support V2
+         if (protocol_version >= proto_version_t::encrypted_transport && !encryption_handshake_sent) {
+            send_encrypted_key_exchange();
+         } else if (protocol_version < proto_version_t::encrypted_transport && my_impl->p2p_require_encryption) {
+            peer_ilog( p2p_conn_log, this, "Peer does not support encryption and p2p-require-encryption is set. Closing." );
+            no_retry = go_away_reason::authentication;
+            enqueue( go_away_message( go_away_reason::authentication ) );
+            return;
          }
 
          send_gossip_bp_peers_initial_message();
@@ -3935,6 +4208,182 @@ namespace core_net {
       peer_dlog( p2p_trx_log, this, "received transaction_notice_message ${id}", ("id", msg.id) );
    }
 
+   // called from connection strand
+   void connection::handle_message( const encrypted_key_exchange& msg ) {
+      peer_dlog( p2p_msg_log, this, "received encrypted_key_exchange" );
+
+      if (encryption_active || encryption_transitioning) {
+         peer_wlog( p2p_msg_log, this, "received duplicate encrypted_key_exchange, ignoring" );
+         return;
+      }
+
+      if (!ephemeral_ecdh_key) {
+         // We haven't sent our key exchange yet — the handshake hasn't been fully
+         // processed on this connection. Buffer the peer's key exchange and process
+         // it after we send ours (triggered by the handshake handler).
+         peer_dlog( p2p_msg_log, this, "received encrypted_key_exchange before ours sent, buffering" );
+         pending_peer_key_exchange = msg;
+         return;
+      }
+
+      // Validate peer's ECDH public key is not all zeros
+      const auto& peer_ecdh = msg.ecdh_pubkey;
+      bool all_zero = true;
+      for (auto b : peer_ecdh) { if (b != 0) { all_zero = false; break; } }
+      if (all_zero) {
+         peer_wlog( p2p_msg_log, this, "peer sent zero ECDH public key, closing" );
+         no_retry = go_away_reason::fatal_other;
+         enqueue( go_away_message( go_away_reason::fatal_other ) );
+         return;
+      }
+
+      // Verify the ECDH signature — proves the peer who authenticated in the handshake
+      // is the same entity providing this ECDH key (prevents active MITM substitution).
+      {
+         fc::lock_guard g(conn_mtx);
+         auto peer_handshake_key = last_handshake_recv.key;
+         if (peer_handshake_key.valid() && msg.ecdh_sig != chain::signature_type()) {
+            auto ecdh_digest = compute_ecdh_sig_digest(msg.ecdh_pubkey);
+            auto recovered = fc::crypto::public_key(msg.ecdh_sig, ecdh_digest, true);
+            if (recovered != peer_handshake_key) {
+               peer_wlog( p2p_msg_log, this, "ECDH signature verification failed — key does not match handshake identity, closing" );
+               no_retry = go_away_reason::authentication;
+               enqueue( go_away_message( go_away_reason::authentication ) );
+               return;
+            }
+         } else if (msg.ecdh_sig == chain::signature_type()) {
+            // Peer did not sign the ECDH key — reject if we require authenticated encryption
+            if (my_impl->p2p_require_encryption) {
+               peer_wlog( p2p_msg_log, this, "Peer did not sign ECDH key and p2p-require-encryption is set, closing" );
+               no_retry = go_away_reason::authentication;
+               enqueue( go_away_message( go_away_reason::authentication ) );
+               return;
+            }
+            peer_dlog( p2p_msg_log, this, "Peer did not sign ECDH key, proceeding without MITM protection" );
+         }
+      }
+
+      // Verify and store peer's family key attestation
+      if (msg.family_key.valid() && msg.family_sig != chain::signature_type()) {
+         fc::lock_guard g(conn_mtx);
+         auto peer_handshake_key = last_handshake_recv.key;
+         if (peer_handshake_key.valid()) {
+            auto family_digest = compute_family_sig_digest(msg.family_key);
+            try {
+               auto recovered = fc::crypto::public_key(msg.family_sig, family_digest, true);
+               if (recovered == peer_handshake_key) {
+                  peer_family_key = msg.family_key;
+                  peer_family_id = msg.family_id;
+                  peer_dlog( p2p_msg_log, this, "Peer family verified: ${id} (${key})",
+                             ("id", msg.family_id)("key", msg.family_key.to_string(fc::yield_function_t())) );
+               } else {
+                  peer_wlog( p2p_msg_log, this, "Peer family attestation signature mismatch — ignoring family claim" );
+               }
+            } catch (...) {
+               peer_wlog( p2p_msg_log, this, "Peer family attestation signature recovery failed — ignoring family claim" );
+            }
+         }
+      }
+
+      // Re-evaluate ACL with family key (now available from key exchange)
+      if (my_impl->acl.has_rules() && peer_family_key.valid()) {
+         fc::lock_guard g(conn_mtx);
+         auto peer_handshake_key = last_handshake_recv.key;
+         if (!my_impl->acl.is_allowed(peer_handshake_key, peer_family_key, remote_endpoint_ip_array)) {
+            peer_wlog( p2p_conn_log, this, "Peer rejected by access control rules (family key check)" );
+            no_retry = go_away_reason::authentication;
+            enqueue( go_away_message( go_away_reason::authentication ) );
+            return;
+         }
+      }
+
+      // Compute shared secret
+      auto shared_secret = compute_x25519_shared_secret(ephemeral_ecdh_key->private_key, peer_ecdh);
+      if (!shared_secret) {
+         peer_wlog( p2p_msg_log, this, "ECDH shared secret computation failed (invalid peer key), closing" );
+         no_retry = go_away_reason::fatal_other;
+         enqueue( go_away_message( go_away_reason::fatal_other ) );
+         return;
+      }
+
+      // Derive session key
+      auto session_key = derive_session_key(*shared_secret, my_impl->node_id, conn_node_id);
+
+      // Zero the shared secret from memory
+      OPENSSL_cleanse(shared_secret->data(), shared_secret->size());
+
+      // Zero ephemeral private key — no longer needed
+      OPENSSL_cleanse(ephemeral_ecdh_key->private_key.data(), ephemeral_ecdh_key->private_key.size());
+      ephemeral_ecdh_key.reset();
+
+      // Initialize AEAD context
+      // Initiator = the side with the lower node_id
+      bool is_initiator = (my_impl->node_id < conn_node_id);
+      encryption_ctx = std::make_unique<aead_context>();
+      if (!encryption_ctx->init(session_key, is_initiator)) {
+         peer_wlog( p2p_msg_log, this, "AEAD context initialization failed, closing" );
+         OPENSSL_cleanse(session_key.data(), session_key.size());
+         encryption_ctx.reset();
+         no_retry = go_away_reason::fatal_other;
+         enqueue( go_away_message( go_away_reason::fatal_other ) );
+         return;
+      }
+
+      // Zero the session key from stack
+      OPENSSL_cleanse(session_key.data(), session_key.size());
+
+      // Enter transition mode: send-side encrypts immediately, receive-side
+      // tries decrypt first but falls back to plaintext for messages already
+      // in-flight from before the peer activated encryption.
+      encryption_transitioning = true;
+      encryption_start_time = std::chrono::steady_clock::now();
+
+      peer_ilog( p2p_conn_log, this, "Encrypted transport activated (ChaCha20-Poly1305)" );
+   }
+
+   // called from connection strand — send our side of the key exchange
+   void connection::send_encrypted_key_exchange() {
+      if (protocol_version < proto_version_t::encrypted_transport) return;
+      if (encryption_handshake_sent) return;
+
+      // Generate ephemeral X25519 keypair for this connection
+      ephemeral_ecdh_key = generate_x25519_keypair();
+
+      encrypted_key_exchange msg;
+      msg.ecdh_pubkey = ephemeral_ecdh_key->public_key;
+
+      // Sign the ECDH public key with our node key to prevent MITM substitution.
+      // The signature binds this ephemeral key to our authenticated identity.
+      if (my_impl->node_key) {
+         auto ecdh_digest = compute_ecdh_sig_digest(msg.ecdh_pubkey);
+         msg.ecdh_sig = my_impl->node_key->private_key.sign(ecdh_digest);
+      }
+
+      // Attach family key attestation if configured
+      if (my_impl->family_private_key && my_impl->family_public_key.valid()) {
+         msg.family_key = my_impl->family_public_key;
+         msg.family_id = my_impl->family_id;
+         // Sign: proves this node's operator controls both the node key and the family key
+         if (my_impl->node_key) {
+            auto family_digest = compute_family_sig_digest(my_impl->family_public_key);
+            msg.family_sig = my_impl->node_key->private_key.sign(family_digest);
+         }
+      }
+
+      enqueue( net_message(msg) );
+      encryption_handshake_sent = true;
+
+      peer_dlog( p2p_msg_log, this, "sent encrypted_key_exchange" );
+
+      // If the peer's key exchange arrived before ours was sent, process it now.
+      if (pending_peer_key_exchange) {
+         peer_dlog( p2p_msg_log, this, "processing buffered peer key exchange" );
+         auto buffered = std::move(*pending_peer_key_exchange);
+         pending_peer_key_exchange.reset();
+         handle_message(buffered);
+      }
+   }
+
    digest_type gossip_bp_peers_message::bp_peer::digest(const chain_id_type& chain_id) const {
       digest_type::encoder enc;
       fc::raw::pack(enc, chain_id);
@@ -4035,19 +4484,30 @@ namespace core_net {
       my_impl->chain_plug->accept_transaction( trx,
          [weak = weak_from_this(), trx_size](const next_function_variant<transaction_trace_ptr>& result) mutable {
          // next (this lambda) called from application thread
+         bool txn_failed = false;
          if (std::holds_alternative<fc::exception_ptr>(result)) {
             fc_dlog( p2p_trx_log, "bad packed_transaction : ${m}", ("m", std::get<fc::exception_ptr>(result)->what()) );
+            txn_failed = true;
          } else {
             const transaction_trace_ptr& trace = std::get<transaction_trace_ptr>(result);
             if( !trace->except ) {
                fc_dlog( p2p_trx_log, "chain accepted transaction, bcast ${id}", ("id", trace->id) );
             } else {
                fc_ilog( p2p_trx_log, "bad packed_transaction : ${m}", ("m", trace->except->what()));
+               txn_failed = true;
             }
          }
          connection_ptr conn = weak.lock();
          if( conn ) {
             conn->trx_in_progress_size -= trx_size;
+            // Phase 3: record transaction validation result for reputation
+            if (conn->conn_node_id != fc::sha256()) {
+               if (txn_failed) {
+                  my_impl->reputation.record_invalid_txn(conn->conn_node_id.str());
+               } else {
+                  my_impl->reputation.record_txn_relayed(conn->conn_node_id.str());
+               }
+            }
          }
       });
    }
@@ -4334,25 +4794,35 @@ namespace core_net {
    }
 
    bool net_plugin_impl::authenticate_peer(const handshake_message& msg) const {
-      if(allowed_connections == None)
-         return false;
+      // When Phase 2 ACL rules are configured, skip the legacy allow-list check
+      // but still verify signature ownership. The ACL itself is evaluated in the
+      // handshake handler (line ~3770) where the peer's IP is available.
+      bool use_acl = acl.has_rules();
 
-      if(allowed_connections == Any)
-         return true;
-
-      if(allowed_connections & (Producers | Specified)) {
-         auto allowed_it = std::find(allowed_peers.begin(), allowed_peers.end(), msg.key);
-         auto private_it = private_keys.find(msg.key);
-         bool found_producer_key = false;
-         if(producer_plug != nullptr)
-            found_producer_key = producer_plug->is_producer_key(msg.key);
-         if( allowed_it == allowed_peers.end() && private_it == private_keys.end() && !found_producer_key) {
-            fc_wlog( p2p_conn_log, "Peer ${peer} sent a handshake with an unauthorized key: ${key}.",
-                     ("peer", msg.p2p_address)("key", msg.key) );
+      if (!use_acl) {
+         // Legacy authentication — no ACL configured
+         if(allowed_connections == None)
             return false;
+         if(allowed_connections == Any)
+            return true;
+
+         if(allowed_connections & (Producers | Specified)) {
+            auto allowed_it = std::find(allowed_peers.begin(), allowed_peers.end(), msg.key);
+            auto private_it = private_keys.find(msg.key);
+            bool found_producer_key = false;
+            if(producer_plug != nullptr)
+               found_producer_key = producer_plug->is_producer_key(msg.key);
+            if( allowed_it == allowed_peers.end() && private_it == private_keys.end() && !found_producer_key) {
+               fc_wlog( p2p_conn_log, "Peer ${peer} sent a handshake with an unauthorized key: ${key}.",
+                        ("peer", msg.p2p_address)("key", msg.key) );
+               return false;
+            }
          }
       }
 
+      // Signature verification — always runs regardless of ACL or legacy mode.
+      // Verifies the peer actually owns the key they claim in msg.key.
+      bool requires_auth = use_acl || (allowed_connections & (Producers | Specified));
       if(msg.sig != chain::signature_type() && msg.token != sha256()) {
          sha256 hash = fc::sha256::hash(msg.time);
          if(hash != msg.token) {
@@ -4367,12 +4837,12 @@ namespace core_net {
             fc_wlog( p2p_conn_log, "Peer ${peer} sent a handshake with an unrecoverable key.", ("peer", msg.p2p_address) );
             return false;
          }
-         if((allowed_connections & (Producers | Specified)) && peer_key != msg.key) {
+         if(requires_auth && peer_key != msg.key) {
             fc_wlog( p2p_conn_log, "Peer ${peer} sent a handshake with an unauthenticated key.", ("peer", msg.p2p_address) );
             return false;
          }
       }
-      else if(allowed_connections & (Producers | Specified)) {
+      else if(requires_auth) {
          fc_dlog( p2p_conn_log, "Peer sent a handshake with blank signature and token, but this node accepts only authenticated connections." );
          return false;
       }
@@ -4533,6 +5003,49 @@ namespace core_net {
            "   _agent \tfirst 15 characters of agent-name of peer\n\n"
            "   _nver  \tp2p protocol version\n\n")
          ( "p2p-keepalive-interval-ms", bpo::value<int>()->default_value(def_keepalive_interval), "peer heartbeat keepalive message interval in milliseconds")
+         ( "p2p-enable-encryption", bpo::value<bool>()->default_value(false),
+           "Enable encrypted transport negotiation. When true, the node advertises V2 protocol support and "
+           "negotiates ECDH key exchange with compatible peers. When false, all connections remain plaintext.")
+         ( "p2p-require-encryption", bpo::value<bool>()->default_value(false),
+           "Require encrypted transport for all P2P connections. When true, plaintext-only (V1) peers are rejected. "
+           "Implies p2p-enable-encryption=true.")
+         ( "p2p-incomplete-message-timeout-ms", bpo::value<uint32_t>()->default_value(30000),
+           "Timeout in milliseconds for receiving a complete P2P message after the header arrives. "
+           "Connections that do not deliver the full message within this window are closed. (SEC-024: slow-loris mitigation)")
+         ( "p2p-max-total-buffer-bytes", bpo::value<uint64_t>()->default_value(0),
+           "Maximum aggregate P2P buffer memory across all connections in bytes. 0 = unlimited. "
+           "When exceeded, the newest non-block-producer connections are closed. (SEC-025: global memory cap)")
+         ( "p2p-family-key", bpo::value<string>(),
+           "Path to the family key file (secp256k1 WIF private key). Identifies this node as belonging to "
+           "an organization. All nodes in the same family share the same key. Example: FILE:/etc/anvo/family-key.pem")
+         ( "p2p-family-id", bpo::value<string>()->default_value(""),
+           "Human-readable label for this node's family (max 64 chars). Example: acme-producer")
+         ( "p2p-default-policy", bpo::value<string>()->default_value("allow"),
+           "Default access control policy when no rule matches. Values: 'allow' or 'deny'.")
+         ( "p2p-allow-key", bpo::value<vector<string>>()->composing()->multitoken(),
+           "Public key of a node allowed to connect. May be specified multiple times.")
+         ( "p2p-deny-key", bpo::value<vector<string>>()->composing()->multitoken(),
+           "Public key of a node denied from connecting. May be specified multiple times. Deny rules override allow rules.")
+         ( "p2p-allow-family", bpo::value<vector<string>>()->composing()->multitoken(),
+           "Family public key — all nodes in this family are allowed. May be specified multiple times.")
+         ( "p2p-deny-family", bpo::value<vector<string>>()->composing()->multitoken(),
+           "Family public key — all nodes in this family are denied. May be specified multiple times.")
+         ( "p2p-allow-ip", bpo::value<vector<string>>()->composing()->multitoken(),
+           "IP address or CIDR range allowed to connect. Examples: 10.0.0.0/8, 192.168.1.50. May be specified multiple times.")
+         ( "p2p-deny-ip", bpo::value<vector<string>>()->composing()->multitoken(),
+           "IP address or CIDR range denied from connecting. May be specified multiple times. Deny rules override allow rules.")
+         ( "p2p-reputation-file", bpo::value<string>()->default_value("p2p-reputation.json"),
+           "Path to the peer reputation persistence file. Relative paths are resolved from the data directory.")
+         ( "p2p-node-role", bpo::value<string>()->default_value("peer"),
+           "This node's role: 'peer' (relay, accepts inbound), 'seed' (bootstrap, accepts inbound), "
+           "or 'producer' (block production, outbound-only, never published). "
+           "Included in gossip v2 data for network topology discovery.")
+         ( "p2p-producer-peer-radius", bpo::value<uint32_t>()->default_value(3),
+           "Number of adjacent producers in each direction to connect to for schedule-aware peering. "
+           "Default 3 covers ~29%% of a 21-producer schedule. Only applies when auto-bp-peering is active.")
+         ( "p2p-pre-warm-threshold-ms", bpo::value<uint32_t>()->default_value(2000),
+           "Milliseconds before an adjacent producer's slot to ensure connections are pre-warmed. "
+           "Default 2000ms. Wider windows accommodate slower networks.")
 
         ;
    }
@@ -4680,7 +5193,103 @@ namespace core_net {
          }
 
          chain_id = chain_plug->get_chain_id();
-         fc::rand_pseudo_bytes( node_id.data(), node_id.data_size());
+
+         // Load or generate persistent node key; derive deterministic node_id
+         auto key_file = app().data_dir() / "p2p-node-key";
+         node_key = load_or_generate_node_key(key_file);
+         node_id = node_key->node_id;
+
+         // Transport encryption config
+         p2p_enable_encryption = options.at("p2p-enable-encryption").as<bool>();
+         p2p_require_encryption = options.at("p2p-require-encryption").as<bool>();
+         if (p2p_require_encryption) p2p_enable_encryption = true;  // require implies enable
+         p2p_incomplete_msg_timeout_ms = options.at("p2p-incomplete-message-timeout-ms").as<uint32_t>();
+         p2p_max_total_buffer_bytes = options.at("p2p-max-total-buffer-bytes").as<uint64_t>();
+
+         // Family key config (Phase 2)
+         if (options.count("p2p-family-key")) {
+            auto key_path_str = options.at("p2p-family-key").as<string>();
+            // Strip "FILE:" prefix if present
+            if (key_path_str.starts_with("FILE:")) key_path_str = key_path_str.substr(5);
+            std::filesystem::path key_path(key_path_str);
+            EOS_ASSERT(std::filesystem::exists(key_path), chain::plugin_config_exception,
+                       "Family key file not found: ${f}", ("f", key_path_str));
+            std::ifstream ifs(key_path);
+            std::string wif;
+            std::getline(ifs, wif);
+            while (!wif.empty() && (wif.back() == '\n' || wif.back() == '\r' || wif.back() == ' '))
+               wif.pop_back();
+            EOS_ASSERT(!wif.empty(), chain::plugin_config_exception,
+                       "Family key file is empty: ${f}", ("f", key_path_str));
+            family_private_key = fc::crypto::private_key(wif);
+            family_public_key = family_private_key->get_public_key();
+            fc_ilog(p2p_conn_log, "P2P family key loaded: ${k}",
+                    ("k", family_public_key.to_string(fc::yield_function_t())));
+         }
+         family_id = options.at("p2p-family-id").as<string>();
+         EOS_ASSERT(family_id.size() <= 64, chain::plugin_config_exception,
+                    "p2p-family-id too long (max 64 chars)");
+
+         // Node role and schedule-aware peering config (Phase 4)
+         {
+            auto role_str = options.at("p2p-node-role").as<string>();
+            if (role_str == "peer")          node_role = p2p_node_role::peer;
+            else if (role_str == "seed")     node_role = p2p_node_role::seed;
+            else if (role_str == "producer") node_role = p2p_node_role::producer;
+            else EOS_ASSERT(false, chain::plugin_config_exception,
+                            "Invalid p2p-node-role: ${r}. Must be 'peer', 'seed', or 'producer'.", ("r", role_str));
+         }
+         producer_peer_radius = options.at("p2p-producer-peer-radius").as<uint32_t>();
+         pre_warm_threshold_ms = options.at("p2p-pre-warm-threshold-ms").as<uint32_t>();
+
+         // Access control config (Phase 2)
+         {
+            auto policy_str = options.at("p2p-default-policy").as<string>();
+            if (policy_str == "deny")
+               acl.set_default_policy(access_default_policy::deny);
+            else if (policy_str == "allow")
+               acl.set_default_policy(access_default_policy::allow);
+            else
+               EOS_ASSERT(false, chain::plugin_config_exception,
+                          "Invalid p2p-default-policy: ${p}. Must be 'allow' or 'deny'.", ("p", policy_str));
+         }
+         if (options.count("p2p-deny-key")) {
+            for (const auto& s : options["p2p-deny-key"].as<vector<string>>())
+               acl.add_deny_key(fc::crypto::public_key(s));
+         }
+         if (options.count("p2p-deny-family")) {
+            for (const auto& s : options["p2p-deny-family"].as<vector<string>>())
+               acl.add_deny_family(fc::crypto::public_key(s));
+         }
+         if (options.count("p2p-deny-ip")) {
+            for (const auto& s : options["p2p-deny-ip"].as<vector<string>>()) {
+               EOS_ASSERT(acl.add_deny_ip(s), chain::plugin_config_exception,
+                          "Invalid p2p-deny-ip: ${ip}", ("ip", s));
+            }
+         }
+         if (options.count("p2p-allow-key")) {
+            for (const auto& s : options["p2p-allow-key"].as<vector<string>>())
+               acl.add_allow_key(fc::crypto::public_key(s));
+         }
+         if (options.count("p2p-allow-family")) {
+            for (const auto& s : options["p2p-allow-family"].as<vector<string>>())
+               acl.add_allow_family(fc::crypto::public_key(s));
+         }
+         if (options.count("p2p-allow-ip")) {
+            for (const auto& s : options["p2p-allow-ip"].as<vector<string>>()) {
+               EOS_ASSERT(acl.add_allow_ip(s), chain::plugin_config_exception,
+                          "Invalid p2p-allow-ip: ${ip}", ("ip", s));
+            }
+         }
+
+         // Reputation persistence config
+         {
+            auto rep_file = options.at("p2p-reputation-file").as<string>();
+            reputation_file = std::filesystem::path(rep_file);
+            if (reputation_file.is_relative())
+               reputation_file = app().data_dir() / reputation_file;
+            reputation.load(reputation_file);
+         }
 
          if( p2p_accept_transactions ) {
             chain_plug->enable_accept_transactions();
@@ -4767,6 +5376,17 @@ namespace core_net {
 
       incoming_transaction_ack_subscription = app().get_channel<compat::channels::transaction_ack>().subscribe(
             [this](auto&& t) { transaction_ack(std::forward<decltype(t)>(t)); });
+
+      // Phase 4: producer nodes never accept inbound connections
+      if (node_role == p2p_node_role::producer && !p2p_addresses.empty()) {
+         fc_ilog(p2p_conn_log, "\n"
+               "**********************************\n"
+               "* Node role: PRODUCER            *\n"
+               "* Outbound connections only      *\n"
+               "* Not listening for inbound P2P  *\n"
+               "**********************************\n" );
+         listen_addresses.clear();
+      }
 
       const boost::posix_time::milliseconds accept_timeout(100);
       std::string extra_listening_log_info = ", max clients is " + std::to_string(connections.get_max_client_count());
@@ -4856,6 +5476,79 @@ namespace core_net {
 
    vector<gossip_peer> net_plugin::bp_gossip_peers()const {
       return my->bp_gossip_peers();
+   }
+
+   // ── Phase 2: Access control runtime API ──────────────────────────
+
+   void net_plugin::add_deny_key( acl_key_param params ) {
+      my->acl.add_deny_key(params.key);
+      fc_ilog(p2p_conn_log, "ACL: added deny-key ${k}", ("k", params.key.to_string(fc::yield_function_t())));
+   }
+
+   void net_plugin::remove_deny_key( acl_key_param params ) {
+      my->acl.remove_deny_key(params.key);
+      fc_ilog(p2p_conn_log, "ACL: removed deny-key ${k}", ("k", params.key.to_string(fc::yield_function_t())));
+   }
+
+   void net_plugin::add_deny_ip( acl_ip_param params ) {
+      EOS_ASSERT(my->acl.add_deny_ip(params.ip), chain::plugin_exception,
+                 "Invalid IP/CIDR: ${ip}", ("ip", params.ip));
+      fc_ilog(p2p_conn_log, "ACL: added deny-ip ${ip}", ("ip", params.ip));
+   }
+
+   void net_plugin::remove_deny_ip( acl_ip_param params ) {
+      my->acl.remove_deny_ip(params.ip);
+      fc_ilog(p2p_conn_log, "ACL: removed deny-ip ${ip}", ("ip", params.ip));
+   }
+
+   net_plugin::acl_rules_result net_plugin::access_rules() const {
+      auto summary = my->acl.get_rules();
+      acl_rules_result result;
+      result.default_policy = summary.default_policy;
+      result.deny_keys = std::move(summary.deny_keys);
+      result.deny_families = std::move(summary.deny_families);
+      result.deny_ips = std::move(summary.deny_ips);
+      result.allow_keys = std::move(summary.allow_keys);
+      result.allow_families = std::move(summary.allow_families);
+      result.allow_ips = std::move(summary.allow_ips);
+      return result;
+   }
+
+   vector<net_plugin::peer_reputation_entry> net_plugin::peer_reputation() const {
+      auto reps = my->reputation.get_all_reputations();
+      vector<peer_reputation_entry> result;
+      result.reserve(reps.size());
+      for (auto& r : reps) {
+         peer_reputation_entry e;
+         e.node_key = std::move(r.node_key);
+         e.score = r.score;
+         e.tier = std::move(r.tier);
+         e.invalid_blocks = r.invalid_blocks;
+         e.invalid_txns = r.invalid_txns;
+         e.connection_drops = r.connection_drops;
+         e.sync_failures = r.sync_failures;
+         e.uptime_hours = r.uptime_hours;
+         e.blocks_relayed = r.blocks_relayed;
+         e.avg_block_latency_ms = r.avg_block_latency_ms;
+         result.push_back(std::move(e));
+      }
+      return result;
+   }
+
+   vector<net_plugin::ban_entry_result> net_plugin::bans() const {
+      auto active_bans = my->reputation.get_active_bans();
+      vector<ban_entry_result> result;
+      result.reserve(active_bans.size());
+      for (auto& b : active_bans) {
+         ban_entry_result e;
+         e.identifier = std::move(b.identifier);
+         e.type = std::move(b.type);
+         e.reason = std::move(b.reason);
+         e.ban_count = b.ban_count;
+         e.seconds_remaining = b.seconds_remaining;
+         result.push_back(std::move(e));
+      }
+      return result;
    }
 
    constexpr proto_version_t net_plugin_impl::to_protocol_version(uint16_t v) {

@@ -143,6 +143,7 @@ add_np_test(NAME nested_container_multi_index_test COMMAND tests/nested_containe
 add_np_test(NAME p2p_multiple_listen_test COMMAND tests/p2p_multiple_listen_test.py -v ${UNSHARE})
 add_np_test(NAME p2p_multiple_listen_if_test COMMAND tests/p2p_multiple_listen_test.py -v --activate-if ${UNSHARE})
 add_np_test(NAME p2p_no_listen_test COMMAND tests/p2p_no_listen_test.py -v ${UNSHARE})
+add_np_test(NAME p2p_encrypted_transport_test COMMAND tests/p2p_encrypted_transport_test.py -v ${UNSHARE})
 add_lr_test(NAME p2p_sync_throttle_test COMMAND tests/p2p_sync_throttle_test.py -v -d 2 ${UNSHARE})
 add_lr_test(NAME p2p_sync_throttle_if_test COMMAND tests/p2p_sync_throttle_test.py -v -d 2 --activate-if ${UNSHARE})
 add_np_test(NAME p2p_no_blocks_if_test COMMAND tests/p2p_no_blocks_test.py -v -d 2 ${UNSHARE})
