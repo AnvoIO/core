@@ -40,6 +40,21 @@ BOOST_AUTO_TEST_CASE(txn_relay_increases_score) {
    BOOST_CHECK_CLOSE(mgr.get_score("node_a"), 100.0, 0.01);  // 10000 * 0.01
 }
 
+BOOST_AUTO_TEST_CASE(block_latency_bonus) {
+   reputation_manager mgr;
+   // 100 blocks with average 100ms latency → bonus = (500 - 100) / 50 = +8
+   for (int i = 0; i < 100; ++i) mgr.record_block_latency("fast_node", 100.0);
+   double score = mgr.get_score("fast_node");
+   BOOST_CHECK_CLOSE(score, 8.0, 0.01);
+}
+
+BOOST_AUTO_TEST_CASE(block_latency_no_bonus_slow) {
+   reputation_manager mgr;
+   // Blocks with 600ms average → no bonus (above 500ms threshold)
+   for (int i = 0; i < 10; ++i) mgr.record_block_latency("slow_node", 600.0);
+   BOOST_CHECK_CLOSE(mgr.get_score("slow_node"), 0.0, 0.01);
+}
+
 BOOST_AUTO_TEST_CASE(combined_score) {
    reputation_manager mgr;
    mgr.record_uptime("node_a", 500.0);    // +50

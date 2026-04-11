@@ -2330,6 +2330,10 @@ namespace core_net {
    void sync_manager::sync_timeout(const connection_ptr& c, const boost::system::error_code& ec) {
       if( !ec ) {
          peer_dlog(p2p_blk_log, c, "sync timed out");
+         // Phase 3: record sync failure for reputation
+         if (c->conn_node_id != fc::sha256()) {
+            my_impl->reputation.record_sync_failure(c->conn_node_id.str());
+         }
          sync_reassign_fetch( c );
          c->close(true);
       } else if( ec != boost::asio::error::operation_aborted ) { // don't log on operation_aborted, called on destroy
@@ -3298,15 +3302,40 @@ namespace core_net {
             fc::raw::unpack(dec_ds, which);
             msg_type_t net_msg = to_msg_type_t(which.value);
 
+            // Route message types that need special handling (signed_block,
+            // packed_transaction, vote_message have deleted msg_handler operators
+            // and require ptr-based dispatch).
             if (net_msg == msg_type_t::signed_block) {
                latest_blk_time = now;
+               fc::datastream<const char*> blk_ds(plaintext_data.data(), plaintext_data.size());
+               unsigned_int skip_which{};
+               fc::raw::unpack(blk_ds, skip_which);
+               auto ptr = std::make_shared<signed_block>();
+               fc::raw::unpack(blk_ds, *ptr);
+               auto blk_id = ptr->calculate_id();
+               handle_message(blk_id, std::move(ptr));
+            } else if (net_msg == msg_type_t::packed_transaction) {
+               fc::datastream<const char*> trx_ds(plaintext_data.data(), plaintext_data.size());
+               unsigned_int skip_which{};
+               fc::raw::unpack(trx_ds, skip_which);
+               auto ptr = std::make_shared<packed_transaction>();
+               fc::raw::unpack(trx_ds, *ptr);
+               handle_message(ptr);
+            } else if (net_msg == msg_type_t::vote_message) {
+               fc::datastream<const char*> vote_ds(plaintext_data.data(), plaintext_data.size());
+               unsigned_int skip_which{};
+               fc::raw::unpack(vote_ds, skip_which);
+               auto ptr = std::make_shared<chain::vote_message>();
+               fc::raw::unpack(vote_ds, *ptr);
+               handle_message(ptr);
+            } else {
+               // All other message types go through the generic visitor
+               fc::datastream<const char*> dec_ds2(plaintext_data.data(), plaintext_data.size());
+               net_message msg;
+               fc::raw::unpack(dec_ds2, msg);
+               msg_handler m(shared_from_this());
+               std::visit(m, msg);
             }
-
-            fc::datastream<const char*> dec_ds2(plaintext_data.data(), plaintext_data.size());
-            net_message msg;
-            fc::raw::unpack(dec_ds2, msg);
-            msg_handler m(shared_from_this());
-            std::visit(m, msg);
 
             return true;
          }
@@ -3356,6 +3385,12 @@ namespace core_net {
       const fc::time_point now = fc::time_point::now();
       my_impl->last_block_received_time = last_received_block_time = now;
       const fc::microseconds age(now - bh.timestamp);
+
+      // Phase 3: record block relay latency for reputation (for all blocks, including duplicates)
+      if (conn_node_id != fc::sha256()) {
+         my_impl->reputation.record_block_latency(conn_node_id.str(), static_cast<double>(age.count()) / 1000.0);
+      }
+
       if( my_impl->dispatcher.have_block( blk_id ) ) {
          pending_message_buffer.advance_read_ptr( message_length ); // advance before any send
 
@@ -3761,6 +3796,8 @@ namespace core_net {
 
          if( !my_impl->authenticate_peer( msg ) ) {
             peer_wlog( p2p_conn_log, this, "Peer not authenticated.  Closing connection." );
+            if (conn_node_id != fc::sha256())
+               my_impl->reputation.record_handshake_failure(conn_node_id.str());
             no_retry = go_away_reason::authentication;
             enqueue( go_away_message( go_away_reason::authentication ) );
             return;
@@ -3771,6 +3808,8 @@ namespace core_net {
             fc::lock_guard g(conn_mtx);
             if (!my_impl->acl.is_allowed(msg.key, fc::crypto::public_key(), remote_endpoint_ip_array)) {
                peer_wlog( p2p_conn_log, this, "Peer rejected by access control rules" );
+               if (conn_node_id != fc::sha256())
+                  my_impl->reputation.record_handshake_failure(conn_node_id.str());
                no_retry = go_away_reason::authentication;
                enqueue( go_away_message( go_away_reason::authentication ) );
                return;
@@ -4442,19 +4481,30 @@ namespace core_net {
       my_impl->chain_plug->accept_transaction( trx,
          [weak = weak_from_this(), trx_size](const next_function_variant<transaction_trace_ptr>& result) mutable {
          // next (this lambda) called from application thread
+         bool txn_failed = false;
          if (std::holds_alternative<fc::exception_ptr>(result)) {
             fc_dlog( p2p_trx_log, "bad packed_transaction : ${m}", ("m", std::get<fc::exception_ptr>(result)->what()) );
+            txn_failed = true;
          } else {
             const transaction_trace_ptr& trace = std::get<transaction_trace_ptr>(result);
             if( !trace->except ) {
                fc_dlog( p2p_trx_log, "chain accepted transaction, bcast ${id}", ("id", trace->id) );
             } else {
                fc_ilog( p2p_trx_log, "bad packed_transaction : ${m}", ("m", trace->except->what()));
+               txn_failed = true;
             }
          }
          connection_ptr conn = weak.lock();
          if( conn ) {
             conn->trx_in_progress_size -= trx_size;
+            // Phase 3: record transaction validation result for reputation
+            if (conn->conn_node_id != fc::sha256()) {
+               if (txn_failed) {
+                  my_impl->reputation.record_invalid_txn(conn->conn_node_id.str());
+               } else {
+                  my_impl->reputation.record_txn_relayed(conn->conn_node_id.str());
+               }
+            }
          }
       });
    }

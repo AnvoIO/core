@@ -58,6 +58,8 @@ struct peer_metrics {
    uint32_t    handshake_failures = 0;
    uint64_t    unique_txns_relayed = 0;
    double      total_uptime_hours = 0.0;
+   uint64_t    blocks_relayed = 0;             // total blocks received from this peer
+   double      total_block_latency_ms = 0.0;   // sum of block latencies in milliseconds
 
    // Timestamps for decay calculation
    std::chrono::steady_clock::time_point last_invalid_block;
@@ -95,6 +97,14 @@ struct peer_metrics {
       score -= handshake_failures * 2.0;
       score += unique_txns_relayed * 0.01;
       score += total_uptime_hours * 0.1;
+      // Block relay speed bonus: lower average latency = higher bonus.
+      // Peers that relay blocks within 500ms get up to +10 points.
+      if (blocks_relayed > 0) {
+         double avg_latency_ms = total_block_latency_ms / blocks_relayed;
+         if (avg_latency_ms < 500.0 && avg_latency_ms >= 0.0) {
+            score += (500.0 - avg_latency_ms) / 50.0;  // max +10 at 0ms
+         }
+      }
       return score;
    }
 };
@@ -180,6 +190,14 @@ public:
       std::unique_lock lock(mtx_);
       auto& m = node_metrics_[node_key_str];
       m.unique_txns_relayed++;
+   }
+
+   void record_block_latency(const std::string& node_key_str, double latency_ms) {
+      std::unique_lock lock(mtx_);
+      auto& m = node_metrics_[node_key_str];
+      m.blocks_relayed++;
+      m.total_block_latency_ms += std::max(0.0, latency_ms);
+      m.last_seen = std::chrono::steady_clock::now();
    }
 
    // ── Score & Tier Queries ─────────────────────────────────────────
