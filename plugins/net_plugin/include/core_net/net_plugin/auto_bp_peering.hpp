@@ -241,14 +241,30 @@ public:
                auto& prod_idx = gossip_bps.index.get<by_producer>();
                gossip_bp_peers_message::signed_bp_peer peer{{.producer_name = bp_account}};
                peer.cached_bp_peer_info.emplace(le.server_endpoint, le.outbound_ip_address, expire);
-               peer.bp_peer_info = fc::raw::pack<gossip_bp_peers_message::bp_peer_info_v1>(*peer.cached_bp_peer_info);
+               // Pack v2 if family key is configured, otherwise v1 for backward compat
+               if (self()->family_public_key.valid() && self()->node_key) {
+                  gossip_bp_peers_message::bp_peer_info_v2 v2_info;
+                  v2_info.server_endpoint = le.server_endpoint;
+                  v2_info.outbound_ip_address = le.outbound_ip_address;
+                  v2_info.expiration = expire;
+                  v2_info.family_key = self()->family_public_key;
+                  v2_info.node_key = self()->node_key->public_key;
+                  v2_info.node_role = static_cast<uint8_t>(self()->node_role);
+                  peer.cached_bp_peer_info_v2.emplace(v2_info);
+                  peer.bp_peer_info = fc::raw::pack(v2_info);
+                  peer.version = 2;
+               } else {
+                  peer.bp_peer_info = fc::raw::pack<gossip_bp_peers_message::bp_peer_info_v1>(*peer.cached_bp_peer_info);
+               }
                peer.sig = self()->sign_compact(*peer_info->key, peer.digest(self()->chain_id));
                EOS_ASSERT(peer.sig != signature_type{}, chain::plugin_config_exception, "Unable to sign bp peer ${p}, private key not found for ${k}",
                           ("p", peer.producer_name)("k", peer_info->key->to_string({})));
                if (auto i = prod_idx.find(std::forward_as_tuple(bp_account, le.server_endpoint, le.outbound_ip_address)); i != prod_idx.end()) {
                   gossip_bps.index.modify(i, [&peer](auto& v) {
+                     v.version             = peer.version;
                      v.bp_peer_info        = peer.bp_peer_info;
                      v.cached_bp_peer_info = peer.cached_bp_peer_info;
+                     v.cached_bp_peer_info_v2 = peer.cached_bp_peer_info_v2;
                      v.sig                 = peer.sig;
                   });
                } else {
@@ -329,7 +345,18 @@ public:
                if (peer.producer_name.empty())
                   return false; // invalid bp_peer data
                assert(!peer.cached_bp_peer_info);
+               // Unpack based on version: v2 includes family_key, node_key, node_role.
+               // v1 nodes send version=1 and only v1 fields. The v1 fields are a prefix
+               // of v2, so unpacking v1 from a v2 blob is safe (extra bytes ignored).
                peer.cached_bp_peer_info = fc::raw::unpack<gossip_bp_peers_message::bp_peer_info_v1>(peer.bp_peer_info);
+               if (peer.version.value >= 2) {
+                  try {
+                     peer.cached_bp_peer_info_v2 = fc::raw::unpack<gossip_bp_peers_message::bp_peer_info_v2>(peer.bp_peer_info);
+                  } catch (...) {
+                     // v2 unpack failed — treat as v1 (backward compat)
+                     peer.cached_bp_peer_info_v2.reset();
+                  }
+               }
                if (!valid_endpoint(peer.server_endpoint()))
                   return false; // invalid address
                if (prev != nullptr) {
@@ -422,8 +449,10 @@ public:
             if (i->sig != peer.sig && peer.expiration() >= i->expiration()) { // signature has changed, producer_name and server_endpoint has not changed
                assert(peer.cached_bp_peer_info); // unpacked in validate_gossip_bp_peers_message()
                gossip_bps.index.modify(i, [&peer](auto& m) {
+                  m.version = peer.version;
                   m.bp_peer_info = peer.bp_peer_info;
                   m.cached_bp_peer_info = peer.cached_bp_peer_info;
+                  m.cached_bp_peer_info_v2 = peer.cached_bp_peer_info_v2;
                   m.sig = peer.sig;
                });
                diff = true;

@@ -453,6 +453,8 @@ namespace core_net {
       std::optional<fc::crypto::private_key> family_private_key;  // loaded from p2p-family-key config
       fc::crypto::public_key                 family_public_key;   // derived from family_private_key
       std::string                            family_id;           // human-readable label
+      p2p_node_role                          node_role = p2p_node_role::peer;  // this node's role
+      uint32_t                               producer_peer_radius = 3;         // connect to N adjacent producers
       access_control                         acl;                 // access control rule set
 
       // P2P peer reputation (Phase 3)
@@ -5033,6 +5035,13 @@ namespace core_net {
            "IP address or CIDR range denied from connecting. May be specified multiple times. Deny rules override allow rules.")
          ( "p2p-reputation-file", bpo::value<string>()->default_value("p2p-reputation.json"),
            "Path to the peer reputation persistence file. Relative paths are resolved from the data directory.")
+         ( "p2p-node-role", bpo::value<string>()->default_value("peer"),
+           "This node's role: 'peer' (relay, accepts inbound), 'seed' (bootstrap, accepts inbound), "
+           "or 'producer' (block production, outbound-only, never published). "
+           "Included in gossip v2 data for network topology discovery.")
+         ( "p2p-producer-peer-radius", bpo::value<uint32_t>()->default_value(3),
+           "Number of adjacent producers in each direction to connect to for schedule-aware peering. "
+           "Default 3 covers ~29%% of a 21-producer schedule. Only applies when auto-bp-peering is active.")
 
         ;
    }
@@ -5216,6 +5225,17 @@ namespace core_net {
          family_id = options.at("p2p-family-id").as<string>();
          EOS_ASSERT(family_id.size() <= 64, chain::plugin_config_exception,
                     "p2p-family-id too long (max 64 chars)");
+
+         // Node role and schedule-aware peering config (Phase 4)
+         {
+            auto role_str = options.at("p2p-node-role").as<string>();
+            if (role_str == "peer")          node_role = p2p_node_role::peer;
+            else if (role_str == "seed")     node_role = p2p_node_role::seed;
+            else if (role_str == "producer") node_role = p2p_node_role::producer;
+            else EOS_ASSERT(false, chain::plugin_config_exception,
+                            "Invalid p2p-node-role: ${r}. Must be 'peer', 'seed', or 'producer'.", ("r", role_str));
+         }
+         producer_peer_radius = options.at("p2p-producer-peer-radius").as<uint32_t>();
 
          // Access control config (Phase 2)
          {

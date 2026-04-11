@@ -143,11 +143,30 @@ namespace core_net {
       transaction_id_type id;
    };
 
+   /// Node role for gossip and connection enforcement
+   enum class p2p_node_role : uint8_t {
+      peer     = 0,   // public relay node — accepts inbound, relays blocks/txns
+      seed     = 1,   // bootstrap node — accepts inbound, full chain sync
+      producer = 2    // block producer — outbound only, never published
+   };
+
    struct gossip_bp_peers_message {
       struct bp_peer_info_v1 {
          std::string               server_endpoint;      // externally available address to connect to
          std::string               outbound_ip_address;  // outbound ip address for firewall
          block_timestamp_type      expiration;           // head block to remove bp_peer
+      };
+      /// Extended peer info for v2 gossip — adds family key, node key, and role.
+      /// Old peers unpack v1 fields only (the v1 fields are a prefix of v2).
+      struct bp_peer_info_v2 {
+         // v1 fields (prefix — must match v1 layout)
+         std::string               server_endpoint;
+         std::string               outbound_ip_address;
+         block_timestamp_type      expiration;
+         // v2 extensions
+         chain::public_key_type    family_key;           // producer's family public key
+         chain::public_key_type    node_key;             // specific node's public key at this endpoint
+         uint8_t                   node_role = 0;        // p2p_node_role: 0=peer, 1=seed
       };
       // bp_peer_info_v2 can derive from bp_peer_info_v1, so old peers can still unpack bp_peer_info_v1 from bp_peer::bp_peer_info
       struct bp_peer {
@@ -161,10 +180,16 @@ namespace core_net {
          signature_type  sig; // signature over bp_peer
 
          std::optional<bp_peer_info_v1> cached_bp_peer_info; // not serialized
+         std::optional<bp_peer_info_v2> cached_bp_peer_info_v2; // not serialized, populated for version >= 2
 
          const std::string& server_endpoint() const     { assert(cached_bp_peer_info); return cached_bp_peer_info->server_endpoint; }
          const std::string& outbound_ip_address() const { assert(cached_bp_peer_info); return cached_bp_peer_info->outbound_ip_address; }
          block_timestamp_type expiration() const        { assert(cached_bp_peer_info); return cached_bp_peer_info->expiration; }
+
+         // v2 accessors — return empty/default if v1 only
+         chain::public_key_type family_key() const   { return cached_bp_peer_info_v2 ? cached_bp_peer_info_v2->family_key : chain::public_key_type{}; }
+         chain::public_key_type node_key() const     { return cached_bp_peer_info_v2 ? cached_bp_peer_info_v2->node_key : chain::public_key_type{}; }
+         uint8_t node_role() const                    { return cached_bp_peer_info_v2 ? cached_bp_peer_info_v2->node_role : 0; }
       };
 
       std::vector<signed_bp_peer> peers;
@@ -251,6 +276,7 @@ FC_REFLECT( core_net::block_nack_message, (id) )
 FC_REFLECT( core_net::block_notice_message, (previous)(id) )
 FC_REFLECT( core_net::transaction_notice_message, (id) )
 FC_REFLECT( core_net::gossip_bp_peers_message::bp_peer_info_v1, (server_endpoint)(outbound_ip_address)(expiration) )
+FC_REFLECT( core_net::gossip_bp_peers_message::bp_peer_info_v2, (server_endpoint)(outbound_ip_address)(expiration)(family_key)(node_key)(node_role) )
 FC_REFLECT( core_net::gossip_bp_peers_message::bp_peer, (version)(producer_name)(bp_peer_info) )
 FC_REFLECT_DERIVED(core_net::gossip_bp_peers_message::signed_bp_peer, (core_net::gossip_bp_peers_message::bp_peer), (sig) )
 FC_REFLECT( core_net::gossip_bp_peers_message, (peers) )
