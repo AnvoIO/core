@@ -108,7 +108,7 @@ Multi-node integration tests use the Python TestHarness at `tests/TestHarness/`.
 | `Node.py` | Controls a single `core_netd` process — start, stop, RPC queries |
 | `launcher.py` | Generates network topology and P2P peering configuration |
 | `TestHelper.py` | Argument parser and test lifecycle (setup/teardown) |
-| `WalletMgr.py` | Manages keosd wallet for key management |
+| `WalletMgr.py` | Manages core-wallet for key management |
 | `queries.py` | HTTP RPC wrappers for `/v1/chain/*`, `/v1/net/*` endpoints |
 | `testUtils.py` | Utility functions — port checking, process management |
 

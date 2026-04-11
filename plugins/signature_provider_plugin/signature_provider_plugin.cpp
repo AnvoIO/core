@@ -75,8 +75,8 @@ class signature_provider_plugin_impl {
          auto pubkey = chain::public_key_type(pub_key_str);
 
          if(spec_type_str == "KEY") {
-            wlog("Signature provider for ${pub} uses KEY: — private key is visible in process arguments. "
-                 "Consider using FILE:<path> or KEOSD:<url> for production nodes.", ("pub", pubkey));
+            elog("Signature provider for ${pub} uses KEY: — private key is visible in process arguments. "
+                 "Consider using FILE:<path> or CORE_WALLET:<url> for production nodes.", ("pub", pubkey));
             try {
                chain::private_key_type priv(spec_data);
                EOS_ASSERT(pubkey == priv.get_public_key(), chain::plugin_config_exception, "Private key does not match given public key for ${pub}", ("pub", pubkey));
@@ -112,7 +112,7 @@ signature_provider_plugin::~signature_provider_plugin(){}
 void signature_provider_plugin::set_program_options(options_description&, options_description& cfg) {
    cfg.add_options()
          ("core-wallet-provider-timeout", boost::program_options::value<int32_t>()->default_value(5),
-          "Limits the maximum time (in milliseconds) that is allowed for sending requests to a keosd provider for signing")
+          "Limits the maximum time (in milliseconds) that is allowed for sending requests to a core-wallet provider for signing")
          ;
 }
 
@@ -153,7 +153,7 @@ signature_provider_plugin::bls_public_key_for_specification(const std::string& s
 
    std::string key_str;
    if( spec_type_str == "KEY" ) {
-      wlog("BLS signature provider for ${pub} uses KEY: — private key is visible in process arguments. "
+      elog("BLS signature provider for ${pub} uses KEY: — private key is visible in process arguments. "
            "Consider using FILE:<path> for production nodes.", ("pub", pub_key_str));
       key_str = spec_data;
    } else if( spec_type_str == "FILE" ) {

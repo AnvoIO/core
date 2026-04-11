@@ -107,7 +107,7 @@ if(ENABLE_TESTS)
       include(ExternalProject)
       ExternalProject_Add(
          core_net_vm_test_wasms
-         GIT_REPOSITORY "https://github.com/EOSIO/eos-vm-test-wasms.git"
+         GIT_REPOSITORY "https://github.com/AnvoIO/core-vm-test-wasms.git"
          SOURCE_DIR ${CMAKE_BINARY_DIR}/wasms
          BINARY_DIR ${CMAKE_BINARY_DIR}/wasms
          BUILD_ALWAYS 0

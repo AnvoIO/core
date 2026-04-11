@@ -9,7 +9,7 @@ add_library( chain_plugin
              ${HEADERS} )
 
 if(CORE_NET_ENABLE_DEVELOPER_OPTIONS)
-    message(WARNING "EOSIO Developer Options are enabled; these are NOT supported")
+    message(WARNING "Core Developer Options are enabled; these are NOT supported")
     target_compile_definitions(chain_plugin PUBLIC CORE_NET_DEVELOPER)
 endif()
 

@@ -17,9 +17,9 @@
 int main(int argc, char** argv) {
    fc::logger::get(DEFAULT_LOGGER).set_log_level(fc::log_level::debug);
 
-   CLI::App app{"Spring Command Line Utility"};
+   CLI::App app{"Anvo Core Command Line Utility"};
 
-   // custom leap formatter
+   // custom CLI formatter
    auto fmt = std::make_shared<core_net::cli::CoreNetFormatter>();
    app.formatter(fmt);
 

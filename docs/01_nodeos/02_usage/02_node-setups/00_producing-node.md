@@ -55,29 +55,42 @@ You will need to set the private key for your producer. The public key should ha
 `signature-provider` is defined with a 3-field tuple:
 * `public-key` - A valid Antelope public key in form of a string.
 * `provider-spec` - It's a string formatted like `<provider-type>:<data>`
-* `provider-type` - KEY, CORE_WALLET (or KEOSD for backward compatibility)
+* `provider-type` - FILE (recommended), CORE_WALLET (or KEOSD), KEY (deprecated), or SE
 
-#### Using a Key:
+#### Using a File (recommended):
+
+Load the private key from a file. The file must have owner-only permissions (0600 or 0400).
+
+```console
+# config.ini:
+
+signature-provider = PUBLIC_SIGNING_KEY=FILE:/path/to/private.key
+
+//Example
+//signature-provider = EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV=FILE:/etc/core_netd/keys/producer.key
+```
+
+#### Using Core Wallet:
+
+You can also use `core-wallet` for remote signing.
+
+```console
+# config.ini:
+
+signature-provider = CORE_WALLET:<data>
+
+//Example
+//EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV=CORE_WALLET:https://127.0.0.1:88888
+```
+
+#### Using a Key (deprecated):
+
+> **Deprecated.** The `KEY:` provider exposes the private key in process arguments, which are visible via `ps`, `/proc/PID/cmdline`, shell history, and system audit logs. Use `FILE:` or `CORE_WALLET:` instead. `KEY:` will be removed in a future release.
 
 ```console
 # config.ini:
 
 signature-provider = PUBLIC_SIGNING_KEY=KEY:PRIVATE_SIGNING_KEY
-
-//Example
-//signature-provider = EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV=KEY:5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3
-```
-
-#### Using Core Wallet:
-You can also use `core-wallet` instead of hard-defining keys.
-
-```console
-# config.ini:
-
-signature-provider = CORE_WALLET:<data>   
-
-//Example
-//EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV=CORE_WALLET:https://127.0.0.1:88888
 ```
 
 ### 4. Define a peers list

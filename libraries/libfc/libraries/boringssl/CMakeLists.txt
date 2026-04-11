@@ -1,4 +1,4 @@
-# Disable BoringSSL tests/benchmarks to avoid target conflicts with Spring
+# Disable BoringSSL tests/benchmarks to avoid target conflicts with Anvo Core
 set(BUILD_TESTING_SAVE ${BUILD_TESTING})
 set(BUILD_TESTING OFF)
 add_subdirectory(bssl EXCLUDE_FROM_ALL)
@@ -36,4 +36,4 @@ install( TARGETS decrepit
    ARCHIVE DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR} COMPONENT dev EXCLUDE_FROM_ALL
 )
 
-install( DIRECTORY bssl/include/ DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}/springboringssl" COMPONENT dev EXCLUDE_FROM_ALL )
+install( DIRECTORY bssl/include/ DESTINATION "${CMAKE_INSTALL_FULL_INCLUDEDIR}/coreboringssl" COMPONENT dev EXCLUDE_FROM_ALL )
