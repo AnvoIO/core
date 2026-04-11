@@ -424,10 +424,13 @@ namespace core_net {
          }
 
          bool using_category_address = (options.count("http-category-address") != 0);
+         bool user_configured_unix_socket = unix_sock_path.size() &&
+                                            options.count("unix-socket-path") &&
+                                            !options.at("unix-socket-path").defaulted();
 
          if (!using_category_address) {
-            if (http_server_address.size() && http_server_address != "http-category-address" && unix_sock_path.size()) {
-               // Both TCP and unix socket configured: separate public APIs from sensitive APIs.
+            if (http_server_address.size() && http_server_address != "http-category-address" && user_configured_unix_socket) {
+               // User explicitly configured both TCP and unix socket: separate public APIs from sensitive APIs.
                // Public read-only categories go on TCP. Everything goes on unix socket.
                for (auto cat : {api_category::chain_ro, api_category::chain_rw, api_category::db_size, api_category::trace_api})
                   my->categories_by_address[http_server_address].insert(cat);
@@ -435,8 +438,11 @@ namespace core_net {
                fc_ilog(logger(), "Public APIs (chain_ro, chain_rw, db_size, trace_api) on TCP: ${addr}", ("addr", http_server_address));
                fc_ilog(logger(), "All APIs (including producer, net, wallet, snapshot) on unix socket: ${sock}", ("sock", unix_sock_path));
             } else if (http_server_address.size() && http_server_address != "http-category-address") {
-               // TCP only, no unix socket — all categories on TCP (legacy behavior)
+               // TCP with default or no unix socket — all categories on TCP (legacy behavior)
                my->categories_by_address[http_server_address].insert(api_category::node);
+               // Also serve on default unix socket if present (convenience, not security boundary)
+               if (unix_sock_path.size())
+                  my->categories_by_address[unix_sock_path].insert(api_category::node);
             } else if (unix_sock_path.size()) {
                // Unix socket only, no TCP — all categories on socket
                my->categories_by_address[unix_sock_path].insert(api_category::node);
