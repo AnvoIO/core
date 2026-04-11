@@ -58,9 +58,6 @@ struct response_test_fixture {
    };
 
    using response_impl_type = request_handler<mock_logfile_provider, mock_data_handler_provider>;
-   /**
-    * TODO: initialize extraction implementation here with `mock_logfile_provider` as template param
-    */
    response_test_fixture()
    : response_impl(mock_logfile_provider(*this), mock_data_handler_provider(*this),
                    [](const std::string& msg ){ fc_dlog( fc::logger::get(DEFAULT_LOGGER), msg );})

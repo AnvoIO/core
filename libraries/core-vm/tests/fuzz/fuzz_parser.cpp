@@ -47,17 +47,4 @@ int main( int argc, const char* argv[] ) {
    auto duration = duration_cast<microseconds>(stop - start);
    std::cout << "TIME : " << duration.count() << "us\n";
 
-#if 0
-   catch ( wasm_parse_exception& ex ) {
-   } catch ( wasm_interpreter_exception& ex ) {
-   } catch ( wasm_section_length_exception& ex ) {
-   } catch ( wasm_bad_alloc& ex ) {
-   } catch ( wasm_double_free& ex ) {
-   } catch ( wasm_vector_oob_exception& ex ) {
-   } catch ( wasm_memory_exception& ex ) {
-   } catch ( wasm_unsupported_import_exception& ex ) {
-   } catch ( wasm_illegal_opcode_exception& ex ) {
-   } catch ( guarded_ptr_exception& ex ) {
-   }
-#endif
 }

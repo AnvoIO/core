@@ -281,33 +281,8 @@ void pinnable_mapped_file::setup_copy_on_write_mapping() {
 // returns the number of pages flushed to disk
 size_t pinnable_mapped_file::check_memory_and_flush_if_needed() {
    size_t written_pages {0};
-#if 0
-   if (_non_file_mapped_mapping || _sharable || !_writable)
-      return written_pages;
-
-   // we are in `copy_on_write` mode.
-   static time_t check_time = 0;
-   constexpr int check_interval = 60; // seconds
-   constexpr size_t one_gb = 1ull << 30;
-
-   const time_t current_time = time(NULL);
-   if(current_time >= check_time) {
-      check_time = current_time + check_interval;
-
-      size_t avail_ram_gb = (get_avphys_pages() * sysconf(_SC_PAGESIZE)) / one_gb;
-      if (avail_ram_gb <= 2) {
-         auto [src, sz] = get_region_to_save();
-         pagemap_accessor pagemap;
-         size_t offset = 0;
-         while(offset != sz && written_pages < (one_gb / sysconf(_SC_PAGESIZE))) {
-            size_t copy_size = std::min(_db_size_copy_increment,  sz - offset);
-            if (!pagemap.update_file_from_region({ src + offset, copy_size }, _file_mapping, offset, false, written_pages))
-               break;
-            offset += copy_size;
-         }
-      }
-   }
-#endif
+   // Memory pressure flush was disabled upstream. The function signature is
+   // retained for ABI compatibility but always returns 0.
    return written_pages;
 }
 

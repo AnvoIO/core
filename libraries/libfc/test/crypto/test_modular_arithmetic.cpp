@@ -1096,7 +1096,7 @@ BOOST_AUTO_TEST_CASE(modexp_benchmarking) try {
     // then independent variable the product of the exponent bit size and the base/modulus bit size taken to some power, then we get
     // a pretty good linear correlation when a power of 1.6 is chosen.
 
-    // TODO: See if theoretical analysis of the modular exponentiation algorithm also justifies these scaling properties.
+    // Open question: whether theoretical analysis of the modular exponentiation algorithm also justifies these scaling properties.
 
     // Example results for average time:
     // | Modulus/Base Bit Size | Exponent Bit Size | Average Time (ns) |

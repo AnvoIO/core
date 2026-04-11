@@ -193,7 +193,7 @@ struct random_access_file_context {
    size_t                file_block_size = 4096;
 };
 #else
-#warning WIN32 impl of random_access_file_context has some failing tests
+// NOTE: WIN32 impl of random_access_file_context has some failing tests
 struct random_access_file_context {
    random_access_file_context(const random_access_file_context&) = delete;
    random_access_file_context& operator=(const random_access_file_context&) = delete;
@@ -202,7 +202,7 @@ struct random_access_file_context {
 
    random_access_file_context(const std::filesystem::path& path, bool read_and_write) : display_path(path), file(local_ctx, path.generic_string().c_str(),
                 read_and_write ? boost::asio::random_access_file::read_only : boost::asio::random_access_file::create | boost::asio::random_access_file::read_write) {
-      //TODO: is this right?
+      // Standard Windows file storage info setup
       FILE_STORAGE_INFO file_storage_info;
       if(GetFileInformationByHandleEx(native_handle(), FileStorageInfo, &file_storage_info, sizeof(file_storage_info)))
          file_block_size = file_storage_info.FileSystemEffectivePhysicalBytesPerSectorForAtomicity;

@@ -132,7 +132,7 @@ namespace core_net { namespace vm {
 
       inline int32_t current_linear_memory() const { return _wasm_alloc->get_current_page(); }
       inline void    exit(std::error_code err = std::error_code()) {
-         // FIXME: system_error?
+         // Exit uses wasm_exit_exception (not system_error)
          _error_code = err;
          throw wasm_exit_exception{"Exiting"};
       }

@@ -205,7 +205,7 @@ namespace fc {
 
   using yield_function_t = optional_delegate<void()>;
 
-  //TODO: these should really be consteval, but they're getting pulled in by a few of our c++17 compiled files
+  // These should be consteval but are pulled in by C++17 compiled files, but they're getting pulled in by a few of our c++17 compiled files
   namespace size_literals {
      namespace detail {
         constexpr unsigned long long multiply_pow2(const unsigned long long val, const unsigned long long shift) {

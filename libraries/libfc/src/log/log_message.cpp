@@ -47,7 +47,7 @@ namespace fc
    :my( std::make_shared<detail::log_context_impl>() )
    {
       my->level       = ll;
-      my->file        = std::filesystem::path(file).filename().generic_string(); // TODO truncate filename
+      my->file        = std::filesystem::path(file).filename().generic_string(); // filename extracted via path::filename()
       my->line        = line;
       my->method      = method;
       my->timestamp   = time_point::now();

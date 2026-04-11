@@ -762,7 +762,7 @@ namespace core_net { namespace vm {
             pc_element_t& branch_target = pc_stack[pc_stack.size() - label - 1];
             uint32_t result = op_stack.depth() - branch_target.operand_depth;
             if(branch_target.label_result != types::pseudo) {
-               // FIXME: Reusing the high bit imposes an additional constraint
+               // Note: Reusing the high bit limits operand stack depth to 2^31 (acceptable with 8192 hardcoded limit)
                // on the maximum depth of the operand stack.  This isn't an
                // actual problem right now, because the stack is hard-coded
                // to 8192 elements, but it would be better to avoid spreading

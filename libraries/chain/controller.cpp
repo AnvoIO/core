@@ -2605,7 +2605,7 @@ struct controller_impl {
 
          if( name == config::system_account_name() ) {
             // The initial eosio ABI value affects consensus; see  https://github.com/EOSIO/eos/issues/7794
-            // TODO: This doesn't charge RAM; a fix requires a consensus upgrade.
+            // NOTE: This doesn't charge RAM. A fix would require a consensus upgrade.
             a.abi.assign(eosio_abi_bin, sizeof(eosio_abi_bin));
          }
       });

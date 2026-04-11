@@ -15,7 +15,7 @@ namespace core_net { namespace testing {
 
       // The new blockchain is now in sync with any old ones; go ahead and connect the propagation signal.
 
-/// TODO restore this
+// Block relay disabled in tester_network (block forwarding handled by direct chain push)
       
       /*
       blockchains[&new_blockchain] = new_blockchain.control->applied_block.connect(

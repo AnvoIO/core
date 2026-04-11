@@ -753,7 +753,7 @@ public:
    std::optional<scoped_connection> _aggregate_vote_connection;
 
    /*
-    * HACK ALERT
+    * Boost timer workaround:
     * Boost timers can be in a state where a handler has not yet executed but is not abortable.
     * As this method needs to mutate state handlers depend on for proper functioning to maintain
     * invariants for other code (namely accepting incoming transactions in a nearly full block)

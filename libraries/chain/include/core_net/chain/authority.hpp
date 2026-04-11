@@ -325,7 +325,7 @@ inline bool validate( const Authority& auth ) {
    {
       const key_weight* prev = nullptr;
       for( const auto& k : auth.keys ) {
-         if( prev && !(prev->key < k.key) ) return false; // TODO: require keys to be sorted in ascending order rather than descending (requires modifying many tests)
+         if( prev && !(prev->key < k.key) ) return false; // keys must be sorted; changing direction would require consensus upgrade
          total_weight += k.weight;
          prev = &k;
       }
@@ -333,7 +333,7 @@ inline bool validate( const Authority& auth ) {
    {
       const permission_level_weight* prev = nullptr;
       for( const auto& a : auth.accounts ) {
-         if( prev && ( prev->permission >= a.permission ) ) return false; // TODO: require permission_levels to be sorted in ascending order rather than descending (requires modifying many tests)
+         if( prev && ( prev->permission >= a.permission ) ) return false; // permissions must be sorted; changing direction would require consensus upgrade
          total_weight += a.weight;
          prev = &a;
       }
