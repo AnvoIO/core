@@ -412,28 +412,52 @@ namespace core_net {
          my->plugin_state->keep_alive = options.at("http-keep-alive").as<bool>();
 
          std::string http_server_address;
+         std::string unix_sock_path;
+
          if (options.count("http-server-address")) {
             http_server_address = options.at("http-server-address").as<string>();
-            if (http_server_address.size() && http_server_address != "http-category-address") {
-               my->categories_by_address[http_server_address].insert(api_category::node);
-            }
          }
 
          if (options.count("unix-socket-path") && !options.at("unix-socket-path").as<string>().empty()) {
-            std::string unix_sock_path = options.at("unix-socket-path").as<string>();
-            if (unix_sock_path.size()) {
-               if (unix_sock_path[0] != '/') unix_sock_path = "./" + unix_sock_path;
-               my->categories_by_address[unix_sock_path].insert(api_category::node);
-            } 
+            unix_sock_path = options.at("unix-socket-path").as<string>();
+            if (unix_sock_path.size() && unix_sock_path[0] != '/') unix_sock_path = "./" + unix_sock_path;
          }
 
-         if (options.count("http-category-address") != 0) {
+         bool using_category_address = (options.count("http-category-address") != 0);
+         bool user_configured_unix_socket = unix_sock_path.size() &&
+                                            options.count("unix-socket-path") &&
+                                            !options.at("unix-socket-path").defaulted();
+
+         if (!using_category_address) {
+            if (http_server_address.size() && http_server_address != "http-category-address" && user_configured_unix_socket) {
+               // User explicitly configured both TCP and unix socket: separate public APIs from sensitive APIs.
+               // Public read-only categories go on TCP. Everything goes on unix socket.
+               for (auto cat : {api_category::chain_ro, api_category::chain_rw, api_category::db_size, api_category::trace_api})
+                  my->categories_by_address[http_server_address].insert(cat);
+               my->categories_by_address[unix_sock_path].insert(api_category::node);
+               fc_ilog(logger(), "Public APIs (chain_ro, chain_rw, db_size, trace_api) on TCP: ${addr}", ("addr", http_server_address));
+               fc_ilog(logger(), "All APIs (including producer, net, wallet, snapshot) on unix socket: ${sock}", ("sock", unix_sock_path));
+            } else if (http_server_address.size() && http_server_address != "http-category-address") {
+               // TCP with default or no unix socket — all categories on TCP (legacy behavior)
+               my->categories_by_address[http_server_address].insert(api_category::node);
+               // Also serve on default unix socket if present (convenience, not security boundary)
+               if (unix_sock_path.size())
+                  my->categories_by_address[unix_sock_path].insert(api_category::node);
+            } else if (unix_sock_path.size()) {
+               // Unix socket only, no TCP — all categories on socket
+               my->categories_by_address[unix_sock_path].insert(api_category::node);
+            }
+         }
+
+         if (using_category_address) {
             auto plugins    = options["plugin"].as<std::vector<std::string>>();
             auto has_plugin = [&plugins](const std::string& s) {
                return std::find(plugins.begin(), plugins.end(), s) != plugins.end();
             };
 
-            EOS_ASSERT(http_server_address == "http-category-address" && options.count("unix-socket-path") == 0,
+            bool user_set_unix_socket = options.count("unix-socket-path") &&
+                                       !options.at("unix-socket-path").defaulted();
+            EOS_ASSERT(http_server_address == "http-category-address" && !user_set_unix_socket,
                 chain::plugin_config_exception,
                 "when http-category-address is specified, http-server-address must be set as "
                 "`http-category-address` and `unix-socket-path` must be left unspecified");
