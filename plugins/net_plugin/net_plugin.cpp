@@ -4741,37 +4741,35 @@ namespace core_net {
    }
 
    bool net_plugin_impl::authenticate_peer(const handshake_message& msg) const {
-      // Phase 2 ACL: if new-style rules are configured, use them instead of legacy auth.
-      // At handshake time, we have the node key and IP but not yet the family key.
-      // Family key ACL evaluation happens after encrypted_key_exchange.
-      if (acl.has_rules()) {
-         // We need the peer's IP for ACL evaluation. The caller should have set
-         // remote_endpoint_ip_array on the connection before calling authenticate_peer.
-         // For now, use an empty IP (ACL key/family rules still work, IP rules skip).
-         // Full IP-based ACL is evaluated in the connection's handshake handler.
-         return true;  // defer to ACL check in handshake handler where IP is available
-      }
+      // When Phase 2 ACL rules are configured, skip the legacy allow-list check
+      // but still verify signature ownership. The ACL itself is evaluated in the
+      // handshake handler (line ~3770) where the peer's IP is available.
+      bool use_acl = acl.has_rules();
 
-      // Legacy authentication
-      if(allowed_connections == None)
-         return false;
-
-      if(allowed_connections == Any)
-         return true;
-
-      if(allowed_connections & (Producers | Specified)) {
-         auto allowed_it = std::find(allowed_peers.begin(), allowed_peers.end(), msg.key);
-         auto private_it = private_keys.find(msg.key);
-         bool found_producer_key = false;
-         if(producer_plug != nullptr)
-            found_producer_key = producer_plug->is_producer_key(msg.key);
-         if( allowed_it == allowed_peers.end() && private_it == private_keys.end() && !found_producer_key) {
-            fc_wlog( p2p_conn_log, "Peer ${peer} sent a handshake with an unauthorized key: ${key}.",
-                     ("peer", msg.p2p_address)("key", msg.key) );
+      if (!use_acl) {
+         // Legacy authentication — no ACL configured
+         if(allowed_connections == None)
             return false;
+         if(allowed_connections == Any)
+            return true;
+
+         if(allowed_connections & (Producers | Specified)) {
+            auto allowed_it = std::find(allowed_peers.begin(), allowed_peers.end(), msg.key);
+            auto private_it = private_keys.find(msg.key);
+            bool found_producer_key = false;
+            if(producer_plug != nullptr)
+               found_producer_key = producer_plug->is_producer_key(msg.key);
+            if( allowed_it == allowed_peers.end() && private_it == private_keys.end() && !found_producer_key) {
+               fc_wlog( p2p_conn_log, "Peer ${peer} sent a handshake with an unauthorized key: ${key}.",
+                        ("peer", msg.p2p_address)("key", msg.key) );
+               return false;
+            }
          }
       }
 
+      // Signature verification — always runs regardless of ACL or legacy mode.
+      // Verifies the peer actually owns the key they claim in msg.key.
+      bool requires_auth = use_acl || (allowed_connections & (Producers | Specified));
       if(msg.sig != chain::signature_type() && msg.token != sha256()) {
          sha256 hash = fc::sha256::hash(msg.time);
          if(hash != msg.token) {
@@ -4786,12 +4784,12 @@ namespace core_net {
             fc_wlog( p2p_conn_log, "Peer ${peer} sent a handshake with an unrecoverable key.", ("peer", msg.p2p_address) );
             return false;
          }
-         if((allowed_connections & (Producers | Specified)) && peer_key != msg.key) {
+         if(requires_auth && peer_key != msg.key) {
             fc_wlog( p2p_conn_log, "Peer ${peer} sent a handshake with an unauthenticated key.", ("peer", msg.p2p_address) );
             return false;
          }
       }
-      else if(allowed_connections & (Producers | Specified)) {
+      else if(requires_auth) {
          fc_dlog( p2p_conn_log, "Peer sent a handshake with blank signature and token, but this node accepts only authenticated connections." );
          return false;
       }

@@ -201,6 +201,13 @@ public:
                              const fc::crypto::public_key& family_key,
                              const boost::asio::ip::address_v6::bytes_type& ip) const {
       std::shared_lock lock(mtx_);
+      return evaluate_locked(node_key, family_key, ip);
+   }
+
+   /// Internal evaluation without locking — caller must hold mtx_.
+   access_decision evaluate_locked(const fc::crypto::public_key& node_key,
+                                    const fc::crypto::public_key& family_key,
+                                    const boost::asio::ip::address_v6::bytes_type& ip) const {
 
       // 1. Check deny-key
       if (node_key.valid()) {
@@ -241,14 +248,14 @@ public:
    }
 
    /// Convenience: evaluate and apply default policy.
+   /// Thread-safe — single lock covers both evaluation and default policy read.
    bool is_allowed(const fc::crypto::public_key& node_key,
                    const fc::crypto::public_key& family_key,
                    const boost::asio::ip::address_v6::bytes_type& ip) const {
-      auto decision = evaluate(node_key, family_key, ip);
+      std::shared_lock lock(mtx_);
+      auto decision = evaluate_locked(node_key, family_key, ip);
       if (decision == access_decision::accept) return true;
       if (decision == access_decision::reject) return false;
-      // no_match — apply default
-      std::shared_lock lock(mtx_);
       return default_policy_ == access_default_policy::allow;
    }
 
