@@ -196,6 +196,21 @@ void wallet_manager::import_key(const std::string& name, const std::string& wif_
    w->import_key(wif_key);
 }
 
+size_t wallet_manager::import_wallet(const std::string& name, const std::string& source_wallet_filename,
+                                     const std::string& source_password) {
+   check_timeout();
+   if (wallets.count(name) == 0) {
+      EOS_THROW(chain::wallet_nonexistent_exception, "Wallet not found: ${w}", ("w", name));
+   }
+   auto& w = wallets.at(name);
+   if (w->is_locked()) {
+      EOS_THROW(chain::wallet_locked_exception, "Wallet is locked: ${w}", ("w", name));
+   }
+   auto* sw = dynamic_cast<soft_wallet*>(w.get());
+   EOS_ASSERT(sw != nullptr, wallet_exception, "import_wallet only supported for software wallets");
+   return sw->import_keys_from_wallet(source_wallet_filename, source_password);
+}
+
 void wallet_manager::remove_key(const std::string& name, const std::string& password, const std::string& key) {
    check_timeout();
    if (wallets.count(name) == 0) {
