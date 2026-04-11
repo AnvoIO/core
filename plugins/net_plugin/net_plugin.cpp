@@ -848,9 +848,11 @@ namespace core_net {
       // Per-connection encryption state (accessed only from connection strand)
       std::unique_ptr<aead_context>          encryption_ctx;
       std::optional<x25519_keypair>          ephemeral_ecdh_key;  // generated per-connection
-      bool                                   encryption_active = false;
+      bool                                   encryption_active = false;       // fully active — all msgs encrypted
+      bool                                   encryption_transitioning = false; // key exchange done, transitioning
       bool                                   encryption_handshake_sent = false;
       std::chrono::steady_clock::time_point  encryption_start_time{};
+      std::optional<encrypted_key_exchange>  pending_peer_key_exchange;       // buffered if received before ours sent
 
       // SEC-024: incomplete message read deadline timer
       boost::asio::steady_timer              incomplete_msg_timer{strand};
@@ -1896,12 +1898,12 @@ namespace core_net {
                                     const send_buffer_type& send_buffer,
                                     go_away_reason close_after_send)
    {
-      // If encryption is active, encrypt the payload portion of the send buffer.
+      // If encryption is active (or transitioning), encrypt the payload.
       // Input format:  [4-byte message_length][plaintext_payload]
       // Output format: [4-byte message_length'][12-byte nonce][encrypted_payload][16-byte tag]
       // where message_length' = nonce_len + encrypted_payload + tag_len
       send_buffer_type actual_send_buffer = send_buffer;
-      if (encryption_active && encryption_ctx && encryption_ctx->is_initialized()) {
+      if ((encryption_active || encryption_transitioning) && encryption_ctx && encryption_ctx->is_initialized()) {
          const char* buf = send_buffer->data();
          const size_t buf_size = send_buffer->size();
          if (buf_size > message_header_size) {
@@ -3213,45 +3215,59 @@ namespace core_net {
       try {
          auto now = latest_msg_time = std::chrono::steady_clock::now();
 
-         // ── Encrypted receive path ─────────────────────────────────────────
-         // If encryption is active, the payload is [nonce][ciphertext][tag].
-         // Decrypt the entire payload, then dispatch from decrypted data.
-         if (encryption_active && encryption_ctx && encryption_ctx->is_initialized()) {
-            if (message_length < encrypted_overhead) {
-               peer_elog( p2p_conn_log, this, "Encrypted message too short (${len} bytes)", ("len", message_length) );
-               close();
-               return false;
-            }
-
-            // Read the encrypted payload from the buffer
-            std::vector<char> encrypted_data(message_length);
+         // ── Encrypted/transitioning receive path ─────────────────────────
+         // After key exchange, we enter a transition period where the peer may
+         // still have plaintext messages in-flight. During transition, try to
+         // decrypt; if that fails, process as plaintext. Once the first
+         // successful decryption occurs, switch to fully encrypted mode.
+         if ((encryption_active || encryption_transitioning) && encryption_ctx && encryption_ctx->is_initialized()) {
+            // Read the payload from the buffer (we need it regardless of encrypt/plaintext)
+            std::vector<char> payload_data(message_length);
             auto ds_consume = pending_message_buffer.create_datastream();
-            ds_consume.read(encrypted_data.data(), message_length);
+            ds_consume.read(payload_data.data(), message_length);
 
-            // Decrypt — the original plaintext message_length is used as AAD.
-            // Since the sender encrypted with orig_msg_len as AAD, we need to reconstruct it:
-            // plaintext_len = message_length - encrypted_overhead
-            uint32_t plaintext_msg_len = message_length - static_cast<uint32_t>(encrypted_overhead);
-            auto decrypted = encryption_ctx->open(encrypted_data.data(), encrypted_data.size(), plaintext_msg_len);
-            if (!decrypted) {
-               peer_elog( p2p_conn_log, this, "Message decryption/authentication failed, closing" );
-               close();
-               return false;
+            // Try decryption if payload is large enough to be encrypted
+            bool decrypted_ok = false;
+            std::vector<char> plaintext_data;
+
+            if (message_length >= encrypted_overhead) {
+               uint32_t plaintext_msg_len = message_length - static_cast<uint32_t>(encrypted_overhead);
+               auto decrypted = encryption_ctx->open(payload_data.data(), payload_data.size(), plaintext_msg_len);
+               if (decrypted) {
+                  plaintext_data = std::move(*decrypted);
+                  decrypted_ok = true;
+                  if (encryption_transitioning) {
+                     // First successful decryption — transition complete
+                     encryption_transitioning = false;
+                     encryption_active = true;
+                     peer_dlog( p2p_conn_log, this, "Encryption transition complete — fully encrypted" );
+                  }
+               }
             }
 
-            // Parse the decrypted plaintext as a net_message
-            fc::datastream<const char*> dec_ds(decrypted->data(), decrypted->size());
+            if (!decrypted_ok) {
+               if (encryption_active) {
+                  // Fully encrypted mode — decryption failure is fatal
+                  peer_elog( p2p_conn_log, this, "Message decryption/authentication failed, closing" );
+                  close();
+                  return false;
+               }
+               // Transitioning — fall back to plaintext for this message
+               peer_dlog( p2p_conn_log, this, "Transition: processing plaintext message before encryption" );
+               plaintext_data = std::move(payload_data);
+            }
+
+            // Parse the plaintext as a net_message
+            fc::datastream<const char*> dec_ds(plaintext_data.data(), plaintext_data.size());
             unsigned_int which{};
             fc::raw::unpack(dec_ds, which);
             msg_type_t net_msg = to_msg_type_t(which.value);
 
-            // For encrypted connections, we don't use the specialized peek-and-optimize
-            // handlers. All messages go through full deserialization.
             if (net_msg == msg_type_t::signed_block) {
                latest_blk_time = now;
             }
 
-            fc::datastream<const char*> dec_ds2(decrypted->data(), decrypted->size());
+            fc::datastream<const char*> dec_ds2(plaintext_data.data(), plaintext_data.size());
             net_message msg;
             fc::raw::unpack(dec_ds2, msg);
             msg_handler m(shared_from_this());
@@ -4100,20 +4116,17 @@ namespace core_net {
    void connection::handle_message( const encrypted_key_exchange& msg ) {
       peer_dlog( p2p_msg_log, this, "received encrypted_key_exchange" );
 
-      if (protocol_version < proto_version_t::encrypted_transport) {
-         peer_wlog( p2p_msg_log, this, "received encrypted_key_exchange from V1 peer, ignoring" );
-         return;
-      }
-
-      if (encryption_active) {
+      if (encryption_active || encryption_transitioning) {
          peer_wlog( p2p_msg_log, this, "received duplicate encrypted_key_exchange, ignoring" );
          return;
       }
 
       if (!ephemeral_ecdh_key) {
-         peer_wlog( p2p_msg_log, this, "received encrypted_key_exchange but no ephemeral key generated" );
-         no_retry = go_away_reason::fatal_other;
-         enqueue( go_away_message( go_away_reason::fatal_other ) );
+         // We haven't sent our key exchange yet — the handshake hasn't been fully
+         // processed on this connection. Buffer the peer's key exchange and process
+         // it after we send ours (triggered by the handshake handler).
+         peer_dlog( p2p_msg_log, this, "received encrypted_key_exchange before ours sent, buffering" );
+         pending_peer_key_exchange = msg;
          return;
       }
 
@@ -4189,7 +4202,10 @@ namespace core_net {
       // Zero the session key from stack
       OPENSSL_cleanse(session_key.data(), session_key.size());
 
-      encryption_active = true;
+      // Enter transition mode: send-side encrypts immediately, receive-side
+      // tries decrypt first but falls back to plaintext for messages already
+      // in-flight from before the peer activated encryption.
+      encryption_transitioning = true;
       encryption_start_time = std::chrono::steady_clock::now();
 
       peer_ilog( p2p_conn_log, this, "Encrypted transport activated (ChaCha20-Poly1305)" );
@@ -4219,6 +4235,14 @@ namespace core_net {
       encryption_handshake_sent = true;
 
       peer_dlog( p2p_msg_log, this, "sent encrypted_key_exchange" );
+
+      // If the peer's key exchange arrived before ours was sent, process it now.
+      if (pending_peer_key_exchange) {
+         peer_dlog( p2p_msg_log, this, "processing buffered peer key exchange" );
+         auto buffered = std::move(*pending_peer_key_exchange);
+         pending_peer_key_exchange.reset();
+         handle_message(buffered);
+      }
    }
 
    digest_type gossip_bp_peers_message::bp_peer::digest(const chain_id_type& chain_id) const {
