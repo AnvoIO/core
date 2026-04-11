@@ -193,7 +193,7 @@ struct random_access_file_context {
    size_t                file_block_size = 4096;
 };
 #else
-#warning WIN32 impl of random_access_file_context has some failing tests
+// NOTE: WIN32 impl of random_access_file_context has some failing tests
 struct random_access_file_context {
    random_access_file_context(const random_access_file_context&) = delete;
    random_access_file_context& operator=(const random_access_file_context&) = delete;

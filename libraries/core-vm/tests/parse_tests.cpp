@@ -150,18 +150,8 @@ BOOST_AUTO_TEST_CASE(actual_wasm_test) {
          BOOST_CHECK( memcmp((char*)mod.exports.at(7).field_str.raw(), "_ZdaPv", mod.exports.at(7).field_len) == 0 &&
                mod.exports.at(7).kind == external_kind::Function );
 
-#if 0
-         code_ptr.add_bounds( constants::id_size);
-         id = bp.parse_section_id( code_ptr );
-         BOOST_CHECK_EQUAL( id, section_id::start_section );
-
-         code_ptr.add_bounds( constants::varuint32_size );
-         len = bp.parse_section_payload_len( code_ptr );
-         code_ptr.fit_bounds();
-
-         code_ptr.add_bounds( len );
-         bp.parse_start_section( code_ptr, mod.start );
-#endif
+         // Start section parsing test removed — the test WASM does not contain
+         // a start section, so this block was disabled upstream.
 
          uint32_t indices[] = {73, 60, 169, 92, 80, 124, 131, 152, 176, 177, 178, 164, 153, 122, 136, 156, 158, 83, 184, 123, 129, 185, 154, 155, 121};
 
