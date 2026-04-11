@@ -183,6 +183,45 @@ try:
 
     Print("p2p-require-encryption config option accepted by all nodes")
 
+    # ── Test 4: Runtime API endpoints ────────────────────────────────
+    Print("=== Test 4: Verify net API endpoints return valid data ===")
+
+    # /v1/net/access_rules — should return current ACL state
+    rules_resp = node0.processUrllibRequest('net', 'access_rules')
+    assert rules_resp['payload'] is not None, "access_rules returned null"
+    assert 'default_policy' in rules_resp['payload'], \
+        f"access_rules missing default_policy: {rules_resp['payload']}"
+    Print(f"access_rules: default_policy={rules_resp['payload']['default_policy']}")
+
+    # /v1/net/peer_reputation — should return reputation data (may be empty)
+    rep_resp = node0.processUrllibRequest('net', 'peer_reputation')
+    assert rep_resp['payload'] is not None, "peer_reputation returned null"
+    Print(f"peer_reputation: {len(rep_resp['payload'])} entries")
+
+    # /v1/net/bans — should return ban list (may be empty)
+    bans_resp = node0.processUrllibRequest('net', 'bans')
+    assert bans_resp['payload'] is not None, "bans returned null"
+    Print(f"bans: {len(bans_resp['payload'])} active bans")
+
+    # /v1/net/add_deny_ip — add a deny rule at runtime
+    deny_resp = node0.processUrllibRequest('net', 'add_deny_ip', {"ip": "198.51.100.0/24"})
+    # Verify it shows up in rules
+    rules_resp2 = node0.processUrllibRequest('net', 'access_rules')
+    deny_ips = rules_resp2['payload'].get('deny_ips', [])
+    assert '198.51.100.0/24' in deny_ips, \
+        f"Runtime deny-ip not found in rules: {deny_ips}"
+    Print("Runtime ACL update verified: deny-ip added and visible in rules")
+
+    # /v1/net/remove_deny_ip — remove the rule
+    node0.processUrllibRequest('net', 'remove_deny_ip', {"ip": "198.51.100.0/24"})
+    rules_resp3 = node0.processUrllibRequest('net', 'access_rules')
+    deny_ips2 = rules_resp3['payload'].get('deny_ips', [])
+    assert '198.51.100.0/24' not in deny_ips2, \
+        f"Runtime deny-ip not removed: {deny_ips2}"
+    Print("Runtime ACL update verified: deny-ip removed")
+
+    Print("All net API endpoints verified")
+
     testSuccessful = True
 
 finally:

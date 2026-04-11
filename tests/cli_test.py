@@ -419,6 +419,43 @@ cleos_help_test(['--help'])
 cleos_help_test(['system', '--help'])
 cleos_help_test(['version', '--help'])
 cleos_help_test(['wallet', '--help'])
+cleos_help_test(['net', '--help'])
+
+
+def net_acl_cli_parse_test():
+    """Test that new net ACL/reputation subcommands parse correctly.
+    They should fail with connection error (no server), not parse error."""
+
+    # Each command should fail because no server is running,
+    # but should NOT fail with a CLI parsing error.
+    test_cases = [
+        ['net', 'deny-key', 'PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV'],
+        ['net', 'undeny-key', 'PUB_K1_6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV'],
+        ['net', 'deny-ip', '10.0.0.0/8'],
+        ['net', 'undeny-ip', '10.0.0.0/8'],
+        ['net', 'rules'],
+        ['net', 'reputation'],
+        ['net', 'bans'],
+    ]
+
+    for args in test_cases:
+        result = subprocess.run(
+            ['./programs/core-cli/core-cli', '--no-auto-core-wallet', '-u', 'http://localhost:0/'] + args,
+            check=False, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        # Must fail (no server) but NOT with a parse error
+        assert result.returncode != 0, f"Expected failure for: {args}"
+        assert b'Failed http request' in result.stderr or b'Connection refused' in result.stderr, \
+            f"Expected connection error for: {args}, got: {result.stderr.decode()[:200]}"
+
+    # Verify missing required args produce usage errors
+    for args in [['net', 'deny-key'], ['net', 'deny-ip']]:
+        result = subprocess.run(
+            ['./programs/core-cli/core-cli', '--no-auto-core-wallet'] + args,
+            check=False, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        assert result.returncode != 0, f"Expected failure for missing arg: {args}"
+
+net_acl_cli_parse_test()
+
 
 cli11_bugfix_test()
 
