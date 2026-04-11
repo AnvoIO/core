@@ -346,6 +346,54 @@ void soft_wallet::save_wallet_file( string wallet_filename )
    my->save_wallet_file( wallet_filename );
 }
 
+size_t soft_wallet::import_keys_from_wallet(const string& source_filename, const string& source_password)
+{ try {
+   EOS_ASSERT(!is_locked(), wallet_locked_exception, "Unable to import keys into a locked wallet");
+   EOS_ASSERT(std::filesystem::exists(source_filename), wallet_nonexistent_exception,
+              "Source wallet file not found: ${f}", ("f", source_filename));
+
+   // Load the source wallet data
+   auto source_data = fc::json::from_file(source_filename).as<wallet_data>();
+
+   // Derive decryption key for the source wallet
+   fc::sha512 source_pw;
+   if (!source_data.kdf_salt.empty()) {
+      source_pw = derive_key_pbkdf2(source_password, source_data.kdf_salt);
+   } else {
+      source_pw = fc::sha512::hash(source_password.c_str(), source_password.size());
+   }
+
+   // Decrypt the source wallet keys
+   vector<char> decrypted = fc::aes_decrypt(source_pw, source_data.cipher_keys);
+   auto source_keys = fc::raw::unpack<plain_keys>(decrypted);
+   FC_ASSERT(source_keys.checksum == source_pw, "Invalid password for source wallet");
+
+   // Zero the decryption key
+   OPENSSL_cleanse(&source_pw, sizeof(source_pw));
+
+   // Merge keys — skip duplicates
+   size_t imported = 0;
+   for (const auto& [pub, priv] : source_keys.keys) {
+      if (my->_keys.find(pub) == my->_keys.end()) {
+         my->_keys[pub] = priv;
+         ++imported;
+      }
+   }
+
+   // Zero source keys from memory
+   for (auto& [pub, priv] : source_keys.keys) {
+      // priv is a private_key_type — no OPENSSL_cleanse available for fc type
+      // but it will be destroyed when source_keys goes out of scope
+   }
+
+   if (imported > 0) {
+      my->encrypt_keys();
+      save_wallet_file();
+   }
+
+   return imported;
+} EOS_RETHROW_EXCEPTIONS(wallet_exception, "Failed to import keys from wallet: ${f}", ("f", source_filename)) }
+
 bool soft_wallet::is_locked() const
 {
    return my->is_locked();

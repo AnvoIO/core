@@ -263,6 +263,57 @@ BOOST_AUTO_TEST_CASE(wallet_manager_create_test) {
 }
 
 
+BOOST_AUTO_TEST_CASE(wallet_import_merge_test)
+{ try {
+   using namespace core_net::wallet;
+
+   if (std::filesystem::exists("source.wallet")) std::filesystem::remove("source.wallet");
+   if (std::filesystem::exists("target.wallet")) std::filesystem::remove("target.wallet");
+
+   constexpr auto key1 = "5JktVNHnRX48BUdtewU7N1CyL4Z886c42x7wYW7XhNWkDQRhdcS";
+   constexpr auto key2 = "5Ju5RTcVDo35ndtzHioPMgebvBM6LkJ6tvuU6LTNQv8yaz3ggZr";
+   constexpr auto key3 = "5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3";
+
+   wallet_manager wm;
+
+   // Create source wallet with key1 and key2
+   auto source_pw = wm.create("source");
+   wm.import_key("source", key1);
+   wm.import_key("source", key2);
+   BOOST_CHECK_EQUAL(2u, wm.list_keys("source", source_pw).size());
+   wm.lock("source");
+
+   // Create target wallet with key2 and key3 (key2 is shared)
+   auto target_pw = wm.create("target");
+   wm.import_key("target", key2);
+   wm.import_key("target", key3);
+   BOOST_CHECK_EQUAL(2u, wm.list_keys("target", target_pw).size());
+
+   // Import source into target — should add key1 (new), skip key2 (duplicate)
+   size_t imported = wm.import_wallet("target", "source.wallet", source_pw);
+   BOOST_CHECK_EQUAL(1u, imported);  // only key1 is new
+   BOOST_CHECK_EQUAL(3u, wm.list_keys("target", target_pw).size());
+
+   // Import again — should add 0 (all keys already present)
+   size_t imported2 = wm.import_wallet("target", "source.wallet", source_pw);
+   BOOST_CHECK_EQUAL(0u, imported2);
+   BOOST_CHECK_EQUAL(3u, wm.list_keys("target", target_pw).size());
+
+   // Import into locked wallet should fail
+   wm.lock("target");
+   BOOST_CHECK_THROW(wm.import_wallet("target", "source.wallet", source_pw), wallet_locked_exception);
+
+   // Import with wrong password should fail
+   wm.unlock("target", target_pw);
+   BOOST_CHECK_THROW(wm.import_wallet("target", "source.wallet", "wrong_password"), fc::exception);
+
+   // Import from nonexistent file should fail
+   BOOST_CHECK_THROW(wm.import_wallet("target", "nonexistent.wallet", source_pw), fc::exception);
+
+   std::filesystem::remove("source.wallet");
+   std::filesystem::remove("target.wallet");
+} FC_LOG_AND_RETHROW() }
+
 BOOST_AUTO_TEST_SUITE_END()
 
 } // namespace eos

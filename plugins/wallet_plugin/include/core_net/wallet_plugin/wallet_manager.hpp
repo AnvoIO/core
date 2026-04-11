@@ -105,6 +105,16 @@ public:
    /// @throws fc::exception if wallet not found or locked.
    void import_key(const std::string& name, const std::string& wif_key);
 
+   /// Import keys from another wallet file, merging into an existing wallet.
+   /// The target wallet must be opened and unlocked. The source wallet is
+   /// decrypted with the provided password. Duplicate keys are skipped.
+   /// @param name the name of the target wallet to merge into.
+   /// @param source_wallet_filename path to the source wallet file.
+   /// @param source_password the password for the source wallet.
+   /// @returns number of keys imported.
+   /// @throws fc::exception if target wallet not found or locked, or source can't be decrypted.
+   size_t import_wallet(const std::string& name, const std::string& source_wallet_filename, const std::string& source_password);
+
    /// Removes a key from the specified wallet.
    /// Wallet must be opened and unlocked.
    /// @param name the name of the wallet to remove the key from.

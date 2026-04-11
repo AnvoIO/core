@@ -128,6 +128,18 @@ class soft_wallet final : public wallet_api
        */
       bool    load_wallet_file(string wallet_filename = "");
 
+      /** Import keys from another wallet file, merging into this wallet.
+       *
+       * The source wallet is decrypted with the provided password, and all
+       * keys not already present in this wallet are added. This wallet
+       * must be unlocked. The source wallet file is not modified.
+       *
+       * @param source_filename path to the source wallet file
+       * @param source_password password to decrypt the source wallet
+       * @returns number of keys imported (excluding duplicates)
+       */
+      size_t  import_keys_from_wallet(const string& source_filename, const string& source_password);
+
       /** Saves the current wallet to the given filename.
        *
        * @warning This does not change the wallet filename that will be used for future

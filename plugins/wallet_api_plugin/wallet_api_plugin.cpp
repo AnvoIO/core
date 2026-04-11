@@ -109,6 +109,8 @@ void wallet_api_plugin::plugin_startup() {
             INVOKE_V_R_R(wallet_mgr, unlock, std::string, std::string), 200),
        CALL_WITH_400(wallet, wallet_mgr, import_key,
             INVOKE_V_R_R(wallet_mgr, import_key, std::string, std::string), 201),
+       CALL_WITH_400(wallet, wallet_mgr, import_wallet,
+            INVOKE_R_R_R_R(wallet_mgr, import_wallet, std::string, std::string, std::string), 201),
        CALL_WITH_400(wallet, wallet_mgr, remove_key,
             INVOKE_V_R_R_R(wallet_mgr, remove_key, std::string, std::string, std::string), 201),
        CALL_WITH_400(wallet, wallet_mgr, create_key,

@@ -3993,6 +3993,25 @@ int main( int argc, char** argv ) {
       std::cout << localized("imported private key for: ${pubkey}", ("pubkey", pubkey.to_string({}))) << std::endl;
    });
 
+   // import wallet (merge keys from another wallet file)
+   string source_wallet_file;
+   string source_wallet_pw;
+   auto importWalletFile = wallet->add_subcommand("import-wallet", localized("Import keys from another wallet file (merge)"));
+   importWalletFile->add_option("-n,--name", wallet_name, localized("The name of the target wallet to merge into"));
+   importWalletFile->add_option("--source", source_wallet_file, localized("Path to the source wallet file"))->required();
+   importWalletFile->add_option("--source-password", source_wallet_pw, localized("Password for the source wallet"))->expected(0, 1);
+   importWalletFile->callback([&wallet_name, &source_wallet_file, &source_wallet_pw] {
+      if (source_wallet_pw.empty()) {
+         std::cout << localized("source wallet password: ");
+         fc::set_console_echo(false);
+         std::getline(std::cin, source_wallet_pw, '\n');
+         fc::set_console_echo(true);
+      }
+      fc::variants vs = {fc::variant(wallet_name), fc::variant(source_wallet_file), fc::variant(source_wallet_pw)};
+      auto result = call(wallet_url, wallet_import_wallet, vs);
+      std::cout << localized("imported ${n} key(s)", ("n", result.as_uint64())) << std::endl;
+   });
+
    // remove keys from wallet
    string wallet_rm_key_str;
    auto removeKeyWallet = wallet->add_subcommand("remove_key", localized("Remove key from wallet"));
