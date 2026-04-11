@@ -24,6 +24,7 @@
 #include <fc/crypto/rand.hpp>
 #include <core_net/net_plugin/p2p_transport_encryption.hpp>
 #include <core_net/net_plugin/p2p_access_control.hpp>
+#include <core_net/net_plugin/p2p_peer_reputation.hpp>
 #include <fc/exception/exception.hpp>
 #include <fc/time.hpp>
 #include <fc/mutex.hpp>
@@ -453,6 +454,10 @@ namespace core_net {
       fc::crypto::public_key                 family_public_key;   // derived from family_private_key
       std::string                            family_id;           // human-readable label
       access_control                         acl;                 // access control rule set
+
+      // P2P peer reputation (Phase 3)
+      reputation_manager                     reputation;          // per-peer metrics and scoring
+      std::filesystem::path                  reputation_file;     // persistence path
 
       chain_plugin*                         chain_plug = nullptr;
       producer_plugin*                      producer_plug = nullptr;
@@ -1481,8 +1486,20 @@ namespace core_net {
 
    // called from connection strand
    void connection::_close( bool reconnect, bool shutdown ) {
-      if (socket_open)
+      if (socket_open) {
          peer_ilog(p2p_conn_log, this, "closing");
+         // Phase 3: record connection drop for reputation (only for established connections)
+         if (!shutdown && conn_node_id != fc::sha256()) {
+            my_impl->reputation.record_connection_drop(conn_node_id.str());
+            // Record uptime from latest_msg_time (a steady_clock time_point)
+            auto now = std::chrono::steady_clock::now();
+            if (latest_msg_time > std::chrono::steady_clock::time_point::min()) {
+               auto connected_duration = now - latest_msg_time;
+               double hours = std::chrono::duration<double, std::ratio<3600>>(connected_duration).count();
+               if (hours > 0) my_impl->reputation.record_uptime(conn_node_id.str(), hours);
+            }
+         }
+      }
       else
          peer_dlog(p2p_conn_log, this, "close called on already closed socket");
       socket_open = false;
@@ -2530,6 +2547,10 @@ namespace core_net {
    // called from connection strand
    void sync_manager::rejected_block( const connection_ptr& c, uint32_t blk_num, closing_mode mode ) {
       c->block_status_monitor_.rejected();
+      // Phase 3: record invalid block metric for reputation
+      if (c->conn_node_id != fc::sha256()) {
+         my_impl->reputation.record_invalid_block(c->conn_node_id.str());
+      }
       {
          // reset sync on rejected block
          fc::lock_guard g( sync_mtx );
@@ -3529,6 +3550,14 @@ namespace core_net {
    }
 
    void net_plugin_impl::plugin_shutdown() {
+      // Save reputation data before shutdown
+      if (!reputation_file.empty()) {
+         if (reputation.save(reputation_file)) {
+            fc_ilog(p2p_conn_log, "Peer reputation data saved to ${f}", ("f", reputation_file.string()));
+         } else {
+            fc_wlog(p2p_conn_log, "Failed to save peer reputation data to ${f}", ("f", reputation_file.string()));
+         }
+      }
       thread_pool.stop();
    }
 
@@ -4954,6 +4983,8 @@ namespace core_net {
            "IP address or CIDR range allowed to connect. Examples: 10.0.0.0/8, 192.168.1.50. May be specified multiple times.")
          ( "p2p-deny-ip", bpo::value<vector<string>>()->composing()->multitoken(),
            "IP address or CIDR range denied from connecting. May be specified multiple times. Deny rules override allow rules.")
+         ( "p2p-reputation-file", bpo::value<string>()->default_value("p2p-reputation.json"),
+           "Path to the peer reputation persistence file. Relative paths are resolved from the data directory.")
 
         ;
    }
@@ -5178,6 +5209,15 @@ namespace core_net {
             }
          }
 
+         // Reputation persistence config
+         {
+            auto rep_file = options.at("p2p-reputation-file").as<string>();
+            reputation_file = std::filesystem::path(rep_file);
+            if (reputation_file.is_relative())
+               reputation_file = app().data_dir() / reputation_file;
+            reputation.load(reputation_file);
+         }
+
          if( p2p_accept_transactions ) {
             chain_plug->enable_accept_transactions();
          }
@@ -5387,6 +5427,41 @@ namespace core_net {
       result.allow_keys = std::move(summary.allow_keys);
       result.allow_families = std::move(summary.allow_families);
       result.allow_ips = std::move(summary.allow_ips);
+      return result;
+   }
+
+   vector<net_plugin::peer_reputation_entry> net_plugin::peer_reputation() const {
+      auto reps = my->reputation.get_all_reputations();
+      vector<peer_reputation_entry> result;
+      result.reserve(reps.size());
+      for (auto& r : reps) {
+         peer_reputation_entry e;
+         e.node_key = std::move(r.node_key);
+         e.score = r.score;
+         e.tier = std::move(r.tier);
+         e.invalid_blocks = r.invalid_blocks;
+         e.invalid_txns = r.invalid_txns;
+         e.connection_drops = r.connection_drops;
+         e.sync_failures = r.sync_failures;
+         e.uptime_hours = r.uptime_hours;
+         result.push_back(std::move(e));
+      }
+      return result;
+   }
+
+   vector<net_plugin::ban_entry_result> net_plugin::bans() const {
+      auto active_bans = my->reputation.get_active_bans();
+      vector<ban_entry_result> result;
+      result.reserve(active_bans.size());
+      for (auto& b : active_bans) {
+         ban_entry_result e;
+         e.identifier = std::move(b.identifier);
+         e.type = std::move(b.type);
+         e.reason = std::move(b.reason);
+         e.ban_count = b.ban_count;
+         e.seconds_remaining = b.seconds_remaining;
+         result.push_back(std::move(e));
+      }
       return result;
    }
 

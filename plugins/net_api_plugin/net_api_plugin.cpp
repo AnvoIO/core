@@ -75,6 +75,10 @@ void net_api_plugin::plugin_startup() {
             INVOKE_V_R(net_mgr, remove_deny_ip, net_plugin::acl_ip_param), 201),
        CALL_WITH_400(net, net_ro, net_mgr, access_rules,
             INVOKE_R_V(net_mgr, access_rules), 201),
+       CALL_WITH_400(net, net_ro, net_mgr, peer_reputation,
+            INVOKE_R_V(net_mgr, peer_reputation), 201),
+       CALL_WITH_400(net, net_ro, net_mgr, bans,
+            INVOKE_R_V(net_mgr, bans), 201),
   } );
 }
 
