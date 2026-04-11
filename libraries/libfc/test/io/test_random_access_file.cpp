@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(open_errors) try {
       return e.top_message().find("Failed to open") != std::string::npos;
    });
 
-   //TODO: previously there was a test here to ensure an error was thrown when opening a file that is not writable. Unfortunately
+   // Note: previously there was a test here to ensure an error was thrown when opening a file that is not writable. Unfortunately
    // that turned out tricky to get running properly in CI where the test runs as root (bypassing permission checks) and seems to
    // run on a filesystem lacking support for immutable files.
 } FC_LOG_AND_RETHROW();

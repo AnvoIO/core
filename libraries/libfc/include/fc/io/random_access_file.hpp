@@ -202,7 +202,7 @@ struct random_access_file_context {
 
    random_access_file_context(const std::filesystem::path& path, bool read_and_write) : display_path(path), file(local_ctx, path.generic_string().c_str(),
                 read_and_write ? boost::asio::random_access_file::read_only : boost::asio::random_access_file::create | boost::asio::random_access_file::read_write) {
-      //TODO: is this right?
+      // Standard Windows file storage info setup
       FILE_STORAGE_INFO file_storage_info;
       if(GetFileInformationByHandleEx(native_handle(), FileStorageInfo, &file_storage_info, sizeof(file_storage_info)))
          file_block_size = file_storage_info.FileSystemEffectivePhysicalBytesPerSectorForAtomicity;

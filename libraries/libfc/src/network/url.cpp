@@ -61,7 +61,6 @@ namespace fc
            std::getline( ss, _largs );
            if( _args && _args->size() )
            {
-             // TODO: args = std::move(_args);
               _query = std::move(_largs);
            }
          }

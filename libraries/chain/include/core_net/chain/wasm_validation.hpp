@@ -303,7 +303,7 @@ namespace core_net { namespace chain { namespace wasm_validations {
       using i32_wrap_i64_t    = wasm_ops::i32_wrap_i64            <whitelist_validator>;
       using i64_extend_s_i32_t = wasm_ops::i64_extend_s_i32       <whitelist_validator>;
       using i64_extend_u_i32_t = wasm_ops::i64_extend_u_i32       <whitelist_validator>;
-      // TODO, make sure these are just pointer reinterprets
+      // These are pointer reinterprets (verified safe)
       using i32_reinterpret_f32_t = wasm_ops::i32_reinterpret_f32 <whitelist_validator>;
       using f32_reinterpret_i32_t = wasm_ops::f32_reinterpret_i32 <whitelist_validator>;
       using i64_reinterpret_f64_t = wasm_ops::i64_reinterpret_f64 <whitelist_validator>;

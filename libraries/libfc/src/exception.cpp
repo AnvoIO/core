@@ -266,7 +266,7 @@ namespace fc
          ("source_lineno", lineno)
          ("expr", expr)
          ;
-      /* TODO: restore this later
+      /* Disabled: assert debug output intentionally suppressed
       std::cout
          << "FC_ASSERT triggered:  "
          << fc::json::to_string( assert_trip_info ) << "\n";

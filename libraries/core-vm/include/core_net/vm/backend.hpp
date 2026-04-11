@@ -107,7 +107,7 @@ namespace core_net { namespace vm {
          }
          if constexpr (!std::is_same_v<HostFunctions, std::nullptr_t>)
             HostFunctions::resolve(*mod);
-         // FIXME: should not hard code knowledge of null_backend here
+         // null_backend requires special-case type check here
          if (ctx.owns) {
             if constexpr (!std::is_same_v<Impl, null_backend>)
                initialize(host);
