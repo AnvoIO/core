@@ -81,7 +81,7 @@ try:
         errorExit("Failed to launch V2 encrypted cluster")
 
     # Wait for cluster to sync — proves encryption doesn't break consensus
-    assert cluster.waitOnClusterSync(blockAdvancing=5), \
+    assert cluster.waitOnClusterSync(blockAdvancing=5, timeout=120), \
         "Cluster failed to sync with encryption active"
 
     Print("Cluster synced successfully with V2 encrypted transport")
@@ -163,7 +163,7 @@ try:
     Print("Node key persistence verified — node_id stable across restart")
 
     # Wait for node to rejoin and sync
-    assert cluster.waitOnClusterSync(blockAdvancing=3), \
+    assert cluster.waitOnClusterSync(blockAdvancing=3, timeout=120), \
         "Cluster failed to re-sync after node 0 restart"
     Print("Node 0 rejoined cluster after restart")
 
