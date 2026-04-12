@@ -21,7 +21,7 @@ Previously, `node_id` was a random value regenerated on every startup — it cou
 
 ### P2P encrypted transport
 
-All P2P connections now support AES-256-GCM encrypted transport with ECDH key exchange. Enable with:
+All P2P connections now support ChaCha20-Poly1305 encrypted transport with ECDH (X25519) key exchange. Enable with:
 
 ```ini
 p2p-enable-encryption = true        # enable encryption (negotiate with peers)
@@ -29,6 +29,8 @@ p2p-require-encryption = true       # reject unencrypted connections
 ```
 
 Encrypted nodes automatically negotiate with peers — if both sides support encryption, the connection is encrypted; otherwise it falls back to plaintext (unless `require-encryption` is set). Fully backward compatible with Spring V1 nodes.
+
+**v0.1.3-alpha** fixes a critical bug (#98) in the v0.1.2-alpha encrypted transport: the AEAD nonce was assigned at enqueue time, but the connection's three priority queues (block-sync, general, trx) drained messages in a different order, producing out-of-order nonces on the wire. Peers rejected the mismatched nonces with "Message decryption/authentication failed" after the first batch of blocks. The fix moves the seal call into the wire-order drain path so nonces and transmission order always match. v0.1.2-alpha operators should upgrade before enabling encryption.
 
 ### API listener separation
 

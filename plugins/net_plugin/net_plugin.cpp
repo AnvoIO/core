@@ -659,17 +659,19 @@ namespace core_net {
 
       enum class queue_t { block_sync, general };
       // @param callback must not callback into queued_buffer
+      // @param encrypt if true, buff is plaintext and must be sealed in wire order at fill_out_buffer time (issue #98)
       bool add_write_queue(msg_type_t net_msg,
                            queue_t queue,
                            const send_buffer_type& buff,
+                           bool encrypt,
                            std::function<void(boost::system::error_code, std::size_t)> callback) {
          fc::lock_guard g( _mtx );
          if( net_msg == msg_type_t::packed_transaction || net_msg == msg_type_t::transaction_notice_message ) {
-            _trx_write_queue.emplace_back( buff, std::move(callback) );
+            _trx_write_queue.emplace_back( buff, encrypt, std::move(callback) );
          } else if (queue == queue_t::block_sync) {
-            _sync_write_queue.emplace_back( buff, std::move(callback) );
+            _sync_write_queue.emplace_back( buff, encrypt, std::move(callback) );
          } else {
-            _write_queue.emplace_back( buff, std::move(callback) );
+            _write_queue.emplace_back( buff, encrypt, std::move(callback) );
          }
          _write_queue_size += buff->size();
          if( _write_queue_size > 2 * def_max_write_queue_size ) {
@@ -678,29 +680,52 @@ namespace core_net {
          return true;
       }
 
-      void fill_out_buffer( std::vector<boost::asio::const_buffer>& bufs ) {
+      // Drains the highest-priority non-empty queue in wire order. Each plaintext entry
+      // flagged `encrypt` is passed through `seal_fn` which must return the encrypted
+      // buffer (with new message_length header); the returned buffer replaces the plaintext
+      // and its address is used for the asio write. `seal_fn` may return nullptr on failure
+      // (e.g. EVP_AEAD_CTX_seal failed) — in that case fill_out_buffer returns false and
+      // the caller should close the connection.
+      template<class SealFn>
+      bool fill_out_buffer( std::vector<boost::asio::const_buffer>& bufs, SealFn&& seal_fn ) {
          fc::lock_guard g( _mtx );
+         bool ok = true;
          if (!_sync_write_queue.empty()) { // always send msgs from sync_write_queue first
-            fill_out_buffer( bufs, _sync_write_queue );
+            ok = fill_out_buffer( bufs, _sync_write_queue, seal_fn );
          } else if (!_write_queue.empty()) { // always send msgs from write_queue before trx queue
-            fill_out_buffer( bufs, _write_queue );
+            ok = fill_out_buffer( bufs, _write_queue, seal_fn );
          } else {
-            fill_out_buffer( bufs, _trx_write_queue );
+            ok = fill_out_buffer( bufs, _trx_write_queue, seal_fn );
             assert(_trx_write_queue.empty() && _write_queue.empty() && _sync_write_queue.empty() && _write_queue_size == 0);
          }
+         return ok;
       }
 
    private:
       struct queued_write;
-      void fill_out_buffer( std::vector<boost::asio::const_buffer>& bufs,
-                            deque<queued_write>& w_queue ) REQUIRES(_mtx) {
+      template<class SealFn>
+      bool fill_out_buffer( std::vector<boost::asio::const_buffer>& bufs,
+                            deque<queued_write>& w_queue,
+                            SealFn& seal_fn ) REQUIRES(_mtx) {
          while ( !w_queue.empty() ) {
             auto& m = w_queue.front();
-            bufs.emplace_back( m.buff->data(), m.buff->size() );
             _write_queue_size -= m.buff->size();
-            _out_queue.emplace_back( m );
+            if (m.encrypt) {
+               auto sealed = seal_fn(m.buff);
+               if (!sealed) {
+                  // sealing failed — stop draining; caller will close the connection.
+                  // Put already-drained entries into _out_queue so callbacks still fire.
+                  _out_queue.emplace_back( std::move(m) );
+                  w_queue.pop_front();
+                  return false;
+               }
+               m.buff = std::move(sealed);
+            }
+            bufs.emplace_back( m.buff->data(), m.buff->size() );
+            _out_queue.emplace_back( std::move(m) );
             w_queue.pop_front();
          }
+         return true;
       }
 
       void out_callback( boost::system::error_code ec, std::size_t number_of_bytes_written ) REQUIRES(_mtx) {
@@ -712,6 +737,7 @@ namespace core_net {
    private:
       struct queued_write {
          send_buffer_type buff;
+         bool             encrypt = false;   // issue #98: seal at drain time, not enqueue time
          std::function<void( boost::system::error_code, std::size_t )> callback;
       };
 
@@ -1056,6 +1082,7 @@ namespace core_net {
                        std::optional<block_num_type> block_num,
                        queued_buffer::queue_t queue,
                        const send_buffer_type& buff,
+                       bool encrypt,
                        std::function<void(boost::system::error_code, std::size_t)> callback);
       void do_queue_write(std::optional<block_num_type> block_num);
       void log_send_buffer_stats() const;
@@ -1744,8 +1771,9 @@ namespace core_net {
                                 std::optional<block_num_type> block_num,
                                 queued_buffer::queue_t queue,
                                 const send_buffer_type& buff,
+                                bool encrypt,
                                 std::function<void(boost::system::error_code, std::size_t)> callback) {
-      if( !buffer_queue.add_write_queue( net_msg, queue, buff, std::move(callback) )) {
+      if( !buffer_queue.add_write_queue( net_msg, queue, buff, encrypt, std::move(callback) )) {
          peer_wlog( p2p_conn_log, this, "write_queue full ${s} bytes, giving up on connection", ("s", buffer_queue.write_queue_size()) );
          close();
          return;
@@ -1767,7 +1795,32 @@ namespace core_net {
       }
 
       std::vector<boost::asio::const_buffer> bufs;
-      buffer_queue.fill_out_buffer( bufs );
+      // Issue #98: seal messages at drain time so nonce order matches wire order.
+      // The lambda is called under queued_buffer::_mtx; do_queue_write runs on the
+      // connection strand, so access to encryption_ctx is safe.
+      bool seal_ok = buffer_queue.fill_out_buffer( bufs,
+         [this](const send_buffer_type& plaintext) -> send_buffer_type {
+            if (!encryption_ctx || !encryption_ctx->is_initialized()) return nullptr;
+            const char* buf = plaintext->data();
+            const size_t buf_size = plaintext->size();
+            // message_header_size check was already done at enqueue time (encrypt flag)
+            const char* pt = buf + message_header_size;
+            const size_t pt_len = buf_size - message_header_size;
+            uint32_t orig_msg_len;
+            std::memcpy(&orig_msg_len, buf, sizeof(orig_msg_len));
+            auto encrypted = encryption_ctx->seal(pt, pt_len, orig_msg_len);
+            if (!encrypted) return nullptr;
+            const uint32_t new_msg_len = static_cast<uint32_t>(encrypted->size());
+            auto new_buf = std::make_shared<std::vector<char>>(message_header_size + new_msg_len);
+            std::memcpy(new_buf->data(), &new_msg_len, message_header_size);
+            std::memcpy(new_buf->data() + message_header_size, encrypted->data(), encrypted->size());
+            return new_buf;
+         });
+      if (!seal_ok) {
+         peer_elog( p2p_conn_log, this, "Encryption seal failed during write drain, closing connection" );
+         close();
+         return;
+      }
 
       log_send_buffer_stats();
 
@@ -1932,40 +1985,21 @@ namespace core_net {
                                     const send_buffer_type& send_buffer,
                                     go_away_reason close_after_send)
    {
-      // If encryption is active (or transitioning), encrypt the payload.
-      // Input format:  [4-byte message_length][plaintext_payload]
-      // Output format: [4-byte message_length'][12-byte nonce][encrypted_payload][16-byte tag]
-      // where message_length' = nonce_len + encrypted_payload + tag_len
-      send_buffer_type actual_send_buffer = send_buffer;
-      if ((encryption_active || encryption_transitioning) && encryption_ctx && encryption_ctx->is_initialized()) {
-         const char* buf = send_buffer->data();
-         const size_t buf_size = send_buffer->size();
-         if (buf_size > message_header_size) {
-            const char* plaintext = buf + message_header_size;
-            const size_t plaintext_len = buf_size - message_header_size;
-
-            // Original message_length as AAD
-            uint32_t orig_msg_len;
-            std::memcpy(&orig_msg_len, buf, sizeof(orig_msg_len));
-
-            auto encrypted = encryption_ctx->seal(plaintext, plaintext_len, orig_msg_len);
-            if (encrypted) {
-               // Build new buffer: [new_message_length][encrypted_data]
-               const uint32_t new_msg_len = static_cast<uint32_t>(encrypted->size());
-               auto new_buf = std::make_shared<std::vector<char>>(message_header_size + new_msg_len);
-               std::memcpy(new_buf->data(), &new_msg_len, message_header_size);
-               std::memcpy(new_buf->data() + message_header_size, encrypted->data(), encrypted->size());
-               actual_send_buffer = new_buf;
-            } else {
-               peer_elog( p2p_conn_log, this, "Encryption failed, closing connection" );
-               close();
-               return;
-            }
-         }
-      }
+      // Issue #98: Encryption is deferred to fill_out_buffer so nonces are assigned in
+      // wire order. The priority queues (_sync_write_queue > _write_queue > _trx_write_queue)
+      // can reorder messages across queues; sealing at enqueue time assigned nonces in
+      // enqueue order, producing out-of-order nonces on the wire and "Message
+      // decryption/authentication failed" on the peer after the first batch.
+      //
+      // We capture the "should encrypt" decision NOW (at enqueue time) so messages
+      // enqueued before the encryption_ctx is set up stay plaintext even if they are
+      // drained after encryption_ctx is initialized.
+      const bool encrypt = (encryption_active || encryption_transitioning)
+                           && encryption_ctx && encryption_ctx->is_initialized()
+                           && send_buffer->size() > message_header_size;
 
       connection_ptr self = shared_from_this();
-      queue_write(net_msg, block_num, queue, actual_send_buffer,
+      queue_write(net_msg, block_num, queue, send_buffer, encrypt,
             [conn{std::move(self)}, close_after_send, net_msg, block_num](boost::system::error_code ec, std::size_t s) {
                         if (ec) {
                            if (ec != boost::asio::error::operation_aborted && ec != boost::asio::error::connection_reset && conn->socket_is_open()) {

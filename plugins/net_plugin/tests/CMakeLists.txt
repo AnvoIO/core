@@ -2,6 +2,7 @@ add_executable( test_net_plugin
         auto_bp_peering_unittest.cpp
         rate_limit_parse_unittest.cpp
         p2p_transport_encryption_unittest.cpp
+        p2p_encryption_ordering_unittest.cpp
         p2p_access_control_unittest.cpp
         p2p_peer_reputation_unittest.cpp
         main.cpp
