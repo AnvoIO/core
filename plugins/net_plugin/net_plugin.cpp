@@ -1002,10 +1002,14 @@ namespace core_net {
    private:
       void _close( bool reconnect, bool shutdown ); // for easy capture
 
-      bool process_next_block_message(uint32_t message_length);
-      bool process_next_trx_message(uint32_t message_length);
-      bool process_next_trx_notice_message(uint32_t message_length);
-      bool process_next_vote_message(uint32_t message_length);
+      // Plaintext dispatch helpers. `plaintext` points at the start of the
+      // net_message variant (i.e. the 1-byte variant index followed by the
+      // payload). `wire_bytes` is the on-wire byte count (ciphertext size when
+      // the connection is encrypted) used for bandwidth accounting.
+      bool process_next_block_message(const char* plaintext, size_t plaintext_len, uint32_t wire_bytes);
+      bool process_next_trx_message(const char* plaintext, size_t plaintext_len, uint32_t wire_bytes);
+      bool process_next_trx_notice_message(const char* plaintext, size_t plaintext_len, uint32_t wire_bytes);
+      bool process_next_vote_message(const char* plaintext, size_t plaintext_len, uint32_t wire_bytes);
       void update_endpoints(const tcp::endpoint& endpoint = tcp::endpoint());
 
       void send_gossip_bp_peers_initial_message();
@@ -3279,6 +3283,14 @@ namespace core_net {
    }
 
    // called from connection strand
+   //
+   // Receive-side pipeline: wire bytes → transport-layer decrypt (if applicable)
+   // → plaintext → single dispatcher. Encryption is a byte-level transform at
+   // the transport boundary; the dispatcher below knows nothing about encryption
+   // and is the same code path for plaintext and decrypted messages. Issue #98
+   // was caused by an earlier design that forked the dispatcher into plaintext
+   // and encrypted branches; the encrypted branch skipped sync/dedup bookkeeping
+   // that the specialized process_next_*_message functions own.
    bool connection::process_next_message( uint32_t message_length ) {
       bytes_received += message_length;
       last_bytes_received = get_time();
@@ -3291,111 +3303,68 @@ namespace core_net {
       try {
          auto now = latest_msg_time = std::chrono::steady_clock::now();
 
-         // ── Encrypted/transitioning receive path ─────────────────────────
-         // After key exchange, we enter a transition period where the peer may
-         // still have plaintext messages in-flight. During transition, try to
-         // decrypt; if that fails, process as plaintext. Once the first
-         // successful decryption occurs, switch to fully encrypted mode.
+         // Consume the on-wire bytes for this message from pending_message_buffer
+         // into a local vector. `wire` holds ciphertext for encrypted connections,
+         // plaintext otherwise.
+         std::vector<char> wire(message_length);
+         auto ds_consume = pending_message_buffer.create_datastream();
+         ds_consume.read(wire.data(), message_length);
+
+         // ── Transport-layer decrypt ───────────────────────────────────────
+         // Once encryption_ctx is initialized, wire bytes are ciphertext — try
+         // to decrypt. During the transition window (peer may still have
+         // plaintext messages queued from before encryption started), a decrypt
+         // failure falls back to plaintext passthrough. Once the first message
+         // decrypts successfully, transition ends and any further decrypt
+         // failure closes the connection. This transform is pure
+         // bytes-in/bytes-out — it does not and must not know what message type
+         // is inside.
+         std::vector<char> plaintext;
          if ((encryption_active || encryption_transitioning) && encryption_ctx && encryption_ctx->is_initialized()) {
-            // Read the payload from the buffer (we need it regardless of encrypt/plaintext)
-            std::vector<char> payload_data(message_length);
-            auto ds_consume = pending_message_buffer.create_datastream();
-            ds_consume.read(payload_data.data(), message_length);
-
-            // Try decryption if payload is large enough to be encrypted
-            bool decrypted_ok = false;
-            std::vector<char> plaintext_data;
-
             if (message_length >= encrypted_overhead) {
-               uint32_t plaintext_msg_len = message_length - static_cast<uint32_t>(encrypted_overhead);
-               auto decrypted = encryption_ctx->open(payload_data.data(), payload_data.size(), plaintext_msg_len);
+               uint32_t plaintext_len = message_length - static_cast<uint32_t>(encrypted_overhead);
+               auto decrypted = encryption_ctx->open(wire.data(), wire.size(), plaintext_len);
                if (decrypted) {
-                  plaintext_data = std::move(*decrypted);
-                  decrypted_ok = true;
+                  plaintext = std::move(*decrypted);
                   if (encryption_transitioning) {
-                     // First successful decryption — transition complete
                      encryption_transitioning = false;
                      encryption_active = true;
                      peer_dlog( p2p_conn_log, this, "Encryption transition complete — fully encrypted" );
                   }
                }
             }
-
-            if (!decrypted_ok) {
+            if (plaintext.empty()) {
                if (encryption_active) {
-                  // Fully encrypted mode — decryption failure is fatal
                   peer_elog( p2p_conn_log, this, "Message decryption/authentication failed, closing" );
                   close();
                   return false;
                }
-               // Transitioning — fall back to plaintext for this message
+               // Transitioning — peer queued this message before their encryption
+               // started, so the wire bytes are plaintext. Pass them through.
                peer_dlog( p2p_conn_log, this, "Transition: processing plaintext message before encryption" );
-               plaintext_data = std::move(payload_data);
+               plaintext = std::move(wire);
             }
-
-            // Parse the plaintext as a net_message
-            fc::datastream<const char*> dec_ds(plaintext_data.data(), plaintext_data.size());
-            unsigned_int which{};
-            fc::raw::unpack(dec_ds, which);
-            msg_type_t net_msg = to_msg_type_t(which.value);
-
-            // Route message types that need special handling (signed_block,
-            // packed_transaction, vote_message have deleted msg_handler operators
-            // and require ptr-based dispatch).
-            if (net_msg == msg_type_t::signed_block) {
-               latest_blk_time = now;
-               fc::datastream<const char*> blk_ds(plaintext_data.data(), plaintext_data.size());
-               unsigned_int skip_which{};
-               fc::raw::unpack(blk_ds, skip_which);
-               auto ptr = std::make_shared<signed_block>();
-               fc::raw::unpack(blk_ds, *ptr);
-               auto blk_id = ptr->calculate_id();
-               handle_message(blk_id, std::move(ptr));
-            } else if (net_msg == msg_type_t::packed_transaction) {
-               fc::datastream<const char*> trx_ds(plaintext_data.data(), plaintext_data.size());
-               unsigned_int skip_which{};
-               fc::raw::unpack(trx_ds, skip_which);
-               auto ptr = std::make_shared<packed_transaction>();
-               fc::raw::unpack(trx_ds, *ptr);
-               handle_message(ptr);
-            } else if (net_msg == msg_type_t::vote_message) {
-               fc::datastream<const char*> vote_ds(plaintext_data.data(), plaintext_data.size());
-               unsigned_int skip_which{};
-               fc::raw::unpack(vote_ds, skip_which);
-               auto ptr = std::make_shared<chain::vote_message>();
-               fc::raw::unpack(vote_ds, *ptr);
-               handle_message(ptr);
-            } else {
-               // All other message types go through the generic visitor
-               fc::datastream<const char*> dec_ds2(plaintext_data.data(), plaintext_data.size());
-               net_message msg;
-               fc::raw::unpack(dec_ds2, msg);
-               msg_handler m(shared_from_this());
-               std::visit(m, msg);
-            }
-
-            return true;
+         } else {
+            plaintext = std::move(wire);
          }
 
-         // ── Plaintext receive path (unchanged) ─────────────────────────────
-         // if next message is a block we already have, exit early
-         auto peek_ds = pending_message_buffer.create_peek_datastream();
+         // ── Single dispatcher over plaintext ──────────────────────────────
+         fc::datastream<const char*> peek_ds(plaintext.data(), plaintext.size());
          unsigned_int which{};
          fc::raw::unpack( peek_ds, which );
-
          msg_type_t net_msg = to_msg_type_t(which.value);
 
          if( net_msg == msg_type_t::signed_block ) {
             latest_blk_time = now;
-            return process_next_block_message( message_length );
+            return process_next_block_message( plaintext.data(), plaintext.size(), message_length );
          } else if( net_msg == msg_type_t::packed_transaction ) {
-            return process_next_trx_message( message_length );
+            return process_next_trx_message( plaintext.data(), plaintext.size(), message_length );
          } else if( net_msg == msg_type_t::transaction_notice_message ) {
-            return process_next_trx_notice_message( message_length );
+            return process_next_trx_notice_message( plaintext.data(), plaintext.size(), message_length );
          } else if( net_msg == msg_type_t::vote_message ) {
-            return process_next_vote_message( message_length );
+            return process_next_vote_message( plaintext.data(), plaintext.size(), message_length );
          } else {
-            auto ds = pending_message_buffer.create_datastream();
+            fc::datastream<const char*> ds(plaintext.data(), plaintext.size());
             net_message msg;
             fc::raw::unpack( ds, msg );
             msg_handler m( shared_from_this() );
@@ -3411,10 +3380,12 @@ namespace core_net {
    }
 
    // called from connection strand
-   bool connection::process_next_block_message(uint32_t message_length) {
-      auto peek_ds = pending_message_buffer.create_peek_datastream();
+   bool connection::process_next_block_message(const char* plaintext, size_t plaintext_len, uint32_t wire_bytes) {
+      // Peek the block header for sync bookkeeping without consuming the stream
+      // we'll later use for the full unpack.
+      fc::datastream<const char*> peek_ds(plaintext, plaintext_len);
       unsigned_int which{};
-      fc::raw::unpack( peek_ds, which ); // throw away
+      fc::raw::unpack( peek_ds, which ); // variant index — throw away
       block_header bh;
       fc::raw::unpack( peek_ds, bh );
       const block_id_type blk_id = bh.calculate_id();
@@ -3429,8 +3400,6 @@ namespace core_net {
       }
 
       if( my_impl->dispatcher.have_block( blk_id ) ) {
-         pending_message_buffer.advance_read_ptr( message_length ); // advance before any send
-
          // if we have the block then it has been header validated, add for this connection_id
          my_impl->dispatcher.add_peer_block(blk_id, connection_id);
          send_block_nack(blk_id);
@@ -3447,7 +3416,6 @@ namespace core_net {
       if( !my_impl->sync_master->syncing_from_peer() ) { // guard against peer thinking it needs to send us old blocks
          block_num_type fork_db_root_num = my_impl->get_fork_db_root_num();
          if( blk_num <= fork_db_root_num ) {
-            pending_message_buffer.advance_read_ptr( message_length ); // advance before any send
             peer_dlog( p2p_blk_log, this, "received block ${n} less than froot ${fr}", ("n", blk_num)("fr", fork_db_root_num) );
             send_block_nack(blk_id);
             cancel_sync_wait();
@@ -3455,24 +3423,21 @@ namespace core_net {
             return true;
          }
       } else {
-         block_sync_bytes_received += message_length;
+         block_sync_bytes_received += wire_bytes;
          uint32_t fork_db_root_num = my_impl->get_fork_db_root_num();
          const bool block_le_lib = blk_num <= fork_db_root_num;
          if (block_le_lib) {
             peer_dlog( p2p_blk_log, this, "received block ${n} less than froot ${fr} while syncing", ("n", blk_num)("fr", fork_db_root_num) );
-            pending_message_buffer.advance_read_ptr( message_length ); // advance before any send
          }
          my_impl->sync_master->sync_recv_block(shared_from_this(), blk_id, blk_num, age);
          if (block_le_lib)
             return true;
       }
 
-      auto mb_ds = pending_message_buffer.create_datastream();
-      fc::raw::unpack( mb_ds, which );
-
-      fc::datastream_mirror ds(mb_ds, message_length);
+      fc::datastream<const char*> full_ds(plaintext, plaintext_len);
+      fc::raw::unpack( full_ds, which );
       shared_ptr<signed_block> ptr = std::make_shared<signed_block>();
-      fc::raw::unpack( ds, *ptr );
+      fc::raw::unpack( full_ds, *ptr );
 
       bool has_webauthn_sig = ptr->producer_signature.is_webauthn();
 
@@ -3494,22 +3459,20 @@ namespace core_net {
    }
 
    // called from connection strand
-   bool connection::process_next_trx_message(uint32_t message_length) {
+   bool connection::process_next_trx_message(const char* plaintext, size_t plaintext_len, uint32_t wire_bytes) {
       if( !my_impl->p2p_accept_transactions ) {
          peer_dlog( p2p_trx_log, this, "p2p-accept-transaction=false - dropping trx" );
-         pending_message_buffer.advance_read_ptr( message_length );
          return true;
       }
       if (my_impl->sync_master->syncing_from_peer()) {
          peer_dlog(p2p_trx_log, this, "syncing, dropping trx");
-         pending_message_buffer.advance_read_ptr( message_length );
          return true;
       }
 
       const uint32_t trx_in_progress_sz = this->trx_in_progress_size.load();
 
       auto now = fc::time_point::now();
-      auto ds = pending_message_buffer.create_datastream();
+      fc::datastream<const char*> ds(plaintext, plaintext_len);
       unsigned_int which{};
       fc::raw::unpack( ds, which );
       // shared_ptr<packed_transaction> needed here because packed_transaction_ptr is shared_ptr<const packed_transaction>
@@ -3544,11 +3507,11 @@ namespace core_net {
       const auto& tid = ptr->id();
       peer_dlog( p2p_trx_log, this, "received packed_transaction ${id}", ("id", tid) );
 
-      if (message_length < def_trx_notice_min_size) {
+      if (wire_bytes < def_trx_notice_min_size) {
          // transfer packed transaction is ~170 bytes, transaction notice is 41 bytes
-         fc_dlog( p2p_trx_log, "trx notice not sent, trx size ${s}", ("s", message_length));
+         fc_dlog( p2p_trx_log, "trx notice not sent, trx size ${s}", ("s", wire_bytes));
       } else {
-         fc_dlog( p2p_trx_log, "send trx notice, trx size ${s}", ("s", message_length));
+         fc_dlog( p2p_trx_log, "send trx notice, trx size ${s}", ("s", wire_bytes));
          my_impl->dispatcher.bcast_transaction_notify(ptr);
       }
 
@@ -3557,19 +3520,17 @@ namespace core_net {
    }
 
    // called from connection strand
-   bool connection::process_next_trx_notice_message(uint32_t message_length) {
+   bool connection::process_next_trx_notice_message(const char* plaintext, size_t plaintext_len, uint32_t wire_bytes) {
       if( !my_impl->p2p_accept_transactions ) {
          peer_dlog( p2p_trx_log, this, "p2p-accept-transaction=false - dropping trx notice" );
-         pending_message_buffer.advance_read_ptr( message_length );
          return true;
       }
       if (my_impl->sync_master->syncing_from_peer()) {
          peer_dlog(p2p_trx_log, this, "syncing, dropping trx notice");
-         pending_message_buffer.advance_read_ptr( message_length );
          return true;
       }
 
-      auto ds = pending_message_buffer.create_datastream();
+      fc::datastream<const char*> ds(plaintext, plaintext_len);
       unsigned_int which{};
       fc::raw::unpack( ds, which );
       transaction_notice_message msg;
@@ -3587,14 +3548,13 @@ namespace core_net {
    }
 
 // called from connection strand
-   bool connection::process_next_vote_message(uint32_t message_length) {
+   bool connection::process_next_vote_message(const char* plaintext, size_t plaintext_len, uint32_t wire_bytes) {
       if( !my_impl->p2p_accept_votes ) {
          peer_dlog( p2p_trx_log, this, "p2p_accept_votes=false - dropping vote" );
-         pending_message_buffer.advance_read_ptr( message_length );
          return true;
       }
 
-      auto ds = pending_message_buffer.create_datastream();
+      fc::datastream<const char*> ds(plaintext, plaintext_len);
       unsigned_int which{};
       fc::raw::unpack( ds, which );
       assert(to_msg_type_t(which) == msg_type_t::vote_message); // verified by caller

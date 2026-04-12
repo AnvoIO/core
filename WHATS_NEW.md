@@ -30,7 +30,12 @@ p2p-require-encryption = true       # reject unencrypted connections
 
 Encrypted nodes automatically negotiate with peers — if both sides support encryption, the connection is encrypted; otherwise it falls back to plaintext (unless `require-encryption` is set). Fully backward compatible with Spring V1 nodes.
 
-**v0.1.3-alpha** fixes a critical bug (#98) in the v0.1.2-alpha encrypted transport: the AEAD nonce was assigned at enqueue time, but the connection's three priority queues (block-sync, general, trx) drained messages in a different order, producing out-of-order nonces on the wire. Peers rejected the mismatched nonces with "Message decryption/authentication failed" after the first batch of blocks. The fix moves the seal call into the wire-order drain path so nonces and transmission order always match. v0.1.2-alpha operators should upgrade before enabling encryption.
+**v0.1.3-alpha** makes encrypted P2P actually usable. v0.1.2-alpha shipped two related defects in the encrypted pipeline (issue #98):
+
+1. **Nonce/wire-order drift.** The AEAD nonce was assigned at enqueue time, but the connection's three priority queues (block-sync, general, trx) drained messages in a different order, producing out-of-order nonces on the wire. Peers rejected the mismatched nonces with "Message decryption/authentication failed" after the first batch of blocks. Fix: the `seal` call moved into the wire-order drain path (`fill_out_buffer`) so nonces and transmission order always match.
+2. **Parallel receive pipeline.** The encrypted receive path dispatched `signed_block` / `packed_transaction` / `vote_message` directly to `handle_message`, bypassing the specialized `process_next_*_message` functions that own sync bookkeeping (`sync_recv_block`, `have_block` dedup, below-LIB drops, WebAuthn rejection, trx-drop-while-syncing). With the nonce fix in place, sync stalled after the first batch because `sync_next_expected_num` never advanced. Fix: collapse to a single dispatch path — the encrypted branch is now pure transport (decrypt bytes; hand off to `process_next_message`), and the specialized handlers take a plaintext byte span so both paths share the same bookkeeping.
+
+v0.1.2-alpha operators should upgrade before enabling encryption.
 
 ### API listener separation
 
