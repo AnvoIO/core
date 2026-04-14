@@ -1542,6 +1542,15 @@ namespace core_net {
       socket->close( ec );
       socket.reset( new tcp::socket( my_impl->thread_pool.get_executor() ) );
       flush_queues();
+      // Encrypted-transport session state is bound to the TCP connection —
+      // do not leak it across reconnects.
+      encryption_ctx.reset();
+      ephemeral_ecdh_key.reset();
+      encryption_active = false;
+      encryption_transitioning = false;
+      encryption_handshake_sent = false;
+      encryption_start_time = {};
+      pending_peer_key_exchange.reset();
       peer_syncing_from_us = false;
       block_status_monitor_.reset();
       ++consecutive_immediate_connection_close;
