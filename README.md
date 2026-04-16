@@ -1,6 +1,6 @@
 # Anvo Network Core
 
-> **[v0.1.2-alpha released](https://github.com/AnvoIO/core/releases/tag/v0.1.2-alpha)** — Ubuntu 24.04 packages for x86_64 and ARM64
+> **[v0.1.4-alpha released](https://github.com/AnvoIO/core/releases/tag/v0.1.4-alpha)** — Ubuntu 24.04 packages for x86_64 and ARM64
 
 High-performance Layer 1 blockchain node software. A fork of [Spring](https://github.com/AntelopeIO/spring) (Antelope/EOSIO) rebranded for Anvo Network, featuring BFT consensus with BLS12-381 finality delivering 2-3 second finality. Full smart contract compatibility with existing EOSIO chains; no recompilation required.
 
@@ -20,10 +20,10 @@ Ubuntu 24.04 `.deb` packages for x86_64 and ARM64 are available from the [releas
 
 ```bash
 # x86_64
-sudo apt install ./anvo-core_0.1.2-alpha-ubuntu24.04_amd64.deb
+sudo apt install ./anvo-core_0.1.4-alpha-ubuntu24.04_amd64.deb
 
 # ARM64
-sudo apt install ./anvo-core_0.1.2-alpha-ubuntu24.04_arm64.deb
+sudo apt install ./anvo-core_0.1.4-alpha-ubuntu24.04_arm64.deb
 ```
 
 For Docker-based deployment with automated configuration, snapshot management, and monitoring, see **[core-node](https://github.com/AnvoIO/core-node)**.
