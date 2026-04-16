@@ -1,4 +1,5 @@
 #pragma once
+#include <core_net/state_history/abi.hpp>
 #include <core_net/state_history/log.hpp>
 #include <core_net/state_history/serialization.hpp>
 #include <core_net/state_history/types.hpp>
@@ -12,8 +13,6 @@
 #include <boost/asio/error.hpp>
 #include <boost/beast/websocket.hpp>
 #include <memory>
-
-extern const char* const state_history_plugin_abi;
 
 namespace core_net::state_history {
 
@@ -136,7 +135,8 @@ private:
          }));
 
          co_await stream.async_accept();
-         co_await stream.async_write(boost::asio::const_buffer(state_history_plugin_abi, strlen(state_history_plugin_abi)));
+         const std::string_view wire_abi = session_wire_abi();
+         co_await stream.async_write(boost::asio::const_buffer(wire_abi.data(), wire_abi.size()));
          stream.binary(true);
          boost::asio::co_spawn(strand, write_loop(), [&](std::exception_ptr e) {check_coros_done(e);});
 

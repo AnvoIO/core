@@ -1,4 +1,5 @@
 #include <core_net/chain/abi_def.hpp>
+#include <core_net/chain/config.hpp>
 #include <fc/utility.hpp>
 
 namespace core_net { namespace chain {
@@ -22,7 +23,11 @@ abi_def core_net_contract_abi(const abi_def& core_net_system_abi)
    abi_def eos_abi(core_net_system_abi);
 
    if( eos_abi.version.size() == 0 ) {
-      eos_abi.version = "core_net::abi/1.0";
+      // Emit ABI version prefix that matches the chain's heritage so legacy
+      // (eosio-bootstrapped) chains stay compatible with Antelope tooling.
+      eos_abi.version = (config::system_account_name() == "eosio"_n)
+                        ? "eosio::abi/1.0"
+                        : "core_net::abi/1.0";
    }
 
    fc::move_append(eos_abi.types, common_type_defs());

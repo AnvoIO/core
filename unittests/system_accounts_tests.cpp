@@ -1,3 +1,4 @@
+#include <core_net/chain/abi_def.hpp>
 #include <core_net/chain/controller.hpp>
 #include <core_net/chain/config.hpp>
 #include <core_net/chain/exceptions.hpp>
@@ -5,6 +6,7 @@
 #include <core_net/chain/genesis_state.hpp>
 #include <core_net/chain/permission_object.hpp>
 #include <core_net/chain/snapshot.hpp>
+#include <core_net/state_history/abi.hpp>
 #include <core_net/testing/tester.hpp>
 #include <fc/io/json.hpp>
 #include <boost/test/unit_test.hpp>
@@ -495,6 +497,47 @@ BOOST_AUTO_TEST_CASE( system_account_operations_custom_prefix )
    // Produce more blocks to verify chain stability
    test.produce_blocks(10);
    BOOST_CHECK( test.head().block_num() > 10 );
+
+} FC_LOG_AND_RETHROW() }
+
+// ---- Test: ABI version prefix follows chain heritage (issue #105) ----
+// system_contract_abi and the SHiP session wire ABI must emit the
+// "eosio::abi/*" prefix on eosio-bootstrapped chains so that downstream
+// Antelope tooling (abieos, Hyperion, etc.) keeps working without patches.
+BOOST_AUTO_TEST_CASE( abi_version_prefix_follows_heritage )
+{ try {
+   // Legacy (eosio) chain -> emit "eosio::abi/*".
+   {
+      config::reset_system_accounts_for_testing();
+      legacy_tester test(setup_policy::none);
+      BOOST_REQUIRE_EQUAL( config::system_account_name(), "eosio"_n );
+
+      const abi_def bundled = core_net_contract_abi(abi_def{});
+      BOOST_CHECK_EQUAL( bundled.version, "eosio::abi/1.0" );
+
+      const std::string_view wire = core_net::state_history::session_wire_abi();
+      BOOST_CHECK_NE( wire.find(R"("version": "eosio::abi/1.1")"), std::string_view::npos );
+      BOOST_CHECK_EQUAL( wire.find(R"("version": "core_net::abi/1.1")"), std::string_view::npos );
+   }
+
+   // Fresh (core) chain -> emit "core_net::abi/*".
+   {
+      config::reset_system_accounts_for_testing();
+
+      fc::temp_directory tempdir;
+      auto [cfg, genesis] = base_tester::default_config(tempdir);
+      genesis.system_account_prefix = "core"_n;
+      genesis.initial_key = base_tester::get_public_key( "core"_n, "active" );
+      legacy_tester test(cfg, genesis);
+      BOOST_REQUIRE_EQUAL( config::system_account_name(), "core"_n );
+
+      const abi_def bundled = core_net_contract_abi(abi_def{});
+      BOOST_CHECK_EQUAL( bundled.version, "core_net::abi/1.0" );
+
+      const std::string_view wire = core_net::state_history::session_wire_abi();
+      BOOST_CHECK_NE( wire.find(R"("version": "core_net::abi/1.1")"), std::string_view::npos );
+      BOOST_CHECK_EQUAL( wire.find(R"("version": "eosio::abi/1.1")"), std::string_view::npos );
+   }
 
 } FC_LOG_AND_RETHROW() }
 
