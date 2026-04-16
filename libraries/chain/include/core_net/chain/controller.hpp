@@ -256,6 +256,18 @@ namespace core_net::chain {
          };
          apply_blocks_result_t apply_blocks(const forked_callback_t& cb, const trx_meta_cache_lookup& trx_lookup);
 
+         /**
+          * Record the highest fork_db_root_num (network LIB) reported by any currently connected peer.
+          * Used by apply_blocks() to recognize sync catch-up blocks that are deeply behind the
+          * network-finalized tip — those blocks are treated as already validated, so subjective
+          * checks (per-account CPU, auth) that depend on local wall-clock execution speed do not
+          * fire and stall sync on slower hardware. Called by net_plugin from its sync_manager.
+          * Monotonic (non-decreasing) — calls with a lower value than the current high-water mark
+          * are dropped. Thread-safe.
+          */
+         void set_best_known_peer_lib_num(uint32_t n);
+         uint32_t best_known_peer_lib_num() const;
+
          boost::asio::io_context& get_thread_pool();
 
          const chainbase::database& db()const;

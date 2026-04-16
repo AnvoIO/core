@@ -267,4 +267,38 @@ BOOST_AUTO_TEST_CASE_TEMPLATE( signal_applied_transaction, T, testers ) try {
 
 } FC_LOG_AND_RETHROW()
 
+// ---- best_known_peer_lib_num is monotonic (issue #104) ----
+// net_plugin can call the setter with any value from any peer/state; the
+// controller must only track the high-water mark so a lying or dropped peer
+// cannot rewind our view of the network-finalized tip.
+BOOST_AUTO_TEST_CASE( best_known_peer_lib_num_monotonic ) try {
+   legacy_tester test;
+
+   BOOST_CHECK_EQUAL( test.control->best_known_peer_lib_num(), 0u );
+
+   test.control->set_best_known_peer_lib_num( 100 );
+   BOOST_CHECK_EQUAL( test.control->best_known_peer_lib_num(), 100u );
+
+   test.control->set_best_known_peer_lib_num( 500 );
+   BOOST_CHECK_EQUAL( test.control->best_known_peer_lib_num(), 500u );
+
+   // Non-increasing values must be ignored.
+   test.control->set_best_known_peer_lib_num( 100 );
+   BOOST_CHECK_EQUAL( test.control->best_known_peer_lib_num(), 500u );
+
+   test.control->set_best_known_peer_lib_num( 0 );
+   BOOST_CHECK_EQUAL( test.control->best_known_peer_lib_num(), 500u );
+
+   test.control->set_best_known_peer_lib_num( 500 );
+   BOOST_CHECK_EQUAL( test.control->best_known_peer_lib_num(), 500u );
+
+   // Subsequent higher values continue to advance the mark.
+   test.control->set_best_known_peer_lib_num( 501 );
+   BOOST_CHECK_EQUAL( test.control->best_known_peer_lib_num(), 501u );
+
+   test.control->set_best_known_peer_lib_num( std::numeric_limits<uint32_t>::max() );
+   BOOST_CHECK_EQUAL( test.control->best_known_peer_lib_num(),
+                      std::numeric_limits<uint32_t>::max() );
+} FC_LOG_AND_RETHROW()
+
 BOOST_AUTO_TEST_SUITE_END()

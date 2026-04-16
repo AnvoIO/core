@@ -38,6 +38,16 @@ Encrypted nodes automatically negotiate with peers — if both sides support enc
 
 v0.1.2-alpha operators should upgrade before enabling encryption.
 
+### Sync catch-up skips subjective CPU on deeply finalized blocks
+
+**v0.1.4-alpha** fixes a permanent sync stall on slow or contested hardware ([#104](https://github.com/AnvoIO/core/issues/104)).
+
+During sync catch-up, blocks received from peers were applied with `block_status::complete`, which leaves subjective per-account CPU validation active. On hardware slower than the original producer — or on any hardware during an unfortunate OC tier-up window — a historic transaction's local wall-clock CPU usage could exceed the account's per-transaction CPU limit (which reflects what the producer recorded, not what the local machine measures). The resulting `tx_cpu_usage_exceeded` rejection tripped `block_status_monitor_` and closed the peer connection, which reopened and re-fetched the same failing block — an unrecoverable reconnect loop.
+
+The fix: when a peer has reported a `fork_db_root_num` (network LIB) more than `deep_sync_lib_margin_blocks` (1000 blocks, ~8.3 minutes of chain time) past the block being applied, that block is unambiguously network-finalized. Those blocks are applied as `validated` rather than `complete`, so `skip_trx_checks()` bypasses the subjective CPU and auth checks — matching the semantics of replay from the on-disk block log. `force_all_checks=true` still overrides via the existing gate in `light_validation_allowed()`, preserving the forensic-replay escape hatch. Consensus-critical validation (block structure, QC signatures when `force_all_checks`, protocol features) is unchanged.
+
+net_plugin updates the controller's peer-LIB high-water mark monotonically — a single dropped or misbehaving peer cannot rewind it.
+
 ### API listener separation
 
 Sensitive management APIs (`producer_api_plugin`, `net_api_plugin`) now bind to a separate listener from public read-only APIs by default. This prevents accidental exposure of admin endpoints to the public internet.
