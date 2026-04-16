@@ -1,5 +1,8 @@
 #include <core_net/state_history/abi.hpp>
+#include <core_net/chain/config.hpp>
+#include <core_net/chain/name.hpp>
 #include <regex>
+#include <string>
 
 extern const char* const state_history_plugin_abi = R"({
     "version": "core_net::abi/1.1",
@@ -746,5 +749,21 @@ namespace core_net::state_history {
 std::string ship_abi_without_tables() {
     std::regex scrub_all_tables(R"(\{ "name": "[^"]+", "type": "[^"]+", "key_names": \[[^\]]*\] \},?)");
     return std::regex_replace(state_history_plugin_abi, scrub_all_tables, "");
+}
+
+std::string_view session_wire_abi() {
+    using namespace core_net::chain;
+    static const std::string core_net_abi = state_history_plugin_abi;
+    static const std::string eosio_abi = [] {
+        std::string s = state_history_plugin_abi;
+        static constexpr std::string_view from = R"("version": "core_net::abi/1.1")";
+        static constexpr std::string_view to   = R"("version": "eosio::abi/1.1")";
+        if (auto pos = s.find(from); pos != std::string::npos) {
+            s.replace(pos, from.size(), to);
+        }
+        return s;
+    }();
+    return (config::system_account_name() == "eosio"_n) ? std::string_view{eosio_abi}
+                                                        : std::string_view{core_net_abi};
 }
 }

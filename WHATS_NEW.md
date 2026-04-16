@@ -140,6 +140,17 @@ Anvo Core uses `core.*` as the default system account prefix:
 
 The genesis configuration determines which account names are used. Anvo Core supports both naming schemes — a node can be configured with either `core.*` or `eosio.*` system accounts.
 
+### ABI version prefix follows chain heritage
+
+**v0.1.4-alpha** makes the emitted ABI version namespace match the running chain's heritage ([#105](https://github.com/AnvoIO/core/issues/105)):
+
+- Chains bootstrapped from an `eosio` genesis (e.g. Libre running Anvo Core) emit `eosio::abi/*` on the SHiP session handshake and bundled system-contract ABI.
+- Chains bootstrapped under `core_net` emit `core_net::abi/*` as before.
+
+The decision is driven by `system_account_prefix` in the genesis state — the same flag that already controls system account naming. No new configuration is required. ABI ingest continues to accept both prefixes unchanged.
+
+Previously, every node emitted `core_net::abi/*` unconditionally. Downstream Antelope tooling that hard-codes the `eosio::abi/` allowlist (abieos, Hyperion's state-history consumer, EOSIO SDKs) rejected the prefix and disconnected, so legacy chains required a Spring/Leap intermediary node purely for downstream compatibility. Legacy chains no longer need that intermediary.
+
 ## Migration from Spring
 
 Anvo Core is a direct fork of Spring with namespace and branding changes. All protocol-level behavior is identical. Existing Spring infrastructure (RPC endpoints, chain state, block logs) is compatible with Anvo Core after accounting for the executable renames.
