@@ -74,6 +74,14 @@ const static int      block_interval_us = block_interval_ms*1000;
 const static uint64_t block_timestamp_epoch = 946684800000ll; // epoch is year 2000.
 const static uint32_t genesis_num_supported_key_types = 2;
 
+// Safety margin for treating peer-reported LIB as proof of finalization.
+// Blocks more than this many blocks behind the highest peer-reported
+// fork_db_root_num are considered deeply network-finalized and skip
+// subjective (wall-clock-dependent) checks during sync catch-up. 1000 blocks
+// is ~8.3 minutes of chain time — comfortably larger than any plausible
+// live-fork depth or handshake-propagation lag.
+const static uint32_t deep_sync_lib_margin_blocks = 1000;
+
 /** Percentages are fixed point with a denominator of 10,000 */
 const static int percent_100 = 10000;
 const static int percent_1   = 100;

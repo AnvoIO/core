@@ -1006,6 +1006,10 @@ struct controller_impl {
    my_finalizers_t                 my_finalizers;
    std::atomic<bool>               writing_snapshot = false;
    std::atomic<bool>               applying_block = false;
+   // Highest fork_db_root_num (network LIB) seen across connected peers.
+   // Updated by net_plugin; read by maybe_apply_blocks() to detect sync catch-up
+   // blocks that are deeply behind the network-finalized tip (see #104).
+   std::atomic<uint32_t>           best_known_peer_lib_num_ = 0;
    platform_timer&                 main_thread_timer;
    peer_keys_db_t                  peer_keys_db;
 
@@ -4567,14 +4571,28 @@ struct controller_impl {
             }
          }
 
+         // During sync catch-up, if a peer has reported a LIB well past the block
+         // we are about to apply, that block is unambiguously network-finalized.
+         // Treat it as validated rather than complete so the subjective CPU / auth
+         // checks — which depend on local wall-clock execution speed — do not fire
+         // and stall sync on slower hardware (#104). force_all_checks still overrides
+         // via !conf.force_all_checks in light_validation_allowed().
+         constexpr uint32_t deep_sync_margin = config::deep_sync_lib_margin_blocks;
+         const uint32_t peer_lib = best_known_peer_lib_num_.load(std::memory_order_relaxed);
+
          const auto start_apply_blocks_loop = fc::time_point::now();
          for( auto ritr = new_head_branch.rbegin(); ritr != new_head_branch.rend(); ++ritr ) {
             auto except = std::exception_ptr{};
             const auto& bsp = *ritr;
             try {
+               const bool deep_sync =
+                  peer_lib != 0 && bsp->block_num() + deep_sync_margin < peer_lib;
+               controller::block_status status =
+                  bsp->is_valid() ? controller::block_status::validated
+                : deep_sync       ? controller::block_status::validated
+                :                   controller::block_status::complete;
                controller::apply_blocks_result_t::status_t r =
-                  apply_block( bsp, bsp->is_valid() ? controller::block_status::validated
-                                                    : controller::block_status::complete, trx_lookup );
+                  apply_block( bsp, status, trx_lookup );
                if (r == controller::apply_blocks_result_t::status_t::complete)
                   ++result.num_blocks_applied;
 
@@ -5472,6 +5490,20 @@ void controller::set_async_aggregation(async_t val) {
 controller::apply_blocks_result_t controller::apply_blocks(const forked_callback_t& cb, const trx_meta_cache_lookup& trx_lookup) {
    validate_db_available_size();
    return my->apply_blocks(cb, trx_lookup);
+}
+
+void controller::set_best_known_peer_lib_num(uint32_t n) {
+   // Monotonic: ignore non-increasing values so a single dropped/lying peer cannot
+   // rewind our view of the network-finalized tip.
+   uint32_t prev = my->best_known_peer_lib_num_.load(std::memory_order_relaxed);
+   while (n > prev) {
+      if (my->best_known_peer_lib_num_.compare_exchange_weak(prev, n, std::memory_order_relaxed))
+         break;
+   }
+}
+
+uint32_t controller::best_known_peer_lib_num() const {
+   return my->best_known_peer_lib_num_.load(std::memory_order_relaxed);
 }
 
 

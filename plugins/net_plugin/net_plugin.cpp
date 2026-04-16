@@ -176,6 +176,10 @@ namespace core_net {
       void start_sync( const connection_ptr& c, uint32_t target ); // locks mutex
       bool sync_recently_active() const;
       bool verify_catchup( const connection_ptr& c, uint32_t num, const block_id_type& id ); // locks mutex
+      // Update sync_known_fork_db_root_num and forward the high-water mark to the
+      // controller so apply_blocks() can treat blocks deeply behind the
+      // network-finalized tip as already validated (#104).
+      void set_sync_known_fork_db_root_num(uint32_t n) REQUIRES(sync_mtx);
    public:
       enum class closing_mode {
          immediately,  // closing connection immediately
@@ -2115,6 +2119,11 @@ namespace core_net {
       return true;
    }
 
+   void sync_manager::set_sync_known_fork_db_root_num(uint32_t n) {
+      sync_known_fork_db_root_num = n;
+      my_impl->chain_plug->chain().set_best_known_peer_lib_num(n);
+   }
+
    // called from c's connection strand
    void sync_manager::sync_reset_fork_db_root_num(const connection_ptr& c, bool closing) {
       fc::unique_lock g( sync_mtx );
@@ -2124,7 +2133,7 @@ namespace core_net {
       if( !c ) return;
       if( !closing ) {
          if( c->peer_fork_db_root_num > sync_known_fork_db_root_num ) {
-            sync_known_fork_db_root_num = c->peer_fork_db_root_num;
+            set_sync_known_fork_db_root_num(c->peer_fork_db_root_num);
          }
       } else {
          // Closing connection, therefore its view of fork_db_root can no longer be considered as we will no longer be connected.
@@ -2136,7 +2145,7 @@ namespace core_net {
                highest_fork_db_root_num = cc->last_handshake_recv.fork_db_root_num;
             }
          } );
-         sync_known_fork_db_root_num = highest_fork_db_root_num;
+         set_sync_known_fork_db_root_num(highest_fork_db_root_num);
 
          // if closing the connection we are currently syncing from then request from a diff peer
          if( c == sync_source ) {
@@ -2223,7 +2232,7 @@ namespace core_net {
 
       auto reset_on_failure = [&]() REQUIRES(sync_mtx) {
          sync_source.reset();
-         sync_known_fork_db_root_num = chain_info.fork_db_root_num;
+         set_sync_known_fork_db_root_num(chain_info.fork_db_root_num);
          sync_last_requested_num = 0;
          sync_next_expected_num = std::max( sync_known_fork_db_root_num + 1, sync_next_expected_num );
          // not in sync, but need to be out of lib_catchup for start_sync to work
@@ -2332,7 +2341,7 @@ namespace core_net {
    void sync_manager::start_sync(const connection_ptr& c, uint32_t target) {
       fc::unique_lock g_sync( sync_mtx );
       if( target > sync_known_fork_db_root_num) {
-         sync_known_fork_db_root_num = target;
+         set_sync_known_fork_db_root_num(target);
       }
 
       auto chain_info = my_impl->get_chain_info();
