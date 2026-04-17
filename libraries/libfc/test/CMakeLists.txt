@@ -21,6 +21,7 @@ add_executable( test_fc
         test_escape_str.cpp
         test_bls.cpp
         test_ordered_diff.cpp
+        test_uint128.cpp
         main.cpp
         )
 find_package(ZLIB REQUIRED)

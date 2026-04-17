@@ -125,7 +125,18 @@ namespace fc
     }
     uint128::uint128( const fc::bigint& bi )
     {
-       *this = uint128( std::string(bi) ); // TODO: optimize this...
+       // bigint -> std::vector<char> returns big-endian bytes. Pack them
+       // directly into hi/lo by shifting in one byte at a time. Any bytes
+       // beyond the low 128 bits fall off the top, matching the prior
+       // behavior of round-tripping through the decimal string.
+       const std::vector<char> bytes = bi;
+       uint64_t h = 0, l = 0;
+       for (char c : bytes) {
+          h = (h << 8) | (l >> 56);
+          l = (l << 8) | static_cast<uint8_t>(c);
+       }
+       hi = h;
+       lo = l;
     }
 
     uint128::operator std::string ()const
@@ -350,6 +361,9 @@ namespace fc
 
    static uint8_t _popcount_64( uint64_t x )
    {
+#if defined(__GNUC__) || defined(__clang__)
+      return static_cast<uint8_t>(__builtin_popcountll(x));
+#else
       static const uint64_t m[] = {
          0x5555555555555555ULL,
          0x3333333333333333ULL,
@@ -358,15 +372,12 @@ namespace fc
          0x0000FFFF0000FFFFULL,
          0x00000000FFFFFFFFULL
       };
-      // TODO future optimization:  replace slow, portable version
-      // with fast, non-portable __builtin_popcountll intrinsic
-      // (when available)
-
       for( int i=0, w=1; i<6; i++, w+=w )
       {
          x = (x & m[i]) + ((x >> w) & m[i]);
       }
       return uint8_t(x);
+#endif
    }
 
    uint8_t uint128::popcount()const

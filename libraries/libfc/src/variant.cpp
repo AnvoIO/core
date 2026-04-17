@@ -784,16 +784,28 @@ void from_variant( const variant& v, blob& b ) {
 }
 
 void to_variant( const UInt<8>& n, variant& v ) { v = uint64_t(n); }
-// TODO: warn on overflow?
-void from_variant( const variant& v, UInt<8>& n ) { n = static_cast<uint8_t>(v.as_uint64()); }
+void from_variant( const variant& v, UInt<8>& n ) {
+   const uint64_t value = v.as_uint64();
+   FC_ASSERT( value <= std::numeric_limits<uint8_t>::max(),
+              "unsigned integer value ${v} overflows uint8_t", ("v", value) );
+   n = static_cast<uint8_t>(value);
+}
 
 void to_variant( const UInt<16>& n, variant& v ) { v = uint64_t(n); }
-// TODO: warn on overflow?
-void from_variant( const variant& v, UInt<16>& n ) { n = static_cast<uint16_t>(v.as_uint64()); }
+void from_variant( const variant& v, UInt<16>& n ) {
+   const uint64_t value = v.as_uint64();
+   FC_ASSERT( value <= std::numeric_limits<uint16_t>::max(),
+              "unsigned integer value ${v} overflows uint16_t", ("v", value) );
+   n = static_cast<uint16_t>(value);
+}
 
 void to_variant( const UInt<32>& n, variant& v ) { v = uint64_t(n); }
-// TODO: warn on overflow?
-void from_variant( const variant& v, UInt<32>& n ) { n = static_cast<uint32_t>(v.as_uint64()); }
+void from_variant( const variant& v, UInt<32>& n ) {
+   const uint64_t value = v.as_uint64();
+   FC_ASSERT( value <= std::numeric_limits<uint32_t>::max(),
+              "unsigned integer value ${v} overflows uint32_t", ("v", value) );
+   n = static_cast<uint32_t>(value);
+}
 
 void to_variant( const UInt<64>& n, variant& v ) { v = uint64_t(n); }
 void from_variant( const variant& v, UInt<64>& n ) { n = v.as_uint64(); }

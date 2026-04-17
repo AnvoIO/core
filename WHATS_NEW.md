@@ -85,6 +85,14 @@ The core-vm JIT compiler includes additional safety checks: branch target overfl
 
 Stale protocol feature JSON files are automatically detected and regenerated on startup, preventing nodes from failing to activate features after binary upgrades.
 
+### libfc data-integrity hardening ([#83](https://github.com/AnvoIO/core/issues/83))
+
+Three changes in `libraries/libfc` land in v0.1.5-alpha:
+
+- **Narrow integer `from_variant` now throws on overflow.** `from_variant(variant, UInt<8>)`, `UInt<16>`, and `UInt<32>` previously cast `as_uint64()` down with a silent `static_cast`, so a JSON value of `300` would land in a `UInt<8>` as `44`. They now `FC_ASSERT` the source fits the target, throwing `fc::assert_exception` on overflow. Callers that were relying on the silent truncation (there are none in this tree) would need to clamp before calling.
+- **`uint128(bigint)` round-trip via bytes.** The constructor used to convert the bigint to a decimal string and parse it back — a textual round-trip of up to 39 digits per value. It now consumes the bigint's big-endian byte vector directly, shifting bytes into `hi`/`lo` one at a time. Round-trip equivalence verified by a new regression test covering zero, bit-boundary values, and arbitrary patterns.
+- **`uint128::popcount` uses `__builtin_popcountll` on GCC/Clang.** The portable bit-twiddle fallback stays in an `#else` branch for other toolchains.
+
 ## Protocol Features
 
 ### Dual protocol feature digests
