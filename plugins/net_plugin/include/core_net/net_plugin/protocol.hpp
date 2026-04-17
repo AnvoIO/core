@@ -251,7 +251,7 @@ namespace core_net {
 
    constexpr msg_type_t to_msg_type_t(size_t v) {
       static_assert( std::variant_size_v<net_message> == static_cast<size_t>(msg_type_t::unknown));
-      EOS_ASSERT(v < to_index(msg_type_t::unknown), plugin_exception, "Invalid net_message index: ${v}", ("v", v));
+      CORE_ASSERT(v < to_index(msg_type_t::unknown), plugin_exception, "Invalid net_message index: ${v}", ("v", v));
       return static_cast<msg_type_t>(v);
    }
 

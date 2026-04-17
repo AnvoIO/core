@@ -168,8 +168,8 @@ void my_finalizers_t::maybe_update_fsi(const block_state_ptr& bsp, const qc_t& r
       return;
 
    assert(bsp->active_finalizer_policy);
-   // qc should have already been verified via verify_qc, this EOS_ASSERT should never fire
-   EOS_ASSERT(!bsp->pending_finalizer_policy || received_qc.pending_policy_sig, invalid_qc_claim,
+   // qc should have already been verified via verify_qc, this CORE_ASSERT should never fire
+   CORE_ASSERT(!bsp->pending_finalizer_policy || received_qc.pending_policy_sig, invalid_qc_claim,
               "qc ${bn} expected to have a pending policy signature", ("bn", received_qc.block_num));
 
 
@@ -230,7 +230,7 @@ void unpack_v1(Stream& s, finalizer_safety_information& fsi) {
 bool my_finalizers_t::save_finalizer_safety_info() const {
    try {
       if (!cfile_ds.is_open()) {
-         EOS_ASSERT(!persist_file_path.empty(), finalizer_safety_exception,
+         CORE_ASSERT(!persist_file_path.empty(), finalizer_safety_exception,
                     "path for storing finalizer safety information file not specified");
          cfile_ds.set_file_path(persist_file_path);
          cfile_ds.open(fc::cfile::truncate_rw_mode);
@@ -308,9 +308,9 @@ void my_finalizers_t::load_finalizer_safety_info_v1(fsi_map& res) {
 my_finalizers_t::fsi_map my_finalizers_t::load_finalizer_safety_info() {
    fsi_map res;
 
-   EOS_ASSERT(!persist_file_path.empty(), finalizer_safety_exception,
+   CORE_ASSERT(!persist_file_path.empty(), finalizer_safety_exception,
               "path for storing finalizer safety persistence file not specified");
-   EOS_ASSERT(!cfile_ds.is_open(), finalizer_safety_exception,
+   CORE_ASSERT(!cfile_ds.is_open(), finalizer_safety_exception,
               "Trying to read an already open finalizer safety persistence file: ${p}",
               ("p", persist_file_path));
 
@@ -336,14 +336,14 @@ my_finalizers_t::fsi_map my_finalizers_t::load_finalizer_safety_info() {
       // -----------------------------------------
       uint64_t magic = 0;
       fc::raw::unpack(persist_file, magic);
-      EOS_ASSERT(magic == fsi_t::magic, finalizer_safety_exception,
+      CORE_ASSERT(magic == fsi_t::magic, finalizer_safety_exception,
                  "bad magic number in finalizer safety persistence file: ${p}", ("p", persist_file_path));
 
       // We can load files with older, but not files with a version higher that the running core_netd understands.
       // -----------------------------------------------------------------------------------------------------
       uint64_t file_version = 0; // current file version
       fc::raw::unpack(persist_file, file_version);
-      EOS_ASSERT(file_version <= current_safety_file_version, finalizer_safety_exception,
+      CORE_ASSERT(file_version <= current_safety_file_version, finalizer_safety_exception,
                  "Incorrect version number in finalizer safety persistence file: ${p}", ("p", persist_file_path));
 
       // finally read the `finalizer_safety_information` info
@@ -358,7 +358,7 @@ my_finalizers_t::fsi_map my_finalizers_t::load_finalizer_safety_info() {
          load_finalizer_safety_info_v1(res);
          break;
       default:
-         EOS_ASSERT( false, finalizer_safety_exception,
+         CORE_ASSERT( false, finalizer_safety_exception,
                      "unsupported finalizer safety file version ${v}", ("v", file_version) );
       }
 
@@ -367,7 +367,7 @@ my_finalizers_t::fsi_map my_finalizers_t::load_finalizer_safety_info() {
          uint32_t calculated_checksum = persist_file.checksum();
          uint32_t cs = 0;
          fc::raw::unpack(persist_file, cs);
-         EOS_ASSERT(cs == calculated_checksum, finalizer_safety_exception,
+         CORE_ASSERT(cs == calculated_checksum, finalizer_safety_exception,
                     "bad checksum reading finalizer safety persistence file: ${p}", ("p", persist_file_path));
       }
 

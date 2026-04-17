@@ -37,7 +37,7 @@ namespace core_net::chain {
          if (!result.additional_signatures.empty()) {
             bool wtmsig_enabled = detail::is_builtin_activated(pfa, pfs, builtin_protocol_feature_t::wtmsig_block_signatures);
 
-            EOS_ASSERT(wtmsig_enabled, block_validate_exception,
+            CORE_ASSERT(wtmsig_enabled, block_validate_exception,
                        "Block has multiple signatures before activation of WTMsig Block Signatures");
 
             // as an optimization we don't copy this out into the legitimate extension structure as it serializes

@@ -4,13 +4,13 @@
 #include <boost/core/typeinfo.hpp>
 
 
-#define EOS_ASSERT( expr, exc_type, FORMAT, ... )                \
+#define CORE_ASSERT( expr, exc_type, FORMAT, ... )                \
    FC_MULTILINE_MACRO_BEGIN                                           \
    if( !(expr) )                                                      \
       FC_THROW_EXCEPTION( exc_type, FORMAT, __VA_ARGS__ );            \
    FC_MULTILINE_MACRO_END
 
-#define EOS_THROW( exc_type, FORMAT, ... ) \
+#define CORE_THROW( exc_type, FORMAT, ... ) \
     throw exc_type( FC_LOG_MESSAGE( error, FORMAT, __VA_ARGS__ ) );
 
 /**
@@ -18,7 +18,7 @@
  * The main difference here is that if the exception caught isn't of type "core_net::chain::chain_exception"
  * This macro will rethrow the exception as the specified "exception_type"
  */
-#define EOS_RETHROW_EXCEPTIONS(exception_type, FORMAT, ... ) \
+#define CORE_RETHROW_EXCEPTIONS(exception_type, FORMAT, ... ) \
    catch( const std::bad_alloc& ) {\
       throw;\
    } catch( const boost::interprocess::bad_alloc& ) {\
@@ -45,7 +45,7 @@
  * The main difference here is that if the exception caught isn't of type "core_net::chain::chain_exception"
  * This macro will rethrow the exception as the specified "exception_type"
  */
-#define EOS_CAPTURE_AND_RETHROW( exception_type, ... ) \
+#define CORE_CAPTURE_AND_RETHROW( exception_type, ... ) \
    catch( const std::bad_alloc& ) {\
       throw;\
    } catch( const boost::interprocess::bad_alloc& ) {\
@@ -107,9 +107,17 @@
       return return_type(e.dynamic_copy_exception());\
    }
 
-#define EOS_RECODE_EXC( cause_type, effect_type ) \
+#define CORE_RECODE_EXC( cause_type, effect_type ) \
    catch( const cause_type& e ) \
    { throw( effect_type( e.what(), e.get_log() ) ); }
+
+// Legacy aliases — retained for downstream-consumer compatibility during the
+// EOSIO→Anvo rebrand. Prefer the CORE_* forms for new code.
+#define EOS_ASSERT(...)               CORE_ASSERT(__VA_ARGS__)
+#define EOS_THROW(...)                CORE_THROW(__VA_ARGS__)
+#define EOS_RETHROW_EXCEPTIONS(...)   CORE_RETHROW_EXCEPTIONS(__VA_ARGS__)
+#define EOS_CAPTURE_AND_RETHROW(...)  CORE_CAPTURE_AND_RETHROW(__VA_ARGS__)
+#define EOS_RECODE_EXC(...)           CORE_RECODE_EXC(__VA_ARGS__)
 
 
 #define FC_DECLARE_DERIVED_EXCEPTION_WITH_ERROR_CODE( TYPE, BASE, CODE, WHAT ) \

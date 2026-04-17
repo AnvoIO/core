@@ -104,17 +104,17 @@ namespace core_net { namespace chain { namespace webassembly {
 
    CORE_NET_VM_PRECONDITION(context_free_check,
          CORE_NET_VM_INVOKE_ONCE([&](auto&&...) {
-            EOS_ASSERT(ctx.get_host().get_context().is_context_free(), unaccessible_api, "this API may only be called from context_free apply");
+            CORE_ASSERT(ctx.get_host().get_context().is_context_free(), unaccessible_api, "this API may only be called from context_free apply");
          }));
 
    CORE_NET_VM_PRECONDITION(context_aware_check,
          CORE_NET_VM_INVOKE_ONCE([&](auto&&...) {
-            EOS_ASSERT(!ctx.get_host().get_context().is_context_free(), unaccessible_api, "only context free api's can be used in this context");
+            CORE_ASSERT(!ctx.get_host().get_context().is_context_free(), unaccessible_api, "only context free api's can be used in this context");
          }));
 
    CORE_NET_VM_PRECONDITION(privileged_check,
          CORE_NET_VM_INVOKE_ONCE([&](auto&&...) {
-            EOS_ASSERT(ctx.get_host().get_context().is_privileged(), unaccessible_api,
+            CORE_ASSERT(ctx.get_host().get_context().is_privileged(), unaccessible_api,
                        "${code} does not have permission to call this API", ("code", ctx.get_host().get_context().get_receiver()));
          }));
 
@@ -137,7 +137,7 @@ namespace core_net { namespace chain { namespace webassembly {
                core_net::vm::invoke_on<false, core_net::vm::invoke_on_all_t>([&arg](auto&& narg, auto&&... nrest) {
                   using nested_arg_t = std::decay_t<decltype(narg)>;
                   if constexpr (core_net::vm::is_span_type_v<nested_arg_t> || vm::is_argument_proxy_type_v<nested_arg_t>)
-                      EOS_ASSERT(!is_aliasing(detail::to_span(arg), detail::to_span(narg)), wasm_exception, "pointers not allowed to alias");
+                      CORE_ASSERT(!is_aliasing(detail::to_span(arg), detail::to_span(narg)), wasm_exception, "pointers not allowed to alias");
                }, rest...);
             }
          })));
@@ -158,7 +158,7 @@ namespace core_net { namespace chain { namespace webassembly {
    CORE_NET_VM_PRECONDITION(is_nan_check,
          CORE_NET_VM_INVOKE_ON_ALL([&](auto&& arg, auto&&... rest) {
             if constexpr (should_check_nan_v<std::remove_cv_t<typename remove_argument_proxy<std::decay_t<decltype(arg)>>::type>>) {
-               EOS_ASSERT(!webassembly::is_nan(*arg), transaction_exception, "NaN is not an allowed value for a secondary key");
+               CORE_ASSERT(!webassembly::is_nan(*arg), transaction_exception, "NaN is not an allowed value for a secondary key");
             }
          }));
 

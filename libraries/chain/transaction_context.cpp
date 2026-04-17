@@ -100,15 +100,15 @@ namespace core_net::chain {
 
    void transaction_context::disallow_transaction_extensions( const char* error_msg )const {
       if( control.is_speculative_block() ) {
-         EOS_THROW( subjective_block_production_exception, error_msg );
+         CORE_THROW( subjective_block_production_exception, error_msg );
       } else {
-         EOS_THROW( disallowed_transaction_extensions_bad_block_exception, error_msg );
+         CORE_THROW( disallowed_transaction_extensions_bad_block_exception, error_msg );
       }
    }
 
    void transaction_context::init(uint64_t initial_net_usage)
    {
-      EOS_ASSERT( !is_initialized, transaction_exception, "cannot initialize twice" );
+      CORE_ASSERT( !is_initialized, transaction_exception, "cannot initialize twice" );
       init_net_usage = initial_net_usage;
 
       // set maximum to a semi-valid deadline to allow for pause math and conversion to dates for logging
@@ -284,7 +284,7 @@ namespace core_net::chain {
       // DISABLE_DEFERRED_TRXS_STAGE_1 is activated;
       // read-only and dry-run transactions are not allowed to be delayed at any time
       if( control.is_builtin_activated(builtin_protocol_feature_t::disable_deferred_trxs_stage_1) || is_transient() ) {
-         EOS_ASSERT( trx.delay_sec.value == 0, transaction_exception, "transaction cannot be delayed" );
+         CORE_ASSERT( trx.delay_sec.value == 0, transaction_exception, "transaction cannot be delayed" );
       }
       if( trx.transaction_extensions.size() > 0 ) {
          disallow_transaction_extensions( "no transaction extensions supported yet for input transactions" );
@@ -345,7 +345,7 @@ namespace core_net::chain {
    }
 
    void transaction_context::exec() {
-      EOS_ASSERT( is_initialized, transaction_exception, "must first initialize" );
+      CORE_ASSERT( is_initialized, transaction_exception, "must first initialize" );
 
       for (int i = 0; i < 2; ++i) { // interrupt_oc_exception can only happen once
          try {
@@ -384,7 +384,7 @@ namespace core_net::chain {
    }
 
    void transaction_context::finalize() {
-      EOS_ASSERT( is_initialized, transaction_exception, "must first initialize" );
+      CORE_ASSERT( is_initialized, transaction_exception, "must first initialize" );
 
       // read-only transactions only need net_usage and elapsed in the trace
       if ( is_read_only() ) {
@@ -462,15 +462,15 @@ namespace core_net::chain {
       if (!control.skip_trx_checks()) {
          if( BOOST_UNLIKELY(trace->net_usage > eager_net_limit) ) {
             if ( net_limit_due_to_block ) {
-               EOS_THROW( block_net_usage_exceeded,
+               CORE_THROW( block_net_usage_exceeded,
                           "not enough space left in block: ${net_usage} > ${net_limit}",
                           ("net_usage", trace->net_usage)("net_limit", eager_net_limit) );
             }  else if (net_limit_due_to_greylist) {
-               EOS_THROW( greylist_net_usage_exceeded,
+               CORE_THROW( greylist_net_usage_exceeded,
                           "greylisted transaction net usage is too high: ${net_usage} > ${net_limit}",
                           ("net_usage", trace->net_usage)("net_limit", eager_net_limit) );
             } else {
-               EOS_THROW( tx_net_usage_exceeded,
+               CORE_THROW( tx_net_usage_exceeded,
                           "transaction net usage is too high: ${net_usage} > ${net_limit}",
                           ("net_usage", trace->net_usage)("net_limit", eager_net_limit) );
             }
@@ -506,13 +506,13 @@ namespace core_net::chain {
 
       auto now = fc::time_point::now();
       if (expired == platform_timer::state_t::interrupted) {
-         EOS_THROW( interrupt_exception, "interrupt signaled, ran ${bt}us, start ${s}",
+         CORE_THROW( interrupt_exception, "interrupt signaled, ran ${bt}us, start ${s}",
                     ("bt", now - pseudo_start)("s", start) );
       } else if( explicit_billed_cpu_time || deadline_exception_code == deadline_exception::code_value ) {
-         EOS_THROW( deadline_exception, "deadline exceeded ${billing_timer}us",
+         CORE_THROW( deadline_exception, "deadline exceeded ${billing_timer}us",
                      ("billing_timer", now - pseudo_start)("now", now)("deadline", _deadline)("start", start) );
       } else if( deadline_exception_code == block_cpu_usage_exceeded::code_value ) {
-         EOS_THROW( block_cpu_usage_exceeded,
+         CORE_THROW( block_cpu_usage_exceeded,
                      "not enough time left in block to complete executing transaction ${billing_timer}us",
                      ("now", now)("deadline", _deadline)("start", start)("billing_timer", now - pseudo_start) );
       } else if( deadline_exception_code == tx_cpu_usage_exceeded::code_value ) {
@@ -524,19 +524,19 @@ namespace core_net::chain {
          assert_msg += get_tx_cpu_usage_exceeded_reason_msg(limit);
          if (cpu_limit_due_to_greylist) {
             assert_msg = "greylisted " + assert_msg;
-            EOS_THROW( greylist_cpu_usage_exceeded, assert_msg, ("id", packed_trx.id())
+            CORE_THROW( greylist_cpu_usage_exceeded, assert_msg, ("id", packed_trx.id())
                      ("billing_timer", now - pseudo_start)("subjective", subjective_cpu_bill_us)("limit", limit) );
          } else {
-            EOS_THROW( tx_cpu_usage_exceeded, assert_msg, ("id", packed_trx.id())
+            CORE_THROW( tx_cpu_usage_exceeded, assert_msg, ("id", packed_trx.id())
                      ("billing_timer", now - pseudo_start)("subjective", subjective_cpu_bill_us)("limit", limit) );
          }
       } else if( deadline_exception_code == leeway_deadline_exception::code_value ) {
-         EOS_THROW( leeway_deadline_exception,
+         CORE_THROW( leeway_deadline_exception,
                      "the transaction was unable to complete by deadline, "
                      "but it is possible it could have succeeded if it were allowed to run to completion ${billing_timer}",
                      ("now", now)("deadline", _deadline)("start", start)("billing_timer", now - pseudo_start) );
       }
-      EOS_ASSERT( false,  transaction_exception, "unexpected deadline exception code ${code}", ("code", deadline_exception_code) );
+      CORE_ASSERT( false,  transaction_exception, "unexpected deadline exception code ${code}", ("code", deadline_exception_code) );
    }
 
    void transaction_context::pause_billing_timer() {
@@ -570,7 +570,7 @@ namespace core_net::chain {
       if (!control.skip_trx_checks()) {
          if( check_minimum ) {
             const auto& cfg = control.get_global_properties().configuration;
-            EOS_ASSERT( billed_us >= cfg.min_transaction_cpu_usage, transaction_exception,
+            CORE_ASSERT( billed_us >= cfg.min_transaction_cpu_usage, transaction_exception,
                         "cannot bill CPU time less than the minimum of ${min_billable} us",
                         ("min_billable", cfg.min_transaction_cpu_usage)("billed_cpu_time_us", billed_us)
                       );
@@ -585,7 +585,7 @@ namespace core_net::chain {
          const bool cpu_limited_by_account = (account_cpu_limit <= objective_duration_limit.count());
 
          if( !cpu_limited_by_account && (billing_timer_exception_code == block_cpu_usage_exceeded::code_value) ) {
-            EOS_ASSERT( billed_us <= objective_duration_limit.count(),
+            CORE_ASSERT( billed_us <= objective_duration_limit.count(),
                         block_cpu_usage_exceeded,
                         "billed CPU time (${billed} us) is greater than the billable CPU time left in the block (${billable} us)",
                         ("billed", billed_us)( "billable", objective_duration_limit.count() )
@@ -623,7 +623,7 @@ namespace core_net::chain {
          const bool cpu_limited_by_account = (account_cpu_limit <= objective_duration_limit.count());
 
          if( !cpu_limited_by_account && (billing_timer_exception_code == block_cpu_usage_exceeded::code_value) ) {
-            EOS_ASSERT( prev_billed_us < objective_duration_limit.count(),
+            CORE_ASSERT( prev_billed_us < objective_duration_limit.count(),
                         block_cpu_usage_exceeded,
                         "estimated CPU time (${billed} us) is not less than the billable CPU time left in the block (${billable} us)",
                         ("billed", prev_billed_us)( "billable", objective_duration_limit.count() )
@@ -704,14 +704,14 @@ namespace core_net::chain {
          }
       }
 
-      EOS_ASSERT( (!force_elastic_limits && control.is_speculative_block()) || (!greylisted_cpu && !greylisted_net),
+      CORE_ASSERT( (!force_elastic_limits && control.is_speculative_block()) || (!greylisted_cpu && !greylisted_net),
                   transaction_exception, "greylisted when not producing block" );
 
       return std::make_tuple(account_net_limit, account_cpu_limit, greylisted_net, greylisted_cpu);
    }
 
    action_trace& transaction_context::get_action_trace( uint32_t action_ordinal ) {
-      EOS_ASSERT( 0 < action_ordinal && action_ordinal <= trace->action_traces.size() ,
+      CORE_ASSERT( 0 < action_ordinal && action_ordinal <= trace->action_traces.size() ,
                   transaction_exception,
                   "action_ordinal ${ordinal} is outside allowed range [1,${max}]",
                   ("ordinal", action_ordinal)("max", trace->action_traces.size())
@@ -720,7 +720,7 @@ namespace core_net::chain {
    }
 
    const action_trace& transaction_context::get_action_trace( uint32_t action_ordinal )const {
-      EOS_ASSERT( 0 < action_ordinal && action_ordinal <= trace->action_traces.size() ,
+      CORE_ASSERT( 0 < action_ordinal && action_ordinal <= trace->action_traces.size() ,
                   transaction_exception,
                   "action_ordinal ${ordinal} is outside allowed range [1,${max}]",
                   ("ordinal", action_ordinal)("max", trace->action_traces.size())
@@ -831,7 +831,7 @@ namespace core_net::chain {
       } catch( const boost::interprocess::bad_alloc& ) {
          throw;
       } catch ( ... ) {
-          EOS_ASSERT( false, tx_duplicate,
+          CORE_ASSERT( false, tx_duplicate,
                      "duplicate transaction ${id}", ("id", id ) );
       }
    } /// record_transaction
@@ -843,9 +843,9 @@ namespace core_net::chain {
       if( !trx.context_free_actions.empty() && !control.skip_trx_checks() ) {
          for( const auto& a : trx.context_free_actions ) {
             auto* code = db.find<account_object, by_name>( a.account );
-            EOS_ASSERT( code != nullptr, transaction_exception,
+            CORE_ASSERT( code != nullptr, transaction_exception,
                         "action's code account '${account}' does not exist", ("account", a.account) );
-            EOS_ASSERT( a.authorization.size() == 0, transaction_exception,
+            CORE_ASSERT( a.authorization.size() == 0, transaction_exception,
                         "context-free actions cannot have authorizations" );
          }
       }
@@ -855,25 +855,25 @@ namespace core_net::chain {
       bool one_auth = false;
       for( const auto& a : trx.actions ) {
          auto* code = db.find<account_object, by_name>(a.account);
-         EOS_ASSERT( code != nullptr, transaction_exception,
+         CORE_ASSERT( code != nullptr, transaction_exception,
                      "action's code account '${account}' does not exist", ("account", a.account) );
          if ( is_read_only() ) {
-            EOS_ASSERT( a.authorization.size() == 0, transaction_exception,
+            CORE_ASSERT( a.authorization.size() == 0, transaction_exception,
                        "read-only action '${name}' cannot have authorizations", ("name", a.name) );
          }
          for( const auto& auth : a.authorization ) {
             one_auth = true;
             auto* actor = db.find<account_object, by_name>(auth.actor);
-            EOS_ASSERT( actor  != nullptr, transaction_exception,
+            CORE_ASSERT( actor  != nullptr, transaction_exception,
                         "action's authorizing actor '${account}' does not exist", ("account", auth.actor) );
-            EOS_ASSERT( auth_manager.find_permission(auth) != nullptr, transaction_exception,
+            CORE_ASSERT( auth_manager.find_permission(auth) != nullptr, transaction_exception,
                         "action's authorizations include a non-existent permission: ${permission}",
                         ("permission", auth) );
             if( enforce_actor_whitelist_blacklist )
                actors.insert( auth.actor );
          }
       }
-      EOS_ASSERT( one_auth || is_read_only(), tx_no_auths, "transaction must have at least one authorization" );
+      CORE_ASSERT( one_auth || is_read_only(), tx_no_auths, "transaction must have at least one authorization" );
 
       if( enforce_actor_whitelist_blacklist ) {
          control.check_actor_list( actors );
@@ -884,7 +884,7 @@ namespace core_net::chain {
       if (producers.empty())
          return -1; // SAVANNA depends on DISALLOW_EMPTY_PRODUCER_SCHEDULE
 
-      EOS_ASSERT(producers.size() <= config::max_proposers, wasm_execution_error,
+      CORE_ASSERT(producers.size() <= config::max_proposers, wasm_execution_error,
                  "Producer schedule exceeds the maximum proposer count for this chain");
 
       trx_blk_context.proposed_schedule_block_num = control.head().block_num() + 1;

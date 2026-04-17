@@ -124,11 +124,11 @@ private:
      prune_config(prune_conf), non_local_get_block_id(non_local_get_block_id),
      log(std::filesystem::path(log_dir_and_stem).replace_extension("log")),
      index(std::filesystem::path(log_dir_and_stem).replace_extension("index")) {
-      EOS_ASSERT(!!non_local_get_block_id, chain::plugin_exception, "misuse of get_block_id");
+      CORE_ASSERT(!!non_local_get_block_id, chain::plugin_exception, "misuse of get_block_id");
 
       if(prune_config) {
-         EOS_ASSERT(prune_config->prune_blocks, chain::plugin_exception, "state history log prune configuration requires at least one block");
-         EOS_ASSERT(__builtin_popcount(prune_config->prune_threshold) == 1, chain::plugin_exception, "state history prune threshold must be power of 2");
+         CORE_ASSERT(prune_config->prune_blocks, chain::plugin_exception, "state history log prune configuration requires at least one block");
+         CORE_ASSERT(__builtin_popcount(prune_config->prune_threshold) == 1, chain::plugin_exception, "state history prune threshold must be power of 2");
          //switch this over to the mask that will be used
          prune_config->prune_threshold = ~(prune_config->prune_threshold-1);
       }
@@ -218,23 +218,23 @@ private:
       const uint32_t block_num = chain::block_header::num_from_id(header.block_id);
 
       if(!empty())
-         EOS_ASSERT(block_num <= _end_block, chain::plugin_exception, "block ${b} skips over block ${e} in ${name}", ("b", block_num)("e", _end_block)("name", log.display_path()));
-      EOS_ASSERT(block_num >= _index_begin_block, chain::plugin_exception, "block ${b} is before start block ${s} of ${name}", ("b", block_num)("s", _begin_block)("name", log.display_path()));
+         CORE_ASSERT(block_num <= _end_block, chain::plugin_exception, "block ${b} skips over block ${e} in ${name}", ("b", block_num)("e", _end_block)("name", log.display_path()));
+      CORE_ASSERT(block_num >= _index_begin_block, chain::plugin_exception, "block ${b} is before start block ${s} of ${name}", ("b", block_num)("s", _begin_block)("name", log.display_path()));
       if(block_num == _end_block) //appending at the end of known blocks; can shortcut some checks since we have last_block_id readily available
-         EOS_ASSERT(prev_id == last_block_id, chain::plugin_exception, "missed a fork change in ${name}", ("name", log.display_path()));
+         CORE_ASSERT(prev_id == last_block_id, chain::plugin_exception, "missed a fork change in ${name}", ("name", log.display_path()));
       else {                      //seeing a block num we've seen before OR first block in the log; prepare some extra checks
          //find the previous block id as a sanity check. This might not be in our log due to log splitting. It also might not be present at all if this is the first
          // block written, so don't require this lookup to succeed, just require the id to match if the lookup succeeded.
          if(std::optional<chain::block_id_type> local_id_found = get_block_id(block_num-1))
-            EOS_ASSERT(local_id_found == prev_id, chain::plugin_exception, "missed a fork change in ${name}", ("name", log.display_path()));
+            CORE_ASSERT(local_id_found == prev_id, chain::plugin_exception, "missed a fork change in ${name}", ("name", log.display_path()));
          else if(std::optional<chain::block_id_type> non_local_id_found = non_local_get_block_id(block_num-1))
-            EOS_ASSERT(non_local_id_found == prev_id, chain::plugin_exception, "missed a fork change in ${name}", ("name", log.display_path()));
+            CORE_ASSERT(non_local_id_found == prev_id, chain::plugin_exception, "missed a fork change in ${name}", ("name", log.display_path()));
          //we don't want to re-write blocks that we already have, so check if the existing block_id recorded in the log matches and if so, bail
          if(get_block_id(block_num) == id)
             return;
          //but if it doesn't match, and log isn't empty, ensure not writing a new genesis block to guard against accidental rewinding of the entire ship log
          if(!empty())
-            EOS_ASSERT(block_num > 2u, chain::plugin_exception, "existing ship log with ${eb} blocks when starting from genesis block ${b}", ("eb", _end_block-_begin_block)("b", block_num));
+            CORE_ASSERT(block_num > 2u, chain::plugin_exception, "existing ship log with ${eb} blocks when starting from genesis block ${b}", ("eb", _end_block-_begin_block)("b", block_num));
       }
 
       ssize_t log_insert_pos = log.size();
@@ -339,7 +339,7 @@ private:
          uint64_t suffix;
          if(!is_ship(header.magic) || !is_ship_supported_version(header.magic) || header.payload_size > size ||
              pos + header_size + header.payload_size + sizeof(suffix) > size) {
-            EOS_ASSERT(!is_ship(header.magic) || is_ship_supported_version(header.magic), chain::plugin_exception,
+            CORE_ASSERT(!is_ship(header.magic) || is_ship_supported_version(header.magic), chain::plugin_exception,
                        "${name} has an unsupported version", ("name", log.display_path()));
             break;
          }
@@ -379,7 +379,7 @@ private:
 
          if(pruned_count)
             _begin_block = _end_block - *pruned_count;
-      } EOS_RETHROW_EXCEPTIONS(chain::plugin_exception, "${name} is corrupted and cannot be repaired", ("name", log.display_path()));
+      } CORE_RETHROW_EXCEPTIONS(chain::plugin_exception, "${name} is corrupted and cannot be repaired", ("name", log.display_path()));
    }
 
    void check_index_on_init() {
@@ -401,7 +401,7 @@ private:
          do {
             const uint64_t logpos = log.unpack_from<uint64_t>(next_logpos);
             header = log.unpack_from<decltype(header)>(logpos);
-            EOS_ASSERT(is_ship(header.magic) && is_ship_supported_version(header.magic), chain::plugin_exception, "corrupt ${name}, unknown header magic", ("name", log.display_path()));
+            CORE_ASSERT(is_ship(header.magic) && is_ship_supported_version(header.magic), chain::plugin_exception, "corrupt ${name}, unknown header magic", ("name", log.display_path()));
 
             const uint32_t read_block_num = chain::block_header::num_from_id(header.block_id);
             //may need to skip blocks if log was closed when a shorter fork has been applied; ex: log contains 2345675 (begin=2, end=6, but we see block 7 and 6 when reading)
@@ -434,7 +434,7 @@ private:
          //verify last index position matches last log entry
          const uint64_t index_pos = get_pos(_end_block-1);
          FC_ASSERT(index_pos == last_header_pos, "Last index position ${ip} does not match last entry in log ${lp}", ("ip", index_pos)("lp", last_header_pos));
-      } EOS_RETHROW_EXCEPTIONS(chain::plugin_exception, "${name} is corrupted and cannot be repaired, will be automatically regenerated if removed.", ("name", index.display_path()));
+      } CORE_RETHROW_EXCEPTIONS(chain::plugin_exception, "${name} is corrupted and cannot be repaired, will be automatically regenerated if removed.", ("name", index.display_path()));
    }
 
    uint64_t get_pos(uint32_t block_num) {
@@ -458,7 +458,7 @@ private:
          return;
 
       log_header first_header = log.unpack_from<decltype(first_header)>(0);
-      EOS_ASSERT(is_ship_log_pruned(first_header.magic), chain::plugin_exception, "vacuum can only be performed on pruned logs");
+      CORE_ASSERT(is_ship_log_pruned(first_header.magic), chain::plugin_exception, "vacuum can only be performed on pruned logs");
 
       //may happen if _begin_block is still first block on-disk of log. clear the pruned feature flag & erase
       // the 4 byte trailer. The pruned flag is only set on the first header in the log, so it does not need

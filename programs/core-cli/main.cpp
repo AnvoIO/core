@@ -212,7 +212,7 @@ packed_transaction::compression_type to_compression_type( tx_compression_type t 
       case tx_compression_type::none: return packed_transaction::compression_type::none;
       case tx_compression_type::zlib: return packed_transaction::compression_type::zlib;
       case tx_compression_type::default_compression: return packed_transaction::compression_type::none;
-      default: EOS_ASSERT(false, unknown_transaction_compression, "unknown transaction compression type");
+      default: CORE_ASSERT(false, unknown_transaction_compression, "unknown transaction compression type");
    }
 }
 
@@ -291,16 +291,16 @@ public:
          if (is_public_key_str(public_key_json)) {
             try {
                signing_keys.push_back(public_key_type(public_key_json));
-            } EOS_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", public_key_json))
+            } CORE_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", public_key_json))
          } else {
             fc::variant json_keys;
             try {
                json_keys = fc::json::from_string(public_key_json, fc::json::parse_type::relaxed_parser);
-            } EOS_RETHROW_EXCEPTIONS(json_parse_exception, "Fail to parse JSON from string: ${string}", ("string", public_key_json));
+            } CORE_RETHROW_EXCEPTIONS(json_parse_exception, "Fail to parse JSON from string: ${string}", ("string", public_key_json));
             try {
                std::vector<public_key_type> keys = json_keys.template as<std::vector<public_key_type>>();
                signing_keys = std::move(keys);
-            } EOS_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key array format '${data}'",
+            } CORE_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key array format '${data}'",
                                      ("data", fc::json::to_string(json_keys, fc::time_point::maximum())))
          }
       }
@@ -452,7 +452,7 @@ fc::variant push_transaction( signed_transaction& trx, const std::vector<public_
             ref_block = call(get_block_func, fc::mutable_variant_object("block_num_or_id", tx_ref_block_num_or_id));
             ref_block_id = ref_block["id"].as<block_id_type>();
          }
-      } EOS_RETHROW_EXCEPTIONS(invalid_ref_block_exception, "Invalid reference block num or id: ${block_num_or_id}", ("block_num_or_id", tx_ref_block_num_or_id));
+      } CORE_RETHROW_EXCEPTIONS(invalid_ref_block_exception, "Invalid reference block num or id: ${block_num_or_id}", ("block_num_or_id", tx_ref_block_num_or_id));
       trx.set_reference_block(ref_block_id);
 
       if (tx_force_unique) {
@@ -634,12 +634,12 @@ fc::variant json_from_file_or_string(const string& file_or_str, fc::json::parse_
    if ( !looks_like_json && std::filesystem::is_regular_file(file_or_str, ec) ) {
       try {
          return fc::json::from_file(file_or_str, ptype);
-      } EOS_RETHROW_EXCEPTIONS(json_parse_exception, "Fail to parse JSON from file: ${file}", ("file", file_or_str));
+      } CORE_RETHROW_EXCEPTIONS(json_parse_exception, "Fail to parse JSON from file: ${file}", ("file", file_or_str));
 
    } else if (looks_like_json) {
       try {
          return fc::json::from_string(file_or_str, ptype);
-      } EOS_RETHROW_EXCEPTIONS(json_parse_exception, "Fail to parse JSON from string: ${string}", ("string", file_or_str));
+      } CORE_RETHROW_EXCEPTIONS(json_parse_exception, "Fail to parse JSON from string: ${string}", ("string", file_or_str));
    } else {
       return file_or_str;
    }
@@ -824,7 +824,7 @@ chain::action create_delegate(const name& from, const name& receiver, const asse
          ("stake_net_quantity", net.to_string())
          ("stake_cpu_quantity", cpu.to_string())
          ("transfer", transfer);
-   EOS_ASSERT(net.get_symbol() == cpu.get_symbol(), symbol_type_exception, "Asset types of net & cpu must match");
+   CORE_ASSERT(net.get_symbol() == cpu.get_symbol(), symbol_type_exception, "Asset types of net & cpu must match");
    name contract = to_default_contract(cpu);
    return create_action(get_account_permissions(tx_permission, {from,config::active_name}),
                         contract, "delegatebw"_n, act_payload);
@@ -910,7 +910,7 @@ authority parse_json_authority(const std::string& authorityJsonOrFile) {
    fc::variant authority_var = json_from_file_or_string(authorityJsonOrFile);
    try {
       return authority_var.as<authority>();
-   } EOS_RETHROW_EXCEPTIONS(authority_type_exception, "Invalid authority format '${data}'",
+   } CORE_RETHROW_EXCEPTIONS(authority_type_exception, "Invalid authority format '${data}'",
                             ("data", fc::json::to_string(authority_var, fc::time_point::maximum())))
 }
 
@@ -918,11 +918,11 @@ authority parse_json_authority_or_key(const std::string& authorityJsonOrFile) {
    if (is_public_key_str(authorityJsonOrFile)) {
       try {
          return authority(public_key_type(authorityJsonOrFile));
-      } EOS_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", authorityJsonOrFile))
+      } CORE_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", authorityJsonOrFile))
    } else {
       auto result = parse_json_authority(authorityJsonOrFile);
       result.sort_fields();
-      EOS_ASSERT( core_net::chain::validate(result), authority_type_exception, "Authority failed validation! ensure that keys, accounts, and waits are sorted and that the threshold is valid and satisfiable!");
+      CORE_ASSERT( core_net::chain::validate(result), authority_type_exception, "Authority failed validation! ensure that keys, accounts, and waits are sorted and that the threshold is valid and satisfiable!");
       return result;
    }
 }
@@ -949,7 +949,7 @@ asset to_asset( account_name code, const string& s ) {
          auto p = cache.emplace( make_pair( code, sym ), result.max_supply.get_symbol() );
          it = p.first;
       } else {
-         EOS_THROW(symbol_type_exception, "Symbol ${s} is not supported by token contract ${c}", ("s", sym_str)("c", code));
+         CORE_THROW(symbol_type_exception, "Symbol ${s} is not supported by token contract ${c}", ("s", sym_str)("c", code));
       }
    }
    auto expected_symbol = it->second;
@@ -957,7 +957,7 @@ asset to_asset( account_name code, const string& s ) {
       auto factor = expected_symbol.precision() / a.precision();
       a = asset( a.get_amount() * factor, expected_symbol );
    } else if ( a.decimals() > expected_symbol.decimals() ) {
-      EOS_THROW(symbol_type_exception, "Too many decimal digits in ${a}, only ${d} supported", ("a", a)("d", expected_symbol.decimals()));
+      CORE_THROW(symbol_type_exception, "Too many decimal digits in ${a}, only ${d} supported", ("a", a)("d", expected_symbol.decimals()));
    } // else precision matches
    return a;
 }
@@ -1233,7 +1233,7 @@ struct register_producer_subcommand {
          public_key_type producer_key;
          try {
             producer_key = public_key_type(producer_key_str);
-         } EOS_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid producer public key: ${public_key}", ("public_key", producer_key_str))
+         } CORE_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid producer public key: ${public_key}", ("public_key", producer_key_str))
 
          auto regprod_var = regproducer_variant(name(producer_str), producer_key, url, loc );
          auto accountPermissions = get_account_permissions(tx_permission, {name(producer_str), config::active_name});
@@ -1288,15 +1288,15 @@ struct create_account_subcommand {
             if( owner_key_str.find('{') != string::npos ) {
                try{
                   owner = parse_json_authority_or_key(owner_key_str);
-               } EOS_RETHROW_EXCEPTIONS( explained_exception, "Invalid owner authority: ${authority}", ("authority", owner_key_str) )
+               } CORE_RETHROW_EXCEPTIONS( explained_exception, "Invalid owner authority: ${authority}", ("authority", owner_key_str) )
             } else if( owner_key_str.find('@') != string::npos ) {
                try {
                   owner = authority(to_permission_level(owner_key_str));
-               } EOS_RETHROW_EXCEPTIONS( explained_exception, "Invalid owner permission level: ${permission}", ("permission", owner_key_str) )
+               } CORE_RETHROW_EXCEPTIONS( explained_exception, "Invalid owner permission level: ${permission}", ("permission", owner_key_str) )
             } else {
                try {
                   owner = authority(public_key_type(owner_key_str));
-               } EOS_RETHROW_EXCEPTIONS( public_key_type_exception, "Invalid owner public key: ${public_key}", ("public_key", owner_key_str) );
+               } CORE_RETHROW_EXCEPTIONS( public_key_type_exception, "Invalid owner public key: ${public_key}", ("public_key", owner_key_str) );
             }
 
             if( active_key_str.empty() ) {
@@ -1304,15 +1304,15 @@ struct create_account_subcommand {
             } else if ( active_key_str.find('{') != string::npos ) {
                try{
                   active = parse_json_authority_or_key(active_key_str);
-               } EOS_RETHROW_EXCEPTIONS( explained_exception, "Invalid active authority: ${authority}", ("authority", owner_key_str) )
+               } CORE_RETHROW_EXCEPTIONS( explained_exception, "Invalid active authority: ${authority}", ("authority", owner_key_str) )
             }else if( active_key_str.find('@') != string::npos ) {
                try {
                   active = authority(to_permission_level(active_key_str));
-               } EOS_RETHROW_EXCEPTIONS( explained_exception, "Invalid active permission level: ${permission}", ("permission", active_key_str) )
+               } CORE_RETHROW_EXCEPTIONS( explained_exception, "Invalid active permission level: ${permission}", ("permission", active_key_str) )
             } else {
                try {
                   active = authority(public_key_type(active_key_str));
-               } EOS_RETHROW_EXCEPTIONS( public_key_type_exception, "Invalid active public key: ${public_key}", ("public_key", active_key_str) );
+               } CORE_RETHROW_EXCEPTIONS( public_key_type_exception, "Invalid active public key: ${public_key}", ("public_key", active_key_str) );
             }
 
             auto create = create_newaccount(name(creator), name(account_name), owner, active);
@@ -1321,7 +1321,7 @@ struct create_account_subcommand {
                EOSC_ASSERT( !buy_ram_bytes_in_kbytes || !buy_ram_bytes, "ERROR: --buy-ram-kbytes and --buy-ram-bytes cannot be set at the same time" );
                auto net = to_asset(stake_net);
                auto cpu = to_asset(stake_cpu);
-               EOS_ASSERT(net.symbol_name() == cpu.symbol_name(), symbol_type_exception, "--stake-net & --stake-cpu asset symbol must match");
+               CORE_ASSERT(net.symbol_name() == cpu.symbol_name(), symbol_type_exception, "--stake-net & --stake-cpu asset symbol must match");
                name contract = to_default_contract(cpu);
                action buyram = !buy_ram_eos.empty() ? create_buyram(name(creator), name(account_name), to_asset(buy_ram_eos))
                   : create_buyrambytes(contract, name(creator), name(account_name), (buy_ram_bytes_in_kbytes) ? (buy_ram_bytes_in_kbytes * 1024) : buy_ram_bytes);
@@ -1431,7 +1431,7 @@ struct approve_producer_subcommand {
                std::cerr << "Voter info not found for account " << voter << std::endl;
                return;
             }
-            EOS_ASSERT( 1 == res.rows.size(), multiple_voter_info, "More than one voter_info for account" );
+            CORE_ASSERT( 1 == res.rows.size(), multiple_voter_info, "More than one voter_info for account" );
             auto prod_vars = res.rows[0]["producers"].get_array();
             vector<core_net::name> prods;
             for ( auto& x : prod_vars ) {
@@ -1484,7 +1484,7 @@ struct unapprove_producer_subcommand {
                std::cerr << "Voter info not found for account " << voter << std::endl;
                return;
             }
-            EOS_ASSERT( 1 == res.rows.size(), multiple_voter_info, "More than one voter_info for account" );
+            CORE_ASSERT( 1 == res.rows.size(), multiple_voter_info, "More than one voter_info for account" );
             auto prod_vars = res.rows[0]["producers"].get_array();
             vector<core_net::name> prods;
             for ( auto& x : prod_vars ) {
@@ -1644,7 +1644,7 @@ struct get_transaction_id_subcommand {
             } else {
                std::cerr << "file/string does not represent a transaction" << std::endl;
             }
-         } EOS_RETHROW_EXCEPTIONS(transaction_type_exception, "Fail to parse transaction JSON '${data}'", ("data",trx_to_check))
+         } CORE_RETHROW_EXCEPTIONS(transaction_type_exception, "Fail to parse transaction JSON '${data}'", ("data",trx_to_check))
       });
    }
 };
@@ -1673,7 +1673,7 @@ struct delegate_bandwidth_subcommand {
       delegate_bandwidth->callback([this] {
          asset net = to_asset(stake_net_amount);
          asset cpu = to_asset(stake_cpu_amount);
-         EOS_ASSERT( net.get_symbol() == cpu.get_symbol(), symbol_type_exception, "stake_net_quantity & stake_cpu_quantity asset symbols must match" );
+         CORE_ASSERT( net.get_symbol() == cpu.get_symbol(), symbol_type_exception, "stake_net_quantity & stake_cpu_quantity asset symbols must match" );
          name contract = to_default_contract(cpu);
          fc::variant act_payload = fc::mutable_variant_object()
                   ("from", from_str)
@@ -1686,7 +1686,7 @@ struct delegate_bandwidth_subcommand {
          EOSC_ASSERT( !(buy_ram_amount.size()) || !buy_ram_bytes, "ERROR: --buyram and --buy-ram-bytes cannot be set at the same time" );
          if (buy_ram_amount.size()) {
             asset ram_amount = to_asset(buy_ram_amount);
-            EOS_ASSERT( ram_amount.get_symbol() == cpu.get_symbol(), symbol_type_exception, "stake_net_quantity & stake_cpu_quantity & --buyram asset symbols must match" );
+            CORE_ASSERT( ram_amount.get_symbol() == cpu.get_symbol(), symbol_type_exception, "stake_net_quantity & stake_cpu_quantity & --buyram asset symbols must match" );
             acts.push_back( create_buyram(name(from_str), name(receiver_str), ram_amount) );
          } else if (buy_ram_bytes) {
             acts.push_back( create_buyrambytes(contract, name(from_str), name(receiver_str), buy_ram_bytes) );
@@ -1714,7 +1714,7 @@ struct undelegate_bandwidth_subcommand {
       undelegate_bandwidth->callback([this] {
          asset net = to_asset(unstake_net_amount);
          asset cpu = to_asset(unstake_cpu_amount);
-         EOS_ASSERT( net.get_symbol() == cpu.get_symbol(), symbol_type_exception, "unstake_net_quantity & unstake_cpu_amount asset symbols must match" );
+         CORE_ASSERT( net.get_symbol() == cpu.get_symbol(), symbol_type_exception, "unstake_net_quantity & unstake_cpu_amount asset symbols must match" );
          name contract = to_default_contract(cpu);
 
          fc::variant act_payload = fc::mutable_variant_object()
@@ -2061,7 +2061,7 @@ struct unstaketorex_subcommand {
       unstaketorex->callback([this] {
          asset from_net = to_asset(from_net_str);
          asset from_cpu = to_asset(from_cpu_str);
-         EOS_ASSERT(from_net.symbol_name() == from_cpu.symbol_name(), symbol_type_exception, "from_net & from_cpu asset symbol must match");
+         CORE_ASSERT(from_net.symbol_name() == from_cpu.symbol_name(), symbol_type_exception, "from_net & from_cpu asset symbol must match");
          name contract = to_default_contract(from_cpu);
          fc::variant act_payload = fc::mutable_variant_object()
             ("owner",    owner_str)
@@ -2953,14 +2953,14 @@ int main( int argc, char** argv ) {
          signed_transaction trx;
          try {
             abi_serializer::from_variant( trx_var, trx, abi_serializer_resolver, abi_serializer::create_yield_function( abi_serializer_max_time ) );
-         } EOS_RETHROW_EXCEPTIONS( transaction_type_exception, "Invalid transaction format: '${data}'",
+         } CORE_RETHROW_EXCEPTIONS( transaction_type_exception, "Invalid transaction format: '${data}'",
                                    ("data", fc::json::to_string(trx_var, fc::time_point::maximum())))
          std::cout << fc::json::to_pretty_string( packed_transaction( trx, packed_transaction::compression_type::none )) << std::endl;
       } else {
          try {
             signed_transaction trx = trx_var.as<signed_transaction>();
             std::cout << fc::json::to_pretty_string( fc::variant( packed_transaction( trx, packed_transaction::compression_type::none ))) << std::endl;
-         } EOS_RETHROW_EXCEPTIONS( transaction_type_exception, "Fail to convert transaction, --pack-action-data likely needed" )
+         } CORE_RETHROW_EXCEPTIONS( transaction_type_exception, "Fail to convert transaction, --pack-action-data likely needed" )
       }
    });
 
@@ -2975,7 +2975,7 @@ int main( int argc, char** argv ) {
       packed_transaction packed_trx;
       try {
          fc::from_variant<packed_transaction>( packed_trx_var, packed_trx );
-      } EOS_RETHROW_EXCEPTIONS( transaction_type_exception, "Invalid packed transaction format: '${data}'",
+      } CORE_RETHROW_EXCEPTIONS( transaction_type_exception, "Invalid packed transaction format: '${data}'",
                                 ("data", fc::json::to_string(packed_trx_var, fc::time_point::maximum())))
       signed_transaction strx = packed_trx.get_signed_transaction();
       fc::variant trx_var;
@@ -3000,7 +3000,7 @@ int main( int argc, char** argv ) {
       bytes packed_action_data_string;
       try {
          packed_action_data_string = variant_to_bin(name(unpacked_action_data_account_string), name(unpacked_action_data_name_string), unpacked_action_data_json);
-      } EOS_RETHROW_EXCEPTIONS(transaction_type_exception, "Fail to parse unpacked action data JSON")
+      } CORE_RETHROW_EXCEPTIONS(transaction_type_exception, "Fail to parse unpacked action data JSON")
       std::cout << fc::to_hex(packed_action_data_string.data(), packed_action_data_string.size()) << std::endl;
    });
 
@@ -3013,7 +3013,7 @@ int main( int argc, char** argv ) {
    unpack_action_data->add_option("name", packed_action_data_name_string, localized("The name of the function that's called by this action"))->required();
    unpack_action_data->add_option("packed_action_data", packed_action_data_string, localized("The action data expressed as packed hex string"))->required();
    unpack_action_data->callback([&] {
-      EOS_ASSERT( packed_action_data_string.size() >= 2, transaction_type_exception, "No packed_action_data found" );
+      CORE_ASSERT( packed_action_data_string.size() >= 2, transaction_type_exception, "No packed_action_data found" );
       vector<char> packed_action_data_blob(packed_action_data_string.size()/2);
       fc::from_hex(packed_action_data_string, packed_action_data_blob.data(), packed_action_data_blob.size());
       fc::variant unpacked_action_data_json = bin_to_variant(name(packed_action_data_account_string), name(packed_action_data_name_string), packed_action_data_blob);
@@ -3078,7 +3078,7 @@ int main( int argc, char** argv ) {
    unpack_hex->add_option("--type", type, (localized("Type of the HEX data, if not specified then some common types are attempted")));
    unpack_hex->add_option("--abi-file", abi_file, localized("The abi file that contains --type for unpacking"));
    unpack_hex->callback([&] {
-      EOS_ASSERT( packed_hex.size() >= 2, misc_exception, "No packed HEX data found" );
+      CORE_ASSERT( packed_hex.size() >= 2, misc_exception, "No packed HEX data found" );
       vector<char> packed_blob(packed_hex.size()/2);
       fc::from_hex(packed_hex, packed_blob.data(), packed_blob.size());
       bool success = false;
@@ -3094,7 +3094,7 @@ int main( int argc, char** argv ) {
             success = true;
          } catch (...) {}
       } else {
-         EOS_ASSERT( abi_file.empty(), misc_exception, "--type required if --abi-file specified");
+         CORE_ASSERT( abi_file.empty(), misc_exception, "--type required if --abi-file specified");
          success = try_each_type(try_types{}, [&]<typename Type>(){
             try {
                auto v = fc::raw::unpack<Type>( packed_blob );
@@ -3130,7 +3130,7 @@ int main( int argc, char** argv ) {
       signed_transaction trx;
       try {
         abi_serializer::from_variant( trx_var, trx, abi_serializer_resolver_empty, abi_serializer::create_yield_function( abi_serializer_max_time ) );
-      } EOS_RETHROW_EXCEPTIONS(transaction_type_exception, "Invalid transaction format: '${data}'",
+      } CORE_RETHROW_EXCEPTIONS(transaction_type_exception, "Invalid transaction format: '${data}'",
                                ("data", fc::json::to_string(trx_var, fc::time_point::maximum())))
 
       std::optional<chain_id_type> chain_id;
@@ -3434,7 +3434,7 @@ int main( int argc, char** argv ) {
       public_key_type public_key;
       try {
          public_key = public_key_type(public_key_str);
-      } EOS_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", public_key_str))
+      } CORE_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", public_key_str))
       auto arg = fc::mutable_variant_object( "public_key", public_key);
       std::cout << fc::json::to_pretty_string(call(get_key_accounts_func, arg)) << std::endl;
    });
@@ -3659,7 +3659,7 @@ int main( int argc, char** argv ) {
 
         std::cerr << localized(("Reading WASM from " + wasmPath + "...").c_str()) << std::endl;
         fc::read_file_contents(wasmPath, wasm);
-        EOS_ASSERT( !wasm.empty(), wasm_file_not_found, "no wasm file found ${f}", ("f", wasmPath) );
+        CORE_ASSERT( !wasm.empty(), wasm_file_not_found, "no wasm file found ${f}", ("f", wasmPath) );
 
         const string binary_wasm_header("\x00\x61\x73\x6d\x01\x00\x00\x00", 8);
         if(wasm.compare(0, 8, binary_wasm_header))
@@ -3718,7 +3718,7 @@ int main( int argc, char** argv ) {
            }
         }
 
-        EOS_ASSERT( std::filesystem::exists( abiPath ), abi_file_not_found, "no abi file found ${f}", ("f", abiPath)  );
+        CORE_ASSERT( std::filesystem::exists( abiPath ), abi_file_not_found, "no abi file found ${f}", ("f", abiPath)  );
 
         abi_bytes = fc::raw::pack(fc::json::from_file(abiPath).as<abi_def>());
       } else {
@@ -3732,7 +3732,7 @@ int main( int argc, char** argv ) {
       if (!duplicate) {
          try {
             actions.emplace_back( create_setabi(name(account), abi_bytes) );
-         } EOS_RETHROW_EXCEPTIONS(abi_type_exception,  "Fail to parse ABI JSON")
+         } CORE_RETHROW_EXCEPTIONS(abi_type_exception,  "Fail to parse ABI JSON")
          if ( shouldSend ) {
             std::cerr << localized("Setting ABI...") << std::endl;
             if( tx_compression == tx_compression_type::default_compression )
@@ -3748,7 +3748,7 @@ int main( int argc, char** argv ) {
    add_standard_transaction_options_plus_signing(codeSubcommand, "account@active");
    add_standard_transaction_options_plus_signing(abiSubcommand, "account@active");
    contractSubcommand->callback([&] {
-      if(!contract_clear) EOS_ASSERT( !contractPath.empty(), contract_exception, " contract-dir is null ", ("f", contractPath) );
+      if(!contract_clear) CORE_ASSERT( !contractPath.empty(), contract_exception, " contract-dir is null ", ("f", contractPath) );
       shouldSend = false;
       set_code_callback();
       set_abi_callback();
@@ -3984,7 +3984,7 @@ int main( int argc, char** argv ) {
       try {
          wallet_key = private_key_type( wallet_key_str );
       } catch (...) {
-         EOS_THROW(private_key_type_exception, "Invalid private key")
+         CORE_THROW(private_key_type_exception, "Invalid private key")
       }
       public_key_type pubkey = wallet_key.get_public_key();
 
@@ -4024,7 +4024,7 @@ int main( int argc, char** argv ) {
       try {
          pubkey = public_key_type( wallet_rm_key_str );
       } catch (...) {
-         EOS_THROW(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", wallet_rm_key_str))
+         CORE_THROW(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", wallet_rm_key_str))
       }
       fc::variants vs = {fc::variant(wallet_name), fc::variant(wallet_pw), fc::variant(wallet_rm_key_str)};
       call(wallet_url, wallet_remove_key, vs);
@@ -4108,7 +4108,7 @@ int main( int argc, char** argv ) {
             packed_transaction packed_trx;
             try {
               fc::from_variant<packed_transaction>( trx_var, packed_trx );
-            } EOS_RETHROW_EXCEPTIONS( transaction_type_exception, "Invalid packed transaction format: '${data}'",
+            } CORE_RETHROW_EXCEPTIONS( transaction_type_exception, "Invalid packed transaction format: '${data}'",
                                 ("data", fc::json::to_string(trx_var, fc::time_point::maximum())))
            const signed_transaction& strx = packed_trx.get_signed_transaction();
            trx_var = strx;
@@ -4119,7 +4119,7 @@ int main( int argc, char** argv ) {
       signed_transaction trx;
       try {
         abi_serializer::from_variant( trx_var, trx, abi_serializer_resolver_empty, abi_serializer::create_yield_function( abi_serializer_max_time ) );
-      } EOS_RETHROW_EXCEPTIONS(transaction_type_exception, "Invalid transaction format: '${data}'",
+      } CORE_RETHROW_EXCEPTIONS(transaction_type_exception, "Invalid transaction format: '${data}'",
                                ("data", fc::json::to_string(trx_var, fc::time_point::maximum())))
 
       std::optional<chain_id_type> chain_id;
@@ -4136,7 +4136,7 @@ int main( int argc, char** argv ) {
          public_key_type pub_key;
          try {
             pub_key = public_key_type(str_public_key);
-         } EOS_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", str_public_key))
+         } CORE_RETHROW_EXCEPTIONS(public_key_type_exception, "Invalid public key: ${public_key}", ("public_key", str_public_key))
          fc::variant keys_var(flat_set<public_key_type>{ pub_key });
          sign_transaction(trx, keys_var, *chain_id);
       } else {
@@ -4149,7 +4149,7 @@ int main( int argc, char** argv ) {
          private_key_type priv_key;
          try {
             priv_key = private_key_type(str_private_key);
-         } EOS_RETHROW_EXCEPTIONS(private_key_type_exception, "Invalid private key")
+         } CORE_RETHROW_EXCEPTIONS(private_key_type_exception, "Invalid private key")
          trx.sign(priv_key, *chain_id);
       }
 
@@ -4282,26 +4282,26 @@ int main( int argc, char** argv ) {
       transaction proposed_trx;
       try {
          proposed_trx = trx_var.as<transaction>();
-      } EOS_RETHROW_EXCEPTIONS(transaction_type_exception, "Invalid transaction format: '${data}'",
+      } CORE_RETHROW_EXCEPTIONS(transaction_type_exception, "Invalid transaction format: '${data}'",
                                ("data", fc::json::to_string(trx_var, fc::time_point::maximum())))
       bytes proposed_trx_serialized = variant_to_bin( name(proposed_contract), name(proposed_action), trx_var );
 
       vector<permission_level> reqperm;
       try {
          reqperm = requested_perm_var.as<vector<permission_level>>();
-      } EOS_RETHROW_EXCEPTIONS(transaction_type_exception, "Wrong requested permissions format: '${data}'", ("data",requested_perm_var));
+      } CORE_RETHROW_EXCEPTIONS(transaction_type_exception, "Wrong requested permissions format: '${data}'", ("data",requested_perm_var));
 
       vector<permission_level> trxperm;
       try {
          trxperm = transaction_perm_var.as<vector<permission_level>>();
-      } EOS_RETHROW_EXCEPTIONS(transaction_type_exception, "Wrong transaction permissions format: '${data}'", ("data",transaction_perm_var));
+      } CORE_RETHROW_EXCEPTIONS(transaction_type_exception, "Wrong transaction permissions format: '${data}'", ("data",transaction_perm_var));
 
       auto accountPermissions = get_account_permissions(tx_permission);
       if (accountPermissions.empty()) {
          if (!proposer.empty()) {
             accountPermissions = vector<permission_level>{{name(proposer), config::active_name}};
          } else {
-            EOS_THROW(missing_auth_exception, "Authority is not provided (either by multisig parameter <proposer> or -p)");
+            CORE_THROW(missing_auth_exception, "Authority is not provided (either by multisig parameter <proposer> or -p)");
          }
       }
       if (proposer.empty()) {
@@ -4346,7 +4346,7 @@ int main( int argc, char** argv ) {
          if (!proposer.empty()) {
             accountPermissions = vector<permission_level>{{name(proposer), config::active_name}};
          } else {
-            EOS_THROW(missing_auth_exception, "Authority is not provided (either by multisig parameter <proposer> or -p)");
+            CORE_THROW(missing_auth_exception, "Authority is not provided (either by multisig parameter <proposer> or -p)");
          }
       }
       if (proposer.empty()) {
@@ -4620,7 +4620,7 @@ int main( int argc, char** argv ) {
          if (!canceler.empty()) {
             accountPermissions = vector<permission_level>{{name(canceler), config::active_name}};
          } else {
-            EOS_THROW(missing_auth_exception, "Authority is not provided (either by multisig parameter <canceler> or -p)");
+            CORE_THROW(missing_auth_exception, "Authority is not provided (either by multisig parameter <canceler> or -p)");
          }
       }
       if (canceler.empty()) {
@@ -4648,7 +4648,7 @@ int main( int argc, char** argv ) {
          if (!executer.empty()) {
             accountPermissions = vector<permission_level>{{name(executer), config::active_name}};
          } else {
-            EOS_THROW(missing_auth_exception, "Authority is not provided (either by multisig parameter <executer> or -p)");
+            CORE_THROW(missing_auth_exception, "Authority is not provided (either by multisig parameter <executer> or -p)");
          }
       }
       if (executer.empty()) {

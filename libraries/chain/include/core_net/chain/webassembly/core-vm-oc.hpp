@@ -302,7 +302,7 @@ struct core_vm_oc_type_converter : public core_net::vm::type_converter<webassemb
       -> std::enable_if_t< vm::is_argument_proxy_type_v<T> &&
                            std::is_pointer_v<typename T::proxy_type>, T> {
       if constexpr(T::is_legacy()) {
-         EOS_ASSERT(ptr != 0, wasm_execution_error, "references cannot be created for null pointers");
+         CORE_ASSERT(ptr != 0, wasm_execution_error, "references cannot be created for null pointers");
       }
       void* p = array_ptr_impl<typename T::pointee_type>(ptr, 1);
       return {p};

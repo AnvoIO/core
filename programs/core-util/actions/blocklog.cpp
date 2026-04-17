@@ -221,7 +221,7 @@ bool blocklog_actions::trim_blocklog_front(std::filesystem::path block_dir, uint
 
 void blocklog_actions::extract_block_range(std::filesystem::path block_dir, std::filesystem::path output_dir, uint32_t start, uint32_t last) {
    report_time rt("extracting block range");
-   EOS_ASSERT(last > start, block_log_exception, "extract range end must be greater than start");
+   CORE_ASSERT(last > start, block_log_exception, "extract range end must be greater than start");
    block_log::extract_block_range(block_dir, output_dir, start, last);
    rt.report();
 }
@@ -301,8 +301,8 @@ int blocklog_actions::read_log() {
    if (print_log) {
       block_log   block_logger(opt->blocks_dir, opt->blog_conf);
       end = block_logger.read_head();
-      EOS_ASSERT(end, block_log_exception, "No blocks found in block log");
-      EOS_ASSERT(end->block_num() > 1, block_log_exception, "Only one block found in block log");
+      CORE_ASSERT(end, block_log_exception, "No blocks found in block log");
+      CORE_ASSERT(end->block_num() > 1, block_log_exception, "Only one block found in block log");
 
       ilog("existing block log contains block num ${first} through block num ${n}",
            ("first", block_logger.first_block_num())("n", end->block_num()));
@@ -337,7 +337,7 @@ int blocklog_actions::read_log() {
             ilog("existing reversible fork_db block num ${first} through block num ${last} ",
                  ("first", (*first)->block_num())("last", (*last)->block_num()));
             if (print_log) {
-               EOS_ASSERT(end->block_num() + 1 == (*first)->block_num(), block_log_exception,
+               CORE_ASSERT(end->block_num() + 1 == (*first)->block_num(), block_log_exception,
                           "fork_db does not start at end of block log");
             } else {
                block_num = (*first)->block_num();

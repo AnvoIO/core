@@ -24,7 +24,7 @@ namespace core_net { namespace chain { namespace webassembly {
       auto max_action_return_value_size = 
          context.control.get_global_properties().configuration.max_action_return_value_size;
       if( !context.trx_context.is_read_only() )
-         EOS_ASSERT(packed_blob.size() <= max_action_return_value_size,
+         CORE_ASSERT(packed_blob.size() <= max_action_return_value_size,
                     action_return_value_exception,
                     "action return value size must be less or equal to ${s} bytes", ("s", max_action_return_value_size));
       context.action_return_value.assign( packed_blob.data(), packed_blob.data() + packed_blob.size() );

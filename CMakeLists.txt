@@ -210,36 +210,16 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/core_net.version.in ${CMAKE_CURRENT_B
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/core_net.version.hpp DESTINATION ${CMAKE_INSTALL_FULL_INCLUDEDIR} COMPONENT dev EXCLUDE_FROM_ALL)
 
 set(EOS_ROOT_DIR "${CMAKE_BINARY_DIR}/lib")
-# legacy eosio CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/core_net-config.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioTester.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioCheckVersion.cmake COPYONLY)
-# legacy leap CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/core_net-config.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioTester.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioCheckVersion.cmake COPYONLY)
-# spring CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/core_net-config.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioTester.cmake @ONLY)
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake ${CMAKE_BINARY_DIR}/lib/cmake/core_net/EosioCheckVersion.cmake COPYONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in  ${CMAKE_BINARY_DIR}/lib/cmake/core_net/core_net-config.cmake       @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/CoreNetTesterBuild.cmake.in ${CMAKE_BINARY_DIR}/lib/cmake/core_net/CoreNetTester.cmake       @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/CoreNetCheckVersion.cmake   ${CMAKE_BINARY_DIR}/lib/cmake/core_net/CoreNetCheckVersion.cmake COPYONLY)
 
 set(EOS_ROOT_DIR "${CMAKE_INSTALL_FULL_LIBDIR}")
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/EosioTester.cmake.in ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake @ONLY)
-# legacy eosio CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
-# legacy leap CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
-# spring CMake files
-configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake @ONLY)
-install(FILES ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_BINARY_DIR}/modules/EosioTester.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
-install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/EosioCheckVersion.cmake DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/CoreNetTester.cmake.in  ${CMAKE_BINARY_DIR}/modules/CoreNetTester.cmake     @ONLY)
+configure_file(${CMAKE_SOURCE_DIR}/CMakeModules/core_net-config.cmake.in ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake  @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/modules/core_net-config.cmake            DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
+install(FILES ${CMAKE_BINARY_DIR}/modules/CoreNetTester.cmake              DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
+install(FILES ${CMAKE_SOURCE_DIR}/CMakeModules/CoreNetCheckVersion.cmake   DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}/cmake/core_net COMPONENT dev EXCLUDE_FROM_ALL)
 
 configure_file(LICENSE                                                     licenses/core/LICENSE           COPYONLY)
 configure_file(libraries/softfloat/COPYING.txt                             licenses/core/LICENSE.softfloat COPYONLY)

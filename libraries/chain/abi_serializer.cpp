@@ -133,7 +133,7 @@ namespace core_net::chain {
       // Accept both legacy "eosio::abi/1.x" and current "core_net::abi/1.x" version strings.
       // Legacy format must be supported permanently for backward compatibility with
       // existing deployed contracts and ABI files.
-      EOS_ASSERT(abi.version.starts_with("core_net::abi/1.") || abi.version.starts_with("eosio::abi/1."),
+      CORE_ASSERT(abi.version.starts_with("core_net::abi/1.") || abi.version.starts_with("eosio::abi/1."),
                  unsupported_abi_version_exception, "ABI has an unsupported version");
 
       size_t types_size = abi.types.size();
@@ -156,7 +156,7 @@ namespace core_net::chain {
          structs[st.name] = std::move(st);
 
       for( auto& td : abi.types ) {
-         EOS_ASSERT(!_is_type(td.new_type_name, ctx), duplicate_abi_type_def_exception,
+         CORE_ASSERT(!_is_type(td.new_type_name, ctx), duplicate_abi_type_def_exception,
                     "type already exists", ("new_type_name",impl::limit_size(td.new_type_name)));
          typedefs[std::move(td.new_type_name)] = std::move(td.type);
       }
@@ -180,13 +180,13 @@ namespace core_net::chain {
        *  The ABI vector may contain duplicates which would make it
        *  an invalid ABI
        */
-      EOS_ASSERT( typedefs.size() == types_size, duplicate_abi_type_def_exception, "duplicate type definition detected" );
-      EOS_ASSERT( structs.size() == structs_size, duplicate_abi_struct_def_exception, "duplicate struct definition detected" );
-      EOS_ASSERT( actions.size() == actions_size, duplicate_abi_action_def_exception, "duplicate action definition detected" );
-      EOS_ASSERT( tables.size() == tables_size, duplicate_abi_table_def_exception, "duplicate table definition detected" );
-      EOS_ASSERT( error_messages.size() == error_messages_size, duplicate_abi_err_msg_def_exception, "duplicate error message definition detected" );
-      EOS_ASSERT( variants.size() == variants_size, duplicate_abi_variant_def_exception, "duplicate variant definition detected" );
-      EOS_ASSERT( action_results.size() == action_results_size, duplicate_abi_action_results_def_exception, "duplicate action results definition detected" );
+      CORE_ASSERT( typedefs.size() == types_size, duplicate_abi_type_def_exception, "duplicate type definition detected" );
+      CORE_ASSERT( structs.size() == structs_size, duplicate_abi_struct_def_exception, "duplicate struct definition detected" );
+      CORE_ASSERT( actions.size() == actions_size, duplicate_abi_action_def_exception, "duplicate action definition detected" );
+      CORE_ASSERT( tables.size() == tables_size, duplicate_abi_table_def_exception, "duplicate table definition detected" );
+      CORE_ASSERT( error_messages.size() == error_messages_size, duplicate_abi_err_msg_def_exception, "duplicate error message definition detected" );
+      CORE_ASSERT( variants.size() == variants_size, duplicate_abi_variant_def_exception, "duplicate variant definition detected" );
+      CORE_ASSERT( action_results.size() == action_results_size, duplicate_abi_action_results_def_exception, "duplicate action results definition detected" );
 
       validate(ctx);
    }
@@ -204,7 +204,7 @@ namespace core_net::chain {
    }
 
    int abi_serializer::get_integer_size(const std::string_view& type) const {
-      EOS_ASSERT( is_integer(type), invalid_type_inside_abi, "${type} is not an integer type",
+      CORE_ASSERT( is_integer(type), invalid_type_inside_abi, "${type} is not an integer type",
                   ("type",impl::limit_size(type)));
       if( type.starts_with("uint") ) {
          return boost::lexical_cast<int>(type.substr(4));
@@ -236,7 +236,7 @@ namespace core_net::chain {
             return {};
          auto prev = sz.value;
          sz = 10 * sz +  (type[pos] - '0');
-         EOS_ASSERT( sz.value >= prev, abi_serialization_deadline_exception,
+         CORE_ASSERT( sz.value >= prev, abi_serialization_deadline_exception,
                      "integer overflow parsing fixed-size array type" );
          ++pos;
       }
@@ -287,7 +287,7 @@ namespace core_net::chain {
 
    const struct_def& abi_serializer::get_struct(const std::string_view& type)const {
       auto itr = structs.find(resolve_type(type) );
-      EOS_ASSERT( itr != structs.end(), invalid_type_inside_abi, "Unknown struct ${type}", ("type",impl::limit_size(type)) );
+      CORE_ASSERT( itr != structs.end(), invalid_type_inside_abi, "Unknown struct ${type}", ("type",impl::limit_size(type)) );
       return itr->second;
    }
 
@@ -297,14 +297,14 @@ namespace core_net::chain {
          auto itr = typedefs.find(t.second);
          while( itr != typedefs.end() ) {
             ctx.check_deadline();
-            EOS_ASSERT( find(types_seen.begin(), types_seen.end(), itr->second) == types_seen.end(), abi_circular_def_exception,
+            CORE_ASSERT( find(types_seen.begin(), types_seen.end(), itr->second) == types_seen.end(), abi_circular_def_exception,
                         "Circular reference in type ${type}", ("type", impl::limit_size(t.first)) );
             types_seen.emplace_back(itr->second);
             itr = typedefs.find(itr->second);
          }
       } FC_CAPTURE_AND_RETHROW( (t) ) }
       for( const auto& t : typedefs ) { try {
-         EOS_ASSERT(_is_type(t.second, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(t.second)) );
+         CORE_ASSERT(_is_type(t.second, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(t.second)) );
       } FC_CAPTURE_AND_RETHROW( (t) ) }
       for( const auto& s : structs ) { try {
          if( s.second.base != type_name() ) {
@@ -313,7 +313,7 @@ namespace core_net::chain {
             while( current->base != type_name() ) {
                ctx.check_deadline();
                const struct_def& base = get_struct(current->base); //<-- force struct to inherit from another struct
-               EOS_ASSERT( find(types_seen.begin(), types_seen.end(), base.name) == types_seen.end(), abi_circular_def_exception,
+               CORE_ASSERT( find(types_seen.begin(), types_seen.end(), base.name) == types_seen.end(), abi_circular_def_exception,
                            "Circular reference in struct ${type}", ("type",impl::limit_size(s.second.name)) );
                types_seen.emplace_back(base.name);
                current = &base;
@@ -321,29 +321,29 @@ namespace core_net::chain {
          }
          for( const auto& field : s.second.fields ) { try {
             ctx.check_deadline();
-            EOS_ASSERT(_is_type(_remove_bin_extension(field.type), ctx), invalid_type_inside_abi,
+            CORE_ASSERT(_is_type(_remove_bin_extension(field.type), ctx), invalid_type_inside_abi,
                        "${type}", ("type",impl::limit_size(field.type)) );
          } FC_CAPTURE_AND_RETHROW( (field) ) }
       } FC_CAPTURE_AND_RETHROW( (s) ) }
       for( const auto& s : variants ) { try {
          for( const auto& type : s.second.types ) { try {
             ctx.check_deadline();
-            EOS_ASSERT(_is_type(type, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(type)) );
+            CORE_ASSERT(_is_type(type, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(type)) );
          } FC_CAPTURE_AND_RETHROW( (type) ) }
       } FC_CAPTURE_AND_RETHROW( (s) ) }
       for( const auto& a : actions ) { try {
         ctx.check_deadline();
-        EOS_ASSERT(_is_type(a.second, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(a.second)) );
+        CORE_ASSERT(_is_type(a.second, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(a.second)) );
       } FC_CAPTURE_AND_RETHROW( (a)  ) }
 
       for( const auto& t : tables ) { try {
         ctx.check_deadline();
-        EOS_ASSERT(_is_type(t.second, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(t.second)) );
+        CORE_ASSERT(_is_type(t.second, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(t.second)) );
       } FC_CAPTURE_AND_RETHROW( (t)  ) }
 
       for( const auto& r : action_results ) { try {
         ctx.check_deadline();
-        EOS_ASSERT(_is_type(r.second, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(r.second)) );
+        CORE_ASSERT(_is_type(r.second, ctx), invalid_type_inside_abi, "${type}", ("type",impl::limit_size(r.second)) );
       } FC_CAPTURE_AND_RETHROW( (r)  ) }
    }
 
@@ -364,7 +364,7 @@ namespace core_net::chain {
    {
       auto h = ctx.enter_scope();
       auto s_itr = structs.find(type);
-      EOS_ASSERT( s_itr != structs.end(), invalid_type_inside_abi, "Unknown type ${type}", ("type",ctx.maybe_shorten(type)) );
+      CORE_ASSERT( s_itr != structs.end(), invalid_type_inside_abi, "Unknown type ${type}", ("type",ctx.maybe_shorten(type)) );
       ctx.hint_struct_type_if_in_array( s_itr );
       const auto& st = s_itr->second;
       if( st.base != type_name() ) {
@@ -380,10 +380,10 @@ namespace core_net::chain {
                continue;
             }
             if( encountered_extension ) {
-               EOS_THROW( abi_exception, "Encountered field '${f}' without binary extension designation while processing struct '${p}'",
+               CORE_THROW( abi_exception, "Encountered field '${f}' without binary extension designation while processing struct '${p}'",
                           ("f", ctx.maybe_shorten(field.name))("p", ctx.get_path_string()) );
             }
-            EOS_THROW( unpack_exception, "Stream unexpectedly ended; unable to unpack field '${f}' of struct '${p}'",
+            CORE_THROW( unpack_exception, "Stream unexpectedly ended; unable to unpack field '${f}' of struct '${p}'",
                        ("f", ctx.maybe_shorten(field.name))("p", ctx.get_path_string()) );
 
          }
@@ -415,7 +415,7 @@ namespace core_net::chain {
       auto fixed_array_sz = is_szarray(rtype);
 
       auto read_array = [&](fc::unsigned_int::base_uint sz) {
-         EOS_ASSERT( sz <= max_array_size, unpack_exception,
+         CORE_ASSERT( sz <= max_array_size, unpack_exception,
                      "ABI array size ${s} exceeds maximum ${m} while processing '${p}'",
                      ("s", sz)("m", max_array_size)("p", ctx.get_path_string()) );
          ctx.hint_array_type_if_in_array();
@@ -426,7 +426,7 @@ namespace core_net::chain {
             ctx.set_array_index_of_path_back(i);
             auto v = _binary_to_variant(ftype, stream, ctx);
             if( !is_optional(resolve_type(ftype)) )
-               EOS_ASSERT( !v.is_null(), unpack_exception, "Invalid packed array element '${p}'", ("p", ctx.get_path_string()) );
+               CORE_ASSERT( !v.is_null(), unpack_exception, "Invalid packed array element '${p}'", ("p", ctx.get_path_string()) );
             vars.emplace_back(std::move(v));
          }
          return fc::variant(std::move(vars));
@@ -437,7 +437,7 @@ namespace core_net::chain {
       } else if( auto btype = built_in_types.find(ftype ); btype != built_in_types.end() ) {
          try {
             return btype->second.first(stream, is_array(rtype), is_optional(rtype), ctx.get_yield_function());
-         } EOS_RETHROW_EXCEPTIONS( unpack_exception, "Unable to unpack ${class} type '${type}' while processing '${p}'",
+         } CORE_RETHROW_EXCEPTIONS( unpack_exception, "Unable to unpack ${class} type '${type}' while processing '${p}'",
                                    ("class", is_array(rtype) ? "array of built-in" : is_optional(rtype) ? "optional of built-in" : "built-in")
                                    ("type", impl::limit_size(ftype))("p", ctx.get_path_string()) )
       }
@@ -445,13 +445,13 @@ namespace core_net::chain {
          fc::unsigned_int size;
          try {
             fc::raw::unpack(stream, size);
-         } EOS_RETHROW_EXCEPTIONS( unpack_exception, "Unable to unpack size of array '${p}'", ("p", ctx.get_path_string()) )
+         } CORE_RETHROW_EXCEPTIONS( unpack_exception, "Unable to unpack size of array '${p}'", ("p", ctx.get_path_string()) )
          return read_array(size.value);
       } else if ( is_optional(rtype) ) {
          char flag;
          try {
             fc::raw::unpack(stream, flag);
-         } EOS_RETHROW_EXCEPTIONS( unpack_exception, "Unable to unpack presence flag of optional '${p}'", ("p", ctx.get_path_string()) )
+         } CORE_RETHROW_EXCEPTIONS( unpack_exception, "Unable to unpack presence flag of optional '${p}'", ("p", ctx.get_path_string()) )
          return flag ? _binary_to_variant(ftype, stream, ctx) : fc::variant();
       } else {
          auto v_itr = variants.find(rtype);
@@ -460,8 +460,8 @@ namespace core_net::chain {
             fc::unsigned_int select;
             try {
                fc::raw::unpack(stream, select);
-            } EOS_RETHROW_EXCEPTIONS( unpack_exception, "Unable to unpack tag of variant '${p}'", ("p", ctx.get_path_string()) )
-            EOS_ASSERT( (size_t)select < v_itr->second.types.size(), unpack_exception,
+            } CORE_RETHROW_EXCEPTIONS( unpack_exception, "Unable to unpack tag of variant '${p}'", ("p", ctx.get_path_string()) )
+            CORE_ASSERT( (size_t)select < v_itr->second.types.size(), unpack_exception,
                         "Unpacked invalid tag (${select}) for variant '${p}'", ("select", select.value)("p",ctx.get_path_string()) );
             auto h1 = ctx.push_to_path( impl::variant_path_item{ .variant_itr = v_itr, .variant_ordinal = static_cast<uint32_t>(select) } );
             return fc::variants{v_itr->second.types[select], _binary_to_variant(v_itr->second.types[select], stream, ctx)};
@@ -471,7 +471,7 @@ namespace core_net::chain {
       fc::mutable_variant_object mvo;
       _binary_to_variant(rtype, stream, mvo, ctx);
       // QUESTION: Is this assert actually desired? It disallows unpacking empty structs from datastream.
-      EOS_ASSERT( mvo.size() > 0, unpack_exception, "Unable to unpack '${p}' from stream", ("p", ctx.get_path_string()) );
+      CORE_ASSERT( mvo.size() > 0, unpack_exception, "Unable to unpack '${p}' from stream", ("p", ctx.get_path_string()) );
       return fc::variant( std::move(mvo) );
    }
 
@@ -530,7 +530,7 @@ namespace core_net::chain {
          size_t sz = *fixed_array_sz;
          ctx.hint_array_type_if_in_array();
          const vector<fc::variant>& vars = var.get_array();
-         EOS_ASSERT( vars.size() == sz, pack_exception,
+         CORE_ASSERT( vars.size() == sz, pack_exception,
                      "Incorrect number of values provided (${a}) for fixed-size (${b}) array type", ("a", sz)("b", vars.size()));
          pack_array(vars);
       } else if( auto btype = built_in_types.find(fundamental_type(rtype)); btype != built_in_types.end() ) {
@@ -549,13 +549,13 @@ namespace core_net::chain {
       } else if( (v_itr = variants.find(rtype)) != variants.end() ) {
          ctx.hint_variant_type_if_in_array( v_itr );
          auto& v = v_itr->second;
-         EOS_ASSERT( var.is_array() && var.size() == 2, pack_exception,
+         CORE_ASSERT( var.is_array() && var.size() == 2, pack_exception,
                     "Expected input to be an array of two items while processing variant '${p}'", ("p", ctx.get_path_string()) );
-         EOS_ASSERT( var[size_t(0)].is_string(), pack_exception,
+         CORE_ASSERT( var[size_t(0)].is_string(), pack_exception,
                     "Encountered non-string as first item of input array while processing variant '${p}'", ("p", ctx.get_path_string()) );
          auto variant_type_str = var[size_t(0)].get_string();
          auto it = find(v.types.begin(), v.types.end(), variant_type_str);
-         EOS_ASSERT( it != v.types.end(), pack_exception,
+         CORE_ASSERT( it != v.types.end(), pack_exception,
                      "Specified type '${t}' in input array is not valid within the variant '${p}'",
                      ("t", ctx.maybe_shorten(variant_type_str))("p", ctx.get_path_string()) );
          fc::raw::pack(ds, fc::unsigned_int(it - v.types.begin()));
@@ -578,7 +578,7 @@ namespace core_net::chain {
                bool present = vo.contains(string(field.name).c_str());
                if( present || is_optional(field.type) ) {
                   if( disallow_additional_fields )
-                     EOS_THROW( pack_exception, "Unexpected field '${f}' found in input object while processing struct '${p}'",
+                     CORE_THROW( pack_exception, "Unexpected field '${f}' found in input object while processing struct '${p}'",
                                 ("f", ctx.maybe_shorten(field.name))("p", ctx.get_path_string()) );
                   {
                      auto h1 = ctx.push_to_path( impl::field_path_item{ .parent_struct_itr = s_itr, .field_ordinal = i } );
@@ -588,16 +588,16 @@ namespace core_net::chain {
                } else if( field.type.ends_with("$") && ctx.extensions_allowed() ) {
                   disallow_additional_fields = true;
                } else if( disallow_additional_fields ) {
-                  EOS_THROW( abi_exception, "Encountered field '${f}' without binary extension designation while processing struct '${p}'",
+                  CORE_THROW( abi_exception, "Encountered field '${f}' without binary extension designation while processing struct '${p}'",
                              ("f", ctx.maybe_shorten(field.name))("p", ctx.get_path_string()) );
                } else {
-                  EOS_THROW( pack_exception, "Missing field '${f}' in input object while processing struct '${p}'",
+                  CORE_THROW( pack_exception, "Missing field '${f}' in input object while processing struct '${p}'",
                              ("f", ctx.maybe_shorten(field.name))("p", ctx.get_path_string()) );
                }
             }
          } else if( var.is_array() ) {
             const auto& va = var.get_array();
-            EOS_ASSERT( st.base == type_name(), invalid_type_inside_abi,
+            CORE_ASSERT( st.base == type_name(), invalid_type_inside_abi,
                         "Using input array to specify the fields of the derived struct '${p}'; input arrays are currently only allowed for structs without a base",
                         ("p",ctx.get_path_string()) );
             for( uint32_t i = 0; i < st.fields.size(); ++i ) {
@@ -609,15 +609,15 @@ namespace core_net::chain {
                } else if( field.type.ends_with("$") && ctx.extensions_allowed() ) {
                   break;
                } else {
-                  EOS_THROW( pack_exception, "Early end to input array specifying the fields of struct '${p}'; require input for field '${f}'",
+                  CORE_THROW( pack_exception, "Early end to input array specifying the fields of struct '${p}'; require input for field '${f}'",
                              ("p", ctx.get_path_string())("f", ctx.maybe_shorten(field.name)) );
                }
             }
          } else {
-            EOS_THROW( pack_exception, "Unexpected input encountered while processing struct '${p}'", ("p",ctx.get_path_string()) );
+            CORE_THROW( pack_exception, "Unexpected input encountered while processing struct '${p}'", ("p",ctx.get_path_string()) );
          }
       } else {
-         EOS_THROW( invalid_type_inside_abi, "Unknown type ${type}", ("type",ctx.maybe_shorten(type)) );
+         CORE_THROW( invalid_type_inside_abi, "Unknown type ${type}", ("type",ctx.maybe_shorten(type)) );
       }
    } FC_CAPTURE_AND_RETHROW() }
 
@@ -722,7 +722,7 @@ namespace core_net::chain {
 
       fc::scoped_exit<std::function<void()>> abi_traverse_context_with_path::push_to_path( const path_item& item ) {
          std::function<void()> callback = [this](){
-            EOS_ASSERT( path.size() > 0, abi_exception,
+            CORE_ASSERT( path.size() > 0, abi_exception,
                         "invariant failure in variant_to_binary_context: path is empty on scope exit" );
             path.pop_back();
          };
@@ -733,11 +733,11 @@ namespace core_net::chain {
       }
 
       void abi_traverse_context_with_path::set_array_index_of_path_back( uint32_t i ) {
-         EOS_ASSERT( path.size() > 0, abi_exception, "path is empty" );
+         CORE_ASSERT( path.size() > 0, abi_exception, "path is empty" );
 
          auto& b = path.back();
 
-         EOS_ASSERT( std::holds_alternative<array_index_path_item>(b), abi_exception, "trying to set array index without first pushing new array index item" );
+         CORE_ASSERT( std::holds_alternative<array_index_path_item>(b), abi_exception, "trying to set array index without first pushing new array index item" );
 
          std::get<array_index_path_item>(b).array_index = i;
       }

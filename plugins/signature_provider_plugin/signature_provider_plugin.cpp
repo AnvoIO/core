@@ -13,26 +13,26 @@ namespace core_net {
 
 static std::string read_key_from_file(const std::string& file_path) {
    std::filesystem::path key_file(file_path);
-   EOS_ASSERT(std::filesystem::exists(key_file), chain::plugin_config_exception,
+   CORE_ASSERT(std::filesystem::exists(key_file), chain::plugin_config_exception,
               "Signature provider key file does not exist: ${f}", ("f", file_path));
-   EOS_ASSERT(std::filesystem::is_regular_file(key_file), chain::plugin_config_exception,
+   CORE_ASSERT(std::filesystem::is_regular_file(key_file), chain::plugin_config_exception,
               "Signature provider key file is not a regular file: ${f}", ("f", file_path));
 
    struct stat st;
-   EOS_ASSERT(::stat(file_path.c_str(), &st) == 0, chain::plugin_config_exception,
+   CORE_ASSERT(::stat(file_path.c_str(), &st) == 0, chain::plugin_config_exception,
               "Cannot stat signature provider key file: ${f}", ("f", file_path));
-   EOS_ASSERT((st.st_mode & (S_IRWXG | S_IRWXO)) == 0, chain::plugin_config_exception,
+   CORE_ASSERT((st.st_mode & (S_IRWXG | S_IRWXO)) == 0, chain::plugin_config_exception,
               "Signature provider key file ${f} has insecure permissions ${p} — must not be accessible by group or others",
               ("f", file_path)("p", st.st_mode & 0777));
 
    std::ifstream ifs(key_file);
-   EOS_ASSERT(ifs.is_open(), chain::plugin_config_exception,
+   CORE_ASSERT(ifs.is_open(), chain::plugin_config_exception,
               "Cannot open signature provider key file: ${f}", ("f", file_path));
    std::string key_str;
    std::getline(ifs, key_str);
    while(!key_str.empty() && (key_str.back() == '\n' || key_str.back() == '\r' || key_str.back() == ' '))
       key_str.pop_back();
-   EOS_ASSERT(!key_str.empty(), chain::plugin_config_exception,
+   CORE_ASSERT(!key_str.empty(), chain::plugin_config_exception,
               "Signature provider key file is empty: ${f}", ("f", file_path));
    return key_str;
 }
@@ -79,30 +79,30 @@ class signature_provider_plugin_impl {
                  "Consider using FILE:<path> or CORE_WALLET:<url> for production nodes.", ("pub", pubkey));
             try {
                chain::private_key_type priv(spec_data);
-               EOS_ASSERT(pubkey == priv.get_public_key(), chain::plugin_config_exception, "Private key does not match given public key for ${pub}", ("pub", pubkey));
+               CORE_ASSERT(pubkey == priv.get_public_key(), chain::plugin_config_exception, "Private key does not match given public key for ${pub}", ("pub", pubkey));
                return std::make_pair(pubkey, make_key_signature_provider(priv));
             } catch( const fc::exception& ) {
-               EOS_THROW(chain::plugin_config_exception, "Invalid private key for public key ${pub}", ("pub", pubkey));
+               CORE_THROW(chain::plugin_config_exception, "Invalid private key for public key ${pub}", ("pub", pubkey));
             } catch( const std::exception& ) {
-               EOS_THROW(chain::plugin_config_exception, "Invalid private key for public key ${pub}", ("pub", pubkey));
+               CORE_THROW(chain::plugin_config_exception, "Invalid private key for public key ${pub}", ("pub", pubkey));
             }
          }
          else if(spec_type_str == "FILE") {
             auto key_str = read_key_from_file(spec_data);
             try {
                chain::private_key_type priv(key_str);
-               EOS_ASSERT(pubkey == priv.get_public_key(), chain::plugin_config_exception,
+               CORE_ASSERT(pubkey == priv.get_public_key(), chain::plugin_config_exception,
                           "Private key in file ${f} does not match given public key ${pub}", ("f", spec_data)("pub", pubkey));
                return std::make_pair(pubkey, make_key_signature_provider(priv));
             } catch( const fc::exception& ) {
-               EOS_THROW(chain::plugin_config_exception, "Invalid private key in file ${f} for public key ${pub}", ("f", spec_data)("pub", pubkey));
+               CORE_THROW(chain::plugin_config_exception, "Invalid private key in file ${f} for public key ${pub}", ("f", spec_data)("pub", pubkey));
             } catch( const std::exception& ) {
-               EOS_THROW(chain::plugin_config_exception, "Invalid private key in file ${f} for public key ${pub}", ("f", spec_data)("pub", pubkey));
+               CORE_THROW(chain::plugin_config_exception, "Invalid private key in file ${f} for public key ${pub}", ("f", spec_data)("pub", pubkey));
             }
          }
          else if(spec_type_str == "CORE_WALLET" || spec_type_str == "KEOSD")
             return std::make_pair(pubkey, make_core_wallet_signature_provider(spec_data, pubkey));
-         EOS_THROW(chain::plugin_config_exception, "Unsupported key provider type \"${t}\"", ("t", spec_type_str));
+         CORE_THROW(chain::plugin_config_exception, "Unsupported key provider type \"${t}\"", ("t", spec_type_str));
       }
 };
 
@@ -167,17 +167,17 @@ signature_provider_plugin::bls_public_key_for_specification(const std::string& s
 //         public_key   spec_type    spec_data
 std::tuple<std::string, std::string, std::string> signature_provider_plugin::parse_signature_provider_spec(const std::string& spec) {
    auto delim = spec.find("=");
-   EOS_ASSERT(delim != std::string::npos, chain::plugin_config_exception, "Missing \"=\" in the key spec pair");
+   CORE_ASSERT(delim != std::string::npos, chain::plugin_config_exception, "Missing \"=\" in the key spec pair");
    // public_key can be base64 encoded with trailing `=`
    // e.g. --signature-provider PUB_BLS_Fmgk<snip>iuA===KEY:PVT_BLS_NZhJ<snip>ZHFu
    while( spec.size() > delim+1 && spec[delim+1] == '=' )
       ++delim;
-   EOS_ASSERT(delim < spec.size() + 1, chain::plugin_config_exception, "Missing spec data in the key spec pair");
+   CORE_ASSERT(delim < spec.size() + 1, chain::plugin_config_exception, "Missing spec data in the key spec pair");
    auto pub_key_str = spec.substr(0, delim);
    auto spec_str = spec.substr(delim + 1);
 
    auto spec_delim = spec_str.find(":");
-   EOS_ASSERT(spec_delim != std::string::npos, chain::plugin_config_exception, "Missing \":\" in the key spec pair");
+   CORE_ASSERT(spec_delim != std::string::npos, chain::plugin_config_exception, "Missing \":\" in the key spec pair");
    auto spec_type_str = spec_str.substr(0, spec_delim);
    auto spec_data = spec_str.substr(spec_delim + 1);
    return {std::move(pub_key_str), std::move(spec_type_str), std::move(spec_data)};

@@ -67,9 +67,9 @@ void snapshot_scheduler::on_irreversible_block(const signed_block_ptr& lib, cons
 snapshot_scheduler::snapshot_schedule_result snapshot_scheduler::schedule_snapshot(const snapshot_request_information& sri) {
    auto& snapshot_by_value = _snapshot_requests.get<by_snapshot_value>();
    auto existing = snapshot_by_value.find(std::make_tuple(sri.block_spacing, sri.start_block_num, sri.end_block_num));
-   EOS_ASSERT(existing == snapshot_by_value.end(), chain::duplicate_snapshot_request, "Duplicate snapshot request");
-   EOS_ASSERT(sri.start_block_num <= sri.end_block_num, chain::invalid_snapshot_request, "End block number should be greater or equal to start block number");
-   EOS_ASSERT(sri.start_block_num + sri.block_spacing <= sri.end_block_num, chain::invalid_snapshot_request, "Block spacing exceeds defined by start and end range");
+   CORE_ASSERT(existing == snapshot_by_value.end(), chain::duplicate_snapshot_request, "Duplicate snapshot request");
+   CORE_ASSERT(sri.start_block_num <= sri.end_block_num, chain::invalid_snapshot_request, "End block number should be greater or equal to start block number");
+   CORE_ASSERT(sri.start_block_num + sri.block_spacing <= sri.end_block_num, chain::invalid_snapshot_request, "Block spacing exceeds defined by start and end range");
 
    _snapshot_requests.emplace(snapshot_schedule_information{{_snapshot_id++}, {sri.block_spacing, sri.start_block_num, sri.end_block_num, sri.snapshot_description}, {}});
    x_serialize();
@@ -81,7 +81,7 @@ snapshot_scheduler::snapshot_schedule_result snapshot_scheduler::schedule_snapsh
 snapshot_scheduler::snapshot_schedule_result snapshot_scheduler::unschedule_snapshot(uint32_t sri) {
    auto& snapshot_by_id = _snapshot_requests.get<by_snapshot_id>();
    auto existing = snapshot_by_id.find(sri);
-   EOS_ASSERT(existing != snapshot_by_id.end(), chain::snapshot_request_not_found, "Snapshot request not found");
+   CORE_ASSERT(existing != snapshot_by_id.end(), chain::snapshot_request_not_found, "Snapshot request not found");
 
    snapshot_schedule_result result{{existing->snapshot_request_id}, {existing->block_spacing, existing->start_block_num, existing->end_block_num, existing->snapshot_description}};
    _snapshot_requests.erase(existing);
@@ -185,7 +185,7 @@ void snapshot_scheduler::create_snapshot(next_function<snapshot_information> nex
          write_snapshot(temp_path);
          std::error_code ec;
          fs::rename(temp_path, snapshot_path, ec);
-         EOS_ASSERT(!ec, snapshot_finalization_exception,
+         CORE_ASSERT(!ec, snapshot_finalization_exception,
                     "Unable to finalize valid snapshot of block number ${bn}: [code: ${ec}] ${message}",
                     ("bn", head_block_num)("ec", ec.value())("message", ec.message()));
 
@@ -218,7 +218,7 @@ void snapshot_scheduler::create_snapshot(next_function<snapshot_information> nex
 
          std::error_code ec;
          fs::rename(temp_path, pending_path, ec);
-         EOS_ASSERT(!ec, snapshot_finalization_exception,
+         CORE_ASSERT(!ec, snapshot_finalization_exception,
                     "Unable to promote temp snapshot ${t} to pending ${p} for block number ${bn}: [code: ${ec}] ${message}",
                     ("t", temp_path.generic_string())("p", pending_path.generic_string())
                     ("bn", head_block_num)("ec", ec.value())("message", ec.message()));

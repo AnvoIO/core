@@ -54,7 +54,7 @@ inline node_key_t load_or_generate_node_key(const std::filesystem::path& key_fil
    if (std::filesystem::exists(key_file)) {
       // Load existing key
       std::ifstream ifs(key_file);
-      EOS_ASSERT(ifs.good(), chain::plugin_config_exception,
+      CORE_ASSERT(ifs.good(), chain::plugin_config_exception,
                  "Unable to read node key file: ${f}", ("f", key_file.string()));
 
       std::string wif;
@@ -65,7 +65,7 @@ inline node_key_t load_or_generate_node_key(const std::filesystem::path& key_fil
       while (!wif.empty() && (wif.back() == '\n' || wif.back() == '\r' || wif.back() == ' '))
          wif.pop_back();
 
-      EOS_ASSERT(!wif.empty(), chain::plugin_config_exception,
+      CORE_ASSERT(!wif.empty(), chain::plugin_config_exception,
                  "Node key file is empty: ${f}", ("f", key_file.string()));
 
       result.private_key = fc::crypto::private_key(wif);
@@ -91,11 +91,11 @@ inline node_key_t load_or_generate_node_key(const std::filesystem::path& key_fil
 
       {
          std::ofstream ofs(tmp_file, std::ios::trunc);
-         EOS_ASSERT(ofs.good(), chain::plugin_config_exception,
+         CORE_ASSERT(ofs.good(), chain::plugin_config_exception,
                     "Unable to write node key file: ${f}", ("f", tmp_file.string()));
          ofs << result.private_key.to_string(fc::yield_function_t()) << "\n";
          ofs.close();
-         EOS_ASSERT(!ofs.fail(), chain::plugin_config_exception,
+         CORE_ASSERT(!ofs.fail(), chain::plugin_config_exception,
                     "Failed to flush node key file: ${f}", ("f", tmp_file.string()));
       }
 
@@ -187,7 +187,7 @@ derive_session_key(const std::array<uint8_t, x25519_key_len>& shared_secret,
                   shared_secret.data(), shared_secret.size(),
                   nullptr, 0,           // no salt
                   info.data(), info.size());
-   EOS_ASSERT(rc == 1, chain::plugin_exception, "HKDF session key derivation failed");
+   CORE_ASSERT(rc == 1, chain::plugin_exception, "HKDF session key derivation failed");
 
    return key;
 }

@@ -220,7 +220,7 @@ struct completed_block {
    }
 
    const block_signing_authority& pending_block_signing_authority() const {
-      EOS_THROW( misc_exception, "pending_block_signing_authority called on completed_block" );
+      CORE_THROW( misc_exception, "pending_block_signing_authority called on completed_block" );
    }
 };
 
@@ -273,7 +273,7 @@ struct assembled_block {
       // Calling is_protocol_feature_activated during the assembled_block stage is not efficient.
       // We should avoid doing it.
       // In fact for now it isn't even implemented.
-      EOS_THROW( misc_exception,
+      CORE_THROW( misc_exception,
                  "checking if protocol feature is activated in the assembled_block stage is not yet supported" );
    }
 
@@ -470,7 +470,7 @@ struct building_block {
                                  for (const auto& pa : pas.producers)
                                     if (pa.producer_name == input.producer)
                                        return pa.authority;
-                                 EOS_THROW( misc_exception,
+                                 CORE_THROW( misc_exception,
                                             "producer ${p} not found in proposer schedule", ("p", input.producer) );
                               }()}
          , prev_activated_protocol_features(parent.activated_protocol_features)
@@ -676,7 +676,7 @@ struct building_block {
 
          for( auto it = branch.begin(); it != branch.end(); ++it ) {
             if( auto qc = (*it)->get_best_qc(); qc ) {
-               EOS_ASSERT( qc->block_num <= block_header::num_from_id(parent.id()), block_validate_exception,
+               CORE_ASSERT( qc->block_num <= block_header::num_from_id(parent.id()), block_validate_exception,
                            "most recent ancestor QC block number (${a}) cannot be greater than parent's block number (${p})",
                            ("a", qc->block_num)("p", block_header::num_from_id(parent.id())) );
                auto qc_claim = qc->to_qc_claim();
@@ -1165,12 +1165,12 @@ struct controller_impl {
       typename ForkDB::bsp_t prev = fork_db.get_block( chain_head.previous() );
 
       if( !prev ) {
-         EOS_ASSERT( fork_db.root()->id() == chain_head.previous(), block_validate_exception,
+         CORE_ASSERT( fork_db.root()->id() == chain_head.previous(), block_validate_exception,
                      "attempt to pop beyond last irreversible block" );
          prev = fork_db.root();
       }
 
-      EOS_ASSERT( chain_head.block(), block_validate_exception,
+      CORE_ASSERT( chain_head.block(), block_validate_exception,
                   "attempting to pop a block that was sparsely loaded from a snapshot");
       chain_head = block_handle{prev};
 
@@ -1262,7 +1262,7 @@ struct controller_impl {
    template<builtin_protocol_feature_t F>
    inline void set_activation_handler() {
       auto res = protocol_feature_activation_handlers.emplace( F, &controller_impl::on_activation<F> );
-      EOS_ASSERT( res.second, misc_exception, "attempting to set activation handler twice" );
+      CORE_ASSERT( res.second, misc_exception, "attempting to set activation handler twice" );
    }
 
    inline void trigger_activation_handler( builtin_protocol_feature_t f ) {
@@ -1555,7 +1555,7 @@ struct controller_impl {
    }
 
    controller::apply_blocks_result_t log_irreversible() {
-      EOS_ASSERT( fork_db_has_root(), fork_database_exception, "fork database not properly initialized" );
+      CORE_ASSERT( fork_db_has_root(), fork_database_exception, "fork database not properly initialized" );
 
       const std::optional<block_id_type> log_head_id = blog.head_id();
       const bool valid_log_head = !!log_head_id;
@@ -1565,10 +1565,10 @@ struct controller_impl {
       auto root_id = fork_db_root_block_id();
 
       if( valid_log_head ) {
-         EOS_ASSERT( root_id == log_head_id, fork_database_exception,
+         CORE_ASSERT( root_id == log_head_id, fork_database_exception,
                      "fork database root ${rid} does not match block log head ${hid}", ("rid", root_id)("hid", log_head_id) );
       } else {
-         EOS_ASSERT( fork_db_root_block_num() == lib_num, fork_database_exception,
+         CORE_ASSERT( fork_db_root_block_num() == lib_num, fork_database_exception,
                      "The first block ${lib_num} when starting with an empty block log should be the block after fork database root ${bn}.",
                      ("lib_num", lib_num)("bn", fork_db_root_block_num()) );
       }
@@ -1839,12 +1839,12 @@ struct controller_impl {
 
       if (startup == startup_t::existing_state) {
          if (!replay_block_log_needed) {
-            EOS_ASSERT(fork_db_has_root(), fork_database_exception,
+            CORE_ASSERT(fork_db_has_root(), fork_database_exception,
                        "No existing fork database despite existing chain state. Replay required." );
             uint32_t lib_num = fork_db_root_block_num();
             auto first_block_num = blog.first_block_num();
             if(blog_head) {
-               EOS_ASSERT( first_block_num <= lib_num && lib_num <= blog_head->block_num(),
+               CORE_ASSERT( first_block_num <= lib_num && lib_num <= blog_head->block_num(),
                            block_log_exception,
                            "block log (ranging from ${block_log_first_num} to ${block_log_last_num}) does not contain the last irreversible block (${fork_db_lib})",
                            ("block_log_first_num", first_block_num)
@@ -1929,7 +1929,7 @@ struct controller_impl {
                fork_db_reset_root_to_chain_head();
             } else if( chain_head.block_num() != fork_db.root()->block_num() ) {
                auto new_root = fork_db.search_on_branch( pending_head->id(), chain_head.block_num() );
-               EOS_ASSERT( new_root, fork_database_exception,
+               CORE_ASSERT( new_root, fork_database_exception,
                            "unexpected error: could not find new LIB in fork database" );
                ilog( "advancing fork database root to new last irreversible block within existing fork database: ${id}",
                      ("id", new_root->id()) );
@@ -1956,7 +1956,7 @@ struct controller_impl {
    }
 
    void startup(std::function<void()> shutdown, std::function<bool()> check_shutdown, const snapshot_reader_ptr& snapshot) {
-      EOS_ASSERT( snapshot, snapshot_exception, "No snapshot reader provided" );
+      CORE_ASSERT( snapshot, snapshot_exception, "No snapshot reader provided" );
       this->shutdown = std::move(shutdown);
       assert(this->shutdown);
       this->check_shutdown = std::move(check_shutdown);
@@ -1970,11 +1970,11 @@ struct controller_impl {
                   ("b", blog.first_block_num())("e", blog_head->block_num()) );
             block_states = read_from_snapshot( snapshot, blog.first_block_num(), blog_head->block_num() );
          } else {
-            EOS_ASSERT( !fork_db_.file_exists(), fork_database_exception,
+            CORE_ASSERT( !fork_db_.file_exists(), fork_database_exception,
                         "When starting from a snapshot with no block log, we shouldn't have a fork database either" );
             ilog( "Starting initialization from snapshot and no block log, this may take a significant amount of time" );
             block_states = read_from_snapshot( snapshot, 0, std::numeric_limits<uint32_t>::max() );
-            EOS_ASSERT( chain_head.block_num() > 0, snapshot_exception,
+            CORE_ASSERT( chain_head.block_num() > 0, snapshot_exception,
                         "Snapshot indicates controller head at block number 0, but that is not allowed. "
                         "Snapshot is invalid." );
             blog.reset( chain_id, chain_head.block_num() + 1 );
@@ -1999,9 +1999,9 @@ struct controller_impl {
    }
 
    void startup(std::function<void()> shutdown, std::function<bool()> check_shutdown, const genesis_state& genesis) {
-      EOS_ASSERT( db.revision() < 1, database_exception, "This version of controller::startup only works with a fresh state database." );
+      CORE_ASSERT( db.revision() < 1, database_exception, "This version of controller::startup only works with a fresh state database." );
       const auto& genesis_chain_id = genesis.compute_chain_id();
-      EOS_ASSERT( genesis_chain_id == chain_id, chain_id_type_exception,
+      CORE_ASSERT( genesis_chain_id == chain_id, chain_id_type_exception,
                   "genesis state provided to startup corresponds to a chain ID (${genesis_chain_id}) that does not match the chain ID that controller was constructed with (${controller_chain_id})",
                   ("genesis_chain_id", genesis_chain_id)("controller_chain_id", chain_id)
       );
@@ -2018,7 +2018,7 @@ struct controller_impl {
       initialize_blockchain_state(genesis); // sets chain_head to genesis state
 
       if( blog.head() ) {
-         EOS_ASSERT( blog.first_block_num() == 1, block_log_exception, "block log does not start with genesis block" );
+         CORE_ASSERT( blog.first_block_num() == 1, block_log_exception, "block log does not start with genesis block" );
       } else {
          blog.reset( genesis, chain_head.block() );
       }
@@ -2027,7 +2027,7 @@ struct controller_impl {
    }
 
    void startup(std::function<void()> shutdown, std::function<bool()> check_shutdown) {
-      EOS_ASSERT( db.revision() >= 1, database_exception,
+      CORE_ASSERT( db.revision() >= 1, database_exception,
                   "This version of controller::startup does not work with a fresh state database." );
 
       this->shutdown = std::move(shutdown);
@@ -2036,9 +2036,9 @@ struct controller_impl {
       assert(this->check_shutdown);
 
       bool valid = chain_head.read(conf.state_dir / config::chain_head_filename);
-      EOS_ASSERT( valid, database_exception, "No existing chain_head.dat file");
+      CORE_ASSERT( valid, database_exception, "No existing chain_head.dat file");
 
-      EOS_ASSERT(db.revision() == chain_head.block_num(), database_exception,
+      CORE_ASSERT(db.revision() == chain_head.block_num(), database_exception,
                  "chain_head block num ${bn} does not match chainbase revision ${r}",
                  ("bn", chain_head.block_num())("r", db.revision()));
 
@@ -2054,7 +2054,7 @@ struct controller_impl {
       // check database version
       const auto& header_idx = db.get_index<database_header_multi_index>().indices().get<by_id>();
 
-      EOS_ASSERT(header_idx.begin() != header_idx.end(), bad_database_version_exception,
+      CORE_ASSERT(header_idx.begin() != header_idx.end(), bad_database_version_exception,
                  "state database version pre-dates versioning, please restore from a compatible snapshot or replay!");
 
       auto header_itr = header_idx.begin();
@@ -2068,7 +2068,7 @@ struct controller_impl {
 
       {
          const auto& state_chain_id = db.get<global_property_object>().chain_id;
-         EOS_ASSERT( state_chain_id == chain_id, chain_id_type_exception,
+         CORE_ASSERT( state_chain_id == chain_id, chain_id_type_exception,
                      "chain ID in state (${state_chain_id}) does not match the chain ID that controller was constructed with (${controller_chain_id})",
                      ("state_chain_id", state_chain_id)("controller_chain_id", chain_id)
          );
@@ -2082,7 +2082,7 @@ struct controller_impl {
       }
 
       // At this point chain_head != nullptr
-      EOS_ASSERT( db.revision() >= chain_head.block_num(), fork_database_exception,
+      CORE_ASSERT( db.revision() >= chain_head.block_num(), fork_database_exception,
                   "chain head (${head}) is inconsistent with state (${db})",
                   ("db", db.revision())("head", chain_head.block_num()) );
 
@@ -2095,7 +2095,7 @@ struct controller_impl {
          db.undo();
       }
 
-      EOS_ASSERT(conf.terminate_at_block == 0 || conf.terminate_at_block > chain_head.block_num(),
+      CORE_ASSERT(conf.terminate_at_block == 0 || conf.terminate_at_block > chain_head.block_num(),
                  plugin_config_exception, "--terminate-at-block ${t} not greater than chain head ${h}",
                  ("t", conf.terminate_at_block)("h", chain_head.block_num()));
 
@@ -2405,13 +2405,13 @@ struct controller_impl {
                }
             });
          } else {
-            EOS_THROW(snapshot_exception, "Unsupported block_state version");
+            CORE_THROW(snapshot_exception, "Unsupported block_state version");
          }
       } else if (header.version == 7) {
          // snapshot created with Spring 1.0.0, which was very soon superseded by Spring 1.0.1
          // and a new snapshot format.
          // ----------------------------------------------------------------------------------
-         EOS_THROW(snapshot_exception, "v7 snapshots are not supported anymore in Spring 1.0.1 and above");
+         CORE_THROW(snapshot_exception, "v7 snapshots are not supported anymore in Spring 1.0.1 and above");
       } else {
          // loading a snapshot saved by Leap up to version 6.
          // -------------------------------------------------
@@ -2432,14 +2432,14 @@ struct controller_impl {
                static_cast<block_header_state_legacy&>(*head_header_state) = block_header_state_legacy(std::move(legacy_header_state));
             });
          } else {
-            EOS_THROW(snapshot_exception, "Unsupported block_header_state version");
+            CORE_THROW(snapshot_exception, "Unsupported block_header_state version");
          }
          chain_head = block_handle{head_header_state};
          result.first = head_header_state;
       }
 
       snapshot_head_block = chain_head.block_num();
-      EOS_ASSERT( blog_start <= (snapshot_head_block + 1) && snapshot_head_block <= blog_end,
+      CORE_ASSERT( blog_start <= (snapshot_head_block + 1) && snapshot_head_block <= blog_end,
                   block_log_exception,
                   "Block log is provided with snapshot but does not contain the head block from the snapshot nor a block right after it",
                   ("snapshot_head_block", snapshot_head_block)
@@ -2473,7 +2473,7 @@ struct controller_impl {
 
             if (std::clamp(header.version, v2::minimum_version, v2::maximum_version) == header.version ) {
                std::optional<genesis_state> genesis = extract_legacy_genesis_state(*snapshot, header.version);
-               EOS_ASSERT( genesis, snapshot_exception,
+               CORE_ASSERT( genesis, snapshot_exception,
                            "Snapshot indicates chain_snapshot_header version 2, but does not contain a genesis_state. "
                            "It must be corrupted.");
                snapshot->read_section<global_property_object>([&db=this->db,gs_chain_id=genesis->compute_chain_id()]( auto &section ) {
@@ -2570,7 +2570,7 @@ struct controller_impl {
       });
 
       const auto& gpo = db.get<global_property_object>();
-      EOS_ASSERT( gpo.chain_id == chain_id, chain_id_type_exception,
+      CORE_ASSERT( gpo.chain_id == chain_id, chain_id_type_exception,
                   "chain ID in snapshot (${snapshot_chain_id}) does not match the chain ID that controller was constructed with (${controller_chain_id})",
                   ("snapshot_chain_id", gpo.chain_id)("controller_chain_id", chain_id)
       );
@@ -2831,7 +2831,7 @@ struct controller_impl {
    {
       const auto& idx = db.get_index<generated_transaction_multi_index,by_trx_id>();
       auto itr = idx.find( trxid );
-      EOS_ASSERT( itr != idx.end(), unknown_transaction_exception, "unknown transaction" );
+      CORE_ASSERT( itr != idx.end(), unknown_transaction_exception, "unknown transaction" );
       const fc::time_point block_deadline = fc::time_point::maximum();
       const fc::microseconds max_transaction_time = fc::microseconds::maximum();
       return push_scheduled_transaction( *itr, block_deadline, max_transaction_time, billed_cpu_time_us, explicit_billed_cpu_time );
@@ -2844,7 +2844,7 @@ struct controller_impl {
 
       auto start = fc::time_point::now();
       const bool validating = !is_speculative_block();
-      EOS_ASSERT( !validating || explicit_billed_cpu_time, transaction_exception, "validating requires explicit billing" );
+      CORE_ASSERT( !validating || explicit_billed_cpu_time, transaction_exception, "validating requires explicit billing" );
 
       maybe_session undo_session;
       if ( !skip_db_sessions() )
@@ -2864,7 +2864,7 @@ struct controller_impl {
 
       // check delay_until only before disable_deferred_trxs_stage_1 is activated.
       if( !is_builtin_activated( builtin_protocol_feature_t::disable_deferred_trxs_stage_1 ) ) {
-         EOS_ASSERT( gtrx.delay_until <= pending_block_time(), transaction_exception, "this transaction isn't ready",
+         CORE_ASSERT( gtrx.delay_until <= pending_block_time(), transaction_exception, "this transaction isn't ready",
                     ("gtrx.delay_until",gtrx.delay_until)("pbt",pending_block_time()) );
       }
 
@@ -3030,7 +3030,7 @@ struct controller_impl {
             uint32_t limited_cpu_time_to_bill_us = static_cast<uint32_t>( std::min(
                   std::min( static_cast<int64_t>(cpu_time_to_bill_us), account_cpu_limit ),
                   trx_context.initial_objective_duration_limit.count() ) );
-            EOS_ASSERT( !explicit_billed_cpu_time || (cpu_time_to_bill_us == limited_cpu_time_to_bill_us),
+            CORE_ASSERT( !explicit_billed_cpu_time || (cpu_time_to_bill_us == limited_cpu_time_to_bill_us),
                         transaction_exception, "cpu to bill ${cpu} != limited ${limit}", ("cpu", cpu_time_to_bill_us)("limit", limited_cpu_time_to_bill_us) );
             cpu_time_to_bill_us = limited_cpu_time_to_bill_us;
          }
@@ -3065,7 +3065,7 @@ struct controller_impl {
    const transaction_receipt& push_receipt( const T& trx, transaction_receipt_header::status_enum status,
                                             uint64_t cpu_usage_us, uint64_t net_usage ) {
       uint64_t net_usage_words = net_usage / 8;
-      EOS_ASSERT( net_usage_words*8 == net_usage, transaction_exception, "net_usage is not divisible by 8" );
+      CORE_ASSERT( net_usage_words*8 == net_usage, transaction_exception, "net_usage is not divisible by 8" );
       auto& bb = std::get<building_block>(pending->_block_stage);
       auto& receipts = bb.pending_trx_receipts();
       receipts.emplace_back( trx );
@@ -3091,7 +3091,7 @@ struct controller_impl {
                                            bool explicit_billed_cpu_time,
                                            int64_t subjective_cpu_bill_us )
    {
-      EOS_ASSERT(block_deadline != fc::time_point(), transaction_exception, "deadline cannot be uninitialized");
+      CORE_ASSERT(block_deadline != fc::time_point(), transaction_exception, "deadline cannot be uninitialized");
 
       transaction_trace_ptr trace;
       try {
@@ -3250,7 +3250,7 @@ struct controller_impl {
                                       const std::optional<block_id_type>& producer_block_id,
                                       const fc::time_point& deadline )
    {
-      EOS_ASSERT( !pending, block_validate_exception, "pending block already exists" );
+      CORE_ASSERT( !pending, block_validate_exception, "pending block already exists" );
 
       emit( block_start, chain_head.block_num() + 1, __FILE__, __LINE__ );
 
@@ -3265,7 +3265,7 @@ struct controller_impl {
          pending.reset();
       });
 
-      EOS_ASSERT( skip_db_sessions(s) || db.revision() == chain_head.block_num(), database_exception,
+      CORE_ASSERT( skip_db_sessions(s) || db.revision() == chain_head.block_num(), database_exception,
                   "db revision is not on par with head block",
                   ("db.revision()", db.revision())("controller_head_block", chain_head.block_num())("fork_db_head_block", fork_db_head().block_num()) );
 
@@ -3319,12 +3319,12 @@ struct controller_impl {
                auto res = activated_protocol_features.emplace( feature_digest, true );
                if( res.second ) {
                   // feature_digest was not preactivated
-                  EOS_ASSERT( !f.preactivation_required, protocol_feature_exception,
+                  CORE_ASSERT( !f.preactivation_required, protocol_feature_exception,
                               "attempted to activate protocol feature without prior required preactivation: ${digest}",
                               ("digest", feature_digest)
                   );
                } else {
-                  EOS_ASSERT( !res.first->second, block_validate_exception,
+                  CORE_ASSERT( !res.first->second, block_validate_exception,
                               "attempted duplicate activation within a single block: ${digest}",
                               ("digest", feature_digest)
                   );
@@ -3347,7 +3347,7 @@ struct controller_impl {
             }
          }
 
-         EOS_ASSERT( handled_all_preactivated_features, block_validate_exception,
+         CORE_ASSERT( handled_all_preactivated_features, block_validate_exception,
                      "There are pre-activated protocol features that were not activated at the start of this block"
          );
 
@@ -3371,7 +3371,7 @@ struct controller_impl {
                 pbhs.prev_pending_schedule.schedule.producers.size() == 0 // ... and there was room for a new pending schedule prior to any possible promotion
                )
             {
-               EOS_ASSERT( gpo.proposed_schedule.version == pbhs.active_schedule_version + 1,
+               CORE_ASSERT( gpo.proposed_schedule.version == pbhs.active_schedule_version + 1,
                            producer_schedule_exception, "wrong producer schedule version specified" );
 
                // Promote proposed schedule to pending schedule.
@@ -3457,8 +3457,8 @@ struct controller_impl {
 
    void assemble_block(bool validating, std::optional<qc_data_t> validating_qc_data, const block_state_ptr& validating_bsp)
    {
-      EOS_ASSERT( pending, block_validate_exception, "it is not valid to finalize when there is no pending block");
-      EOS_ASSERT( std::holds_alternative<building_block>(pending->_block_stage), block_validate_exception, "already called finish_block");
+      CORE_ASSERT( pending, block_validate_exception, "it is not valid to finalize when there is no pending block");
+      CORE_ASSERT( std::holds_alternative<building_block>(pending->_block_stage), block_validate_exception, "already called finish_block");
 
       try {
          auto& bb = std::get<building_block>(pending->_block_stage);
@@ -3533,7 +3533,7 @@ struct controller_impl {
       });
 
       try {
-         EOS_ASSERT( std::holds_alternative<completed_block>(pending->_block_stage), block_validate_exception,
+         CORE_ASSERT( std::holds_alternative<completed_block>(pending->_block_stage), block_validate_exception,
                      "cannot call commit_block until pending block is completed" );
 
          auto& cb = std::get<completed_block>(pending->_block_stage);
@@ -3730,25 +3730,25 @@ struct controller_impl {
          auto status = pfs.is_recognized( f, timestamp );
          switch( status ) {
             case protocol_feature_set::recognized_t::unrecognized:
-               EOS_THROW( protocol_feature_exception,
+               CORE_THROW( protocol_feature_exception,
                           "protocol feature with digest '${digest}' is unrecognized", ("digest", f) );
             break;
             case protocol_feature_set::recognized_t::disabled:
-               EOS_THROW( protocol_feature_exception,
+               CORE_THROW( protocol_feature_exception,
                           "protocol feature with digest '${digest}' is disabled", ("digest", f) );
             break;
             case protocol_feature_set::recognized_t::too_early:
-               EOS_THROW( protocol_feature_exception,
+               CORE_THROW( protocol_feature_exception,
                           "${timestamp} is too early for the earliest allowed activation time of the protocol feature with digest '${digest}'", ("digest", f)("timestamp", timestamp) );
             break;
             case protocol_feature_set::recognized_t::ready:
             break;
             default:
-               EOS_THROW( protocol_feature_exception, "unexpected recognized_t status" );
+               CORE_THROW( protocol_feature_exception, "unexpected recognized_t status" );
             break;
          }
 
-         EOS_ASSERT( currently_activated_protocol_features.find( f ) == currently_activated_protocol_features.end(),
+         CORE_ASSERT( currently_activated_protocol_features.find( f ) == currently_activated_protocol_features.end(),
                      protocol_feature_exception,
                      "protocol feature with digest '${digest}' has already been activated",
                      ("digest", f)
@@ -3763,7 +3763,7 @@ struct controller_impl {
             return (std::find( new_protocol_features.begin(), itr, f ) != itr);
          };
 
-         EOS_ASSERT( pfs.validate_dependencies( f, dependency_checker ), protocol_feature_exception,
+         CORE_ASSERT( pfs.validate_dependencies( f, dependency_checker ), protocol_feature_exception,
                      "not all dependencies of protocol feature with digest '${digest}' have been activated",
                      ("digest", f)
          );
@@ -3912,7 +3912,7 @@ struct controller_impl {
                } else if( std::holds_alternative<transaction_id_type>(receipt.trx) ) {
                   trace = push_scheduled_transaction(std::get<transaction_id_type>(receipt.trx), receipt.cpu_usage_us, true);
                } else {
-                  EOS_ASSERT( false, block_validate_exception, "encountered unexpected receipt type" );
+                  CORE_ASSERT( false, block_validate_exception, "encountered unexpected receipt type" );
                }
 
                bool transaction_failed   = trace && trace->except;
@@ -3928,14 +3928,14 @@ struct controller_impl {
                   throw *trace->except;
                }
 
-               EOS_ASSERT(trx_receipts.size() > 0, block_validate_exception,
+               CORE_ASSERT(trx_receipts.size() > 0, block_validate_exception,
                           "expected a receipt, block_num ${bn}, block_id ${id}, receipt ${e}",
                           ("bn", b->block_num())("id", producer_block_id)("e", receipt));
-               EOS_ASSERT(trx_receipts.size() == num_pending_receipts + 1, block_validate_exception,
+               CORE_ASSERT(trx_receipts.size() == num_pending_receipts + 1, block_validate_exception,
                           "expected receipt was not added, block_num ${bn}, block_id ${id}, receipt ${e}",
                           ("bn", b->block_num())("id", producer_block_id)("e", receipt));
                const transaction_receipt_header& r = trx_receipts.back();
-               EOS_ASSERT(r == static_cast<const transaction_receipt_header&>(receipt), block_validate_exception,
+               CORE_ASSERT(r == static_cast<const transaction_receipt_header&>(receipt), block_validate_exception,
                           "receipt does not match, ${lhs} != ${rhs}",
                           ("lhs", r)("rhs", static_cast<const transaction_receipt_header&>(receipt)));
             }
@@ -3954,7 +3954,7 @@ struct controller_impl {
                   actual_finality_mroot = bsp->get_validation_mroot(bsp->core.latest_qc_claim().block_num);
                }
 
-               EOS_ASSERT(bsp->finality_mroot() == actual_finality_mroot, block_validate_exception,
+               CORE_ASSERT(bsp->finality_mroot() == actual_finality_mroot, block_validate_exception,
                   "finality_mroot does not match, received finality_mroot: ${r} != actual_finality_mroot: ${a} for block ${bn} ${id}",
                   ("r", bsp->finality_mroot())("a", actual_finality_mroot)("bn", bsp->block_num())("id", bsp->id()));
             } else {
@@ -3974,7 +3974,7 @@ struct controller_impl {
                report_block_header_diff(*b, ab.header());
 
                // this implicitly asserts that all header fields (less the signature) are identical
-               EOS_ASSERT(producer_block_id == ab.id(), block_validate_exception, "Block ID does not match, ${producer_block_id} != ${validator_block_id}",
+               CORE_ASSERT(producer_block_id == ab.id(), block_validate_exception, "Block ID does not match, ${producer_block_id} != ${validator_block_id}",
                           ("producer_block_id", producer_block_id)("validator_block_id", ab.id()));
             }
 
@@ -4097,7 +4097,7 @@ struct controller_impl {
 
       // This function is called only in Savanna. Finality block header
       // extension must exist
-      EOS_ASSERT( finality_ext, block_validate_exception,
+      CORE_ASSERT( finality_ext, block_validate_exception,
                   "Proper Savanna block #${b} does not have a finality header extension",
                   ("b", block_num) );
 
@@ -4119,7 +4119,7 @@ struct controller_impl {
       // necessarily a Transition block). Since verify_proper_block_exts will not be called
       // on Transition blocks, previous block may not be a Legacy block
       // -------------------------------------------------------------------------------------------------
-      EOS_ASSERT( !prev.header.is_legacy_block(), block_validate_exception,
+      CORE_ASSERT( !prev.header.is_legacy_block(), block_validate_exception,
                   "Proper Savanna block #${b} may not have previous block that is a Legacy block",
                   ("b", block_num) );
 
@@ -4130,19 +4130,19 @@ struct controller_impl {
 
       // new claimed QC block number cannot be less than previous block's
       // claimed QC block number
-      EOS_ASSERT( new_qc_claim.block_num >= prev_qc_claim.block_num, invalid_qc_claim,
+      CORE_ASSERT( new_qc_claim.block_num >= prev_qc_claim.block_num, invalid_qc_claim,
                   "Block #${b} claims a block_num (${n1}) less than the previous block's (${n2})",
                   ("n1", new_qc_claim.block_num)("n2", prev_qc_claim.block_num)("b", block_num) );
 
       // new claimed QC block number cannot be greater than previous block number
-      EOS_ASSERT( new_qc_claim.block_num <= prev.block_num(), invalid_qc_claim,
+      CORE_ASSERT( new_qc_claim.block_num <= prev.block_num(), invalid_qc_claim,
                   "Block #${b} claims a block_num (${n1}) that is greater than the previous block number (${n2})",
                   ("n1", new_qc_claim.block_num)("n2", prev.block_num())("b", block_num) );
 
       if( new_qc_claim.block_num == prev_qc_claim.block_num ) {
          if( new_qc_claim.is_strong_qc == prev_qc_claim.is_strong_qc ) {
             // QC block extension is redundant
-            EOS_ASSERT( !qc_extension_present, invalid_qc_claim,
+            CORE_ASSERT( !qc_extension_present, invalid_qc_claim,
                         "Block #${b} should not provide a QC block extension since its QC claim is the same as the previous block's",
                         ("b", block_num) );
 
@@ -4152,13 +4152,13 @@ struct controller_impl {
          }
 
          // new claimed QC must be stronger than previous if the claimed block number is the same
-         EOS_ASSERT( new_qc_claim.is_strong_qc, invalid_qc_claim,
+         CORE_ASSERT( new_qc_claim.is_strong_qc, invalid_qc_claim,
                      "claimed QC (${s1}) must be stricter than previous block's (${s2}) if block number is the same. Block number: ${b}",
                      ("s1", new_qc_claim.is_strong_qc)("s2", prev_qc_claim.is_strong_qc)("b", block_num) );
       }
 
       // At this point, we are making a new claim in this block, so it must include a QC to justify this claim.
-      EOS_ASSERT( qc_extension_present, block_validate_exception,
+      CORE_ASSERT( qc_extension_present, block_validate_exception,
                   "Block #${b} is making a new finality claim, but doesn't include a qc to justify this claim", ("b", block_num) );
 
       assert(qc_ext_itr != block_exts.end() );
@@ -4166,12 +4166,12 @@ struct controller_impl {
       const auto& qc_proof = qc_ext.qc;
 
       // Check QC information in header extension and block extension match
-      EOS_ASSERT( qc_proof.block_num == new_qc_claim.block_num, block_validate_exception,
+      CORE_ASSERT( qc_proof.block_num == new_qc_claim.block_num, block_validate_exception,
                   "Block #${b}: Mismatch between qc.block_num (${n1}) in block extension and block_num (${n2}) in header extension",
                   ("n1", qc_proof.block_num)("n2", new_qc_claim.block_num)("b", block_num) );
 
       // Verify claimed strength is the same as in proof
-      EOS_ASSERT( qc_proof.is_strong() == new_qc_claim.is_strong_qc, block_validate_exception,
+      CORE_ASSERT( qc_proof.is_strong() == new_qc_claim.is_strong_qc, block_validate_exception,
                   "QC is_strong (${s1}) in block extension does not match is_strong_qc (${s2}) in header extension. Block number: ${b}",
                   ("s1", qc_proof.is_strong())("s2", new_qc_claim.is_strong_qc)("b", block_num) );
 
@@ -4186,7 +4186,7 @@ struct controller_impl {
          // compute finality mroot using previous block state and new qc claim
          auto        computed_finality_mroot = prev.get_finality_mroot_claim(new_qc_claim);
          const auto& supplied_finality_mroot  = b->action_mroot;
-         EOS_ASSERT( computed_finality_mroot == supplied_finality_mroot, block_validate_exception,
+         CORE_ASSERT( computed_finality_mroot == supplied_finality_mroot, block_validate_exception,
                      "computed finality mroot (${computed}) does not match supplied finality mroot ${supplied} by header extension. Block number: ${b}, block id: ${id}",
                      ("computed", computed_finality_mroot)("supplied", supplied_finality_mroot)("b", block_num)("id", id) );
       }
@@ -4203,16 +4203,16 @@ struct controller_impl {
       auto qc_ext_id = quorum_certificate_extension::extension_id();
       bool qc_extension_present = block_exts.count(qc_ext_id) != 0;
 
-      EOS_ASSERT( !qc_extension_present, block_validate_exception,
+      CORE_ASSERT( !qc_extension_present, block_validate_exception,
                   "Legacy block #${b} includes a QC block extension",
                   ("b", block_num) );
 
-      EOS_ASSERT( !b->is_proper_svnn_block(), block_validate_exception,
+      CORE_ASSERT( !b->is_proper_svnn_block(), block_validate_exception,
                   "Legacy block #${b} has invalid schedule_version",
                   ("b", block_num) );
 
       // Verify we don't go back from Savanna (Transition or Proper) block to Legacy block
-      EOS_ASSERT( prev.header.is_legacy_block(), block_validate_exception,
+      CORE_ASSERT( prev.header.is_legacy_block(), block_validate_exception,
                   "Legacy block #${b} must have previous block that is also a Legacy block",
                   ("b", block_num) );
    }
@@ -4226,11 +4226,11 @@ struct controller_impl {
       auto qc_ext_id = quorum_certificate_extension::extension_id();
       bool qc_extension_present = block_exts.count(qc_ext_id) != 0;
 
-      EOS_ASSERT( !qc_extension_present, block_validate_exception,
+      CORE_ASSERT( !qc_extension_present, block_validate_exception,
                   "Transition block #${b} includes a QC block extension",
                   ("b", block_num) );
 
-      EOS_ASSERT( !prev.header.is_proper_svnn_block(), block_validate_exception,
+      CORE_ASSERT( !prev.header.is_proper_svnn_block(), block_validate_exception,
                   "Transition block #${b} may not have previous block that is a Proper Savanna block",
                   ("b", block_num) );
 
@@ -4239,26 +4239,26 @@ struct controller_impl {
       assert(finality_ext);
       const auto& f_ext = std::get<finality_extension>(*finality_ext);
 
-      EOS_ASSERT( !f_ext.new_proposer_policy_diff, block_validate_exception,
+      CORE_ASSERT( !f_ext.new_proposer_policy_diff, block_validate_exception,
                   "Transition block #${b} has new_proposer_policy_diff",
                   ("b", block_num) );
 
       if (auto it = prev.header_exts.find(finality_extension::extension_id()); it != prev.header_exts.end()) {
          // Transition block other than Genesis Block
          const auto& prev_finality_ext = std::get<finality_extension>(it->second);
-         EOS_ASSERT( f_ext.qc_claim == prev_finality_ext.qc_claim, invalid_qc_claim,
+         CORE_ASSERT( f_ext.qc_claim == prev_finality_ext.qc_claim, invalid_qc_claim,
                      "Non Genesis Transition block #${b} QC claim ${this_qc_claim} not equal to previous QC claim ${prev_qc_claim}",
                      ("b", block_num)("this_qc_claim", f_ext.qc_claim)("prev_qc_claim", prev_finality_ext.qc_claim) );
-         EOS_ASSERT( !f_ext.new_finalizer_policy_diff, block_validate_exception,
+         CORE_ASSERT( !f_ext.new_finalizer_policy_diff, block_validate_exception,
                      "Non Genesis Transition block #${b} finality block header extension may not have new_finalizer_policy_diff",
                      ("b", block_num) );
       } else {
          // Savanna Genesis Block
          qc_claim_t genesis_qc_claim {.block_num = block_num, .is_strong_qc = false};
-         EOS_ASSERT( f_ext.qc_claim == genesis_qc_claim, invalid_qc_claim,
+         CORE_ASSERT( f_ext.qc_claim == genesis_qc_claim, invalid_qc_claim,
                      "Savanna Genesis block #${b} has invalid QC claim ${qc_claim}",
                      ("b", block_num)("qc_claim", f_ext.qc_claim) );
-         EOS_ASSERT( f_ext.new_finalizer_policy_diff, block_validate_exception,
+         CORE_ASSERT( f_ext.new_finalizer_policy_diff, block_validate_exception,
                      "Savanna Genesis block #${b} finality block header extension misses new_finalizer_policy_diff",
                      ("b", block_num) );
 
@@ -4266,10 +4266,10 @@ struct controller_impl {
          try {
             finalizer_policy no_policy;
             finalizer_policy genesis_policy = no_policy.apply_diff(*f_ext.new_finalizer_policy_diff);
-            EOS_ASSERT( genesis_policy.generation == 1, block_validate_exception,
+            CORE_ASSERT( genesis_policy.generation == 1, block_validate_exception,
                         "Savanna Genesis block #${b} finalizer policy generation (${g}) not 1",
                         ("b", block_num)("g", genesis_policy.generation) );
-         } EOS_RETHROW_EXCEPTIONS(block_validate_exception, "applying diff of Savanna Genesis Block")
+         } CORE_RETHROW_EXCEPTIONS(block_validate_exception, "applying diff of Savanna Genesis Block")
       }
    }
 
@@ -4280,12 +4280,12 @@ struct controller_impl {
       assert(is_proper_savanna_block == b->is_proper_svnn_block());
 
       if constexpr (is_proper_savanna_block) {
-         EOS_ASSERT( b->is_proper_svnn_block(), block_validate_exception,
+         CORE_ASSERT( b->is_proper_svnn_block(), block_validate_exception,
                      "create_block_state_i cannot be called on block #${b} which is not a Proper Savanna block unless the prev block state provided is of type block_state",
                      ("b", b->block_num()) );
          return verify_basic_proper_block_invariants(id, b, prev);
       } else {
-         EOS_ASSERT( !b->is_proper_svnn_block(), block_validate_exception,
+         CORE_ASSERT( !b->is_proper_svnn_block(), block_validate_exception,
                      "create_block_state_i cannot be called on block #${b} which is a Proper Savanna block unless the prev block state provided is of type block_state_legacy",
                      ("b", b->block_num()) );
 
@@ -4318,7 +4318,7 @@ struct controller_impl {
       }
 
       auto trx_mroot = calculate_trx_merkle( b->transactions, is_proper_savanna_block );
-      EOS_ASSERT( b->transaction_mroot == trx_mroot,
+      CORE_ASSERT( b->transaction_mroot == trx_mroot,
                   block_validate_exception,
                   "invalid block transaction merkle root ${b} != ${c}", ("b", b->transaction_mroot)("c", trx_mroot) );
 
@@ -4334,7 +4334,7 @@ struct controller_impl {
             skip_validate_signee
       );
 
-      EOS_ASSERT( id == bsp->id(), block_validate_exception,
+      CORE_ASSERT( id == bsp->id(), block_validate_exception,
                   "provided id ${id} does not match block id ${bid}", ("id", id)("bid", bsp->id()) );
 
 
@@ -4367,7 +4367,7 @@ struct controller_impl {
 
    // thread safe, expected to be called from thread other than the main thread
    controller::accepted_block_result create_block_handle( const block_id_type& id, const signed_block_ptr& b ) {
-      EOS_ASSERT( b, block_validate_exception, "null block" );
+      CORE_ASSERT( b, block_validate_exception, "null block" );
 
       auto f = [&](auto& fork_db) -> controller::accepted_block_result {
          if (auto bsp = fork_db.get_block(id, include_root_t::yes))
@@ -4460,7 +4460,7 @@ struct controller_impl {
       assert(!pending); // should not be pending block
 
       try {
-         EOS_ASSERT( b, block_validate_exception, "trying to replay an empty block" );
+         CORE_ASSERT( b, block_validate_exception, "trying to replay an empty block" );
 
          const bool skip_validate_signee = !conf.force_all_checks;
          validator_t validator = [this](block_timestamp_type timestamp, const flat_set<digest_type>& cur_features,
@@ -4551,7 +4551,7 @@ struct controller_impl {
             for( auto itr = old_head_branch.begin(); itr != old_head_branch.end(); ++itr ) {
                pop_block();
             }
-            EOS_ASSERT( chain_head.id() == old_head_branch.back()->header.previous, fork_database_exception,
+            CORE_ASSERT( chain_head.id() == old_head_branch.back()->header.previous, fork_database_exception,
                         "loss of sync between fork_db and chainbase during fork switch" ); // _should_ never fail
 
             if( forked_cb ) {
@@ -4647,7 +4647,7 @@ struct controller_impl {
                   for( auto itr = applied_itr; itr != new_head_branch.end(); ++itr ) {
                      pop_block();
                   }
-                  EOS_ASSERT( chain_head.id() == old_head_branch.back()->header.previous, fork_database_exception,
+                  CORE_ASSERT( chain_head.id() == old_head_branch.back()->header.previous, fork_database_exception,
                               "loss of sync between fork_db and chainbase during fork switch reversal" ); // _should_ never fail
 
                   // re-apply good blocks
@@ -4841,7 +4841,7 @@ struct controller_impl {
             return excluded;
          };
 
-         EOS_ASSERT( is_subset,  actor_whitelist_exception,
+         CORE_ASSERT( is_subset,  actor_whitelist_exception,
                      "authorizing actor(s) in transaction are not on the actor whitelist: ${actors}",
                      ("actors", generate_missing_actors(actors, whitelist))
                    );
@@ -4881,7 +4881,7 @@ struct controller_impl {
             return blacklisted;
          };
 
-         EOS_ASSERT( !intersects, actor_blacklist_exception,
+         CORE_ASSERT( !intersects, actor_blacklist_exception,
                      "authorizing actor(s) in transaction are on the actor blacklist: ${actors}",
                      ("actors", generate_blacklisted_actors(actors, blacklist))
                    );
@@ -4890,12 +4890,12 @@ struct controller_impl {
 
    void check_contract_list( account_name code )const {
       if( conf.contract_whitelist.size() > 0 ) {
-         EOS_ASSERT( conf.contract_whitelist.find( code ) != conf.contract_whitelist.end(),
+         CORE_ASSERT( conf.contract_whitelist.find( code ) != conf.contract_whitelist.end(),
                      contract_whitelist_exception,
                      "account '${code}' is not on the contract whitelist", ("code", code)
                    );
       } else if( conf.contract_blacklist.size() > 0 ) {
-         EOS_ASSERT( conf.contract_blacklist.find( code ) == conf.contract_blacklist.end(),
+         CORE_ASSERT( conf.contract_blacklist.find( code ) == conf.contract_blacklist.end(),
                      contract_blacklist_exception,
                      "account '${code}' is on the contract blacklist", ("code", code)
                    );
@@ -4904,7 +4904,7 @@ struct controller_impl {
 
    void check_action_list( account_name code, action_name action )const {
       if( conf.action_blacklist.size() > 0 ) {
-         EOS_ASSERT( conf.action_blacklist.find( std::make_pair(code, action) ) == conf.action_blacklist.end(),
+         CORE_ASSERT( conf.action_blacklist.find( std::make_pair(code, action) ) == conf.action_blacklist.end(),
                      action_blacklist_exception,
                      "action '${code}::${action}' is on the action blacklist",
                      ("code", code)("action", action)
@@ -4914,7 +4914,7 @@ struct controller_impl {
 
    void check_key_list( const public_key_type& key )const {
       if( conf.key_blacklist.size() > 0 ) {
-         EOS_ASSERT( conf.key_blacklist.find( key ) == conf.key_blacklist.end(),
+         CORE_ASSERT( conf.key_blacklist.find( key ) == conf.key_blacklist.end(),
                      key_blacklist_exception,
                      "public key '${key}' is on the key blacklist",
                      ("key", key)
@@ -4981,7 +4981,7 @@ struct controller_impl {
          });
       }
 
-      EOS_ASSERT(legacy_root, fork_database_exception, "legacy fork datbabase root not set");
+      CORE_ASSERT(legacy_root, fork_database_exception, "legacy fork datbabase root not set");
 
       block_state_ptr prev;
       auto bitr = legacy_branch.rbegin();
@@ -5183,7 +5183,7 @@ struct controller_impl {
    }
 
    block_timestamp_type pending_block_timestamp()const {
-      EOS_ASSERT( pending, block_validate_exception, "no pending block" );
+      CORE_ASSERT( pending, block_validate_exception, "no pending block" );
 
       return pending->timestamp();
    }
@@ -5203,14 +5203,14 @@ struct controller_impl {
    }
 
    std::optional<block_id_type> pending_producer_block_id()const {
-      EOS_ASSERT( pending, block_validate_exception, "no pending block" );
+      CORE_ASSERT( pending, block_validate_exception, "no pending block" );
       return pending->_producer_block_id;
    }
 
    void validate_db_available_size() const {
       const auto free = db.get_free_memory();
       const auto guard = conf.state_guard_size;
-      EOS_ASSERT(free >= guard, database_guard_exception, "database free: ${f}, guard size: ${g}", ("f", free)("g",guard));
+      CORE_ASSERT(free >= guard, database_guard_exception, "database free: ${f}, guard size: ${g}", ("f", free)("g",guard));
    }
 
    const producer_authority_schedule& active_producers()const {
@@ -5314,28 +5314,28 @@ void controller::preactivate_feature( const digest_type& feature_digest, bool is
    switch( status ) {
       case protocol_feature_set::recognized_t::unrecognized:
          if( is_speculative_block() ) {
-            EOS_THROW( subjective_block_production_exception,
+            CORE_THROW( subjective_block_production_exception,
                        "protocol feature with digest '${digest}' is unrecognized", ("digest", feature_digest) );
          } else {
-            EOS_THROW( protocol_feature_bad_block_exception,
+            CORE_THROW( protocol_feature_bad_block_exception,
                        "protocol feature with digest '${digest}' is unrecognized", ("digest", feature_digest) );
          }
       break;
       case protocol_feature_set::recognized_t::disabled:
          if( is_speculative_block() ) {
-            EOS_THROW( subjective_block_production_exception,
+            CORE_THROW( subjective_block_production_exception,
                        "protocol feature with digest '${digest}' is disabled", ("digest", feature_digest) );
          } else {
-            EOS_THROW( protocol_feature_bad_block_exception,
+            CORE_THROW( protocol_feature_bad_block_exception,
                        "protocol feature with digest '${digest}' is disabled", ("digest", feature_digest) );
          }
       break;
       case protocol_feature_set::recognized_t::too_early:
          if( is_speculative_block() ) {
-            EOS_THROW( subjective_block_production_exception,
+            CORE_THROW( subjective_block_production_exception,
                        "${timestamp} is too early for the earliest allowed activation time of the protocol feature with digest '${digest}'", ("digest", feature_digest)("timestamp", cur_time) );
          } else {
-            EOS_THROW( protocol_feature_bad_block_exception,
+            CORE_THROW( protocol_feature_bad_block_exception,
                        "${timestamp} is too early for the earliest allowed activation time of the protocol feature with digest '${digest}'", ("digest", feature_digest)("timestamp", cur_time) );
          }
       break;
@@ -5343,9 +5343,9 @@ void controller::preactivate_feature( const digest_type& feature_digest, bool is
       break;
       default:
          if( is_speculative_block() ) {
-            EOS_THROW( subjective_block_production_exception, "unexpected recognized_t status" );
+            CORE_THROW( subjective_block_production_exception, "unexpected recognized_t status" );
          } else {
-            EOS_THROW( protocol_feature_bad_block_exception, "unexpected recognized_t status" );
+            CORE_THROW( protocol_feature_bad_block_exception, "unexpected recognized_t status" );
          }
       break;
    }
@@ -5371,7 +5371,7 @@ void controller::preactivate_feature( const digest_type& feature_digest, bool is
    // Thus the exceptions that can be thrown below can be regular objective exceptions
    // that do not cause immediate rejection of the block.
 
-   EOS_ASSERT( !is_protocol_feature_activated( feature_digest ),
+   CORE_ASSERT( !is_protocol_feature_activated( feature_digest ),
                protocol_feature_exception,
                "protocol feature with digest '${digest}' is already activated",
                ("digest", feature_digest)
@@ -5379,7 +5379,7 @@ void controller::preactivate_feature( const digest_type& feature_digest, bool is
 
    const auto& pso = my->db.get<protocol_state_object>();
 
-   EOS_ASSERT( std::find( pso.preactivated_protocol_features.begin(),
+   CORE_ASSERT( std::find( pso.preactivated_protocol_features.begin(),
                           pso.preactivated_protocol_features.end(),
                           feature_digest
                ) == pso.preactivated_protocol_features.end(),
@@ -5397,7 +5397,7 @@ void controller::preactivate_feature( const digest_type& feature_digest, bool is
                           d ) != pso.preactivated_protocol_features.end() );
    };
 
-   EOS_ASSERT( pfs.validate_dependencies( feature_digest, dependency_checker ),
+   CORE_ASSERT( pfs.validate_dependencies( feature_digest, dependency_checker ),
                protocol_feature_exception,
                "not all dependencies of protocol feature with digest '${digest}' have been activated or pre-activated",
                ("digest", feature_digest)
@@ -5446,7 +5446,7 @@ transaction_trace_ptr controller::start_block( block_timestamp_type when,
       validate_protocol_features( new_protocol_feature_activations );
    }
 
-   EOS_ASSERT( bs == block_status::incomplete || bs == block_status::ephemeral, block_validate_exception, "speculative block type required" );
+   CORE_ASSERT( bs == block_status::incomplete || bs == block_status::ephemeral, block_validate_exception, "speculative block type required" );
 
    return my->start_block( when, confirm_block_count, new_protocol_feature_activations,
                            bs, std::optional<block_id_type>(), deadline );
@@ -5528,7 +5528,7 @@ transaction_trace_ptr controller::push_transaction( const transaction_metadata_p
                                                     uint32_t billed_cpu_time_us, bool explicit_billed_cpu_time,
                                                     int64_t subjective_cpu_bill_us ) {
    validate_db_available_size();
-   EOS_ASSERT( trx && !trx->implicit() && !trx->scheduled(), transaction_type_exception, "Implicit/Scheduled transaction not allowed" );
+   CORE_ASSERT( trx && !trx->implicit() && !trx->scheduled(), transaction_type_exception, "Implicit/Scheduled transaction not allowed" );
    return my->push_transaction(trx, block_deadline, max_transaction_time, billed_cpu_time_us, explicit_billed_cpu_time, subjective_cpu_bill_us );
 }
 
@@ -5572,8 +5572,8 @@ void controller::set_contract_blacklist( const flat_set<account_name>& new_contr
 }
 void controller::set_action_blacklist( const flat_set< pair<account_name, action_name> >& new_action_blacklist ) {
    for (auto& act: new_action_blacklist) {
-      EOS_ASSERT(act.first != account_name(), name_type_exception, "Action blacklist - contract name should not be empty");
-      EOS_ASSERT(act.second != action_name(), action_type_exception, "Action blacklist - action name should not be empty");
+      CORE_ASSERT(act.first != account_name(), name_type_exception, "Action blacklist - contract name should not be empty");
+      CORE_ASSERT(act.second != action_name(), action_type_exception, "Action blacklist - action name should not be empty");
    }
    my->conf.action_blacklist = new_action_blacklist;
 }
@@ -5646,17 +5646,17 @@ time_point controller::pending_block_time()const {
 }
 
 uint32_t controller::pending_block_num()const {
-   EOS_ASSERT( my->pending, block_validate_exception, "no pending block" );
+   CORE_ASSERT( my->pending, block_validate_exception, "no pending block" );
    return my->pending->block_num();
 }
 
 account_name controller::pending_block_producer()const {
-   EOS_ASSERT( my->pending, block_validate_exception, "no pending block" );
+   CORE_ASSERT( my->pending, block_validate_exception, "no pending block" );
    return my->pending->producer();
 }
 
 const block_signing_authority& controller::pending_block_signing_authority() const {
-   EOS_ASSERT( my->pending, block_validate_exception, "no pending block" );
+   CORE_ASSERT( my->pending, block_validate_exception, "no pending block" );
    return my->pending->pending_block_signing_authority();
 }
 
@@ -5768,7 +5768,7 @@ fc::sha256 controller::calculate_integrity_hash() { try {
 } FC_LOG_AND_RETHROW() }
 
 void controller::write_snapshot( const snapshot_writer_ptr& snapshot ) {
-   EOS_ASSERT( !my->pending, block_validate_exception, "cannot take a consistent snapshot with a pending block" );
+   CORE_ASSERT( !my->pending, block_validate_exception, "cannot take a consistent snapshot with a pending block" );
    my->writing_snapshot.store(true, std::memory_order_release);
    auto e = fc::make_scoped_exit([&] {
       my->writing_snapshot.store(false, std::memory_order_release);
@@ -5793,7 +5793,7 @@ int64_t controller::set_proposed_producers( transaction_context& trx_context, ve
 }
 
 int64_t controller_impl::set_proposed_producers_legacy( vector<producer_authority> producers ) {
-   EOS_ASSERT(producers.size() <= config::max_producers, wasm_execution_error,
+   CORE_ASSERT(producers.size() <= config::max_producers, wasm_execution_error,
               "Producer schedule exceeds the maximum producer count for this chain");
    const auto& gpo = db.get<global_property_object>();
    auto cur_block_num = chain_head.block_num() + 1;
@@ -6052,12 +6052,12 @@ uint32_t controller::configured_subjective_signature_length_limit()const {
 void controller::validate_expiration( const transaction& trx )const { try {
    const auto& chain_configuration = get_global_properties().configuration;
 
-   EOS_ASSERT( trx.expiration.to_time_point() >= pending_block_time(),
+   CORE_ASSERT( trx.expiration.to_time_point() >= pending_block_time(),
                expired_tx_exception,
                "transaction has expired, "
                "expiration is ${trx.expiration} and pending block time is ${pending_block_time}",
                ("trx.expiration",trx.expiration)("pending_block_time",pending_block_time()));
-   EOS_ASSERT( trx.expiration.to_time_point() <= pending_block_time() + fc::seconds(chain_configuration.max_transaction_lifetime),
+   CORE_ASSERT( trx.expiration.to_time_point() <= pending_block_time() + fc::seconds(chain_configuration.max_transaction_lifetime),
                tx_exp_too_far_exception,
                "Transaction expiration is too far in the future relative to the reference time of ${reference_time}, "
                "expiration is ${trx.expiration} and the maximum transaction lifetime is ${max_til_exp} seconds",
@@ -6069,7 +6069,7 @@ void controller::validate_tapos( const transaction& trx )const { try {
    const auto& tapos_block_summary = db().get<block_summary_object>((uint16_t)trx.ref_block_num);
 
    //Verify TaPoS block summary has correct ID prefix, and that this block's time is not past the expiration
-   EOS_ASSERT(trx.verify_reference_block(tapos_block_summary.block_id), invalid_ref_block_exception,
+   CORE_ASSERT(trx.verify_reference_block(tapos_block_summary.block_id), invalid_ref_block_exception,
               "Transaction's reference block ${rb} did not match ${bs}. Is this transaction from a different fork?",
               ("rb", trx.ref_block_num)("bs", tapos_block_summary.block_id));
 } FC_CAPTURE_AND_RETHROW() }
@@ -6103,7 +6103,7 @@ std::optional<fc::microseconds> controller::get_subjective_cpu_leeway() const {
 }
 
 void controller::set_greylist_limit( uint32_t limit ) {
-   EOS_ASSERT( 0 < limit && limit <= chain::config::maximum_elastic_resource_multiplier,
+   CORE_ASSERT( 0 < limit && limit <= chain::config::maximum_elastic_resource_multiplier,
                misc_exception,
                "Invalid limit (${limit}) passed into set_greylist_limit. "
                "Must be between 1 and ${max}.",
@@ -6162,7 +6162,7 @@ deep_mind_handler* controller::get_deep_mind_logger(bool is_trx_transient)const 
 }
 
 void controller::enable_deep_mind(deep_mind_handler* logger) {
-   EOS_ASSERT( logger != nullptr, misc_exception, "Invalid logger passed into enable_deep_mind, must be set" );
+   CORE_ASSERT( logger != nullptr, misc_exception, "Invalid logger passed into enable_deep_mind, must be set" );
    my->deep_mind_logger = logger;
 }
 
@@ -6500,7 +6500,7 @@ void controller_impl::on_activation<builtin_protocol_feature_t::disable_deferred
 
 template<>
 void controller_impl::on_activation<builtin_protocol_feature_t::savanna>() {
-   EOS_ASSERT( !is_builtin_activated( builtin_protocol_feature_t::core_consensus_v2 ),
+   CORE_ASSERT( !is_builtin_activated( builtin_protocol_feature_t::core_consensus_v2 ),
                protocol_feature_exception,
                "SAVANNA and CORE_CONSENSUS_V2 are mutually exclusive — cannot activate both on the same chain" );
    db.modify( db.get<protocol_state_object>(), [&]( auto& ps ) {
@@ -6510,7 +6510,7 @@ void controller_impl::on_activation<builtin_protocol_feature_t::savanna>() {
 
 template<>
 void controller_impl::on_activation<builtin_protocol_feature_t::core_consensus_v2>() {
-   EOS_ASSERT( !is_builtin_activated( builtin_protocol_feature_t::savanna ),
+   CORE_ASSERT( !is_builtin_activated( builtin_protocol_feature_t::savanna ),
                protocol_feature_exception,
                "CORE_CONSENSUS_V2 and SAVANNA are mutually exclusive — cannot activate both on the same chain" );
    db.modify( db.get<protocol_state_object>(), [&]( auto& ps ) {

@@ -74,14 +74,14 @@ namespace core_net { namespace client { namespace http {
 
       if (!initialized) {
          auto res = curl_global_init(CURL_GLOBAL_DEFAULT);
-         EOS_ASSERT(res == CURLE_OK, chain::http_exception, curl_easy_strerror(res));
+         CORE_ASSERT(res == CURLE_OK, chain::http_exception, curl_easy_strerror(res));
          initialized = true;
       }
 
       static std::unique_ptr<CURL, decltype(&curl_easy_cleanup)> handle(nullptr, &curl_easy_cleanup);
       if (!handle) handle.reset(curl_easy_init());
       auto curl = handle.get();
-      EOS_ASSERT(curl != 0, chain::http_exception, "curl_easy_init failed");
+      CORE_ASSERT(curl != 0, chain::http_exception, "curl_easy_init failed");
 
       std::string uri;
 
@@ -128,8 +128,8 @@ namespace core_net { namespace client { namespace http {
 
       auto res = curl_easy_perform(curl);
       if (res == CURLE_COULDNT_CONNECT || res == CURLE_URL_MALFORMAT)
-         EOS_THROW(connection_exception, curl_easy_strerror(res));
-      EOS_ASSERT(res == CURLE_OK, chain::http_exception, curl_easy_strerror(res));
+         CORE_THROW(connection_exception, curl_easy_strerror(res));
+      CORE_ASSERT(res == CURLE_OK, chain::http_exception, curl_easy_strerror(res));
 
       long http_code = 0;
       curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);

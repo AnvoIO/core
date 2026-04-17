@@ -72,7 +72,7 @@ digest_type block_header_state::compute_finality_digest() const {
 
 // returns scheduled active proposer policy for a given block at timestamp `t`
 const proposer_policy_ptr& block_header_state::get_active_proposer_policy_for_block_at(block_timestamp_type next_block_timestamp) const {
-   EOS_ASSERT(next_block_timestamp > timestamp(), block_too_old_exception,
+   CORE_ASSERT(next_block_timestamp > timestamp(), block_too_old_exception,
               "next block timestamp ${n} must be greater than current timestamp ${c}", ("n", next_block_timestamp)("c", timestamp()));
 
    // if the block is in the same round of current block, use current active_proposer_policy
@@ -164,7 +164,7 @@ finalizer_policies_t block_header_state::get_finalizer_policies(const block_ref&
       // has to be the one in latest_qc_claim_block_active_finalizer_policy
       assert(latest_qc_claim_block_active_finalizer_policy != nullptr);
       assert(latest_qc_claim_block_active_finalizer_policy->generation == active_gen);
-      EOS_ASSERT(latest_qc_claim_block_active_finalizer_policy != nullptr &&
+      CORE_ASSERT(latest_qc_claim_block_active_finalizer_policy != nullptr &&
                     latest_qc_claim_block_active_finalizer_policy->generation == active_gen,
                  chain_exception,
                  "Logic error in finalizer policy retrieval"); // just in case
@@ -180,7 +180,7 @@ finalizer_policies_t block_header_state::get_finalizer_policies(const block_ref&
       // cannot be the one in latest_qc_claim_block_active_finalizer_policy since it was active at
       // core.latest_qc_claim().block_num. So it must be the one still pending.
       assert(pending_finalizer_policy && pending_finalizer_policy->second->generation == pending_gen);
-      EOS_ASSERT(pending_finalizer_policy && pending_finalizer_policy->second->generation == pending_gen, chain_exception,
+      CORE_ASSERT(pending_finalizer_policy && pending_finalizer_policy->second->generation == pending_gen, chain_exception,
                  "Logic error in finalizer policy retrieval");  // just in case
       res.pending_finalizer_policy = pending_finalizer_policy->second;
    }
@@ -353,7 +353,7 @@ void finish_next(const block_header_state& prev,
       // mirroring the legacy path validation in block_header_state_legacy.cpp:270,284.
       // The block production path (get_next_proposer_schedule_version) always sets version
       // to previous + 1; this assertion catches malformed blocks from peers.
-      EOS_ASSERT(f_ext.new_proposer_policy_diff->version == prev.get_last_proposed_proposer_policy().proposer_schedule.version + 1,
+      CORE_ASSERT(f_ext.new_proposer_policy_diff->version == prev.get_last_proposed_proposer_policy().proposer_schedule.version + 1,
                  invalid_block_header_extension,
                  "proposer schedule version ${n} must be one greater than previous ${p}",
                  ("n", f_ext.new_proposer_policy_diff->version)("p", prev.get_last_proposed_proposer_policy().proposer_schedule.version));
@@ -386,7 +386,7 @@ void finish_next(const block_header_state& prev,
       // this new block.
       // Add this new proposal to the `proposed_finalizer_policies` which tracks the in-flight proposals.
       // ------------------------------------------------------------------------------------------------
-      EOS_ASSERT(new_finalizer_policy.generation > prev.finalizer_policy_generation, invalid_block_header_extension,
+      CORE_ASSERT(new_finalizer_policy.generation > prev.finalizer_policy_generation, invalid_block_header_extension,
                  "new finalizer policy generation ${n} not greater than previous ${p}", ("n", new_finalizer_policy.generation)("p", prev.finalizer_policy_generation));
       next_header_state.finalizer_policy_generation = new_finalizer_policy.generation;
       next_header_state.proposed_finalizer_policies.emplace_back(
@@ -500,10 +500,10 @@ block_header_state block_header_state::next(block_header_state_input& input) con
 block_header_state block_header_state::next(const signed_block_header& h, validator_t& validator) const {
    auto producer = get_producer_for_block_at(h.timestamp).producer_name;
    
-   EOS_ASSERT( h.previous == block_id, unlinkable_block_exception,
+   CORE_ASSERT( h.previous == block_id, unlinkable_block_exception,
                "previous mismatch ${p} != ${id}", ("p", h.previous)("id", block_id) );
-   EOS_ASSERT( h.producer == producer, wrong_producer, "wrong producer specified" );
-   EOS_ASSERT( !h.new_producers, producer_schedule_exception,
+   CORE_ASSERT( h.producer == producer, wrong_producer, "wrong producer specified" );
+   CORE_ASSERT( !h.new_producers, producer_schedule_exception,
                "Block header contains legacy producer schedule outdated by activation of WTMsig Block Signatures" );
 
    block_header_state next_header_state;
@@ -528,7 +528,7 @@ block_header_state block_header_state::next(const signed_block_header& h, valida
    // retrieve finality_extension data from block header extension
    // --------------------------------------------------------------------
    auto  f_entry = exts.find(finality_extension::extension_id());
-   EOS_ASSERT(f_entry != exts.end(), invalid_block_header_extension,
+   CORE_ASSERT(f_entry != exts.end(), invalid_block_header_extension,
               "Instant Finality Extension is expected to be present in all block headers after switch to IF");
    const auto& f_ext = std::get<finality_extension>(f_entry->second);
 
@@ -538,7 +538,7 @@ block_header_state block_header_state::next(const signed_block_header& h, valida
       auto next_core_metadata = core.next_metadata(f_ext.qc_claim);
       bool no_finality_tree_associated = core.is_genesis_block_num(next_core_metadata.latest_qc_claim_block_num);
 
-      EOS_ASSERT(no_finality_tree_associated == h.action_mroot.empty(), block_validate_exception,
+      CORE_ASSERT(no_finality_tree_associated == h.action_mroot.empty(), block_validate_exception,
                  "No Finality Tree Root associated with the block, does not match with empty action_mroot: "
                  "(${n}), action_mroot empty (${e}), latest_qc_claim_block_num (${f})",
                  ("n", no_finality_tree_associated)("e", h.action_mroot.empty())

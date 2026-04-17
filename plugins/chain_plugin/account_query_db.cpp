@@ -150,7 +150,7 @@ namespace core_net::chain_apis {
 
          for (uint32_t block_num = fork_db_root_num + 1; block_num <= head_num; block_num++) {
             const auto block_p = controller.fetch_block_by_number(block_num);
-            EOS_ASSERT(block_p, chain::plugin_exception, "cannot fetch reversible block ${block_num}, required for account_db initialization", ("block_num", block_num));
+            CORE_ASSERT(block_p, chain::plugin_exception, "cannot fetch reversible block ${block_num}, required for account_db initialization", ("block_num", block_num));
             time_to_block_num.emplace(block_p->timestamp.to_time_point(), block_num);
          }
 
@@ -219,7 +219,7 @@ namespace core_net::chain_apis {
          uint32_t last_updated_height = fork_db_root_num;
          if (last_updated > fork_db_root_time) {
             const auto iter = time_to_block_num.find(last_updated);
-            EOS_ASSERT(iter != time_to_block_num.end(), chain::plugin_exception, "invalid block time encountered in on-chain accounts ${time}", ("time", last_updated));
+            CORE_ASSERT(iter != time_to_block_num.end(), chain::plugin_exception, "invalid block time encountered in on-chain accounts ${time}", ("time", last_updated));
             last_updated_height = iter->second;
          }
 
@@ -386,7 +386,7 @@ namespace core_net::chain_apis {
             for (const auto& up: updated) {
                auto key = std::make_tuple(up.actor, up.permission);
                auto source_itr = permission_by_owner.find(key);
-               EOS_ASSERT(source_itr != permission_by_owner.end(), chain::plugin_exception, "chain data is missing");
+               CORE_ASSERT(source_itr != permission_by_owner.end(), chain::plugin_exception, "chain data is missing");
                auto itr = index.find(key);
                if (itr == index.end()) {
                   const auto& po = *source_itr;

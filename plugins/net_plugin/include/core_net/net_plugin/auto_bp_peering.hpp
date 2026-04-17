@@ -175,22 +175,22 @@ public:
          std::string aname;
          try {
             auto comma_pos = entry.find(',');
-            EOS_ASSERT(comma_pos != std::string::npos, chain::plugin_config_exception,
+            CORE_ASSERT(comma_pos != std::string::npos, chain::plugin_config_exception,
                        "p2p-auto-bp-peer ${e} must consist of an account name and server address separated by a comma", ("e", entry));
             auto addr = entry.substr(comma_pos + 1);
             aname = entry.substr(0, comma_pos);
             account_name account(aname);
             const auto& [host, port, type] = net_utils::split_host_port_type(addr);
-            EOS_ASSERT( !host.empty() && !port.empty(), chain::plugin_config_exception,
+            CORE_ASSERT( !host.empty() && !port.empty(), chain::plugin_config_exception,
                         "Invalid p2p-auto-bp-peer ${p}, syntax host:port:[trx|blk]", ("p", addr));
             net_utils::endpoint e{host, port};
-            EOS_ASSERT(std::find(peers.begin(), peers.end(), addr) == peers.end(), chain::plugin_config_exception,
+            CORE_ASSERT(std::find(peers.begin(), peers.end(), addr) == peers.end(), chain::plugin_config_exception,
                        "\"${a}\" should only appear in either p2p-peer-address or p2p-auto-bp-peer option, not both.", ("a",addr));
             fc_dlog(p2p_log, "Setting p2p-auto-bp-peer ${a} -> ${d}", ("a", account)("d", addr));
             config.auto_bp_accounts[e]        = account;
             config.auto_bp_addresses[account] = std::move(e);
          } catch (chain::name_type_exception&) {
-            EOS_ASSERT(false, chain::plugin_config_exception,
+            CORE_ASSERT(false, chain::plugin_config_exception,
                        "The account ${a} supplied by --p2p-auto-bp-peer option is invalid", ("a", aname));
          }
       }
@@ -204,22 +204,22 @@ public:
          std::string aname;
          try {
             auto comma_pos = entry.find(',');
-            EOS_ASSERT(comma_pos != std::string::npos, chain::plugin_config_exception,
+            CORE_ASSERT(comma_pos != std::string::npos, chain::plugin_config_exception,
                        "p2p-bp-gossip-endpoint ${e} must consist of bp-account-name,inbound-server-endpoint,outbound-ip-address separated by commas", ("e", entry));
             aname = entry.substr(0, comma_pos);
             account_name account(aname);
             auto rest = entry.substr(comma_pos + 1);
             comma_pos = rest.find(',');
-            EOS_ASSERT(comma_pos != std::string::npos, chain::plugin_config_exception,
+            CORE_ASSERT(comma_pos != std::string::npos, chain::plugin_config_exception,
                        "p2p-bp-gossip-endpoint ${e} must consist of bp-account-name,inbound-server-endpoint,outbound-ip-address separated by commas, second comma is missing", ("e", entry));
             auto inbound_server_endpoint = rest.substr(0, comma_pos);
             boost::trim(inbound_server_endpoint);
             const auto& [host, port, type] = net_utils::split_host_port_type(inbound_server_endpoint);
-            EOS_ASSERT( !host.empty() && !port.empty() && type.empty(), chain::plugin_config_exception,
+            CORE_ASSERT( !host.empty() && !port.empty() && type.empty(), chain::plugin_config_exception,
                         "Invalid p2p-bp-gossip-endpoint inbound server endpoint ${p}, syntax host:port", ("p", inbound_server_endpoint));
             auto outbound_ip_address = rest.substr(comma_pos + 1);
             boost::trim(outbound_ip_address);
-            EOS_ASSERT( outbound_ip_address.length() <= net_utils::max_p2p_address_length, chain::plugin_config_exception,
+            CORE_ASSERT( outbound_ip_address.length() <= net_utils::max_p2p_address_length, chain::plugin_config_exception,
                         "p2p-bp-gossip-endpoint outbound-ip-address ${a} too long, must be less than ${m}",
                         ("a", outbound_ip_address)("m", net_utils::max_p2p_address_length) );
             auto is_valid_ip_address = [](const std::string& ip_str) {
@@ -230,19 +230,19 @@ public:
                }
                return true;
             };
-            EOS_ASSERT( is_valid_ip_address(outbound_ip_address), chain::plugin_config_exception,
+            CORE_ASSERT( is_valid_ip_address(outbound_ip_address), chain::plugin_config_exception,
                         "Invalid p2p-bp-gossip-endpoint outbound ip address ${p}, syntax ip-address", ("p", outbound_ip_address));
 
             fc_dlog(p2p_log, "Setting p2p-bp-gossip-endpoint ${a} -> ${i},${o}", ("a", account)("i", inbound_server_endpoint)("o", outbound_ip_address));
-            EOS_ASSERT(std::ranges::find_if(config.my_bp_gossip_accounts[account],
+            CORE_ASSERT(std::ranges::find_if(config.my_bp_gossip_accounts[account],
                                             [&](const auto& e) { return e.outbound_ip_address == outbound_ip_address; }) == config.my_bp_gossip_accounts[account].end(),
                        chain::plugin_config_exception, "Duplicate p2p-bp-gossip-endpoint for: ${a}, outbound ip address: ${i}",
                        ("a", account)("i", outbound_ip_address));
             config.my_bp_gossip_accounts[account].emplace_back(inbound_server_endpoint, outbound_ip_address);
-            EOS_ASSERT(config.my_bp_gossip_accounts[account].size() <= max_bp_gossip_peers_per_producer, chain::plugin_config_exception,
+            CORE_ASSERT(config.my_bp_gossip_accounts[account].size() <= max_bp_gossip_peers_per_producer, chain::plugin_config_exception,
                        "Too many p2p-bp-gossip-endpoint for ${a}, max ${m}", ("a", account)("m", max_bp_gossip_peers_per_producer));
          } catch (chain::name_type_exception&) {
-            EOS_ASSERT(false, chain::plugin_config_exception,
+            CORE_ASSERT(false, chain::plugin_config_exception,
                        "The account ${a} supplied by --p2p-bp-gossip-endpoint option is invalid", ("a", aname));
          }
       }
@@ -269,7 +269,7 @@ public:
                   // update initial so always an active one
                   gossip_bp_peers_message::signed_bp_peer signed_empty{{.producer_name = bp_account}}; // .server_endpoint not set for initial message
                   signed_empty.sig = self()->sign_compact(*peer_info->key, signed_empty.digest(self()->chain_id));
-                  EOS_ASSERT(signed_empty.sig != signature_type{}, chain::plugin_config_exception,
+                  CORE_ASSERT(signed_empty.sig != signature_type{}, chain::plugin_config_exception,
                              "Unable to sign empty gossip bp peer of ${a}, private key not found for ${k}", ("a", bp_account)("k", peer_info->key->to_string({})));
                   initial_gossip_msg_factory.set_initial_send_buffer(signed_empty);
                   initial_updated = true;
@@ -294,7 +294,7 @@ public:
                   peer.bp_peer_info = fc::raw::pack<gossip_bp_peers_message::bp_peer_info_v1>(*peer.cached_bp_peer_info);
                }
                peer.sig = self()->sign_compact(*peer_info->key, peer.digest(self()->chain_id));
-               EOS_ASSERT(peer.sig != signature_type{}, chain::plugin_config_exception, "Unable to sign bp peer ${p}, private key not found for ${k}",
+               CORE_ASSERT(peer.sig != signature_type{}, chain::plugin_config_exception, "Unable to sign bp peer ${p}, private key not found for ${k}",
                           ("p", peer.producer_name)("k", peer_info->key->to_string({})));
                if (auto i = prod_idx.find(std::forward_as_tuple(bp_account, le.server_endpoint, le.outbound_ip_address)); i != prod_idx.end()) {
                   gossip_bps.index.modify(i, [&peer](auto& v) {

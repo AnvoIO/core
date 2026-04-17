@@ -32,7 +32,7 @@ class corevmoc_instantiated_module : public wasm_instantiated_module_interface {
          m.whitelisted = context.is_core_vm_oc_whitelisted();
          m.write_window = context.control.is_write_window();
          const code_descriptor* const cd = _corevmoc_runtime.cc.get_descriptor_for_code_sync(m, context.get_receiver(), _code_hash, _vm_version);
-         EOS_ASSERT(cd, wasm_execution_error, "Core VM OC instantiation failed");
+         CORE_ASSERT(cd, wasm_execution_error, "Core VM OC instantiation failed");
 
          if ( is_main_thread() )
             _corevmoc_runtime.exec.execute(*cd, _corevmoc_runtime.mem, context);

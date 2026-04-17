@@ -622,7 +622,7 @@ public:
                                bool                          is_transient);
    
    void        add_greylist_accounts(const producer_plugin::greylist_params& params) {
-      EOS_ASSERT(params.accounts.size() > 0, chain::invalid_http_request, "At least one account is required");
+      CORE_ASSERT(params.accounts.size() > 0, chain::invalid_http_request, "At least one account is required");
 
       chain::controller& chain = chain_plug->chain();
       for (auto& acc : params.accounts) {
@@ -631,7 +631,7 @@ public:
    }
 
    void remove_greylist_accounts(const producer_plugin::greylist_params& params) {
-      EOS_ASSERT(params.accounts.size() > 0, chain::invalid_http_request, "At least one account is required");
+      CORE_ASSERT(params.accounts.size() > 0, chain::invalid_http_request, "At least one account is required");
 
       chain::controller& chain = chain_plug->chain();
       for (auto& acc : params.accounts) {
@@ -840,7 +840,7 @@ public:
    bool push_read_only_transaction(transaction_metadata_ptr trx, next_function<transaction_trace_ptr> next);
 
    void set_produce_block_offset(uint32_t produce_block_offset_ms) {
-      EOS_ASSERT(produce_block_offset_ms < (config::producer_repetitions * config::block_interval_ms), plugin_config_exception,
+      CORE_ASSERT(produce_block_offset_ms < (config::producer_repetitions * config::block_interval_ms), plugin_config_exception,
                  "produce-block-offset-ms ${p} must be [0 - ${max})", ("p", produce_block_offset_ms)("max", config::producer_repetitions * config::block_interval_ms));
       _produce_block_cpu_effort = fc::microseconds(config::block_interval_us - (produce_block_offset_ms*1000 / config::producer_repetitions) );
    }
@@ -886,7 +886,7 @@ public:
 
    void on_irreversible_block(const signed_block_ptr& lib, const block_id_type& block_id) {
       const chain::controller& chain = chain_plug->chain();
-      EOS_ASSERT(chain.is_write_window(), producer_exception, "write window is expected for on_irreversible_block signal");
+      CORE_ASSERT(chain.is_write_window(), producer_exception, "write window is expected for on_irreversible_block signal");
       _irreversible_block_time = lib->timestamp.to_time_point();
       _snapshot_scheduler.on_irreversible_block(lib, block_id, chain);
       if (!_is_savanna_active) {
@@ -1009,7 +1009,7 @@ public:
                                       next_function<transaction_trace_ptr> next) {
 
       const transaction& t = trx->get_transaction();
-      EOS_ASSERT( t.delay_sec.value == 0, transaction_exception, "transaction cannot be delayed" );
+      CORE_ASSERT( t.delay_sec.value == 0, transaction_exception, "transaction cannot be delayed" );
 
       if (trx_type == transaction_metadata::trx_type::read_only) {
          assert(_ro_thread_pool_size > 0); // enforced by chain_plugin
@@ -1186,7 +1186,7 @@ public:
    chain::signature_type sign_compact(const chain::public_key_type& key, const fc::sha256& digest) const {
       if (key != chain::public_key_type()) {
          auto private_key_itr = _signature_providers.find(key);
-         EOS_ASSERT(private_key_itr != _signature_providers.end(), producer_priv_key_not_found,
+         CORE_ASSERT(private_key_itr != _signature_providers.end(), producer_priv_key_not_found,
                     "Local producer has no private key in config.ini corresponding to public key ${key}", ("key", key));
 
          return private_key_itr->second(digest);
@@ -1199,7 +1199,7 @@ public:
       auto& chain = chain_plug->chain();
 
       auto head = chain.head();
-      EOS_ASSERT(block_num > head.block_num(), invalid_pause_at_block_request,
+      CORE_ASSERT(block_num > head.block_num(), invalid_pause_at_block_request,
                  "Pause at block ${bn} <= chain head ${h}", ("bn", block_num)("h", head.block_num()));
 
       fc_ilog(_log, "Set pause at block #${bn}", ("bn", block_num));
@@ -1373,7 +1373,7 @@ if( options.count(op_name) ) { \
 void producer_plugin_impl::plugin_initialize(const boost::program_options::variables_map& options)
 { 
    chain_plug = app().find_plugin<chain_plugin>();
-   EOS_ASSERT(chain_plug, plugin_config_exception, "chain_plugin not found" );
+   CORE_ASSERT(chain_plug, plugin_config_exception, "chain_plugin not found" );
    _options = &options;
    LOAD_VALUE_SET(options, "producer-name", _producers)
 
@@ -1409,7 +1409,7 @@ void producer_plugin_impl::plugin_initialize(const boost::program_options::varia
    }
 
    auto subjective_account_max_failures_window_size = options.at("subjective-account-max-failures-window-size").as<uint32_t>();
-   EOS_ASSERT(subjective_account_max_failures_window_size > 0, plugin_config_exception,
+   CORE_ASSERT(subjective_account_max_failures_window_size > 0, plugin_config_exception,
               "subjective-account-max-failures-window-size ${s} must be greater than 0", ("s", subjective_account_max_failures_window_size));
 
    _account_fails.set_max_failures_per_account(options.at("subjective-account-max-failures").as<uint32_t>(),
@@ -1418,7 +1418,7 @@ void producer_plugin_impl::plugin_initialize(const boost::program_options::varia
    set_produce_block_offset(options.at("produce-block-offset-ms").as<uint32_t>());
 
    _max_block_cpu_usage_threshold_us = options.at("max-block-cpu-usage-threshold-us").as<uint32_t>();
-   EOS_ASSERT(_max_block_cpu_usage_threshold_us < config::block_interval_us,
+   CORE_ASSERT(_max_block_cpu_usage_threshold_us < config::block_interval_us,
               plugin_config_exception,
               "max-block-cpu-usage-threshold-us ${t} must be 0 .. ${bi}",
               ("bi", config::block_interval_us)("t", _max_block_cpu_usage_threshold_us));
@@ -1430,7 +1430,7 @@ void producer_plugin_impl::plugin_initialize(const boost::program_options::varia
    }
 
    fc::microseconds subjective_account_decay_time = fc::minutes(options.at("subjective-account-decay-time-minutes").as<uint32_t>());
-   EOS_ASSERT(subjective_account_decay_time.count() > 0,
+   CORE_ASSERT(subjective_account_decay_time.count() > 0,
               plugin_config_exception,
               "subjective-account-decay-time-minutes ${dt} must be greater than 0",
               ("dt", subjective_account_decay_time.to_seconds() / 60));
@@ -1444,7 +1444,7 @@ void producer_plugin_impl::plugin_initialize(const boost::program_options::varia
 
    auto max_incoming_transaction_queue_size = options.at("incoming-transaction-queue-size-mb").as<uint16_t>() * 1024 * 1024;
 
-   EOS_ASSERT(max_incoming_transaction_queue_size > 0, plugin_config_exception,
+   CORE_ASSERT(max_incoming_transaction_queue_size > 0, plugin_config_exception,
               "incoming-transaction-queue-size-mb ${mb} must be greater than 0", ("mb", max_incoming_transaction_queue_size));
 
    _unapplied_transactions.set_max_transaction_queue_size(max_incoming_transaction_queue_size);
@@ -1476,7 +1476,7 @@ void producer_plugin_impl::plugin_initialize(const boost::program_options::varia
          _snapshots_dir = sd;
       }
 
-      EOS_ASSERT(std::filesystem::is_directory(_snapshots_dir),
+      CORE_ASSERT(std::filesystem::is_directory(_snapshots_dir),
                  snapshot_directory_not_found_exception,
                  "No such directory '${dir}'",
                  ("dir", _snapshots_dir));
@@ -1501,19 +1501,19 @@ void producer_plugin_impl::plugin_initialize(const boost::program_options::varia
          }
       }
    }
-   EOS_ASSERT(producer_plugin::test_mode_ || _ro_thread_pool_size == 0 || !is_configured_producer(), plugin_config_exception,
+   CORE_ASSERT(producer_plugin::test_mode_ || _ro_thread_pool_size == 0 || !is_configured_producer(), plugin_config_exception,
               "read-only-threads not allowed on producer node");
 
    // only initialize other read-only options when read-only thread pool is enabled
    if (_ro_thread_pool_size > 0) {
-      EOS_ASSERT(_ro_thread_pool_size <= _ro_max_threads_allowed,
+      CORE_ASSERT(_ro_thread_pool_size <= _ro_max_threads_allowed,
                  plugin_config_exception,
                  "read-only-threads (${th}) greater than the number of threads allowed (${allowed})",
                  ("th", _ro_thread_pool_size)("allowed", _ro_max_threads_allowed));
 
       _ro_write_window_time_us = fc::microseconds(options.at("read-only-write-window-time-us").as<uint32_t>());
       _ro_read_window_time_us  = fc::microseconds(options.at("read-only-read-window-time-us").as<uint32_t>());
-      EOS_ASSERT(_ro_read_window_time_us > _ro_read_window_minimum_time_us,
+      CORE_ASSERT(_ro_read_window_time_us > _ro_read_window_minimum_time_us,
                  plugin_config_exception,
                  "read-only-read-window-time-us (${read}) must be at least greater than  ${min} us",
                  ("read", _ro_read_window_time_us)("min", _ro_read_window_minimum_time_us));
@@ -1599,16 +1599,16 @@ void producer_plugin_impl::plugin_startup() {
       chain::controller& chain = chain_plug->chain();
       _db_read_mode = chain.get_read_mode();
 
-      EOS_ASSERT(!is_configured_producer() || !irreversible_mode(), plugin_config_exception,
+      CORE_ASSERT(!is_configured_producer() || !irreversible_mode(), plugin_config_exception,
                  "node cannot have any producer-name configured because block production is impossible when read_mode is \"irreversible\"");
 
-      EOS_ASSERT(_finalizer_keys.empty() || !irreversible_mode(), plugin_config_exception,
+      CORE_ASSERT(_finalizer_keys.empty() || !irreversible_mode(), plugin_config_exception,
                  "node cannot have any finalizers configured because finalization is impossible when read_mode is \"irreversible\"");
 
-      EOS_ASSERT(!is_configured_producer() || chain.get_validation_mode() == chain::validation_mode::FULL, plugin_config_exception,
+      CORE_ASSERT(!is_configured_producer() || chain.get_validation_mode() == chain::validation_mode::FULL, plugin_config_exception,
                  "node cannot have any producer-name configured because block production is not safe when validation_mode is not \"full\"");
 
-      EOS_ASSERT(!is_configured_producer() || chain_plug->accept_transactions(), plugin_config_exception,
+      CORE_ASSERT(!is_configured_producer() || chain_plug->accept_transactions(), plugin_config_exception,
                  "node cannot have any producer-name configured because no block production is possible with no [api|p2p]-accepted-transactions");
 
       chain.set_node_finalizer_keys(_finalizer_keys);
@@ -1810,7 +1810,7 @@ producer_plugin::whitelist_blacklist producer_plugin::get_whitelist_blacklist() 
 }
 
 void producer_plugin::set_whitelist_blacklist(const producer_plugin::whitelist_blacklist& params) {
-   EOS_ASSERT(params.actor_whitelist || params.actor_blacklist || params.contract_whitelist || params.contract_blacklist ||
+   CORE_ASSERT(params.actor_whitelist || params.actor_blacklist || params.contract_whitelist || params.contract_blacklist ||
                  params.action_blacklist || params.key_blacklist,
               chain::invalid_http_request,
               "At least one of actor_whitelist, actor_blacklist, contract_whitelist, contract_blacklist, action_blacklist, and "
@@ -1875,13 +1875,13 @@ void producer_plugin_impl::schedule_protocol_feature_activations(const producer_
    const chain::controller& chain = chain_plug->chain();
    std::set<digest_type>    set_of_features_to_activate(schedule.protocol_features_to_activate.begin(),
                                                      schedule.protocol_features_to_activate.end());
-   EOS_ASSERT(set_of_features_to_activate.size() == schedule.protocol_features_to_activate.size(), invalid_protocol_features_to_activate,
+   CORE_ASSERT(set_of_features_to_activate.size() == schedule.protocol_features_to_activate.size(), invalid_protocol_features_to_activate,
               "duplicate digests");
    chain.validate_protocol_features(schedule.protocol_features_to_activate);
    const auto& pfs = chain.get_protocol_feature_manager().get_protocol_feature_set();
    for (auto& feature_digest : set_of_features_to_activate) {
       const auto& pf = pfs.get_protocol_feature(feature_digest);
-      EOS_ASSERT(!pf.preactivation_required, protocol_feature_exception,
+      CORE_ASSERT(!pf.preactivation_required, protocol_feature_exception,
                  "protocol feature requires preactivation: ${digest}", ("digest", feature_digest));
    }
    _protocol_features_to_activate = schedule.protocol_features_to_activate;
@@ -2564,7 +2564,7 @@ producer_plugin_impl::push_result producer_plugin_impl::push_transaction(const f
                                                                          block_time_tracker::trx_time_tracker&       trx_tracker,
                                                                          const next_function<transaction_trace_ptr>& next) {
    auto start = fc::time_point::now();
-   EOS_ASSERT(!trx->is_read_only(), producer_exception, "Unexpected read-only trx");
+   CORE_ASSERT(!trx->is_read_only(), producer_exception, "Unexpected read-only trx");
 
    chain::controller&         chain           = chain_plug->chain();
    chain::subjective_billing& subjective_bill = chain.get_mutable_subjective_billing();
@@ -2856,7 +2856,7 @@ void producer_plugin_impl::schedule_production_loop() {
    } else if (in_speculating_mode() && is_configured_producer() && !production_disabled_by_policy()) {
       chain::controller& chain = chain_plug->chain();
       fc_dlog(_log, "Speculative Block Created; Scheduling Speculative/Production Change");
-      EOS_ASSERT(chain.is_building_block(), missing_pending_block_state, "speculating without pending_block_state");
+      CORE_ASSERT(chain.is_building_block(), missing_pending_block_state, "speculating without pending_block_state");
       auto wake_time = block_timing_util::calculate_producer_wake_up_time(fc::microseconds{config::block_interval_us}, chain.pending_block_num(), chain.pending_block_timestamp(),
                                                                           _producers, chain.head_active_producers().producers,
                                                                           _producer_watermarks);
@@ -2881,13 +2881,13 @@ void producer_plugin_impl::schedule_maybe_produce_block(bool exhausted) {
 
    if (!exhausted && deadline > fc::time_point::now()) {
       // ship this block off no later than its deadline
-      EOS_ASSERT(chain.is_building_block(), missing_pending_block_state, "producing without pending_block_state, start_block succeeded");
+      CORE_ASSERT(chain.is_building_block(), missing_pending_block_state, "producing without pending_block_state, start_block succeeded");
       auto dur = deadline - fc::time_point::now();
       _timer.expires_after(std::chrono::microseconds(dur.count()));
       fc_dlog(_log, "Scheduling Block Production on Normal Block #${num} for ${time}",
               ("num", chain.head().block_num() + 1)("time", deadline));
    } else {
-      EOS_ASSERT(chain.is_building_block(), missing_pending_block_state, "producing without pending_block_state");
+      CORE_ASSERT(chain.is_building_block(), missing_pending_block_state, "producing without pending_block_state");
       _timer.expires_after(std::chrono::microseconds(0));
       fc_dlog(_log, "Scheduling Block Production on ${desc} Block #${num} immediately",
               ("num", chain.head().block_num() + 1)("desc", block_is_exhausted() ? "Exhausted" : "Deadline exceeded"));
@@ -2965,9 +2965,9 @@ void producer_plugin_impl::produce_block() {
    auto start = fc::time_point::now();
    _time_tracker.add_idle_time(start);
 
-   EOS_ASSERT(in_producing_mode(), producer_exception, "called produce_block while not actually producing");
+   CORE_ASSERT(in_producing_mode(), producer_exception, "called produce_block while not actually producing");
    chain::controller& chain = chain_plug->chain();
-   EOS_ASSERT(chain.is_building_block(), missing_pending_block_state,
+   CORE_ASSERT(chain.is_building_block(), missing_pending_block_state,
               "pending_block_state does not exist but it should, another plugin may have corrupted it");
 
    auto auth = chain.pending_block_signing_authority();
@@ -2982,7 +2982,7 @@ void producer_plugin_impl::produce_block() {
       }
    });
 
-   EOS_ASSERT(relevant_providers.size() > 0, producer_priv_key_not_found,
+   CORE_ASSERT(relevant_providers.size() > 0, producer_priv_key_not_found,
               "Attempting to produce a block for which we don't have any relevant private keys");
 
    if (_protocol_features_signaled) {
@@ -3089,7 +3089,7 @@ void producer_plugin_impl::switch_to_write_window() {
       return;
    }
 
-   EOS_ASSERT(_ro_num_active_exec_tasks.load() == 0 && _ro_exec_tasks_fut.empty(), producer_exception,
+   CORE_ASSERT(_ro_num_active_exec_tasks.load() == 0 && _ro_exec_tasks_fut.empty(), producer_exception,
               "no read-only tasks should be running before switching to write window");
 
    start_write_window();
@@ -3121,8 +3121,8 @@ void producer_plugin_impl::start_write_window() {
 // Called only from app thread
 void producer_plugin_impl::switch_to_read_window() {
    chain::controller& chain = chain_plug->chain();
-   EOS_ASSERT(chain.is_write_window(), producer_exception, "expected to be in write window");
-   EOS_ASSERT(_ro_num_active_exec_tasks.load() == 0 && _ro_exec_tasks_fut.empty(), producer_exception, "_ro_exec_tasks_fut expected to be empty");
+   CORE_ASSERT(chain.is_write_window(), producer_exception, "expected to be in write window");
+   CORE_ASSERT(_ro_num_active_exec_tasks.load() == 0 && _ro_exec_tasks_fut.empty(), producer_exception, "_ro_exec_tasks_fut expected to be empty");
 
    _time_tracker.pause();
 

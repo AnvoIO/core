@@ -52,7 +52,7 @@ namespace core_net::resource_monitor {
       // warning_threshold must be less than shutdown_threshold.
       // set them together so it is simpler to check.
       void set_threshold(uint32_t new_threshold, uint32_t new_warning_threshold) {
-         EOS_ASSERT(new_warning_threshold < new_threshold, chain::plugin_config_exception,
+         CORE_ASSERT(new_warning_threshold < new_threshold, chain::plugin_config_exception,
                     "warning_threshold ${new_warning_threshold} must be less than threshold ${new_threshold}", ("new_warning_threshold", new_warning_threshold) ("new_threshold", new_threshold));
 
          shutdown_threshold = new_threshold;
@@ -60,7 +60,7 @@ namespace core_net::resource_monitor {
       }
 
       void set_absolute(uint64_t new_v, uint64_t new_warning_v) {
-         EOS_ASSERT(new_warning_v > new_v, chain::plugin_config_exception,
+         CORE_ASSERT(new_warning_v > new_v, chain::plugin_config_exception,
                     "absolute warning value ${w} must be more than absolute threshold ${n}", ("w", new_warning_v)("n", new_v));
 
          shutdown_absolute = new_v;
@@ -117,7 +117,7 @@ namespace core_net::resource_monitor {
          // Get detailed information of the path
          struct stat statbuf{};
          auto status = space_provider.get_stat(path_name.string().c_str(), &statbuf);
-         EOS_ASSERT(status == 0, chain::plugin_config_exception,
+         CORE_ASSERT(status == 0, chain::plugin_config_exception,
                     "Failed to run stat on ${path} with status ${status}", ("path", path_name.string())("status", status));
 
          ilog("${path_name}'s file system to be monitored", ("path_name", path_name.string()));
@@ -137,7 +137,7 @@ namespace core_net::resource_monitor {
          // available amount, we use minimum available amount as threshold.
          std::error_code ec;
          auto info = space_provider.get_space(path_name, ec);
-         EOS_ASSERT(!ec, chain::plugin_config_exception,
+         CORE_ASSERT(!ec, chain::plugin_config_exception,
             "Unable to get space info for ${path_name}: [code: ${ec}] ${message}",
             ("path_name", path_name.string())
             ("ec", ec.value())

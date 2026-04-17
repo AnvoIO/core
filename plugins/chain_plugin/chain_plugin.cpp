@@ -357,7 +357,7 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("vm-oc-compile-threads,eos-vm-oc-compile-threads", bpo::value<uint64_t>()->default_value(1u)->notifier([](const auto t) {
                if(t == 0) {
                   elog("vm-oc-compile-threads must be set to a non-zero value");
-                  EOS_ASSERT(false, plugin_exception, "");
+                  CORE_ASSERT(false, plugin_exception, "");
                }
          }), "Number of threads to use for VM OC tier-up")
          ("vm-oc-enable,eos-vm-oc-enable", bpo::value<chain::wasm_interface::vm_oc_enable>()->default_value(chain::wasm_interface::vm_oc_enable::oc_auto),
@@ -518,7 +518,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
                p = std::filesystem::current_path() / p;
             }
 
-            EOS_ASSERT( fc::json::save_to_file( chainbase::environment(), p, true ), misc_exception,
+            CORE_ASSERT( fc::json::save_to_file( chainbase::environment(), p, true ), misc_exception,
                         "Error occurred while writing build info JSON to '${path}'",
                         ("path", p)
             );
@@ -526,7 +526,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
             ilog( "Saved build info JSON to '${path}'", ("path", p) );
          }
 
-         EOS_THROW( node_management_success, "reported build environment information" );
+         CORE_THROW( node_management_success, "reported build environment information" );
       }
 
       LOAD_VALUE_SET( options, "sender-bypass-whiteblacklist", chain_config->sender_bypass_whiteblacklist );
@@ -552,7 +552,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
          auto& list = chain_config->action_blacklist;
          for( const auto& a : acts ) {
             auto pos = a.find( "::" );
-            EOS_ASSERT( pos != std::string::npos, plugin_config_exception, "Invalid entry in action-blacklist: '${a}'", ("a", a));
+            CORE_ASSERT( pos != std::string::npos, plugin_config_exception, "Invalid entry in action-blacklist: '${a}'", ("a", a));
             account_name code( a.substr( 0, pos ));
             action_name act( a.substr( pos + 2 ));
             list.emplace( code, act );
@@ -610,7 +610,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
             auto item = fc::json::from_string(cp).as<std::pair<uint32_t,block_id_type>>();
             auto itr = loaded_checkpoints.find(item.first);
             if( itr != loaded_checkpoints.end() ) {
-               EOS_ASSERT( itr->second == item.second,
+               CORE_ASSERT( itr->second == item.second,
                            plugin_config_exception,
                           "redefining existing checkpoint at block number ${num}: original: ${orig} new: ${new}",
                           ("num", item.first)("orig", itr->second)("new", item.second)
@@ -640,19 +640,19 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
 
       if( options.count( "chain-state-db-size-mb" )) {
          chain_config->state_size = options.at( "chain-state-db-size-mb" ).as<uint64_t>() * 1024 * 1024;
-         EOS_ASSERT( chain_config->state_size <= 8ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
+         CORE_ASSERT( chain_config->state_size <= 8ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
                      "The maximum supported size for the chain state db (chain-state-db-size-mb) is 8TiB" );
       }
 
       if( options.count( "chain-state-db-guard-size-mb" )) {
          chain_config->state_guard_size = options.at( "chain-state-db-guard-size-mb" ).as<uint64_t>() * 1024 * 1024;
-         EOS_ASSERT( chain_config->state_guard_size <= 1ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
+         CORE_ASSERT( chain_config->state_guard_size <= 1ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
                      "chain-state-db-guard-size-mb too large" );
       }
 
       if( options.count( "transaction-finality-status-max-storage-size-gb" )) {
          const uint64_t max_storage_size = options.at( "transaction-finality-status-max-storage-size-gb" ).as<uint64_t>() * 1024 * 1024 * 1024;
-         EOS_ASSERT( max_storage_size <= 1ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
+         CORE_ASSERT( max_storage_size <= 1ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
                      "transaction-finality-status-max-storage-size-gb too large" );
          if (max_storage_size > 0) {
             const fc::microseconds success_duration = fc::seconds(options.at( "transaction-finality-status-success-duration-sec" ).as<uint64_t>());
@@ -664,7 +664,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
 
       if( options.count( "chain-threads" )) {
          chain_config->chain_thread_pool_size = options.at( "chain-threads" ).as<uint16_t>();
-         EOS_ASSERT( chain_config->chain_thread_pool_size > 0, plugin_config_exception,
+         CORE_ASSERT( chain_config->chain_thread_pool_size > 0, plugin_config_exception,
                      "chain-threads ${num} must be greater than 0", ("num", chain_config->chain_thread_pool_size) );
       }
 
@@ -678,7 +678,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
       }
 
       chain_config->sig_cpu_bill_pct = options.at("signature-cpu-billable-pct").as<uint32_t>();
-      EOS_ASSERT( chain_config->sig_cpu_bill_pct >= 0 && chain_config->sig_cpu_bill_pct <= 100, plugin_config_exception,
+      CORE_ASSERT( chain_config->sig_cpu_bill_pct >= 0 && chain_config->sig_cpu_bill_pct <= 100, plugin_config_exception,
                   "signature-cpu-billable-pct must be 0 - 100, ${pct}", ("pct", chain_config->sig_cpu_bill_pct) );
       chain_config->sig_cpu_bill_pct *= config::percent_1;
 
@@ -708,7 +708,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
          || options.count("blocks-log-stride") || options.count("max-retained-block-files");
       bool has_retain_blocks_option = options.count("block-log-retain-blocks");
 
-      EOS_ASSERT(!has_partitioned_block_log_options || !has_retain_blocks_option, plugin_config_exception,
+      CORE_ASSERT(!has_partitioned_block_log_options || !has_retain_blocks_option, plugin_config_exception,
          "block-log-retain-blocks cannot be specified together with blocks-retained-dir, blocks-archive-dir or blocks-log-stride or max-retained-block-files.");
 
       std::filesystem::path retained_dir;
@@ -733,7 +733,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
          if (block_log_retain_blocks == 0)
             chain_config->blog = core_net::chain::empty_blocklog_config{};
          else {
-            EOS_ASSERT(cfile::supports_hole_punching(), plugin_config_exception,
+            CORE_ASSERT(cfile::supports_hole_punching(), plugin_config_exception,
                        "block-log-retain-blocks cannot be greater than 0 because the file system does not support hole "
                        "punching");
             chain_config->blog = core_net::chain::prune_blocklog_config{ .prune_blocks = block_log_retain_blocks };
@@ -746,7 +746,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
          std::optional<genesis_state> gs;
          
          gs = block_log::extract_genesis_state( blocks_dir, retained_dir );
-         EOS_ASSERT( gs,
+         CORE_ASSERT( gs,
                      plugin_config_exception,
                      "Block log at '${path}' does not contain a genesis state, it only has the chain-id.",
                      ("path", (blocks_dir / "blocks.log").generic_string())
@@ -764,7 +764,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
                p = std::filesystem::current_path() / p;
             }
 
-            EOS_ASSERT( fc::json::save_to_file( *gs, p, true ),
+            CORE_ASSERT( fc::json::save_to_file( *gs, p, true ),
                         misc_exception,
                         "Error occurred while writing genesis JSON to '${path}'",
                         ("path", p.generic_string())
@@ -773,13 +773,13 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
             ilog( "Saved genesis JSON to '${path}'", ("path", p.generic_string()) );
          }
 
-         EOS_THROW( extract_genesis_state_exception, "extracted genesis state from blocks.log" );
+         CORE_THROW( extract_genesis_state_exception, "extracted genesis state from blocks.log" );
       }
 
       uint32_t truncate_at_block = options.at( "truncate-at-block" ).as<uint32_t>();
       uint32_t terminate_at_block = options.at( "terminate-at-block" ).as<uint32_t>();
       if (truncate_at_block > 0 && terminate_at_block > 0) {
-         EOS_ASSERT(truncate_at_block == terminate_at_block, plugin_config_exception,
+         CORE_ASSERT(truncate_at_block == terminate_at_block, plugin_config_exception,
                     "truncate-at-block ${a} must match terminate-at-block ${b}",
                     ("a", truncate_at_block)("b", terminate_at_block));
       } else if (truncate_at_block > 0 && !options.at( "hard-replay-blockchain" ).as<bool>()) {
@@ -796,7 +796,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
          ilog( "Replay requested: deleting state database" );
          if (!options.count( "snapshot" )) {
             auto first_block = block_log::extract_first_block_num(blocks_dir, retained_dir);
-            EOS_ASSERT(first_block == 1, plugin_config_exception,
+            CORE_ASSERT(first_block == 1, plugin_config_exception,
                        "replay-blockchain without snapshot requested without a full block log, first block: ${n}", ("n", first_block));
          }
          clear_directory_contents( chain_config->state_dir );
@@ -805,7 +805,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
       std::optional<chain_id_type> chain_id;
       if (options.count( "snapshot" )) {
          snapshot_path = options.at( "snapshot" ).as<std::filesystem::path>();
-         EOS_ASSERT( std::filesystem::exists(*snapshot_path), plugin_config_exception,
+         CORE_ASSERT( std::filesystem::exists(*snapshot_path), plugin_config_exception,
                      "Cannot load snapshot, ${name} does not exist", ("name", snapshot_path->generic_string()) );
 
          // recover genesis information from the snapshot
@@ -816,16 +816,16 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
          chain_id = controller::extract_chain_id(reader);
          infile.close();
 
-         EOS_ASSERT( options.count( "genesis-timestamp" ) == 0,
+         CORE_ASSERT( options.count( "genesis-timestamp" ) == 0,
                  plugin_config_exception,
                  "--snapshot is incompatible with --genesis-timestamp as the snapshot contains genesis information");
-         EOS_ASSERT( options.count( "genesis-json" ) == 0,
+         CORE_ASSERT( options.count( "genesis-json" ) == 0,
                      plugin_config_exception,
                      "--snapshot is incompatible with --genesis-json as the snapshot contains genesis information");
 
          auto shared_mem_path = chain_config->state_dir / "shared_memory.bin";
          auto chain_head_path = chain_config->state_dir / chain_head_filename;
-         EOS_ASSERT(!std::filesystem::is_regular_file(shared_mem_path) &&
+         CORE_ASSERT(!std::filesystem::is_regular_file(shared_mem_path) &&
                     !std::filesystem::is_regular_file(chain_head_path),
                     plugin_config_exception,
                     "Snapshot can only be used to initialize an empty database, remove directory: ${d}",
@@ -834,7 +834,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
          auto block_log_chain_id = block_log::extract_chain_id(blocks_dir, retained_dir);
 
          if (block_log_chain_id) {
-            EOS_ASSERT( *chain_id == *block_log_chain_id,
+            CORE_ASSERT( *chain_id == *block_log_chain_id,
                            plugin_config_exception,
                            "snapshot chain ID (${snapshot_chain_id}) does not match the chain ID (${block_log_chain_id}) in the block log",
                            ("snapshot_chain_id",  *chain_id)
@@ -862,7 +862,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
             }, *chain_context);
 
             if( chain_id ) {
-               EOS_ASSERT( *block_log_chain_id == *chain_id, block_log_exception,
+               CORE_ASSERT( *block_log_chain_id == *chain_id, block_log_exception,
                            "Chain ID in blocks.log (${block_log_chain_id}) does not match the existing "
                            " chain ID in state (${state_chain_id}).",
                            ("block_log_chain_id", *block_log_chain_id)
@@ -882,7 +882,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
                genesis_file = std::filesystem::current_path() / genesis_file;
             }
 
-            EOS_ASSERT( std::filesystem::is_regular_file( genesis_file ),
+            CORE_ASSERT( std::filesystem::is_regular_file( genesis_file ),
                         plugin_config_exception,
                        "Specified genesis file '${genesis}' does not exist.",
                        ("genesis", genesis_file));
@@ -899,7 +899,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
             }
 
             if( block_log_genesis ) {
-               EOS_ASSERT( *block_log_genesis == provided_genesis, plugin_config_exception,
+               CORE_ASSERT( *block_log_genesis == provided_genesis, plugin_config_exception,
                            "Genesis state, provided via command line arguments, does not match the existing genesis state"
                            " in blocks.log. It is not necessary to provide genesis state arguments when a full blocks.log "
                            "file already exists."
@@ -907,7 +907,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
             } else {
                const auto& provided_genesis_chain_id = provided_genesis.compute_chain_id();
                if( chain_id ) {
-                  EOS_ASSERT( provided_genesis_chain_id == *chain_id, plugin_config_exception,
+                  CORE_ASSERT( provided_genesis_chain_id == *chain_id, plugin_config_exception,
                               "Genesis state, provided via command line arguments, has a chain ID (${provided_genesis_chain_id}) "
                               "that does not match the existing chain ID in the database state (${state_chain_id}). "
                               "It is not necessary to provide genesis state arguments when an initialized database state already exists.",
@@ -916,7 +916,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
                   );
                } else {
                   if( block_log_chain_id ) {
-                     EOS_ASSERT( provided_genesis_chain_id == *block_log_chain_id, plugin_config_exception,
+                     CORE_ASSERT( provided_genesis_chain_id == *block_log_chain_id, plugin_config_exception,
                                  "Genesis state, provided via command line arguments, has a chain ID (${provided_genesis_chain_id}) "
                                  "that does not match the existing chain ID in blocks.log (${block_log_chain_id}).",
                                  ("provided_genesis_chain_id", provided_genesis_chain_id)
@@ -931,7 +931,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
                }
             }
          } else {
-            EOS_ASSERT( options.count( "genesis-timestamp" ) == 0,
+            CORE_ASSERT( options.count( "genesis-timestamp" ) == 0,
                         plugin_config_exception,
                         "--genesis-timestamp is only valid if also passed in with --genesis-json");
          }
@@ -943,7 +943,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
             } else {
                // Uninitialized state database and no genesis state provided
 
-               EOS_ASSERT( !block_log_chain_id, plugin_config_exception,
+               CORE_ASSERT( !block_log_chain_id, plugin_config_exception,
                            "Genesis state is necessary to initialize fresh blockchain state but genesis state could not be "
                            "found in the blocks log. Please either load from snapshot or find a blocks log that starts "
                            "from genesis."
@@ -974,7 +974,7 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
       if( options.count("vm-oc-cache-size-mb") ) {
          chain_config->corevmoc_config.cache_size = options.at( "vm-oc-cache-size-mb" ).as<uint64_t>() * 1024u * 1024u;
-         EOS_ASSERT( chain_config->corevmoc_config.cache_size <= 8ull * 1024 * 1024 * 1024, plugin_config_exception,
+         CORE_ASSERT( chain_config->corevmoc_config.cache_size <= 8ull * 1024 * 1024 * 1024, plugin_config_exception,
                      "vm-oc-cache-size-mb too large" );
       }
       if( options.count("vm-oc-compile-threads") )
@@ -990,19 +990,19 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
       chain.emplace( *chain_config, std::move(pfs), *chain_id );
 
       if( options.count( "transaction-retry-max-storage-size-gb" )) {
-         EOS_ASSERT( !options.count( "producer-name"), plugin_config_exception,
+         CORE_ASSERT( !options.count( "producer-name"), plugin_config_exception,
                      "Transaction retry not allowed on producer nodes." );
          const uint64_t max_storage_size = options.at( "transaction-retry-max-storage-size-gb" ).as<uint64_t>() * 1024 * 1024 * 1024;
-         EOS_ASSERT( max_storage_size <= 1ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
+         CORE_ASSERT( max_storage_size <= 1ull * 1024 * 1024 * 1024 * 1024, plugin_config_exception,
                      "transaction-retry-max-storage-size-gb too large" );
          if( max_storage_size > 0 ) {
             const uint32_t p2p_dedup_time_s = options.at( "p2p-dedup-cache-expire-time-sec" ).as<uint32_t>();
             const uint32_t trx_retry_interval = options.at( "transaction-retry-interval-sec" ).as<uint32_t>();
             const uint32_t trx_retry_max_expire = options.at( "transaction-retry-max-expiration-sec" ).as<uint32_t>();
-            EOS_ASSERT( trx_retry_interval >= 2 * p2p_dedup_time_s, plugin_config_exception,
+            CORE_ASSERT( trx_retry_interval >= 2 * p2p_dedup_time_s, plugin_config_exception,
                         "transaction-retry-interval-sec ${ri} must be greater than 2 times p2p-dedup-cache-expire-time-sec ${dd}",
                         ("ri", trx_retry_interval)("dd", p2p_dedup_time_s) );
-            EOS_ASSERT( trx_retry_max_expire > trx_retry_interval, plugin_config_exception,
+            CORE_ASSERT( trx_retry_max_expire > trx_retry_interval, plugin_config_exception,
                         "transaction-retry-max-expiration-sec ${m} should be configured larger than transaction-retry-interval-sec ${i}",
                         ("m", trx_retry_max_expire)("i", trx_retry_interval) );
             _trx_retry_db.emplace( *chain, max_storage_size,
@@ -1049,10 +1049,10 @@ void chain_plugin_impl::plugin_initialize(const variables_map& options) {
          setbuf(stdout, NULL);
 
          //verify configuration is correct
-         EOS_ASSERT( options.at("api-accept-transactions").as<bool>() == false, plugin_config_exception,
+         CORE_ASSERT( options.at("api-accept-transactions").as<bool>() == false, plugin_config_exception,
             "api-accept-transactions must be set to false in order to enable deep-mind logging.");
 
-         EOS_ASSERT( options.at("p2p-accept-transactions").as<bool>() == false, plugin_config_exception,
+         CORE_ASSERT( options.at("p2p-accept-transactions").as<bool>() == false, plugin_config_exception,
             "p2p-accept-transactions must be set to false in order to enable deep-mind logging.");
 
          chain->enable_deep_mind( &_deep_mind_log );
@@ -1226,7 +1226,7 @@ chain_apis::read_write::read_write(controller& db,
 }
 
 void chain_apis::read_write::validate() const {
-   EOS_ASSERT( api_accept_transactions, missing_chain_api_plugin_exception,
+   CORE_ASSERT( api_accept_transactions, missing_chain_api_plugin_exception,
                "Not allowed, node has api-accept-transactions = false" );
 }
 
@@ -1320,7 +1320,7 @@ namespace chain_apis {
 const string read_only::KEYi64 = "i64";
 
 get_info_db::get_info_results read_only::get_info(const read_only::get_info_params&, const fc::time_point&) const {
-   EOS_ASSERT(gidb, plugin_config_exception, "get_info being accessed when not enabled");
+   CORE_ASSERT(gidb, plugin_config_exception, "get_info being accessed when not enabled");
 
    // To be able to run get_info on an http thread, get_info results are stored
    // in get_info_db and updated whenever accepted_block signal is received.
@@ -1329,7 +1329,7 @@ get_info_db::get_info_results read_only::get_info(const read_only::get_info_para
 
 read_only::get_transaction_status_results
 read_only::get_transaction_status(const read_only::get_transaction_status_params& param, const fc::time_point&) const {
-   EOS_ASSERT(trx_finality_status_proc, unsupported_feature, "Transaction Status Interface not enabled.  To enable, configure core_netd with '--transaction-finality-status-max-storage-size-gb <size>'.");
+   CORE_ASSERT(trx_finality_status_proc, unsupported_feature, "Transaction Status Interface not enabled.  To enable, configure core_netd with '--transaction-finality-status-max-storage-size-gb <size>'.");
 
    trx_finality_status_processing::chain_state ch_state = trx_finality_status_proc->get_chain_state();
 
@@ -1419,7 +1419,7 @@ uint64_t read_only::get_table_index_name(const read_only::get_table_rows_params&
    // see multi_index packing of index name
    const uint64_t table = p.table.to_uint64_t();
    uint64_t index = table & 0xFFFFFFFFFFFFFFF0ULL;
-   EOS_ASSERT( index == table, chain::contract_table_query_exception, "Unsupported table name: ${n}", ("n", p.table) );
+   CORE_ASSERT( index == table, chain::contract_table_query_exception, "Unsupported table name: ${n}", ("n", p.table) );
 
    primary = false;
    uint64_t pos = 0;
@@ -1446,7 +1446,7 @@ uint64_t read_only::get_table_index_name(const read_only::get_table_rows_params&
       try {
          pos = fc::to_uint64( p.index_position );
       } catch(...) {
-         EOS_ASSERT( false, chain::contract_table_query_exception, "Invalid index_position: ${p}", ("p", p.index_position));
+         CORE_ASSERT( false, chain::contract_table_query_exception, "Invalid index_position: ${p}", ("p", p.index_position));
       }
       if (pos < 2) {
          primary = true;
@@ -1487,7 +1487,7 @@ uint64_t convert_to_type(const string& str, const string& desc) {
    try {
       return ( core_net::chain::string_to_symbol( 0, str.c_str() ) >> 8 );
    } catch( ... ) {
-      EOS_ASSERT( false, chain_type_exception, "Could not convert ${desc} string '${str}' to any of the following: "
+      CORE_ASSERT( false, chain_type_exception, "Could not convert ${desc} string '${str}' to any of the following: "
                         "uint64_t, valid name, or valid symbol (with or without the precision)",
                   ("desc", desc)("str", str));
    }
@@ -1500,7 +1500,7 @@ double convert_to_type(const string& str, const string& desc) {
       val = fc::variant(str).as<double>();
    } FC_RETHROW_EXCEPTIONS(warn, "Could not convert ${desc} string '${str}' to key type.", ("desc", desc)("str",str) )
 
-   EOS_ASSERT( !std::isnan(val), chain::contract_table_query_exception,
+   CORE_ASSERT( !std::isnan(val), chain::contract_table_query_exception,
                "Converted ${desc} string '${str}' to NaN which is not a permitted value for the key type", ("desc", desc)("str",str) );
 
    return val;
@@ -1530,7 +1530,7 @@ string convert_to_string(const chain::key256_t& source, const string& key_type, 
          memcpy(val._hash, byte_array.data(), byte_array.size() );
          return std::string(val);
       }
-      EOS_ASSERT( false, chain_type_exception, "Incompatible key_type and encode_type for key256_t next_key" );
+      CORE_ASSERT( false, chain_type_exception, "Incompatible key_type and encode_type for key256_t next_key" );
 
    } FC_RETHROW_EXCEPTIONS(warn, "Could not convert ${desc} source '${source}' to string.", ("desc", desc)("source",source) )
 }
@@ -1546,7 +1546,7 @@ string convert_to_string(const float128_t& source, const string& key_type, const
 abi_def get_abi( const controller& db, const name& account ) {
    const auto &d = db.db();
    const account_object *code_accnt = d.find<account_object, by_name>(account);
-   EOS_ASSERT(code_accnt != nullptr, chain::account_query_exception, "Fail to retrieve account for ${account}", ("account", account) );
+   CORE_ASSERT(code_accnt != nullptr, chain::account_query_exception, "Fail to retrieve account for ${account}", ("account", account) );
    abi_def abi;
    abi_serializer::to_abi(code_accnt->abi, abi);
    return abi;
@@ -1558,7 +1558,7 @@ string get_table_type( const abi_def& abi, const name& table_name ) {
          return t.index_type;
       }
    }
-   EOS_ASSERT( false, chain::contract_table_query_exception, "Table ${table} is not specified in the ABI", ("table",table_name) );
+   CORE_ASSERT( false, chain::contract_table_query_exception, "Table ${table} is not specified in the ABI", ("table",table_name) );
 }
 
 read_only::get_table_rows_return_t
@@ -1567,14 +1567,14 @@ read_only::get_table_rows( const read_only::get_table_rows_params& p, const fc::
    bool primary = false;
    auto table_with_index = get_table_index_name( p, primary );
    if( primary ) {
-      EOS_ASSERT( p.table == table_with_index, chain::contract_table_query_exception, "Invalid table name ${t}", ( "t", p.table ));
+      CORE_ASSERT( p.table == table_with_index, chain::contract_table_query_exception, "Invalid table name ${t}", ( "t", p.table ));
       auto table_type = get_table_type( abi, p.table );
       if( table_type == KEYi64 || p.key_type == "i64" || p.key_type == "name" ) {
          return get_table_rows_ex<key_value_index>(p,std::move(abi),deadline);
       }
-      EOS_ASSERT( false, chain::contract_table_query_exception,  "Invalid table type ${type}", ("type",table_type)("abi",abi));
+      CORE_ASSERT( false, chain::contract_table_query_exception,  "Invalid table type ${type}", ("type",table_type)("abi",abi));
    } else {
-      EOS_ASSERT( !p.key_type.empty(), chain::contract_table_query_exception, "key type required for non-primary index" );
+      CORE_ASSERT( !p.key_type.empty(), chain::contract_table_query_exception, "key type required for non-primary index" );
 
       if (p.key_type == chain_apis::i64 || p.key_type == "name") {
          return get_table_rows_by_seckey<index64_index, uint64_t>(p, std::move(abi), deadline, [](uint64_t v)->uint64_t {
@@ -1625,7 +1625,7 @@ read_only::get_table_rows( const read_only::get_table_rows_params& p, const fc::
          using  conv = keytype_converter<chain_apis::ripemd160,chain_apis::hex>;
          return get_table_rows_by_seckey<conv::index_type, conv::input_type>(p, std::move(abi), deadline, conv::function());
       }
-      EOS_ASSERT(false, chain::contract_table_query_exception,  "Unsupported secondary index type: ${t}", ("t", p.key_type));
+      CORE_ASSERT(false, chain::contract_table_query_exception,  "Unsupported secondary index type: ${t}", ("t", p.key_type));
    }
 }
 
@@ -1690,13 +1690,13 @@ vector<asset> read_only::get_currency_balance( const read_only::get_currency_bal
 
    vector<asset> results;
    walk_key_value_table(p.code, p.account, "accounts"_n, [&](const key_value_object& obj){
-      EOS_ASSERT( obj.value.size() >= sizeof(asset), chain::asset_type_exception, "Invalid data on table");
+      CORE_ASSERT( obj.value.size() >= sizeof(asset), chain::asset_type_exception, "Invalid data on table");
 
       asset cursor;
       fc::datastream<const char *> ds(obj.value.data(), obj.value.size());
       fc::raw::unpack(ds, cursor);
 
-      EOS_ASSERT( cursor.get_symbol().valid(), chain::asset_type_exception, "Invalid asset");
+      CORE_ASSERT( cursor.get_symbol().valid(), chain::asset_type_exception, "Invalid asset");
 
       if( !p.symbol || boost::iequals(cursor.symbol_name(), *p.symbol) ) {
         results.emplace_back(cursor);
@@ -1718,7 +1718,7 @@ fc::variant read_only::get_currency_stats( const read_only::get_currency_stats_p
    uint64_t scope = ( core_net::chain::string_to_symbol( 0, boost::algorithm::to_upper_copy(p.symbol).c_str() ) >> 8 );
 
    walk_key_value_table(p.code, name(scope), "stat"_n, [&](const key_value_object& obj){
-      EOS_ASSERT( obj.value.size() >= sizeof(read_only::get_currency_stats_result), chain::asset_type_exception, "Invalid data on table");
+      CORE_ASSERT( obj.value.size() >= sizeof(read_only::get_currency_stats_result), chain::asset_type_exception, "Invalid data on table");
 
       fc::datastream<const char *> ds(obj.value.data(), obj.value.size());
       read_only::get_currency_stats_result result;
@@ -1736,14 +1736,14 @@ fc::variant read_only::get_currency_stats( const read_only::get_currency_stats_p
 
 fc::variant get_global_row( const database& db, const abi_def& abi, const abi_serializer& abis, const fc::microseconds& abi_serializer_max_time_us, bool shorten_abi_errors ) {
    const auto table_type = get_table_type(abi, "global"_n);
-   EOS_ASSERT(table_type == read_only::KEYi64, chain::contract_table_query_exception, "Invalid table type ${type} for table global", ("type",table_type));
+   CORE_ASSERT(table_type == read_only::KEYi64, chain::contract_table_query_exception, "Invalid table type ${type} for table global", ("type",table_type));
 
    const auto* const table_id = db.find<chain::table_id_object, chain::by_code_scope_table>(boost::make_tuple(config::system_account_name(), config::system_account_name(), "global"_n));
-   EOS_ASSERT(table_id, chain::contract_table_query_exception, "Missing table global");
+   CORE_ASSERT(table_id, chain::contract_table_query_exception, "Missing table global");
 
    const auto& kv_index = db.get_index<key_value_index, by_scope_primary>();
    const auto it = kv_index.find(boost::make_tuple(table_id->id, "global"_n.to_uint64_t()));
-   EOS_ASSERT(it != kv_index.end(), chain::contract_table_query_exception, "Missing row in table global");
+   CORE_ASSERT(it != kv_index.end(), chain::contract_table_query_exception, "Missing row in table global");
 
    vector<char> data;
    read_only::copy_inline_row(*it, data);
@@ -1795,7 +1795,7 @@ read_only::get_producers( const read_only::get_producers_params& params, const f
    abi_def abi = core_net::chain_apis::get_abi(db, config::system_account_name());
    const auto table_type = get_table_type(abi, "producers"_n);
    const abi_serializer abis{ abi_def(abi), abi_serializer::create_yield_function( abi_serializer_max_time ) };
-   EOS_ASSERT(table_type == KEYi64, chain::contract_table_query_exception, "Invalid table type ${type} for table producers", ("type",table_type));
+   CORE_ASSERT(table_type == KEYi64, chain::contract_table_query_exception, "Invalid table type ${type} for table producers", ("type",table_type));
 
    const auto& d = db.db();
    const auto lower = name{params.lower_bound};
@@ -1805,7 +1805,7 @@ read_only::get_producers( const read_only::get_producers_params& params, const f
            boost::make_tuple(config::system_account_name(), config::system_account_name(), "producers"_n));
    const auto* const secondary_table_id = d.find<chain::table_id_object, chain::by_code_scope_table>(
            boost::make_tuple(config::system_account_name(), config::system_account_name(), name("producers"_n.to_uint64_t() | secondary_index_num)));
-   EOS_ASSERT(table_id && secondary_table_id, chain::contract_table_query_exception, "Missing producers table");
+   CORE_ASSERT(table_id && secondary_table_id, chain::contract_table_query_exception, "Missing producers table");
 
    const auto& kv_index = d.get_index<key_value_index, by_scope_primary>();
    const auto& secondary_index = d.get_index<index_double_index>().indices();
@@ -1900,7 +1900,7 @@ read_only::get_scheduled_transactions( const read_only::get_scheduled_transactio
                const auto& by_txid = d.get_index<generated_transaction_multi_index,by_trx_id>();
                auto itr = by_txid.find( txid );
                if (itr == by_txid.end()) {
-                  EOS_THROW(transaction_exception, "Unknown Transaction ID: ${txid}", ("txid", txid));
+                  CORE_THROW(transaction_exception, "Unknown Transaction ID: ${txid}", ("txid", txid));
                }
 
                return d.get_index<generated_transaction_multi_index>().indices().project<by_delay>(itr);
@@ -1964,7 +1964,7 @@ chain::signed_block_ptr read_only::get_raw_block(const read_only::get_raw_block_
    signed_block_ptr block;
    std::optional<uint64_t> block_num;
 
-   EOS_ASSERT( !params.block_num_or_id.empty() && params.block_num_or_id.size() <= 64,
+   CORE_ASSERT( !params.block_num_or_id.empty() && params.block_num_or_id.size() <= 64,
                chain::block_id_type_exception,
                "Invalid Block number or ID, must be greater than 0 and less than 65 characters"
    );
@@ -1978,10 +1978,10 @@ chain::signed_block_ptr read_only::get_raw_block(const read_only::get_raw_block_
    } else {
       try {
          block = db.fetch_block_by_id( fc::variant(params.block_num_or_id).as<block_id_type>() );
-      } EOS_RETHROW_EXCEPTIONS(chain::block_id_type_exception, "Invalid block ID: ${block_num_or_id}", ("block_num_or_id", params.block_num_or_id))
+      } CORE_RETHROW_EXCEPTIONS(chain::block_id_type_exception, "Invalid block ID: ${block_num_or_id}", ("block_num_or_id", params.block_num_or_id))
    }
 
-   EOS_ASSERT( block, unknown_block_exception, "Could not find block: ${block}", ("block", params.block_num_or_id));
+   CORE_ASSERT( block, unknown_block_exception, "Could not find block: ${block}", ("block", params.block_num_or_id));
 
    return block;
 }
@@ -2002,7 +2002,7 @@ std::function<chain::t_or_exception<fc::variant>()> read_only::get_block(const g
 read_only::get_block_header_result read_only::get_block_header(const read_only::get_block_header_params& params, const fc::time_point& deadline) const{
    std::optional<uint64_t> block_num;
 
-   EOS_ASSERT( !params.block_num_or_id.empty() && params.block_num_or_id.size() <= 64,
+   CORE_ASSERT( !params.block_num_or_id.empty() && params.block_num_or_id.size() <= 64,
                chain::block_id_type_exception,
                "Invalid Block number or ID, must be greater than 0 and less than 65 characters"
    );
@@ -2019,9 +2019,9 @@ read_only::get_block_header_result read_only::get_block_header(const read_only::
       } else {
          try {
             header = db.fetch_block_header_by_id( fc::variant(params.block_num_or_id).as<block_id_type>() );
-         } EOS_RETHROW_EXCEPTIONS(chain::block_id_type_exception, "Invalid block ID: ${block_num_or_id}", ("block_num_or_id", params.block_num_or_id))
+         } CORE_RETHROW_EXCEPTIONS(chain::block_id_type_exception, "Invalid block ID: ${block_num_or_id}", ("block_num_or_id", params.block_num_or_id))
       }
-      EOS_ASSERT( header, unknown_block_exception, "Could not find block header: ${block}", ("block", params.block_num_or_id));
+      CORE_ASSERT( header, unknown_block_exception, "Could not find block header: ${block}", ("block", params.block_num_or_id));
       return { header->calculate_id(), fc::variant{*header}, {}};
    } else {
       signed_block_ptr block;
@@ -2030,9 +2030,9 @@ read_only::get_block_header_result read_only::get_block_header(const read_only::
       } else {
          try {
             block = db.fetch_block_by_id( fc::variant(params.block_num_or_id).as<block_id_type>() );
-         } EOS_RETHROW_EXCEPTIONS(chain::block_id_type_exception, "Invalid block ID: ${block_num_or_id}", ("block_num_or_id", params.block_num_or_id))
+         } CORE_RETHROW_EXCEPTIONS(chain::block_id_type_exception, "Invalid block ID: ${block_num_or_id}", ("block_num_or_id", params.block_num_or_id))
       }
-      EOS_ASSERT( block, unknown_block_exception, "Could not find block header: ${block}", ("block", params.block_num_or_id));
+      CORE_ASSERT( block, unknown_block_exception, "Could not find block header: ${block}", ("block", params.block_num_or_id));
       return { block->calculate_id(), fc::variant{static_cast<signed_block_header>(*block)}, block->block_extensions};
    }
 }
@@ -2064,7 +2064,7 @@ fc::variant read_only::get_block_info(const read_only::get_block_info_params& pa
       // assert below will handle the invalid block num
    }
 
-   EOS_ASSERT( block, unknown_block_exception, "Could not find block: ${block}", ("block", params.block_num));
+   CORE_ASSERT( block, unknown_block_exception, "Could not find block: ${block}", ("block", params.block_num));
 
    const auto id = block->calculate_id();
    const uint32_t ref_block_prefix = id._hash[1];
@@ -2097,10 +2097,10 @@ fc::variant read_only::get_block_header_state(const get_block_header_state_param
    } else {
       try {
          sbp = db.fetch_block_by_id(block_id_type(params.block_num_or_id));
-      } EOS_RETHROW_EXCEPTIONS(chain::block_id_type_exception, "Invalid block ID: ${block_num_or_id}", ("block_num_or_id", params.block_num_or_id))
+      } CORE_RETHROW_EXCEPTIONS(chain::block_id_type_exception, "Invalid block ID: ${block_num_or_id}", ("block_num_or_id", params.block_num_or_id))
    }
 
-   EOS_ASSERT( sbp, unknown_block_exception, "Could not find block: ${block}", ("block", params.block_num_or_id));
+   CORE_ASSERT( sbp, unknown_block_exception, "Could not find block: ${block}", ("block", params.block_num_or_id));
 
    block_header_state_legacy ret;
    ret.block_num = sbp->block_num();
@@ -2118,7 +2118,7 @@ void read_write::push_block(read_write::push_block_params&& params, next_functio
       auto b = std::make_shared<signed_block>( std::move(params) );
       block_id_type id = b->calculate_id();
       auto [best_head, obh] = db.accept_block( id, b );
-      EOS_ASSERT(obh, unlinkable_block_exception, "block did not link ${b}", ("b", id));
+      CORE_ASSERT(obh, unlinkable_block_exception, "block did not link ${b}", ("b", id));
       app().get_method<incoming::methods::block_sync>()(b, id, *obh);
    } catch ( boost::interprocess::bad_alloc& ) {
       handle_db_exhaustion();
@@ -2134,7 +2134,7 @@ void read_write::push_transaction(const read_write::push_transaction_params& par
       auto resolver = caching_resolver(make_resolver(db, abi_serializer_max_time, throw_on_yield::yes));
       try {
          abi_serializer::from_variant(params, *pretty_input, resolver, abi_serializer_max_time);
-      } EOS_RETHROW_EXCEPTIONS(chain::packed_transaction_type_exception, "Invalid packed transaction")
+      } CORE_RETHROW_EXCEPTIONS(chain::packed_transaction_type_exception, "Invalid packed transaction")
 
       app().get_method<incoming::methods::transaction_async>()(pretty_input, true, transaction_metadata::trx_type::input, false,
             [this, next](const next_function_variant<transaction_trace_ptr>& result) -> void {
@@ -2236,7 +2236,7 @@ static void push_recurse(read_write* rw, int index, const std::shared_ptr<read_w
 
 void read_write::push_transactions(const read_write::push_transactions_params& params, next_function<read_write::push_transactions_results> next) {
    try {
-      EOS_ASSERT( params.size() <= 1000, too_many_tx_at_once, "Attempt to push too many transactions at once" );
+      CORE_ASSERT( params.size() <= 1000, too_many_tx_at_once, "Attempt to push too many transactions at once" );
       auto params_copy = std::make_shared<read_write::push_transactions_params>(params.begin(), params.end());
       auto result = std::make_shared<read_write::push_transactions_results>();
       result->reserve(params.size());
@@ -2257,7 +2257,7 @@ void api_base::send_transaction_gen(API &api, send_transaction_params_t params, 
       auto resolver = caching_resolver(make_resolver(api.db, api.abi_serializer_max_time, throw_on_yield::yes));
       try {
          abi_serializer::from_variant(params.transaction, *ptrx, resolver, api.abi_serializer_max_time);
-      } EOS_RETHROW_EXCEPTIONS(packed_transaction_type_exception, "Invalid packed transaction")
+      } CORE_RETHROW_EXCEPTIONS(packed_transaction_type_exception, "Invalid packed transaction")
 
       bool retry = false;
       std::optional<uint16_t> retry_num_blocks;
@@ -2266,8 +2266,8 @@ void api_base::send_transaction_gen(API &api, send_transaction_params_t params, 
          retry = params.retry_trx;
          retry_num_blocks = params.retry_trx_num_blocks;
 
-         EOS_ASSERT( !retry || api.trx_retry.has_value(), unsupported_feature, "Transaction retry not enabled on node. transaction-retry-max-storage-size-gb is 0" );
-         EOS_ASSERT( !retry || (ptrx->expiration() <= api.trx_retry->get_max_expiration_time()), tx_exp_too_far_exception,
+         CORE_ASSERT( !retry || api.trx_retry.has_value(), unsupported_feature, "Transaction retry not enabled on node. transaction-retry-max-storage-size-gb is 0" );
+         CORE_ASSERT( !retry || (ptrx->expiration() <= api.trx_retry->get_max_expiration_time()), tx_exp_too_far_exception,
                      "retry transaction expiration ${e} larger than allowed ${m}",
                      ("e", ptrx->expiration())("m", api.trx_retry->get_max_expiration_time()) );
       }
@@ -2357,7 +2357,7 @@ read_only::get_abi_results read_only::get_abi( const get_abi_params& params, con
    }
 
    return result;
-   } EOS_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account abi")
+   } CORE_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account abi")
 }
 
 read_only::get_code_results read_only::get_code( const get_code_params& params, const fc::time_point& )const {
@@ -2368,7 +2368,7 @@ read_only::get_code_results read_only::get_code( const get_code_params& params, 
    const auto& accnt_obj          = d.get<account_object,by_name>( params.account_name );
    const auto& accnt_metadata_obj = d.get<account_metadata_object,by_name>( params.account_name );
 
-   EOS_ASSERT( params.code_as_wasm, unsupported_feature, "Returning WAST from get_code is no longer supported" );
+   CORE_ASSERT( params.code_as_wasm, unsupported_feature, "Returning WAST from get_code is no longer supported" );
 
    if( accnt_metadata_obj.code_hash != digest_type() ) {
       const auto& code_obj = d.get<code_object, by_code_hash>(accnt_metadata_obj.code_hash);
@@ -2381,7 +2381,7 @@ read_only::get_code_results read_only::get_code( const get_code_params& params, 
    }
 
    return result;
-   } EOS_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account code")
+   } CORE_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account code")
 }
 
 read_only::get_code_hash_results read_only::get_code_hash( const get_code_hash_params& params, const fc::time_point& )const {
@@ -2395,7 +2395,7 @@ read_only::get_code_hash_results read_only::get_code_hash( const get_code_hash_p
       result.code_hash = accnt.code_hash;
 
    return result;
-   } EOS_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account code hash")
+   } CORE_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account code hash")
 }
 
 read_only::get_raw_code_and_abi_results read_only::get_raw_code_and_abi( const get_raw_code_and_abi_params& params, const fc::time_point& )const {
@@ -2413,7 +2413,7 @@ read_only::get_raw_code_and_abi_results read_only::get_raw_code_and_abi( const g
    result.abi = blob{{accnt_obj.abi.begin(), accnt_obj.abi.end()}};
 
    return result;
-   } EOS_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account code/abi")
+   } CORE_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account code/abi")
 }
 
 read_only::get_raw_abi_results read_only::get_raw_abi( const get_raw_abi_params& params, const fc::time_point& )const {
@@ -2431,7 +2431,7 @@ read_only::get_raw_abi_results read_only::get_raw_abi( const get_raw_abi_params&
       result.abi = blob{{accnt_obj.abi.begin(), accnt_obj.abi.end()}};
 
    return result;
-   } EOS_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account abi")
+   } CORE_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account abi")
 }
 
 read_only::get_account_return_t read_only::get_account( const get_account_params& params, const fc::time_point& ) const {
@@ -2503,7 +2503,7 @@ read_only::get_account_return_t read_only::get_account( const get_account_params
       if( perm->parent._id ) {
          const auto* p = d.find<permission_object,by_id>( perm->parent );
          if( p ) {
-            EOS_ASSERT(perm->owner == p->owner, invalid_parent_permission, "Invalid parent permission");
+            CORE_ASSERT(perm->owner == p->owner, invalid_parent_permission, "Invalid parent permission");
             parent = p->name;
          }
       }
@@ -2593,7 +2593,7 @@ read_only::get_account_return_t read_only::get_account( const get_account_params
    return [result = std::move(result)]() mutable -> chain::t_or_exception<read_only::get_account_results> {
       return std::move(result);
    };
-   } EOS_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account info")
+   } CORE_RETHROW_EXCEPTIONS(chain::account_query_exception, "unable to retrieve account info")
 }
 
 read_only::get_required_keys_result read_only::get_required_keys( const get_required_keys_params& params, const fc::time_point& )const {
@@ -2601,7 +2601,7 @@ read_only::get_required_keys_result read_only::get_required_keys( const get_requ
    auto resolver = caching_resolver(make_resolver(db, abi_serializer_max_time, throw_on_yield::yes));
    try {
       abi_serializer::from_variant(params.transaction, pretty_input, resolver, abi_serializer_max_time);
-   } EOS_RETHROW_EXCEPTIONS(chain::transaction_type_exception, "Invalid transaction")
+   } CORE_RETHROW_EXCEPTIONS(chain::transaction_type_exception, "Invalid transaction")
 
    auto required_keys_set = db.get_authorization_manager().get_required_keys( pretty_input, params.available_keys, fc::seconds( pretty_input.delay_sec ));
    get_required_keys_result result;
@@ -2621,7 +2621,7 @@ void read_only::compute_transaction(compute_transaction_params params, next_func
 void read_only::send_read_only_transaction(send_read_only_transaction_params params, next_function<send_read_only_transaction_results> next) {
    try {
       static bool read_only_enabled = app().executor().get_read_threads() > 0;
-      EOS_ASSERT( read_only_enabled, unsupported_feature,
+      CORE_ASSERT( read_only_enabled, unsupported_feature,
                   "read-only transactions execution not enabled on API node. Set read-only-threads > 0" );
 
       send_transaction_params_t gen_params { .return_failure_trace = false,
@@ -2648,7 +2648,7 @@ read_only::get_transaction_id_result read_only::get_transaction_id( const read_o
 account_query_db::get_accounts_by_authorizers_result
 read_only::get_accounts_by_authorizers( const account_query_db::get_accounts_by_authorizers_params& args, const fc::time_point& ) const
 {
-   EOS_ASSERT(aqdb.has_value(), plugin_config_exception, "Account Queries being accessed when not enabled");
+   CORE_ASSERT(aqdb.has_value(), plugin_config_exception, "Account Queries being accessed when not enabled");
    return aqdb->get_accounts_by_authorizers(args);
 }
 
@@ -2734,7 +2734,7 @@ fc::variant chain_plugin::get_log_trx(const transaction& trx) const {
 }
 
 const controller::config& chain_plugin::chain_config() const {
-   EOS_ASSERT(my->chain_config.has_value(), plugin_exception, "chain_config not initialized");
+   CORE_ASSERT(my->chain_config.has_value(), plugin_exception, "chain_config not initialized");
    return *my->chain_config;
 }
 

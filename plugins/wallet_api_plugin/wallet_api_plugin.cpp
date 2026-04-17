@@ -42,7 +42,7 @@ using namespace core_net;
 #define INVOKE_R_R_R(api_handle, call_name, in_param0, in_param1) \
      const auto& params = parse_params<fc::variants, http_params_types::params_required>(body);\
      if (params.size() != 2) { \
-        EOS_THROW(chain::invalid_http_request, "Missing valid input from POST body"); \
+        CORE_THROW(chain::invalid_http_request, "Missing valid input from POST body"); \
      } \
      auto result = api_handle.call_name(params.at(0).as<in_param0>(), params.at(1).as<in_param1>());
 
@@ -50,7 +50,7 @@ using namespace core_net;
 #define INVOKE_R_R_R_R(api_handle, call_name, in_param0, in_param1, in_param2) \
      const auto& params = parse_params<fc::variants, http_params_types::params_required>(body);\
      if (params.size() != 3) { \
-        EOS_THROW(chain::invalid_http_request, "Missing valid input from POST body"); \
+        CORE_THROW(chain::invalid_http_request, "Missing valid input from POST body"); \
      } \
      auto result = api_handle.call_name(params.at(0).as<in_param0>(), params.at(1).as<in_param1>(), params.at(2).as<in_param2>());
 
@@ -66,7 +66,7 @@ using namespace core_net;
 #define INVOKE_V_R_R(api_handle, call_name, in_param0, in_param1) \
      const auto& params = parse_params<fc::variants, http_params_types::params_required>(body);\
      if (params.size() != 2) { \
-        EOS_THROW(chain::invalid_http_request, "Missing valid input from POST body"); \
+        CORE_THROW(chain::invalid_http_request, "Missing valid input from POST body"); \
      } \
      api_handle.call_name(params.at(0).as<in_param0>(), params.at(1).as<in_param1>()); \
      core_net::detail::wallet_api_plugin_empty result;
@@ -74,7 +74,7 @@ using namespace core_net;
 #define INVOKE_V_R_R_R(api_handle, call_name, in_param0, in_param1, in_param2) \
      const auto& params = parse_params<fc::variants, http_params_types::params_required>(body);\
      if (params.size() != 3) { \
-        EOS_THROW(chain::invalid_http_request, "Missing valid input from POST body"); \
+        CORE_THROW(chain::invalid_http_request, "Missing valid input from POST body"); \
      } \
      api_handle.call_name(params.at(0).as<in_param0>(), params.at(1).as<in_param1>(), params.at(2).as<in_param2>()); \
      core_net::detail::wallet_api_plugin_empty result;
@@ -148,7 +148,7 @@ void wallet_api_plugin::plugin_initialize(const variables_map& options) {
                   "* override this safety check.      *\n"
                   "*                                  *\n"
                   "************************************\n" );
-            EOS_ASSERT( false, chain::plugin_config_exception,
+            CORE_ASSERT( false, chain::plugin_config_exception,
                         "Wallet API refuses to bind to non-loopback address without --wallet-allow-network" );
          } else {
             wlog( "Wallet API is exposed to the network — --wallet-allow-network is set. "

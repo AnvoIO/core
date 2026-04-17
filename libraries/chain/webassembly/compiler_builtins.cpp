@@ -43,7 +43,7 @@ namespace core_net { namespace chain { namespace webassembly {
       rhs <<= 64;
       rhs |=  lb;
 
-      EOS_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
+      CORE_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
 
       //force integer overflow to return dividend unchanged
       if(lhs == std::numeric_limits<__int128>::min() && rhs == -1) {
@@ -66,7 +66,7 @@ namespace core_net { namespace chain { namespace webassembly {
       rhs <<= 64;
       rhs |=  lb;
 
-      EOS_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
+      CORE_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
 
       lhs /= rhs;
       *ret = lhs;
@@ -96,7 +96,7 @@ namespace core_net { namespace chain { namespace webassembly {
       rhs <<= 64;
       rhs |=  lb;
 
-      EOS_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
+      CORE_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
 
       //force undefined behavior (due to lhs/rhs being an overflow) to return zero
       if(lhs == std::numeric_limits<__int128>::min() && rhs == -1) {
@@ -118,7 +118,7 @@ namespace core_net { namespace chain { namespace webassembly {
       rhs <<= 64;
       rhs |=  lb;
 
-      EOS_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
+      CORE_ASSERT(rhs != 0, arithmetic_exception, "divide by zero");
 
       lhs %= rhs;
       *ret = lhs;
