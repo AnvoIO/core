@@ -27,10 +27,13 @@ namespace core_net::chain { ... }
 
 | Old | New |
 |-----|-----|
-| `EOSIO_*` | `CORE_NET_*` |
+| `EOSIO_*` | `CORE_NET_*` (subsystem-scoped) or `CORE_*` (chain-wide utility) |
 | `EOS_VM_*` | `CORE_NET_VM_*` |
+| `EOS_ASSERT`, `EOS_THROW`, `EOS_RETHROW_EXCEPTIONS`, `EOS_CAPTURE_AND_RETHROW`, `EOS_RECODE_EXC` | `CORE_ASSERT`, `CORE_THROW`, `CORE_RETHROW_EXCEPTIONS`, `CORE_CAPTURE_AND_RETHROW`, `CORE_RECODE_EXC` |
 
-Examples: `CORE_NET_ASSERT`, `CORE_NET_THROW`, `CORE_NET_VM_OC_ENABLE`.
+Examples: `CORE_ASSERT`, `CORE_THROW`, `CORE_NET_VM_OC_ENABLE`, `CORE_NET_VM_ASSERT_INVALIDATE`.
+
+The exception macros (`CORE_ASSERT`, `CORE_THROW`, etc.) use the shorter `CORE_*` form because they're chain-wide utility invoked on nearly every validation line. Subsystem-scoped macros (`CORE_NET_VM_*`, etc.) keep the fuller namespace-matching prefix. The legacy `EOS_*` forms remain available as preprocessor aliases in `<core_net/chain/exceptions.hpp>` for downstream-consumer compatibility; new code should use the `CORE_*` names.
 
 ## System Account Config
 
