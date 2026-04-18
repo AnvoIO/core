@@ -26,7 +26,7 @@ void trace_converter::pack(boost::iostreams::filtering_ostreambuf& obuf, bool tr
       else
          id = std::get<chain::packed_transaction>(r.trx).id();
       auto it = cached_traces.find(id);
-      EOS_ASSERT(it != cached_traces.end() && it->second.trace->receipt, chain::plugin_exception,
+      CORE_ASSERT(it != cached_traces.end() && it->second.trace->receipt, chain::plugin_exception,
                  "missing trace for transaction ${id}", ("id", id));
       traces.push_back(it->second);
    }

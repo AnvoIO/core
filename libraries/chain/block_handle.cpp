@@ -32,7 +32,7 @@ bool block_handle::read(const std::filesystem::path& state_file) {
    if (!std::filesystem::exists(state_file))
       return false;
 
-   EOS_ASSERT(std::filesystem::file_size(state_file) >= 2 * sizeof(chain_head_magic), chain_exception,
+   CORE_ASSERT(std::filesystem::file_size(state_file) >= 2 * sizeof(chain_head_magic), chain_exception,
               "File `chain_head.dat` seems to be corrupted. The best course of action might be to restart from a snapshot" );
 
    try {
@@ -44,7 +44,7 @@ bool block_handle::read(const std::filesystem::path& state_file) {
       fc::raw::unpack(f, magic);
       fc::raw::unpack(f, version);
 
-      EOS_ASSERT(magic == chain_head_magic && version == chain_head_version, chain_exception,
+      CORE_ASSERT(magic == chain_head_magic && version == chain_head_version, chain_exception,
                  "Error reading `chain_head.dat` file. It is likely a Spring 1.0.0 version which is not supported by Spring 1.0.1 and above. "
                  "The best course of action might be to restart from a snapshot" );
 

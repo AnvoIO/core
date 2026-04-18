@@ -236,11 +236,11 @@ const code_descriptor* const code_cache_sync::get_descriptor_for_code_sync(mode 
    auto fd = memfd_for_bytearray(codeobject->code);
    write_message_with_fds(_compile_monitor_write_socket, msg, std::span<wrapped_fd>{&fd, 1});
    auto [success, message, fds] = read_message_with_fds(_compile_monitor_read_socket);
-   EOS_ASSERT(success, wasm_execution_error, "failed to read response from monitor process");
-   EOS_ASSERT(std::holds_alternative<wasm_compilation_result_message>(message), wasm_execution_error, "unexpected response from monitor process");
+   CORE_ASSERT(success, wasm_execution_error, "failed to read response from monitor process");
+   CORE_ASSERT(std::holds_alternative<wasm_compilation_result_message>(message), wasm_execution_error, "unexpected response from monitor process");
 
    wasm_compilation_result_message result = std::get<wasm_compilation_result_message>(message);
-   EOS_ASSERT(std::holds_alternative<code_descriptor>(result.result), wasm_execution_error, "failed to compile wasm");
+   CORE_ASSERT(std::holds_alternative<code_descriptor>(result.result), wasm_execution_error, "failed to compile wasm");
 
    check_eviction_threshold(result.cache_free_bytes);
 
@@ -257,9 +257,9 @@ code_cache_base::code_cache_base(const std::filesystem::path& data_dir, const co
 
    bool created_file = false;
    auto create_code_cache_file = [&] {
-      EOS_ASSERT(corevmoc_config.cache_size >= allocator_t::get_min_size(total_header_size), database_exception, "configured code cache size is too small");
+      CORE_ASSERT(corevmoc_config.cache_size >= allocator_t::get_min_size(total_header_size), database_exception, "configured code cache size is too small");
       std::ofstream ofs(_cache_file_path.generic_string(), std::ofstream::trunc);
-      EOS_ASSERT(ofs.good(), database_exception, "unable to create EOS VM Optimized Compiler code cache");
+      CORE_ASSERT(ofs.good(), database_exception, "unable to create EOS VM Optimized Compiler code cache");
       std::filesystem::resize_file(_cache_file_path, corevmoc_config.cache_size);
       bip::file_mapping creation_mapping(_cache_file_path.generic_string().c_str(), bip::read_write);
       bip::mapped_region creation_region(creation_mapping, bip::read_write);
@@ -273,12 +273,12 @@ code_cache_base::code_cache_base(const std::filesystem::path& data_dir, const co
       char header_buff[total_header_size];
       std::ifstream hs(_cache_file_path.generic_string(), std::ifstream::binary);
       hs.read(header_buff, sizeof(header_buff));
-      EOS_ASSERT(!hs.fail(), bad_database_version_exception, "failed to read code cache header");
+      CORE_ASSERT(!hs.fail(), bad_database_version_exception, "failed to read code cache header");
       memcpy((char*)&cache_header, header_buff + header_offset, sizeof(cache_header));
 
-      EOS_ASSERT(cache_header.id == header_id || cache_header.id == legacy_header_id,
+      CORE_ASSERT(cache_header.id == header_id || cache_header.id == legacy_header_id,
                   bad_database_version_exception, "existing Core VM OC code cache not compatible with this version");
-      EOS_ASSERT(!cache_header.dirty, database_exception, "code cache is dirty");
+      CORE_ASSERT(!cache_header.dirty, database_exception, "code cache is dirty");
    };
 
    if (!std::filesystem::exists(_cache_file_path)) {
@@ -310,11 +310,11 @@ code_cache_base::code_cache_base(const std::filesystem::path& data_dir, const co
    }
 
    _cache_fd = ::open(_cache_file_path.generic_string().c_str(), O_RDWR | O_CLOEXEC);
-   EOS_ASSERT(_cache_fd >= 0, database_exception, "failure to open code cache");
+   CORE_ASSERT(_cache_fd >= 0, database_exception, "failure to open code cache");
 
    //load up the previous cache index
    char* code_mapping = (char*)mmap(nullptr, corevmoc_config.cache_size, PROT_READ|PROT_WRITE, MAP_SHARED, _cache_fd, 0);
-   EOS_ASSERT(code_mapping != MAP_FAILED, database_exception, "failure to mmap code cache");
+   CORE_ASSERT(code_mapping != MAP_FAILED, database_exception, "failure to mmap code cache");
 
    allocator_t* allocator = reinterpret_cast<allocator_t*>(code_mapping);
 

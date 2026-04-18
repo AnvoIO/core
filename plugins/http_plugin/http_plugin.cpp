@@ -382,11 +382,11 @@ namespace core_net {
          verbose_http_errors = options.at( "verbose-http-errors" ).as<bool>();
 
          my->plugin_state->thread_pool_size = options.at( "http-threads" ).as<uint16_t>();
-         EOS_ASSERT( my->plugin_state->thread_pool_size > 0, chain::plugin_config_exception,
+         CORE_ASSERT( my->plugin_state->thread_pool_size > 0, chain::plugin_config_exception,
                      "http-threads ${num} must be greater than 0", ("num", my->plugin_state->thread_pool_size));
 
          auto max_bytes_mb = options.at( "http-max-bytes-in-flight-mb" ).as<int64_t>();
-         EOS_ASSERT( (max_bytes_mb >= -1 && max_bytes_mb < std::numeric_limits<int64_t>::max() / (1024 * 1024)), chain::plugin_config_exception,
+         CORE_ASSERT( (max_bytes_mb >= -1 && max_bytes_mb < std::numeric_limits<int64_t>::max() / (1024 * 1024)), chain::plugin_config_exception,
                      "http-max-bytes-in-flight-mb (${max_bytes_mb}) must be equal to or greater than -1 and less than ${max}", ("max_bytes_mb", max_bytes_mb) ("max", std::numeric_limits<int64_t>::max() / (1024 * 1024)) );
          if ( max_bytes_mb == -1 ) {
             my->plugin_state->max_bytes_in_flight = std::numeric_limits<size_t>::max();
@@ -395,7 +395,7 @@ namespace core_net {
          }
          my->plugin_state->max_requests_in_flight = options.at( "http-max-in-flight-requests" ).as<int32_t>();
          int64_t max_reponse_time_ms = options.at("http-max-response-time-ms").as<int64_t>();
-         EOS_ASSERT( max_reponse_time_ms == -1 || max_reponse_time_ms >= 0, chain::plugin_config_exception,
+         CORE_ASSERT( max_reponse_time_ms == -1 || max_reponse_time_ms >= 0, chain::plugin_config_exception,
                      "http-max-response-time-ms must be -1, or non-negative: ${m}", ("m", max_reponse_time_ms) );
          my->plugin_state->max_response_time = max_reponse_time_ms == -1 ?
                fc::microseconds::maximum() : fc::microseconds( max_reponse_time_ms * 1000 );
@@ -457,7 +457,7 @@ namespace core_net {
 
             bool user_set_unix_socket = options.count("unix-socket-path") &&
                                        !options.at("unix-socket-path").defaulted();
-            EOS_ASSERT(http_server_address == "http-category-address" && !user_set_unix_socket,
+            CORE_ASSERT(http_server_address == "http-category-address" && !user_set_unix_socket,
                 chain::plugin_config_exception,
                 "when http-category-address is specified, http-server-address must be set as "
                 "`http-category-address` and `unix-socket-path` must be left unspecified");
@@ -466,16 +466,16 @@ namespace core_net {
             auto addresses = options["http-category-address"].as<vector<string>>();
             for (const auto& spec : addresses) {
                auto comma_pos = spec.find(',');
-               EOS_ASSERT(comma_pos > 0 && comma_pos != std::string_view::npos, chain::plugin_config_exception,
+               CORE_ASSERT(comma_pos > 0 && comma_pos != std::string_view::npos, chain::plugin_config_exception,
                           "http-category-address '${spec}' does not contain a required comma to separate the category and address",
                           ("spec", spec));
                auto category_name = spec.substr(0, comma_pos);
                auto category = to_category(category_name);
 
-               EOS_ASSERT(category != api_category::unknown, chain::plugin_config_exception, 
+               CORE_ASSERT(category != api_category::unknown, chain::plugin_config_exception, 
                   "invalid category name `${name}` for http_category_address", ("name", std::string(category_name)));
 
-               EOS_ASSERT(has_plugin(category_plugin_name(category)), chain::plugin_config_exception, 
+               CORE_ASSERT(has_plugin(category_plugin_name(category)), chain::plugin_config_exception, 
                   "--plugin=${plugin_name} is required for --http-category-address=${spec}",
                   ("plugin_name", category_plugin_name(category))("spec", spec));
 
@@ -484,7 +484,7 @@ namespace core_net {
                auto [host, port] = fc::split_host_port(address);
                if (port.size()) {
                   auto [itr, inserted] = hostnames.try_emplace(port, host);
-                  EOS_ASSERT(inserted || host == itr->second, chain::plugin_config_exception,
+                  CORE_ASSERT(inserted || host == itr->second, chain::plugin_config_exception,
                              "unable to listen to port ${port} for both ${host} and ${prev}",
                              ("port", port)("host", host)("prev", itr->second));
                }
@@ -552,14 +552,14 @@ namespace core_net {
       log_add_handler(my.get(), entry);
       std::string path  = entry.path;
       auto p = my->plugin_state->url_handlers.emplace(path, my->make_app_thread_url_handler(std::move(entry), q, priority, content_type));
-      EOS_ASSERT( p.second, chain::plugin_config_exception, "http url ${u} is not unique", ("u", path) );
+      CORE_ASSERT( p.second, chain::plugin_config_exception, "http url ${u} is not unique", ("u", path) );
    }
 
    void http_plugin::add_async_handler(api_entry&& entry, http_content_type content_type) {
       log_add_handler(my.get(), entry);
       std::string path  = entry.path;
       auto p = my->plugin_state->url_handlers.emplace(path, my->make_http_thread_url_handler(std::move(entry), content_type));
-      EOS_ASSERT( p.second, chain::plugin_config_exception, "http url ${u} is not unique", ("u", path) );
+      CORE_ASSERT( p.second, chain::plugin_config_exception, "http url ${u} is not unique", ("u", path) );
    }
 
    void http_plugin::post_http_thread_pool(std::function<void()> f) {

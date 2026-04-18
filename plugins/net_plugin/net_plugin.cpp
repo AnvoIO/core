@@ -1168,7 +1168,7 @@ namespace core_net {
 
       template<typename T>
       void operator()( const T& ) const {
-         EOS_ASSERT( false, plugin_config_exception, "Not implemented, call handle_message directly instead" );
+         CORE_ASSERT( false, plugin_config_exception, "Not implemented, call handle_message directly instead" );
       }
 
       void operator()( const handshake_message& msg ) const {
@@ -2579,7 +2579,7 @@ namespace core_net {
    // called from c's connection strand
    void sync_manager::sync_recv_notice( const connection_ptr& c, const notice_message& msg) {
       peer_dlog( p2p_blk_log, c, "sync_manager got ${m} block notice", ("m", modes_str( msg.known_blocks.mode )) );
-      EOS_ASSERT( msg.known_blocks.mode == catch_up || msg.known_blocks.mode == last_irr_catch_up, plugin_exception,
+      CORE_ASSERT( msg.known_blocks.mode == catch_up || msg.known_blocks.mode == last_irr_catch_up, plugin_exception,
                   "sync_recv_notice only called on catch_up" );
       if (msg.known_blocks.mode == catch_up) {
          if (msg.known_blocks.ids.empty()) {
@@ -3182,7 +3182,7 @@ namespace core_net {
                         peer_elog( p2p_conn_log, conn, "async_read_some callback: bytes_transfered = ${bt}, buffer.bytes_to_write = ${btw}",
                                    ("bt",bytes_transferred)("btw",conn->pending_message_buffer.bytes_to_write()) );
                      }
-                     EOS_ASSERT(bytes_transferred <= conn->pending_message_buffer.bytes_to_write(), plugin_exception, "");
+                     CORE_ASSERT(bytes_transferred <= conn->pending_message_buffer.bytes_to_write(), plugin_exception, "");
                      conn->pending_message_buffer.advance_write_ptr(bytes_transferred);
                      while (conn->pending_message_buffer.bytes_to_read() > 0) {
                         uint32_t bytes_in_buffer = conn->pending_message_buffer.bytes_to_read();
@@ -4547,7 +4547,7 @@ namespace core_net {
          sync_manager::closing_mode close_mode = sync_manager::closing_mode::immediately;
          try {
             if (cc.is_producer_node()) {
-               EOS_ASSERT(ptr->timestamp < (fc::time_point::now() + def_allowed_clock_skew), block_from_the_future,
+               CORE_ASSERT(ptr->timestamp < (fc::time_point::now() + def_allowed_clock_skew), block_from_the_future,
                           "received a block from the future, rejecting it: ${id}", ("id", id));
             }
             // this will return empty optional<block_handle> if block is not linkable
@@ -5072,7 +5072,7 @@ namespace core_net {
          fc_ilog( p2p_log, "Initialize net plugin" );
 
          chain_plug = app().find_plugin<chain_plugin>();
-         EOS_ASSERT( chain_plug, chain::missing_chain_plugin_exception, ""  );
+         CORE_ASSERT( chain_plug, chain::missing_chain_plugin_exception, ""  );
 
          peer_log_format = options.at( "peer-log-format" ).as<string>();
 
@@ -5085,7 +5085,7 @@ namespace core_net {
 
          use_socket_read_watermark = options.at( "use-socket-read-watermark" ).as<bool>();
          keepalive_interval = std::chrono::milliseconds( options.at( "p2p-keepalive-interval-ms" ).as<int>() );
-         EOS_ASSERT( keepalive_interval.count() > 0, chain::plugin_config_exception,
+         CORE_ASSERT( keepalive_interval.count() > 0, chain::plugin_config_exception,
                      "p2p-keepalive_interval-ms must be greater than 0" );
 
          // To avoid unnecessary transitions between LIB <-> head catchups,
@@ -5115,32 +5115,32 @@ namespace core_net {
                   fc_wlog( p2p_conn_log, "Removed ${count} duplicate p2p-listen-endpoint entries", ("count", addr_diff));
                }
                for( const auto& addr : p2p_addresses ) {
-                  EOS_ASSERT( addr.length() <= net_utils::max_p2p_address_length, chain::plugin_config_exception,
+                  CORE_ASSERT( addr.length() <= net_utils::max_p2p_address_length, chain::plugin_config_exception,
                               "p2p-listen-endpoint ${a} too long, must be less than ${m}", 
                               ("a", addr)("m", net_utils::max_p2p_address_length) );
                   const auto& [host, port, type] = net_utils::split_host_port_type(addr);
-                  EOS_ASSERT( !host.empty() && !port.empty(), chain::plugin_config_exception,
+                  CORE_ASSERT( !host.empty() && !port.empty(), chain::plugin_config_exception,
                               "Invalid p2p-listen-endpoint ${p}, syntax host:port:[trx|blk]", ("p", addr));
                }
             }
          }
          if( options.count( "p2p-server-address" ) ) {
             p2p_server_addresses = options.at( "p2p-server-address" ).as<vector<string>>();
-            EOS_ASSERT( p2p_server_addresses.size() <= p2p_addresses.size(), chain::plugin_config_exception,
+            CORE_ASSERT( p2p_server_addresses.size() <= p2p_addresses.size(), chain::plugin_config_exception,
                         "p2p-server-address may not be specified more times than p2p-listen-endpoint" );
             for( const auto& addr: p2p_server_addresses ) {
-               EOS_ASSERT( addr.length() <= net_utils::max_p2p_address_length, chain::plugin_config_exception,
+               CORE_ASSERT( addr.length() <= net_utils::max_p2p_address_length, chain::plugin_config_exception,
                            "p2p-server-address ${a} too long, must be less than ${m}", 
                            ("a", addr)("m", net_utils::max_p2p_address_length) );
                const auto& [host, port, type] = net_utils::split_host_port_type(addr);
-               EOS_ASSERT( !host.empty() && !port.empty(), chain::plugin_config_exception,
+               CORE_ASSERT( !host.empty() && !port.empty(), chain::plugin_config_exception,
                            "Invalid p2p-server-address ${p}, syntax host:port:[trx|blk]", ("p", addr));
             }
          }
          p2p_server_addresses.resize(p2p_addresses.size()); // extend with empty entries as needed
 
          thread_pool_size = options.at( "net-threads" ).as<uint16_t>();
-         EOS_ASSERT( thread_pool_size > 0, chain::plugin_config_exception,
+         CORE_ASSERT( thread_pool_size > 0, chain::plugin_config_exception,
                      "net-threads ${num} must be greater than 0", ("num", thread_pool_size) );
 
          std::vector<std::string> peers;
@@ -5148,14 +5148,14 @@ namespace core_net {
             peers = options.at( "p2p-peer-address" ).as<vector<string>>();
             for (const auto& peer : peers) {
                const auto& [host, port, type] = net_utils::split_host_port_type(peer);
-               EOS_ASSERT( !host.empty() && !port.empty(), chain::plugin_config_exception,
+               CORE_ASSERT( !host.empty() && !port.empty(), chain::plugin_config_exception,
                            "Invalid p2p-peer-address ${p}, syntax host:port:[trx|blk]", ("p", peer));
             }
             connections.add_supplied_peers(peers);
          }
          if( options.count( "agent-name" )) {
             user_agent_name = options.at( "agent-name" ).as<string>();
-            EOS_ASSERT( user_agent_name.length() <= net_utils::max_handshake_str_length, chain::plugin_config_exception,
+            CORE_ASSERT( user_agent_name.length() <= net_utils::max_handshake_str_length, chain::plugin_config_exception,
                         "agent-name too long, must be less than ${m}", ("m", net_utils::max_handshake_str_length) );
          }
 
@@ -5165,7 +5165,7 @@ namespace core_net {
 
          if ( options.count( "p2p-bp-gossip-endpoint" ) ) {
             set_bp_producer_peers(options.at( "p2p-bp-gossip-endpoint" ).as<vector<string>>());
-            EOS_ASSERT(options.count("signature-provider"), chain::plugin_config_exception,
+            CORE_ASSERT(options.count("signature-provider"), chain::plugin_config_exception,
                        "signature-provider of associated key required for p2p-bp-gossip-endpoint");
          }
 
@@ -5184,7 +5184,7 @@ namespace core_net {
          }
 
          if( allowed_connections & net_plugin_impl::Specified )
-            EOS_ASSERT( options.count( "peer-key" ),
+            CORE_ASSERT( options.count( "peer-key" ),
                         plugin_config_exception,
                        "At least one peer-key must accompany 'allowed-connection=specified'" );
 
@@ -5224,14 +5224,14 @@ namespace core_net {
             // Strip "FILE:" prefix if present
             if (key_path_str.starts_with("FILE:")) key_path_str = key_path_str.substr(5);
             std::filesystem::path key_path(key_path_str);
-            EOS_ASSERT(std::filesystem::exists(key_path), chain::plugin_config_exception,
+            CORE_ASSERT(std::filesystem::exists(key_path), chain::plugin_config_exception,
                        "Family key file not found: ${f}", ("f", key_path_str));
             std::ifstream ifs(key_path);
             std::string wif;
             std::getline(ifs, wif);
             while (!wif.empty() && (wif.back() == '\n' || wif.back() == '\r' || wif.back() == ' '))
                wif.pop_back();
-            EOS_ASSERT(!wif.empty(), chain::plugin_config_exception,
+            CORE_ASSERT(!wif.empty(), chain::plugin_config_exception,
                        "Family key file is empty: ${f}", ("f", key_path_str));
             family_private_key = fc::crypto::private_key(wif);
             family_public_key = family_private_key->get_public_key();
@@ -5239,7 +5239,7 @@ namespace core_net {
                     ("k", family_public_key.to_string(fc::yield_function_t())));
          }
          family_id = options.at("p2p-family-id").as<string>();
-         EOS_ASSERT(family_id.size() <= 64, chain::plugin_config_exception,
+         CORE_ASSERT(family_id.size() <= 64, chain::plugin_config_exception,
                     "p2p-family-id too long (max 64 chars)");
 
          // Node role and schedule-aware peering config (Phase 4)
@@ -5248,7 +5248,7 @@ namespace core_net {
             if (role_str == "peer")          node_role = p2p_node_role::peer;
             else if (role_str == "seed")     node_role = p2p_node_role::seed;
             else if (role_str == "producer") node_role = p2p_node_role::producer;
-            else EOS_ASSERT(false, chain::plugin_config_exception,
+            else CORE_ASSERT(false, chain::plugin_config_exception,
                             "Invalid p2p-node-role: ${r}. Must be 'peer', 'seed', or 'producer'.", ("r", role_str));
          }
          producer_peer_radius = options.at("p2p-producer-peer-radius").as<uint32_t>();
@@ -5262,7 +5262,7 @@ namespace core_net {
             else if (policy_str == "allow")
                acl.set_default_policy(access_default_policy::allow);
             else
-               EOS_ASSERT(false, chain::plugin_config_exception,
+               CORE_ASSERT(false, chain::plugin_config_exception,
                           "Invalid p2p-default-policy: ${p}. Must be 'allow' or 'deny'.", ("p", policy_str));
          }
          if (options.count("p2p-deny-key")) {
@@ -5275,7 +5275,7 @@ namespace core_net {
          }
          if (options.count("p2p-deny-ip")) {
             for (const auto& s : options["p2p-deny-ip"].as<vector<string>>()) {
-               EOS_ASSERT(acl.add_deny_ip(s), chain::plugin_config_exception,
+               CORE_ASSERT(acl.add_deny_ip(s), chain::plugin_config_exception,
                           "Invalid p2p-deny-ip: ${ip}", ("ip", s));
             }
          }
@@ -5289,7 +5289,7 @@ namespace core_net {
          }
          if (options.count("p2p-allow-ip")) {
             for (const auto& s : options["p2p-allow-ip"].as<vector<string>>()) {
-               EOS_ASSERT(acl.add_allow_ip(s), chain::plugin_config_exception,
+               CORE_ASSERT(acl.add_allow_ip(s), chain::plugin_config_exception,
                           "Invalid p2p-allow-ip: ${ip}", ("ip", s));
             }
          }
@@ -5503,7 +5503,7 @@ namespace core_net {
    }
 
    void net_plugin::add_deny_ip( acl_ip_param params ) {
-      EOS_ASSERT(my->acl.add_deny_ip(params.ip), chain::plugin_exception,
+      CORE_ASSERT(my->acl.add_deny_ip(params.ip), chain::plugin_exception,
                  "Invalid IP/CIDR: ${ip}", ("ip", params.ip));
       fc_ilog(p2p_conn_log, "ACL: added deny-ip ${ip}", ("ip", params.ip));
    }

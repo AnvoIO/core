@@ -152,7 +152,7 @@ namespace core_net::testing {
       ( builtin_protocol_feature_t codename ) -> digest_type {
          auto res = visited_builtins.emplace( codename, std::optional<digest_type>() );
          if( !res.second ) {
-            EOS_ASSERT( res.first->second, protocol_feature_exception,
+            CORE_ASSERT( res.first->second, protocol_feature_exception,
                         "invariant failure: cycle found in builtin protocol feature dependencies"
             );
             return *res.first->second;
@@ -449,7 +449,7 @@ namespace core_net::testing {
       auto block_id = b->calculate_id();
       auto [best_fork, obh] = control->accept_block(block_id, b);
       unapplied_transactions.add_aborted( control->abort_block() );
-      EOS_ASSERT(obh, unlinkable_block_exception, "block did not link ${b}", ("b", b->calculate_id()));
+      CORE_ASSERT(obh, unlinkable_block_exception, "block did not link ${b}", ("b", b->calculate_id()));
       const block_handle& bh = *obh;
       control->apply_blocks( [this]( const transaction_metadata_ptr& trx ) {
          unapplied_transactions.add_forked( trx );
@@ -1222,7 +1222,7 @@ namespace core_net::testing {
                auto id = block->calculate_id();
                auto [best_head, obh] = b.control->accept_block( id, block );
                b.control->abort_block();
-               EOS_ASSERT(obh, unlinkable_block_exception, "block did not link ${b}", ("b", id));
+               CORE_ASSERT(obh, unlinkable_block_exception, "block did not link ${b}", ("b", id));
                b.control->apply_blocks({}, trx_meta_cache_lookup{});
             }
          }

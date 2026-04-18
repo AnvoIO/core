@@ -30,7 +30,7 @@ namespace detail {
       std::istringstream in(limit_str);
       double limit{0};
       in >> limit;
-      EOS_ASSERT(limit >= 0.0, chain::plugin_config_exception, "block sync rate limit must not be negative: ${limit}", ("limit", limit_str));
+      CORE_ASSERT(limit >= 0.0, chain::plugin_config_exception, "block sync rate limit must not be negative: ${limit}", ("limit", limit_str));
       size_t block_sync_rate_limit = 0;
       if( limit > 0.0 ) {
          std::string units;
@@ -39,11 +39,11 @@ namespace detail {
          std::smatch units_match;
          std::regex_match(units, units_match, units_regex);
          if( units.length() > 0 ) {
-            EOS_ASSERT(units_match.size() == 2, chain::plugin_config_exception, "invalid block sync rate limit specification: ${limit}", ("limit", units));
+            CORE_ASSERT(units_match.size() == 2, chain::plugin_config_exception, "invalid block sync rate limit specification: ${limit}", ("limit", units));
             try {
                block_sync_rate_limit = boost::numeric_cast<size_t>(limit * prefix_multipliers.at(units_match[1].str()));
             } catch (boost::numeric::bad_numeric_cast&) {
-               EOS_THROW(chain::plugin_config_exception, "block sync rate limit specification overflowed: ${limit}", ("limit", limit_str));
+               CORE_THROW(chain::plugin_config_exception, "block sync rate limit specification overflowed: ${limit}", ("limit", limit_str));
             }
          }
       }
@@ -55,13 +55,13 @@ namespace detail {
       using std::string;
       // host:port[:trx|:blk][:<rate>]
       if (endpoint_input.size() > max_p2p_address_length) {
-         EOS_ASSERT(!should_throw, chain::plugin_config_exception, "Address specification exceeds max p2p address length" );
+         CORE_ASSERT(!should_throw, chain::plugin_config_exception, "Address specification exceeds max p2p address length" );
          return {};
       }
       string endpoint = endpoint_input;
       boost::trim(endpoint);
       if (endpoint.empty()) {
-         EOS_ASSERT(!should_throw, chain::plugin_config_exception, "Address specification is empty" );
+         CORE_ASSERT(!should_throw, chain::plugin_config_exception, "Address specification is empty" );
          return {};
       }
       auto colon_count = std::count(endpoint.begin(), endpoint.end(), ':');
@@ -69,28 +69,28 @@ namespace detail {
       if (endpoint[0] == '[') {
          end_bracket = endpoint.find(']');
          if (end_bracket == string::npos) {
-            EOS_ASSERT(!should_throw, chain::plugin_config_exception,
+            CORE_ASSERT(!should_throw, chain::plugin_config_exception,
                        "Invalid address specification ${a}, IPv6 no closing square bracket", ("a", endpoint) );
             return {};
          }
       } else if (colon_count >= 7) {
-         EOS_ASSERT(!should_throw, chain::plugin_config_exception,
+         CORE_ASSERT(!should_throw, chain::plugin_config_exception,
                     "Invalid address specification ${a}; IPv6 addresses must be enclosed in square brackets.", ("a", endpoint));
          return {};
 
       } else if (colon_count < 1 || colon_count > 3) {
-         EOS_ASSERT(!should_throw, chain::plugin_config_exception,
+         CORE_ASSERT(!should_throw, chain::plugin_config_exception,
                     "Invalid address specification ${a}; unexpected number of colons.", ("a", endpoint));
          return {};
       }
       string::size_type colon = endpoint.find(':', end_bracket+1);
       if (colon == string::npos) {
-         EOS_ASSERT(!should_throw, chain::plugin_config_exception,
+         CORE_ASSERT(!should_throw, chain::plugin_config_exception,
                     "Invalid address specification ${a}; missing port specification.", ("a", endpoint));
          return {};
       }
       if (end_bracket != 0 && end_bracket+1 != colon) {
-         EOS_ASSERT(!should_throw, chain::plugin_config_exception,
+         CORE_ASSERT(!should_throw, chain::plugin_config_exception,
                     "Invalid address specification ${a}; unexpected character after ']'.", ("a", endpoint));
          return {};
       }
@@ -144,7 +144,7 @@ namespace detail {
    inline std::tuple<std::string, size_t> parse_listen_address( const std::string& address ) {
       constexpr bool should_throw = true;
       auto [host, port, remainder] = detail::split_host_port_remainder(address, should_throw);
-      EOS_ASSERT(!host.empty() && !port.empty(), chain::plugin_config_exception,
+      CORE_ASSERT(!host.empty() && !port.empty(), chain::plugin_config_exception,
                  "Invalid address specification ${a}; host or port missing.", ("a", address));
       auto listen_addr = host + ":" + port;
       auto limit = remainder;

@@ -47,7 +47,7 @@ void set_system_accounts(const system_accounts& sa) {
       // Allow idempotent re-initialization with the same prefix (e.g., multiple
       // testers in the same process with default "eosio" config). Assert if
       // someone tries to change the prefix — that would be a logic error.
-      EOS_ASSERT(g_sys_accounts.system_account == sa.system_account, chain_exception,
+      CORE_ASSERT(g_sys_accounts.system_account == sa.system_account, chain_exception,
                  "system accounts already initialized with prefix '${old}', cannot change to '${new}'",
                  ("old", g_sys_accounts.system_account)("new", sa.system_account));
       return;

@@ -212,12 +212,12 @@ namespace core_net::chain {
 
    template<class BSP>
    void fork_database_impl<BSP>::advance_root_impl( const block_id_type& id ) {
-      EOS_ASSERT( root, fork_database_exception, "root not yet set" );
+      CORE_ASSERT( root, fork_database_exception, "root not yet set" );
 
       auto new_root = get_block_impl( id );
-      EOS_ASSERT( new_root, fork_database_exception,
+      CORE_ASSERT( new_root, fork_database_exception,
                   "cannot advance root to a block that does not exist in the fork database" );
-      EOS_ASSERT( new_root->is_valid(), fork_database_exception,
+      CORE_ASSERT( new_root->is_valid(), fork_database_exception,
                   "cannot advance root to a block that has not yet been validated" );
 
 
@@ -225,7 +225,7 @@ namespace core_net::chain {
       for( auto b = new_root; b; ) {
          blocks_to_remove.emplace_back( b->previous() );
          b = get_block_impl( blocks_to_remove.back() );
-         EOS_ASSERT( b || blocks_to_remove.back() == root->id(), fork_database_exception,
+         CORE_ASSERT( b || blocks_to_remove.back() == root->id(), fork_database_exception,
                      "invariant violation: orphaned branch was present in forked database" );
       }
 
@@ -248,8 +248,8 @@ namespace core_net::chain {
    template <class BSP>
    fork_db_add_t fork_database_impl<BSP>::add_impl(const bsp_t& n, ignore_duplicate_t ignore_duplicate,
                                                    bool validate, validator_t& validator) {
-      EOS_ASSERT( root, fork_database_exception, "root not yet set" );
-      EOS_ASSERT( n, fork_database_exception, "attempt to add null block state" );
+      CORE_ASSERT( root, fork_database_exception, "root not yet set" );
+      CORE_ASSERT( n, fork_database_exception, "attempt to add null block state" );
 
       if constexpr (std::is_same_v<BSP, block_state_ptr>) {
          auto qc_claim = n->extract_qc_claim();
@@ -273,7 +273,7 @@ namespace core_net::chain {
       }
 
       auto prev_bh = get_block_impl( n->previous(), include_root_t::yes );
-      EOS_ASSERT( prev_bh, unlinkable_block_exception,
+      CORE_ASSERT( prev_bh, unlinkable_block_exception,
                   "fork_db unlinkable block ${id} previous ${p}", ("id", n->id())("p", n->previous()) );
 
       if (validate) {
@@ -285,13 +285,13 @@ namespace core_net::chain {
                validator(n->timestamp(), prev_bh->get_activated_protocol_features()->protocol_features, new_protocol_features);
             }
          }
-         EOS_RETHROW_EXCEPTIONS( fork_database_exception, "serialized fork database is incompatible with configured protocol features" )
+         CORE_RETHROW_EXCEPTIONS( fork_database_exception, "serialized fork database is incompatible with configured protocol features" )
       }
 
       auto prev_head = head_impl(include_root_t::yes);
 
       auto inserted = index.insert(n);
-      EOS_ASSERT(ignore_duplicate == ignore_duplicate_t::yes || inserted.second, fork_database_exception,
+      CORE_ASSERT(ignore_duplicate == ignore_duplicate_t::yes || inserted.second, fork_database_exception,
                  "duplicate block added: ${id}", ("id", n->id()));
 
       if (!inserted.second)
@@ -554,15 +554,15 @@ namespace core_net::chain {
       auto first_branch = (first == root->id()) ? root : get_block_impl(first);
       auto second_branch = (second == root->id()) ? root : get_block_impl(second);
 
-      EOS_ASSERT(first_branch, fork_db_block_not_found, "block #${n} ${id} does not exist", ("n", block_header::num_from_id(first))("id", first));
-      EOS_ASSERT(second_branch, fork_db_block_not_found, "block #${n} ${id} does not exist", ("n", block_header::num_from_id(second))("id", second));
+      CORE_ASSERT(first_branch, fork_db_block_not_found, "block #${n} ${id} does not exist", ("n", block_header::num_from_id(first))("id", first));
+      CORE_ASSERT(second_branch, fork_db_block_not_found, "block #${n} ${id} does not exist", ("n", block_header::num_from_id(second))("id", second));
 
       while( first_branch->block_num() > second_branch->block_num() )
       {
          result.first.push_back(first_branch);
          const auto& prev = first_branch->previous();
          first_branch = (prev == root->id()) ? root : get_block_impl( prev );
-         EOS_ASSERT( first_branch, fork_db_block_not_found,
+         CORE_ASSERT( first_branch, fork_db_block_not_found,
                      "block ${id} does not exist",
                      ("id", prev)
          );
@@ -573,7 +573,7 @@ namespace core_net::chain {
          result.second.push_back( second_branch );
          const auto& prev = second_branch->previous();
          second_branch = (prev == root->id()) ? root : get_block_impl( prev );
-         EOS_ASSERT( second_branch, fork_db_block_not_found,
+         CORE_ASSERT( second_branch, fork_db_block_not_found,
                      "block ${id} does not exist",
                      ("id", prev)
          );
@@ -589,11 +589,11 @@ namespace core_net::chain {
          first_branch = get_block_impl( first_prev );
          const auto &second_prev = second_branch->previous();
          second_branch = get_block_impl( second_prev );
-         EOS_ASSERT( first_branch, fork_db_block_not_found,
+         CORE_ASSERT( first_branch, fork_db_block_not_found,
                      "block ${id} does not exist",
                      ("id", first_prev)
          );
-         EOS_ASSERT( second_branch, fork_db_block_not_found,
+         CORE_ASSERT( second_branch, fork_db_block_not_found,
                      "block ${id} does not exist",
                      ("id", second_prev)
          );
@@ -784,15 +784,15 @@ namespace core_net::chain {
             // determine file type, validate totem
             uint32_t totem = 0;
             fc::raw::unpack( ds, totem );
-            EOS_ASSERT( totem == magic_number, fork_database_exception,
+            CORE_ASSERT( totem == magic_number, fork_database_exception,
                         "Fork database file '${filename}' has unexpected magic number: ${actual_totem}. Expected ${t}",
                         ("filename", fork_db_file)("actual_totem", totem)("t", magic_number));
 
             uint32_t version = 0;
             fc::raw::unpack( ds, version );
-            EOS_ASSERT( version != 2, fork_database_exception,
+            CORE_ASSERT( version != 2, fork_database_exception,
                         "Version 2 of fork_database (created by Spring 1.0.0) is not supported" );
-            EOS_ASSERT( version >= fork_database::min_supported_version && version <= fork_database::max_supported_version,
+            CORE_ASSERT( version >= fork_database::min_supported_version && version <= fork_database::max_supported_version,
                         fork_database_exception,
                        "Unsupported version of fork database file '${filename}'. "
                        "Fork database version is ${version} while code supports version(s) [${min},${max}]",
@@ -829,7 +829,7 @@ namespace core_net::chain {
             }
 
             default:
-               EOS_ASSERT( false, fork_database_exception, "unsupported fork database version ${v}", ("v", version) );
+               CORE_ASSERT( false, fork_database_exception, "unsupported fork database version ${v}", ("v", version) );
                break;
             }
          } FC_CAPTURE_AND_RETHROW( (fork_db_file) );
@@ -858,11 +858,11 @@ namespace core_net::chain {
          }
       } else if (in_use == in_use_t::both) {
          dlog("Switching fork_db from legacy, already both root ${rid}, fork_db root ${fid}", ("rid", root->id())("fid", fork_db_s.root()->id()));
-         EOS_ASSERT( fork_db_s.root()->id() == root->id(), fork_database_exception,
+         CORE_ASSERT( fork_db_s.root()->id() == root->id(), fork_database_exception,
                      "switch_from_legacy root mismatch: expected ${e}, got ${g}",
                      ("e", root->id())("g", fork_db_s.root()->id()) );
       } else {
-         EOS_ASSERT( false, fork_database_exception,
+         CORE_ASSERT( false, fork_database_exception,
                      "unexpected fork database state during switch_from_legacy" );
       }
    }

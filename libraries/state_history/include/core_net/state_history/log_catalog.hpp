@@ -87,7 +87,7 @@ public:
 
       if(!retained_log_files.empty()) {
          //always make sure we are going to write to at least the very first block in the catalog
-         EOS_ASSERT(block_num >= retained_log_files.begin()->begin_block_num, chain::plugin_exception,
+         CORE_ASSERT(block_num >= retained_log_files.begin()->begin_block_num, chain::plugin_exception,
                      "block ${b} is before first block ${s} of ${name}.log",
                      ("b", block_num)("s", retained_log_files.begin()->begin_block_num)("name", retained_log_files.begin()->path_and_basename.string()));
 
@@ -215,13 +215,13 @@ private:
 
       if(retained_log_files.size() > 1)
          for(catalog_t::iterator it = retained_log_files.begin(); it != std::prev(retained_log_files.end()); ++it)
-            EOS_ASSERT(it->end_block_num == std::next(it)->begin_block_num, chain::plugin_exception,
+            CORE_ASSERT(it->end_block_num == std::next(it)->begin_block_num, chain::plugin_exception,
                        "retained log file ${sf}.log has block range ${sb}-${se} but ${ef}.log has range ${eb}-${ee} which results in a hole",
                        ("sf", it->path_and_basename.native())("sb", it->begin_block_num)("se", it->end_block_num-1)
                        ("ef", std::next(it)->path_and_basename.native())("eb", std::next(it)->begin_block_num)("ee", std::next(it)->end_block_num-1));
 
       if(!retained_log_files.empty() && !head_log->empty())
-         EOS_ASSERT(retained_log_files.rbegin()->end_block_num == head_log->block_range().first, chain::plugin_exception,
+         CORE_ASSERT(retained_log_files.rbegin()->end_block_num == head_log->block_range().first, chain::plugin_exception,
                     "retained log file ${sf}.log has block range ${sb}-${se} but head log has range ${eb}-${ee} which results in a hole",
                     ("sf", retained_log_files.rbegin()->path_and_basename.native())("sb", retained_log_files.rbegin()->begin_block_num)("se", retained_log_files.rbegin()->end_block_num-1)
                     ("eb", head_log->block_range().first)("ee", head_log->block_range().second-1));

@@ -17,7 +17,7 @@ namespace detail {
    {
       auto num_keys_in_authority = std::visit([](const auto& a) { return a.keys.size(); },
                                               valid_block_signing_authority);
-      EOS_ASSERT(1 + additional_signatures.size() <= num_keys_in_authority, wrong_signing_key,
+      CORE_ASSERT(1 + additional_signatures.size() <= num_keys_in_authority, wrong_signing_key,
                  "number of block signatures (${num_block_signatures}) exceeds number of keys (${num_keys}) in block"
                  " signing authority: ${authority}",
                  ("num_block_signatures", 1 + additional_signatures.size())("num_keys", num_keys_in_authority)
@@ -28,7 +28,7 @@ namespace detail {
 
       for (const auto& s : additional_signatures) {
          auto res = keys.emplace(s, block_id, true);
-         EOS_ASSERT(res.second, wrong_signing_key, "block signed by same key twice: ${key}", ("key", *res.first));
+         CORE_ASSERT(res.second, wrong_signing_key, "block signed by same key twice: ${key}", ("key", *res.first));
       }
 
       bool is_satisfied = false;
@@ -37,11 +37,11 @@ namespace detail {
       std::tie(is_satisfied, relevant_sig_count) = producer_authority::keys_satisfy_and_relevant(
          keys, valid_block_signing_authority);
 
-      EOS_ASSERT(relevant_sig_count == keys.size(), wrong_signing_key,
+      CORE_ASSERT(relevant_sig_count == keys.size(), wrong_signing_key,
                  "block signed by unexpected key: ${signing_keys}, expected: ${authority}. ${c} != ${s}",
                  ("signing_keys", keys)("authority", valid_block_signing_authority)("c", relevant_sig_count)("s", keys. size()));
 
-      EOS_ASSERT(is_satisfied, wrong_signing_key,
+      CORE_ASSERT(is_satisfied, wrong_signing_key,
                  "block signatures ${signing_keys} do not satisfy the block signing authority: ${authority}",
                  ("signing_keys", keys)("authority", valid_block_signing_authority));
    }
@@ -72,7 +72,7 @@ namespace detail {
              const signer_callback_type& signer, const block_signing_authority& valid_block_signing_authority) {
       auto sigs = signer(block_id);
 
-      EOS_ASSERT(!sigs.empty(), no_block_signatures, "Signer returned no signatures");
+      CORE_ASSERT(!sigs.empty(), no_block_signatures, "Signer returned no signatures");
       block.producer_signature = sigs.back();
       // last is producer signature, rest are additional signatures to inject in the block extension
       sigs.pop_back();
@@ -333,7 +333,7 @@ digest_type block_state::get_validation_mroot(block_num_type target_block_num) c
    assert(valid->validation_mroots.size() > 0);
    auto low  = core.last_final_block_num();
    auto high = low + valid->validation_mroots.size();
-   EOS_ASSERT(low <= target_block_num && target_block_num < high, block_validate_exception,
+   CORE_ASSERT(low <= target_block_num && target_block_num < high, block_validate_exception,
               "target_block_num ${b} is outside of range of ${low} and ${high}",
               ("b", target_block_num)("low", low)("high", high));
 

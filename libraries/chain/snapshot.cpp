@@ -65,42 +65,42 @@ variant_snapshot_reader::variant_snapshot_reader(const fc::variant& snapshot)
 }
 
 void variant_snapshot_reader::validate() {
-   EOS_ASSERT(snapshot.is_object(), snapshot_validation_exception,
+   CORE_ASSERT(snapshot.is_object(), snapshot_validation_exception,
          "Variant snapshot is not an object");
    const fc::variant_object& o = snapshot.get_object();
 
-   EOS_ASSERT(o.contains("version"), snapshot_validation_exception,
+   CORE_ASSERT(o.contains("version"), snapshot_validation_exception,
          "Variant snapshot has no version");
 
    const auto& version = o["version"];
-   EOS_ASSERT(version.is_integer(), snapshot_validation_exception,
+   CORE_ASSERT(version.is_integer(), snapshot_validation_exception,
          "Variant snapshot version is not an integer");
 
-   EOS_ASSERT(version.as_uint64() == (uint64_t)current_snapshot_version, snapshot_validation_exception,
+   CORE_ASSERT(version.as_uint64() == (uint64_t)current_snapshot_version, snapshot_validation_exception,
          "Variant snapshot is an unsupported version.  Expected : ${expected}, Got: ${actual}",
          ("expected", current_snapshot_version)("actual",o["version"].as_uint64()));
 
-   EOS_ASSERT(o.contains("sections"), snapshot_validation_exception,
+   CORE_ASSERT(o.contains("sections"), snapshot_validation_exception,
          "Variant snapshot has no sections");
 
    const auto& sections = o["sections"];
-   EOS_ASSERT(sections.is_array(), snapshot_validation_exception, "Variant snapshot sections is not an array");
+   CORE_ASSERT(sections.is_array(), snapshot_validation_exception, "Variant snapshot sections is not an array");
 
    const auto& section_array = sections.get_array();
    for( const auto& section: section_array ) {
-      EOS_ASSERT(section.is_object(), snapshot_validation_exception, "Variant snapshot section is not an object");
+      CORE_ASSERT(section.is_object(), snapshot_validation_exception, "Variant snapshot section is not an object");
 
       const auto& so = section.get_object();
-      EOS_ASSERT(so.contains("name"), snapshot_validation_exception,
+      CORE_ASSERT(so.contains("name"), snapshot_validation_exception,
             "Variant snapshot section has no name");
 
-      EOS_ASSERT(so["name"].is_string(), snapshot_validation_exception,
+      CORE_ASSERT(so["name"].is_string(), snapshot_validation_exception,
                  "Variant snapshot section name is not a string");
 
-      EOS_ASSERT(so.contains("rows"), snapshot_validation_exception,
+      CORE_ASSERT(so.contains("rows"), snapshot_validation_exception,
                  "Variant snapshot section has no rows");
 
-      EOS_ASSERT(so["rows"].is_array(), snapshot_validation_exception,
+      CORE_ASSERT(so["rows"].is_array(), snapshot_validation_exception,
                  "Variant snapshot section rows is not an array");
    }
 }
@@ -125,7 +125,7 @@ void variant_snapshot_reader::set_section( const string& section_name ) {
       }
    }
 
-   EOS_THROW(snapshot_exception, "Variant snapshot has no section named ${n}", ("n", section_name));
+   CORE_THROW(snapshot_exception, "Variant snapshot has no section named ${n}", ("n", section_name));
 }
 
 bool variant_snapshot_reader::read_row( detail::abstract_snapshot_row_reader& row_reader ) {
@@ -175,7 +175,7 @@ ostream_snapshot_writer::ostream_snapshot_writer(std::ostream& snapshot)
 
 void ostream_snapshot_writer::write_start_section( const std::string& section_name )
 {
-   EOS_ASSERT(section_pos == std::streampos(-1), snapshot_exception, "Attempting to write a new section without closing the previous section");
+   CORE_ASSERT(section_pos == std::streampos(-1), snapshot_exception, "Attempting to write a new section without closing the previous section");
    section_pos = snapshot.tellp();
    row_count = 0;
 
@@ -285,14 +285,14 @@ void istream_snapshot_reader::validate() {
       auto expected_totem = ostream_snapshot_writer::magic_number;
       decltype(expected_totem) actual_totem;
       snapshot.read((char*)&actual_totem, sizeof(actual_totem));
-      EOS_ASSERT(actual_totem == expected_totem, snapshot_exception,
+      CORE_ASSERT(actual_totem == expected_totem, snapshot_exception,
                  "Binary snapshot has unexpected magic number!");
 
       // validate version
       auto expected_version = current_snapshot_version;
       decltype(expected_version) actual_version;
       snapshot.read((char*)&actual_version, sizeof(actual_version));
-      EOS_ASSERT(actual_version == expected_version, snapshot_exception,
+      CORE_ASSERT(actual_version == expected_version, snapshot_exception,
                  "Binary snapshot is an unsupported version.  Expected : ${expected}, Got: ${actual}",
                  ("expected", expected_version)("actual", actual_version));
 
@@ -366,7 +366,7 @@ void istream_snapshot_reader::set_section( const string& section_name ) {
       return;
    }
 
-   EOS_THROW(snapshot_exception, "Binary snapshot has no section named ${n}", ("n", section_name));
+   CORE_THROW(snapshot_exception, "Binary snapshot has no section named ${n}", ("n", section_name));
 }
 
 bool istream_snapshot_reader::read_row( detail::abstract_snapshot_row_reader& row_reader ) {
@@ -429,7 +429,7 @@ istream_json_snapshot_reader::istream_json_snapshot_reader(const std::filesystem
    : impl{new istream_json_snapshot_reader_impl{0, 0, {}, {}}}
 {
    FILE* fp = fopen(p.string().c_str(), "rb");
-   EOS_ASSERT(fp, snapshot_exception, "Failed to open JSON snapshot: ${file}", ("file", p));
+   CORE_ASSERT(fp, snapshot_exception, "Failed to open JSON snapshot: ${file}", ("file", p));
    auto close = fc::make_scoped_exit( [&fp]() { fclose( fp ); } );
    char readBuffer[65536];
    eosio_rapidjson::FileReadStream is(fp, readBuffer, sizeof(readBuffer));
@@ -440,15 +440,15 @@ void istream_json_snapshot_reader::validate() {
    try {
       // validate totem
       auto expected_totem = ostream_json_snapshot_writer::magic_number;
-      EOS_ASSERT(impl->doc.HasMember("magic_number"), snapshot_exception, "magic_number section not found" );
+      CORE_ASSERT(impl->doc.HasMember("magic_number"), snapshot_exception, "magic_number section not found" );
       auto actual_totem = impl->doc["magic_number"].GetUint();
-      EOS_ASSERT( actual_totem == expected_totem, snapshot_exception, "JSON snapshot has unexpected magic number" );
+      CORE_ASSERT( actual_totem == expected_totem, snapshot_exception, "JSON snapshot has unexpected magic number" );
 
       // validate version
       auto expected_version = current_snapshot_version;
-      EOS_ASSERT(impl->doc.HasMember("version"), snapshot_exception, "version section not found" );
+      CORE_ASSERT(impl->doc.HasMember("version"), snapshot_exception, "version section not found" );
       auto actual_version = impl->doc["version"].GetUint();
-      EOS_ASSERT( actual_version == expected_version, snapshot_exception,
+      CORE_ASSERT( actual_version == expected_version, snapshot_exception,
                   "JSON snapshot is an unsupported version.  Expected : ${expected}, Got: ${actual}",
                   ("expected", expected_version)( "actual", actual_version ) );
 
@@ -471,10 +471,10 @@ void istream_json_snapshot_reader::set_section( const string& section_name ) {
          effective_name = legacy;
       }
    }
-   EOS_ASSERT( impl->doc.HasMember( effective_name.c_str() ), snapshot_exception, "JSON snapshot has no section ${sec}", ("sec", section_name) );
-   EOS_ASSERT( impl->doc[effective_name.c_str()].HasMember( "num_rows" ), snapshot_exception, "JSON snapshot ${sec} num_rows not found", ("sec", section_name) );
-   EOS_ASSERT( impl->doc[effective_name.c_str()].HasMember( "rows" ), snapshot_exception, "JSON snapshot ${sec} rows not found", ("sec", section_name) );
-   EOS_ASSERT( impl->doc[effective_name.c_str()]["rows"].IsArray(), snapshot_exception, "JSON snapshot ${sec} rows is not an array", ("sec_name", section_name) );
+   CORE_ASSERT( impl->doc.HasMember( effective_name.c_str() ), snapshot_exception, "JSON snapshot has no section ${sec}", ("sec", section_name) );
+   CORE_ASSERT( impl->doc[effective_name.c_str()].HasMember( "num_rows" ), snapshot_exception, "JSON snapshot ${sec} num_rows not found", ("sec", section_name) );
+   CORE_ASSERT( impl->doc[effective_name.c_str()].HasMember( "rows" ), snapshot_exception, "JSON snapshot ${sec} rows not found", ("sec", section_name) );
+   CORE_ASSERT( impl->doc[effective_name.c_str()]["rows"].IsArray(), snapshot_exception, "JSON snapshot ${sec} rows is not an array", ("sec_name", section_name) );
 
    impl->sec_name = effective_name;
    impl->num_rows = impl->doc[effective_name.c_str()]["num_rows"].GetInt();
@@ -482,7 +482,7 @@ void istream_json_snapshot_reader::set_section( const string& section_name ) {
 }
 
 bool istream_json_snapshot_reader::read_row( detail::abstract_snapshot_row_reader& row_reader ) {
-   EOS_ASSERT( impl->cur_row < impl->num_rows, snapshot_exception, "JSON snapshot ${sect}'s cur_row ${cur_row} >= num_rows ${num_rows}",
+   CORE_ASSERT( impl->cur_row < impl->num_rows, snapshot_exception, "JSON snapshot ${sect}'s cur_row ${cur_row} >= num_rows ${num_rows}",
                ("sect_name", impl->sec_name)( "cur_row", impl->cur_row )( "num_rows", impl->num_rows ) );
 
    const eosio_rapidjson::Value& rows = impl->doc[impl->sec_name.c_str()]["rows"];
@@ -529,10 +529,10 @@ void threaded_snapshot_reader::validate() {
       using magic_number_t = std::decay_t<decltype(ostream_snapshot_writer::magic_number)>;
       using version_t = std::decay_t<decltype(current_snapshot_version)>;
 
-      EOS_ASSERT(snapshot_file.unpack_from<magic_number_t>(0) == ostream_snapshot_writer::magic_number, snapshot_exception, "Binary snapshot has unexpected magic number!");
+      CORE_ASSERT(snapshot_file.unpack_from<magic_number_t>(0) == ostream_snapshot_writer::magic_number, snapshot_exception, "Binary snapshot has unexpected magic number!");
 
       const version_t actual_version = snapshot_file.unpack_from<version_t>(sizeof(magic_number_t));
-      EOS_ASSERT(actual_version == current_snapshot_version, snapshot_exception, "Binary snapshot is an unsuppored version.  Expected : ${expected}, Got: ${actual}",
+      CORE_ASSERT(actual_version == current_snapshot_version, snapshot_exception, "Binary snapshot is an unsuppored version.  Expected : ${expected}, Got: ${actual}",
                                                                                  ("expected", current_snapshot_version)("actual", actual_version));
 
       uint64_t next_section_offs = sizeof(magic_number_t) + sizeof(version_t);
@@ -558,7 +558,7 @@ bool threaded_snapshot_reader::find_section_by_name(const string& name) {
       const uint64_t section_name_offset    = next_section_offs + sizeof(uint64_t) + sizeof(uint64_t);
 
       //section size does not include the section size record itself, so + sizeof(uint64_t)
-      EOS_ASSERT(next_section_offs + this_section_size + sizeof(uint64_t) < mapped_snap.get_size(), snapshot_exception, "Binary snapshot section too short");
+      CORE_ASSERT(next_section_offs + this_section_size + sizeof(uint64_t) < mapped_snap.get_size(), snapshot_exception, "Binary snapshot section too short");
 
       if(strncmp(name.c_str(), mapped_snap_addr+section_name_offset, name.size() + 1) == 0) {
          const uint64_t section_data_offset = section_name_offset + name.size() + 1;
@@ -583,7 +583,7 @@ void threaded_snapshot_reader::set_section(const string& section_name) {
    if (!legacy.empty() && find_section_by_name(legacy))
       return;
 
-   EOS_THROW(snapshot_exception, "Binary snapshot has no section named ${n}", ("n", section_name));
+   CORE_THROW(snapshot_exception, "Binary snapshot has no section named ${n}", ("n", section_name));
 }
 
 bool threaded_snapshot_reader::read_row(detail::abstract_snapshot_row_reader& row_reader) {

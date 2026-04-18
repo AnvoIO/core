@@ -201,7 +201,7 @@ void executor::execute(const code_descriptor& code, memory& mem, apply_context& 
       max_pages = config.max_pages;
    }
    stack.reset(max_call_depth);
-   EOS_ASSERT(code.starting_memory_pages <= (int)max_pages, wasm_execution_error, "Initial memory out of range");
+   CORE_ASSERT(code.starting_memory_pages <= (int)max_pages, wasm_execution_error, "Initial memory out of range");
 
    //prepare initial memory, mutable globals, and table data
    if(code.starting_memory_pages > 0 ) {
@@ -297,7 +297,7 @@ void executor::execute(const code_descriptor& code, memory& mem, apply_context& 
          context.trx_context.checktime();
          break;
       case COREVMOC_EXIT_SEGV:
-         EOS_ASSERT(false, wasm_execution_error, "access violation");
+         CORE_ASSERT(false, wasm_execution_error, "access violation");
          break;
       case COREVMOC_EXIT_EXCEPTION: //exception
          std::rethrow_exception(*cb->eptr);

@@ -96,11 +96,11 @@ struct corevmoc_tier {
             runtime_interface = std::make_unique<webassembly::corevmoc::corevmoc_runtime>(data_dir, corevmoc_config, d);
 #endif
          if(!runtime_interface)
-            EOS_THROW(wasm_exception, "${r} wasm runtime not supported on this platform and/or configuration", ("r", vm));
+            CORE_THROW(wasm_exception, "${r} wasm runtime not supported on this platform and/or configuration", ("r", vm));
 
 #ifdef CORE_NET_VM_OC_RUNTIME_ENABLED
          if(corevmoc_tierup != wasm_interface::vm_oc_enable::oc_none) {
-            EOS_ASSERT(vm != wasm_interface::vm_type::core_vm_oc, wasm_exception, "You can't use Core VM OC as the base runtime when tier up is activated");
+            CORE_ASSERT(vm != wasm_interface::vm_type::core_vm_oc, wasm_exception, "You can't use Core VM OC as the base runtime when tier up is activated");
             try {
                corevmoc = std::make_unique<corevmoc_tier>(data_dir, corevmoc_config, d, [this](boost::asio::io_context& ctx, const digest_type& code_id, fc::time_point queued_time) {
                   async_compile_complete(ctx, code_id, queued_time);
@@ -204,7 +204,7 @@ struct corevmoc_tier {
                dlog("Core VM OC compile complete interrupt of ${r} <= ${a}::${act} code ${h}, interrupt #${c}",
                     ("r", context.get_receiver())("a", context.get_action().account)
                     ("act", context.get_action().name)("h", code_hash)("c", core_vm_oc_compile_interrupt_count));
-               EOS_THROW(interrupt_oc_exception, "Core VM OC compile complete interrupt of ${r} <= ${a}::${act} code ${h}, interrupt #${c}",
+               CORE_THROW(interrupt_oc_exception, "Core VM OC compile complete interrupt of ${r} <= ${a}::${act} code ${h}, interrupt #${c}",
                     ("r", context.get_receiver())("a", context.get_action().account)
                     ("act", context.get_action().name)("h", code_hash)("c", core_vm_oc_compile_interrupt_count));
             }

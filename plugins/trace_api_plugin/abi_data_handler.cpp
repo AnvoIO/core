@@ -22,7 +22,7 @@ namespace core_net::trace_api {
                // abi_serializer expects a yield function that takes a recursion depth
                // abis are user provided, do not use a deadline
                auto abi_yield = [](size_t recursion_depth) {
-                  EOS_ASSERT( recursion_depth < chain::abi_serializer::max_recursion_depth, chain::abi_recursion_depth_exception,
+                  CORE_ASSERT( recursion_depth < chain::abi_serializer::max_recursion_depth, chain::abi_recursion_depth_exception,
                               "exceeded max_recursion_depth ${r} ", ("r", chain::abi_serializer::max_recursion_depth) );
                };
                return std::visit([&](auto &&action) -> std::tuple<fc::variant, std::optional<fc::variant>> {

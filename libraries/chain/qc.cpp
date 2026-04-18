@@ -38,7 +38,7 @@ inline void verify_dual_finalizers_votes(const finalizer_policies_t& policies,
       uint32_t pending_vote_index = 0;
       for (const auto& pending_fin: policies.pending_finalizer_policy->finalizers) {
          if (active_fin.public_key == pending_fin.public_key) {
-            EOS_ASSERT(active_policy_sig.vote_same_at(pending_policy_sig, active_vote_index, pending_vote_index),
+            CORE_ASSERT(active_policy_sig.vote_same_at(pending_policy_sig, active_vote_index, pending_vote_index),
                        invalid_qc,
                        "qc ${bn} contains a dual finalizer ${k} which does not vote the same on active and pending policies",
                        ("bn", block_num)("k", active_fin.public_key));
@@ -57,7 +57,7 @@ void qc_t::verify_signatures(const finalizer_policies_t& policies) const {
    active_policy_sig.verify_signatures(policies.active_finalizer_policy, strong_digest, weak_digest);
 
    if (pending_policy_sig) {
-      EOS_ASSERT(policies.pending_finalizer_policy, invalid_qc,
+      CORE_ASSERT(policies.pending_finalizer_policy, invalid_qc,
                  "qc ${bn} contains pending policy signature for nonexistent pending finalizer policy", ("bn", block_num));
       pending_policy_sig->verify_signatures(policies.pending_finalizer_policy, strong_digest, weak_digest);
    }
@@ -68,7 +68,7 @@ void qc_t::verify_basic(const finalizer_policies_t& policies) const {
    active_policy_sig.verify_weights(policies.active_finalizer_policy);
 
    if (pending_policy_sig) {
-      EOS_ASSERT(policies.pending_finalizer_policy, invalid_qc,
+      CORE_ASSERT(policies.pending_finalizer_policy, invalid_qc,
                  "qc ${bn} contains pending policy signature for nonexistent pending finalizer policy", ("bn", block_num));
 
       // verify that every finalizer included in both policies voted the same
@@ -77,7 +77,7 @@ void qc_t::verify_basic(const finalizer_policies_t& policies) const {
       pending_policy_sig->verify_vote_format(policies.pending_finalizer_policy);
       pending_policy_sig->verify_weights(policies.pending_finalizer_policy);
    } else {
-      EOS_ASSERT(!policies.pending_finalizer_policy, invalid_qc,
+      CORE_ASSERT(!policies.pending_finalizer_policy, invalid_qc,
                  "qc ${bn} does not contain pending policy signature for pending finalizer policy", ("bn", block_num));
    }
 }
@@ -103,19 +103,19 @@ void qc_sig_t::verify_vote_format(const finalizer_policy_ptr& fin_policy) const 
    const auto& finalizers = fin_policy->finalizers;
    auto num_finalizers = finalizers.size();
 
-   EOS_ASSERT( strong_votes || weak_votes, invalid_qc,
+   CORE_ASSERT( strong_votes || weak_votes, invalid_qc,
                "Neither strong_votes nor weak_votes present for finalizer policy, generation ${n}",
                ("n", fin_policy->generation) );
 
    // verify number of finalizers matches with vote bitset size
    if (strong_votes) {
-      EOS_ASSERT( num_finalizers == strong_votes->size(), invalid_qc,
+      CORE_ASSERT( num_finalizers == strong_votes->size(), invalid_qc,
                   "vote bitset size is not the same as the number of finalizers for the policy it refers to, "
                   "vote bitset size: ${s}, num of finalizers for the policy: ${n}",
                   ("s", strong_votes->size())("n", num_finalizers) );
    }
    if (weak_votes) {
-      EOS_ASSERT( num_finalizers == weak_votes->size(), invalid_qc,
+      CORE_ASSERT( num_finalizers == weak_votes->size(), invalid_qc,
                   "vote bitset size is not the same as the number of finalizers for the policy it refers to, "
                   "vote bitset size: ${s}, num of finalizers for the policy: ${n}",
                   ("s", weak_votes->size())("n", num_finalizers) );
@@ -125,7 +125,7 @@ void qc_sig_t::verify_vote_format(const finalizer_policy_ptr& fin_policy) const 
    if (strong_votes && weak_votes) {
       for (size_t i=0; i<strong_votes->size(); ++i) {
          // at most one is true
-         EOS_ASSERT( !((*strong_votes)[i] && (*weak_votes)[i]), invalid_qc,
+         CORE_ASSERT( !((*strong_votes)[i] && (*weak_votes)[i]), invalid_qc,
                      "finalizer (bit index ${i}) voted both strong and weak",
                      ("i", i) );
 
@@ -155,11 +155,11 @@ void qc_sig_t::verify_weights(const finalizer_policy_ptr& fin_policy) const {
 
    // verfify quorum is met
    if( is_strong() ) {
-      EOS_ASSERT( strong_weights >= fin_policy->threshold, invalid_qc,
+      CORE_ASSERT( strong_weights >= fin_policy->threshold, invalid_qc,
                   "strong quorum is not met, strong_weights: ${s}, threshold: ${t}",
                   ("s", strong_weights)("t", fin_policy->threshold) );
    } else {
-      EOS_ASSERT( strong_weights + weak_weights >= fin_policy->threshold, invalid_qc,
+      CORE_ASSERT( strong_weights + weak_weights >= fin_policy->threshold, invalid_qc,
                   "weak quorum is not met, strong_weights: ${s}, weak_weights: ${w}, threshold: ${t}",
                   ("s", strong_weights)("w", weak_weights)("t", fin_policy->threshold) );
    }
@@ -203,7 +203,7 @@ void qc_sig_t::verify_signatures(const finalizer_policy_ptr& fin_policy,
    }
 
    // validate aggregated signature
-   EOS_ASSERT( bls12_381::aggregate_verify(pubkeys, digests, sig.jacobian_montgomery_le()),
+   CORE_ASSERT( bls12_381::aggregate_verify(pubkeys, digests, sig.jacobian_montgomery_le()),
                invalid_qc_signature, "qc signature validation failed" );
 
 }
@@ -357,7 +357,7 @@ qc_sig_t aggregating_qc_sig_t::extract_qc_sig_from_aggregating() const {
       qc_sig.sig          = strong_votes.sig;
       qc_sig.sig.aggregate(weak_votes.sig);
    } else {
-      EOS_ASSERT( false, invalid_qc, "extract_qc_sig_from_aggregating called without quorum" );
+      CORE_ASSERT( false, invalid_qc, "extract_qc_sig_from_aggregating called without quorum" );
    }
 
    return qc_sig;
@@ -423,8 +423,8 @@ std::optional<qc_t> aggregating_qc_t::get_best_qc(block_num_type block_num) cons
 }
 
 bool aggregating_qc_t::set_received_qc(const qc_t& qc) {
-   // qc should have already been verified via verify_qc, this EOS_ASSERT should never fire
-   EOS_ASSERT(!pending_policy_sig || qc.pending_policy_sig, invalid_qc,
+   // qc should have already been verified via verify_qc, this CORE_ASSERT should never fire
+   CORE_ASSERT(!pending_policy_sig || qc.pending_policy_sig, invalid_qc,
               "qc ${bn} expected to have a pending policy signature", ("bn", qc.block_num));
    bool active_better = active_policy_sig.set_received_qc_sig(qc.active_policy_sig);
    bool pending_better = false;
@@ -518,7 +518,7 @@ vote_status_t aggregating_qc_t::has_voted(const bls_public_key& key) const {
       return active_status;
    }
 
-   EOS_ASSERT(pending_policy_sig, invalid_qc,
+   CORE_ASSERT(pending_policy_sig, invalid_qc,
               "qc does not contain pending policy signature for pending finalizer policy");
    vote_status_t pending_status = finalizer_has_voted(pending_finalizer_policy, *pending_policy_sig, key);
 

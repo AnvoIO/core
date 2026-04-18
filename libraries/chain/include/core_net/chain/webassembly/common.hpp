@@ -97,7 +97,7 @@ namespace core_net { namespace chain {
          -> std::enable_if_t< vm::is_argument_proxy_type_v<T> &&
                               std::is_pointer_v<typename T::proxy_type>, T> {
          if constexpr(T::is_legacy()) {
-            EOS_ASSERT(ptr != 0, wasm_execution_error, "references cannot be created for null pointers");
+            CORE_ASSERT(ptr != 0, wasm_execution_error, "references cannot be created for null pointers");
          }
          auto p = this->template validate_pointer<typename T::pointee_type>(ptr, 1);
          return {p};

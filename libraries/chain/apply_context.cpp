@@ -120,11 +120,11 @@ void apply_context::exec_one()
                      counter = 0;
                   }
                   if( itr->delta > 0 && itr->account != receiver ) {
-                     EOS_ASSERT( not_in_notify_context, unauthorized_ram_usage_increase,
+                     CORE_ASSERT( not_in_notify_context, unauthorized_ram_usage_increase,
                                  "unprivileged contract cannot increase RAM usage of another account within a notify context: ${account}",
                                  ("account", itr->account)
                      );
-                     EOS_ASSERT( has_authorization( itr->account ), unauthorized_ram_usage_increase,
+                     CORE_ASSERT( has_authorization( itr->account ), unauthorized_ram_usage_increase,
                                  "unprivileged contract cannot increase RAM usage of another account that has not authorized the action: ${account}",
                                  ("account", itr->account)
                      );
@@ -214,7 +214,7 @@ void apply_context::exec()
    }
 
    if( !_cfa_inline_actions.empty() || !_inline_actions.empty() ) {
-      EOS_ASSERT( recurse_depth < control.get_global_properties().configuration.max_inline_action_depth,
+      CORE_ASSERT( recurse_depth < control.get_global_properties().configuration.max_inline_action_depth,
                   transaction_exception, "max inline action depth per transaction reached" );
 
       for( uint32_t ordinal : _cfa_inline_actions ) {
@@ -258,7 +258,7 @@ void apply_context::require_authorization( const account_name& account ) {
         return;
      }
    }
-   EOS_ASSERT( false, missing_auth_exception, "missing authority of ${account}", ("account",account));
+   CORE_ASSERT( false, missing_auth_exception, "missing authority of ${account}", ("account",account));
 }
 
 bool apply_context::has_authorization( const account_name& account )const {
@@ -276,7 +276,7 @@ void apply_context::require_authorization(const account_name& account,
            return;
         }
      }
-  EOS_ASSERT( false, missing_auth_exception, "missing authority of ${account}/${permission}",
+  CORE_ASSERT( false, missing_auth_exception, "missing authority of ${account}/${permission}",
               ("account",account)("permission",permission) );
 }
 
@@ -318,7 +318,7 @@ void apply_context::require_recipient( account_name recipient ) {
  */
 void apply_context::execute_inline( action&& a ) {
    auto* code = control.db().find<account_object, by_name>(a.account);
-   EOS_ASSERT( code != nullptr, action_validate_exception,
+   CORE_ASSERT( code != nullptr, action_validate_exception,
                "inline action's code account ${account} does not exist", ("account", a.account) );
 
    bool enforce_actor_whitelist_blacklist = trx_context.enforce_whiteblacklist && control.is_speculative_block();
@@ -335,9 +335,9 @@ void apply_context::execute_inline( action&& a ) {
 
    for( const auto& auth : a.authorization ) {
       auto* actor = control.db().find<account_object, by_name>(auth.actor);
-      EOS_ASSERT( actor != nullptr, action_validate_exception,
+      CORE_ASSERT( actor != nullptr, action_validate_exception,
                   "inline action's authorizing actor ${account} does not exist", ("account", auth.actor) );
-      EOS_ASSERT( control.get_authorization_manager().find_permission(auth) != nullptr, action_validate_exception,
+      CORE_ASSERT( control.get_authorization_manager().find_permission(auth) != nullptr, action_validate_exception,
                   "inline action's authorizations include a non-existent permission: ${permission}",
                   ("permission", auth) );
       if( enforce_actor_whitelist_blacklist )
@@ -383,7 +383,7 @@ void apply_context::execute_inline( action&& a ) {
          if( disallow_send_to_self_bypass || !send_to_self ) {
             throw;
          } else if( control.is_speculative_block() ) {
-            EOS_THROW(subjective_block_production_exception, "Unexpected exception occurred validating inline action sent to self");
+            CORE_THROW(subjective_block_production_exception, "Unexpected exception occurred validating inline action sent to self");
          }
       }
    }
@@ -400,10 +400,10 @@ void apply_context::execute_inline( action&& a ) {
 
 void apply_context::execute_context_free_inline( action&& a ) {
    auto* code = control.db().find<account_object, by_name>(a.account);
-   EOS_ASSERT( code != nullptr, action_validate_exception,
+   CORE_ASSERT( code != nullptr, action_validate_exception,
                "inline action's code account ${account} does not exist", ("account", a.account) );
 
-   EOS_ASSERT( a.authorization.size() == 0, action_validate_exception,
+   CORE_ASSERT( a.authorization.size() == 0, action_validate_exception,
                "context-free actions cannot have authorizations" );
 
    auto inline_receiver = a.account;
@@ -423,8 +423,8 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
       return;
    }
 
-   EOS_ASSERT( !trx_context.is_read_only(), transaction_exception, "cannot schedule a deferred transaction from within a readonly transaction" );
-   EOS_ASSERT( trx.context_free_actions.size() == 0, cfa_inside_generated_tx, "context free actions are not currently allowed in generated transactions" );
+   CORE_ASSERT( !trx_context.is_read_only(), transaction_exception, "cannot schedule a deferred transaction from within a readonly transaction" );
+   CORE_ASSERT( trx.context_free_actions.size() == 0, cfa_inside_generated_tx, "context free actions are not currently allowed in generated transactions" );
 
    bool enforce_actor_whitelist_blacklist = trx_context.enforce_whiteblacklist && control.is_speculative_block()
                                              && !control.sender_avoids_whitelist_blacklist_enforcement( receiver );
@@ -435,21 +435,21 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
       if( exts.size() > 0 ) {
          auto itr = exts.find( deferred_transaction_generation_context::extension_id() );
 
-         EOS_ASSERT( exts.size() == 1 && itr != exts.end(), invalid_transaction_extension,
+         CORE_ASSERT( exts.size() == 1 && itr != exts.end(), invalid_transaction_extension,
                      "only the deferred_transaction_generation_context extension is currently supported for deferred transactions"
          );
 
          const auto& context = std::get<deferred_transaction_generation_context>(itr->second);
 
-         EOS_ASSERT( context.sender == receiver, ill_formed_deferred_transaction_generation_context,
+         CORE_ASSERT( context.sender == receiver, ill_formed_deferred_transaction_generation_context,
                      "deferred transaction generaction context contains mismatching sender",
                      ("expected", receiver)("actual", context.sender)
          );
-         EOS_ASSERT( context.sender_id == sender_id, ill_formed_deferred_transaction_generation_context,
+         CORE_ASSERT( context.sender_id == sender_id, ill_formed_deferred_transaction_generation_context,
                      "deferred transaction generaction context contains mismatching sender_id",
                      ("expected", sender_id)("actual", context.sender_id)
          );
-         EOS_ASSERT( context.sender_trx_id == trx_context.packed_trx.id(), ill_formed_deferred_transaction_generation_context,
+         CORE_ASSERT( context.sender_trx_id == trx_context.packed_trx.id(), ill_formed_deferred_transaction_generation_context,
                      "deferred transaction generaction context contains mismatching sender_trx_id",
                      ("expected", trx_context.packed_trx.id())("actual", context.sender_trx_id)
          );
@@ -481,10 +481,10 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
    if( !control.skip_auth_check() && !privileged ) { // Do not need to check authorization if replayng irreversible block or if contract is privileged
       if( payer != receiver ) {
          if( ram_restrictions_activated ) {
-            EOS_ASSERT( receiver == act->account, action_validate_exception,
+            CORE_ASSERT( receiver == act->account, action_validate_exception,
                         "cannot bill RAM usage of deferred transactions to another account within notify context"
             );
-            EOS_ASSERT( has_authorization( payer ), action_validate_exception,
+            CORE_ASSERT( has_authorization( payer ), action_validate_exception,
                         "cannot bill RAM usage of deferred transaction to another account that has not authorized the action: ${payer}",
                         ("payer", payer)
             );
@@ -539,18 +539,18 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
          if( disallow_send_to_self_bypass || !is_sending_only_to_self(receiver) ) {
             throw;
          } else if( control.is_speculative_block() ) {
-            EOS_THROW(subjective_block_production_exception, "Unexpected exception occurred validating sent deferred transaction consisting only of actions to self");
+            CORE_THROW(subjective_block_production_exception, "Unexpected exception occurred validating sent deferred transaction consisting only of actions to self");
          }
       }
    }
 
    uint32_t trx_size = 0;
    if ( auto ptr = db.find<generated_transaction_object,by_sender_id>(boost::make_tuple(receiver, sender_id)) ) {
-      EOS_ASSERT( replace_existing, deferred_tx_duplicate, "deferred transaction with the same sender_id and payer already exists" );
+      CORE_ASSERT( replace_existing, deferred_tx_duplicate, "deferred transaction with the same sender_id and payer already exists" );
 
       bool replace_deferred_activated = control.is_builtin_activated(builtin_protocol_feature_t::replace_deferred);
 
-      EOS_ASSERT( replace_deferred_activated || !control.is_speculative_block()
+      CORE_ASSERT( replace_deferred_activated || !control.is_speculative_block()
                      || control.all_subjective_mitigations_disabled(),
                   subjective_block_production_exception,
                   "Replacing a deferred transaction is temporarily disabled." );
@@ -614,7 +614,7 @@ void apply_context::schedule_deferred_transaction( const uint128_t& sender_id, a
       } );
    }
 
-   EOS_ASSERT( ram_restrictions_activated
+   CORE_ASSERT( ram_restrictions_activated
                || control.is_ram_billing_in_notify_allowed()
                || (receiver == act->account) || (receiver == payer) || privileged,
                subjective_block_production_exception,
@@ -629,7 +629,7 @@ bool apply_context::cancel_deferred_transaction( const uint128_t& sender_id, acc
       return false;
    }
 
-   EOS_ASSERT( !trx_context.is_read_only(), transaction_exception, "cannot cancel a deferred transaction from within a readonly transaction" );
+   CORE_ASSERT( !trx_context.is_read_only(), transaction_exception, "cannot cancel a deferred transaction from within a readonly transaction" );
    auto& generated_transaction_idx = db.get_mutable_index<generated_transaction_multi_index>();
    const auto* gto = db.find<generated_transaction_object,by_sender_id>(boost::make_tuple(sender, sender_id));
    if ( gto ) {
@@ -731,7 +731,7 @@ void apply_context::update_db_usage( const account_name& payer, int64_t delta ) 
       if( !(privileged || payer == account_name(receiver)
                || control.is_builtin_activated( builtin_protocol_feature_t::ram_restrictions ) ) )
       {
-         EOS_ASSERT( control.is_ram_billing_in_notify_allowed() || (receiver == act->account),
+         CORE_ASSERT( control.is_ram_billing_in_notify_allowed() || (receiver == act->account),
                      subjective_block_production_exception, "Cannot charge RAM to other accounts during notify." );
          require_authorization( payer );
       }
@@ -756,7 +756,7 @@ int apply_context::get_action( uint32_t type, uint32_t index, char* buffer, size
       act_ptr = &trx.actions[index];
    }
 
-   EOS_ASSERT(act_ptr, action_not_found_exception, "action is not found" );
+   CORE_ASSERT(act_ptr, action_not_found_exception, "action is not found" );
 
    auto ps = fc::raw::pack_size( *act_ptr );
    if( ps <= buffer_size ) {
@@ -782,17 +782,17 @@ int apply_context::get_context_free_data( uint32_t index, char* buffer, size_t b
 }
 
 int apply_context::db_store_i64( name scope, name table, const account_name& payer, uint64_t id, const char* buffer, size_t buffer_size ) {
-   EOS_ASSERT( !trx_context.is_read_only(), table_operation_not_permitted, "cannot store a db record when executing a readonly transaction" );
+   CORE_ASSERT( !trx_context.is_read_only(), table_operation_not_permitted, "cannot store a db record when executing a readonly transaction" );
    return db_store_i64( receiver, scope, table, payer, id, buffer, buffer_size);
 }
 
 int apply_context::db_store_i64( name code, name scope, name table, const account_name& payer, uint64_t id, const char* buffer, size_t buffer_size ) {
 //   require_write_lock( scope );
-   EOS_ASSERT( !trx_context.is_read_only(), table_operation_not_permitted, "cannot store a db record when executing a readonly transaction" );
+   CORE_ASSERT( !trx_context.is_read_only(), table_operation_not_permitted, "cannot store a db record when executing a readonly transaction" );
    const auto& tab = find_or_create_table( code, scope, table, payer );
    auto tableid = tab.id;
 
-   EOS_ASSERT( payer != account_name(), invalid_table_payer, "must specify a valid account to pay for new record" );
+   CORE_ASSERT( payer != account_name(), invalid_table_payer, "must specify a valid account to pay for new record" );
 
    const auto& obj = db.create<key_value_object>( [&]( auto& o ) {
       o.t_id        = tableid;
@@ -828,11 +828,11 @@ int apply_context::db_store_i64( name code, name scope, name table, const accoun
 }
 
 void apply_context::db_update_i64( int iterator, account_name payer, const char* buffer, size_t buffer_size ) {
-   EOS_ASSERT( !trx_context.is_read_only(), table_operation_not_permitted, "cannot update a db record when executing a readonly transaction" );
+   CORE_ASSERT( !trx_context.is_read_only(), table_operation_not_permitted, "cannot update a db record when executing a readonly transaction" );
    const key_value_object& obj = keyval_cache.get( iterator );
 
    const auto& table_obj = keyval_cache.get_table( obj.t_id );
-   EOS_ASSERT( table_obj.code == receiver, table_access_violation, "db access violation" );
+   CORE_ASSERT( table_obj.code == receiver, table_access_violation, "db access violation" );
 
 //   require_write_lock( table_obj.scope );
 
@@ -885,11 +885,11 @@ void apply_context::db_update_i64( int iterator, account_name payer, const char*
 }
 
 void apply_context::db_remove_i64( int iterator ) {
-   EOS_ASSERT( !trx_context.is_read_only(), table_operation_not_permitted, "cannot remove a db record when executing a readonly transaction" );
+   CORE_ASSERT( !trx_context.is_read_only(), table_operation_not_permitted, "cannot remove a db record when executing a readonly transaction" );
    const key_value_object& obj = keyval_cache.get( iterator );
 
    const auto& table_obj = keyval_cache.get_table( obj.t_id );
-   EOS_ASSERT( table_obj.code == receiver, table_access_violation, "db access violation" );
+   CORE_ASSERT( table_obj.code == receiver, table_access_violation, "db access violation" );
 
 //   require_write_lock( table_obj.scope );
 
@@ -954,7 +954,7 @@ int apply_context::db_previous_i64( int iterator, uint64_t& primary ) {
    if( iterator < -1 ) // is end iterator
    {
       auto tab = keyval_cache.find_table_by_end_iterator(iterator);
-      EOS_ASSERT( tab, invalid_table_iterator, "not a valid end iterator" );
+      CORE_ASSERT( tab, invalid_table_iterator, "not a valid end iterator" );
 
       auto itr = idx.upper_bound(tab->id);
       if( idx.begin() == idx.end() || itr == idx.begin() ) return -1; // Empty table

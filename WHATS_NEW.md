@@ -106,6 +106,33 @@ Anvo Core maintains both the original `eosio::` protocol feature digests (for co
 
 All C++ namespaces have been ported from `eosio::` to `core_net::`. Plugin names, config options, and API endpoints retain backward compatibility where applicable.
 
+### Exception macro rename ([#94](https://github.com/AnvoIO/core/issues/94))
+
+**v0.1.5-alpha** renames the `EOS_*` exception macros to `CORE_*` across all ~1,165 call sites in the tree:
+
+| Previous | Current |
+|----------|---------|
+| `EOS_ASSERT` | `CORE_ASSERT` |
+| `EOS_THROW` | `CORE_THROW` |
+| `EOS_RETHROW_EXCEPTIONS` | `CORE_RETHROW_EXCEPTIONS` |
+| `EOS_CAPTURE_AND_RETHROW` | `CORE_CAPTURE_AND_RETHROW` |
+| `EOS_RECODE_EXC` | `CORE_RECODE_EXC` |
+
+The `EOS_*` forms remain available as preprocessor aliases in `<core_net/chain/exceptions.hpp>`, so downstream contracts, plugins, and test code keep compiling unchanged. New code should use the `CORE_*` names.
+
+### CMake module filename rename ([#94](https://github.com/AnvoIO/core/issues/94))
+
+Legacy Eosio/Leap CMake module filenames have been renamed to match the current naming:
+
+| Previous | Current |
+|----------|---------|
+| `CMakeModules/EosioTester.cmake.in` | `CMakeModules/CoreNetTester.cmake.in` |
+| `CMakeModules/EosioTesterBuild.cmake.in` | `CMakeModules/CoreNetTesterBuild.cmake.in` |
+| `CMakeModules/EosioCheckVersion.cmake` | `CMakeModules/CoreNetCheckVersion.cmake` |
+| `CMakeModules/leap-config.cmake.in` | *removed — dead file, referenced only by itself* |
+
+The installed CMake package name stays `core_net` (`find_package(core_net)`), and the INTERFACE library targets exported by the tester (`EosioTester`, `EosioChain`) and the `add_eosio_test_executable` / `add_eosio_test` helper macros are retained so downstream test suites continue to link without changes. The triple-duplicated `configure_file` / `install` block that wrote the same output three times under "legacy eosio / legacy leap / spring" comments has been collapsed into a single pass.
+
 ## CDT 5.x Compatibility (REQUIRED)
 
 Anvo Core must export dual WASM host function names to support contracts compiled with both CDT 5.x (`core_net/` headers) and CDT 4.x (`eosio/` headers):

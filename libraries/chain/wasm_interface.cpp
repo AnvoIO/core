@@ -62,9 +62,9 @@ namespace core_net { namespace chain {
          Serialization::MemoryInputStream stream((U8*)code.data(), code.size());
          WASM::serialize(stream, module);
       } catch(const Serialization::FatalSerializationException& e) {
-         EOS_ASSERT(false, wasm_serialization_error, e.message.c_str());
+         CORE_ASSERT(false, wasm_serialization_error, e.message.c_str());
       } catch(const IR::ValidationException& e) {
-         EOS_ASSERT(false, wasm_serialization_error, e.message.c_str());
+         CORE_ASSERT(false, wasm_serialization_error, e.message.c_str());
       }
 
       wasm_validations::wasm_binary_validation validator(control, module);

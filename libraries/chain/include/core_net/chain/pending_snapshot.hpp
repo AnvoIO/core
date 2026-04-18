@@ -55,12 +55,12 @@ public:
       if(!valid) {
          fs::remove(fs::path(pending_path), ec);
          ilog("Snapshot created at block id ${id} invalidated because block was forked out", ("id", block_id));
-         EOS_THROW(chain::snapshot_finalization_exception,
+         CORE_THROW(chain::snapshot_finalization_exception,
                    "Snapshotted block was forked out of the chain.  ID: ${id}", ("id", block_id));
       }
 
       fs::rename(fs::path(pending_path), fs::path(final_path), ec);
-      EOS_ASSERT(!ec, chain::snapshot_finalization_exception,
+      CORE_ASSERT(!ec, chain::snapshot_finalization_exception,
                  "Unable to finalize valid snapshot of block number ${bn}: [code: ${ec}] ${message}",
                  ("bn", block_num)("ec", ec.value())("message", ec.message()));
 

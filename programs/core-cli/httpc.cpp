@@ -86,7 +86,7 @@ fc::variant do_http_call(const config_t& config, const std::string& base_uri, co
       }
    }
 
-   EOS_ASSERT( status_code == 200 && !response_result.is_null(), http_request_fail,
+   CORE_ASSERT( status_code == 200 && !response_result.is_null(), http_request_fail,
                "Error code ${c}\n: ${msg}\n", ("c", status_code)("msg", re) );
    return response_result;
    }

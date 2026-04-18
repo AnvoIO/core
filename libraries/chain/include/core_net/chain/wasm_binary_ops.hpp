@@ -663,7 +663,7 @@ struct CORE_NET_OperatorDecoderStream
    operator bool() const { return nextByte < end; }
 
    instr* decodeOp() {
-      EOS_ASSERT(nextByte + sizeof(IR::Opcode) <= end, wasm_exception, "");
+      CORE_ASSERT(nextByte + sizeof(IR::Opcode) <= end, wasm_exception, "");
       IR::Opcode opcode;
       memcpy(&opcode, nextByte, sizeof(opcode));
       switch(opcode)
@@ -671,7 +671,7 @@ struct CORE_NET_OperatorDecoderStream
       #define VISIT_OPCODE(opcode,name,nameString,Imm,...) \
          case IR::Opcode::name: \
          { \
-            EOS_ASSERT(nextByte + sizeof(IR::OpcodeAndImm<IR::Imm>) <= end, wasm_exception, ""); \
+            CORE_ASSERT(nextByte + sizeof(IR::OpcodeAndImm<IR::Imm>) <= end, wasm_exception, ""); \
             IR::OpcodeAndImm<IR::Imm>* encodedOperator = (IR::OpcodeAndImm<IR::Imm>*)nextByte; \
             nextByte += sizeof(IR::OpcodeAndImm<IR::Imm>); \
             auto op = _cached_ops->at(BOOST_PP_CAT(name, _code)); \

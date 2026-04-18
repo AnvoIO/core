@@ -24,7 +24,7 @@ class log_index {
       file_.open("rb");
       file_.seek_end(0);
       num_blocks_ = file_.tellp()/ sizeof(uint64_t);
-      EOS_ASSERT(file_.tellp() % sizeof(uint64_t) == 0, Exception,
+      CORE_ASSERT(file_.tellp() % sizeof(uint64_t) == 0, Exception,
                  "The size of ${file} is not a multiple of sizeof(uint64_t)", ("file", path));
    }
 

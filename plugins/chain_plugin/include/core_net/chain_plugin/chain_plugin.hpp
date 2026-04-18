@@ -624,7 +624,7 @@ public:
                   SecKeyType lv = convert_to_type(name{p.lower_bound}, "lower_bound name");
                   std::get<1>(lower_bound_lookup_tuple) = conv(lv);
                } else {
-                  EOS_ASSERT(false, chain::contract_table_query_exception, "Invalid key type of core_net::name ${nm} for lower bound", ("nm", p.lower_bound));
+                  CORE_ASSERT(false, chain::contract_table_query_exception, "Invalid key type of core_net::name ${nm} for lower bound", ("nm", p.lower_bound));
                }
             } else {
                SecKeyType lv = convert_to_type<SecKeyType>( p.lower_bound, "lower_bound" );
@@ -638,7 +638,7 @@ public:
                   SecKeyType uv = convert_to_type(name{p.upper_bound}, "upper_bound name");
                   std::get<1>(upper_bound_lookup_tuple) = conv(uv);
                } else {
-                  EOS_ASSERT(false, chain::contract_table_query_exception, "Invalid key type of core_net::name ${nm} for upper bound", ("nm", p.upper_bound));
+                  CORE_ASSERT(false, chain::contract_table_query_exception, "Invalid key type of core_net::name ${nm} for upper bound", ("nm", p.upper_bound));
                }
             } else {
                SecKeyType uv = convert_to_type<SecKeyType>( p.upper_bound, "upper_bound" );

@@ -58,7 +58,7 @@ private:
 private:
    static uint32_t time_ordinal_for( const fc::time_point& t ) {
       auto ordinal = t.time_since_epoch().count() / (1000U * (uint64_t)subjective_time_interval_ms);
-      EOS_ASSERT(ordinal <= std::numeric_limits<uint32_t>::max(), chain::tx_resource_exhaustion, "overflow of quantized time in subjective billing");
+      CORE_ASSERT(ordinal <= std::numeric_limits<uint32_t>::max(), chain::tx_resource_exhaustion, "overflow of quantized time in subjective billing");
       return ordinal;
    }
 
@@ -66,7 +66,7 @@ private:
       auto aitr = _account_subjective_bill_cache.find( entry.account );
       if( aitr != _account_subjective_bill_cache.end() ) {
          aitr->second.pending_cpu_us -= entry.subjective_cpu_bill;
-         EOS_ASSERT( aitr->second.pending_cpu_us >= 0, chain::tx_resource_exhaustion,
+         CORE_ASSERT( aitr->second.pending_cpu_us >= 0, chain::tx_resource_exhaustion,
                      "Logic error in subjective account billing ${a}", ("a", entry.account) );
          if( aitr->second.empty(time_ordinal, _expired_accumulator_average_window) ) _account_subjective_bill_cache.erase( aitr );
       }

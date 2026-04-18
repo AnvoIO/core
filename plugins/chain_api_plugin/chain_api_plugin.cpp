@@ -30,7 +30,7 @@ template<>
 chain_apis::read_only::get_transaction_status_params
 parse_params<chain_apis::read_only::get_transaction_status_params, http_params_types::params_required>(const std::string& body) {
    if (body.empty()) {
-      EOS_THROW(chain::invalid_http_request, "A Request body is required");
+      CORE_THROW(chain::invalid_http_request, "A Request body is required");
    }
 
    try {
@@ -38,7 +38,7 @@ parse_params<chain_apis::read_only::get_transaction_status_params, http_params_t
       if( v.id == transaction_id_type() ) throw false;
       return v;
    } catch( ... ) {
-      EOS_THROW(chain::invalid_http_request, "Invalid transaction id");
+      CORE_THROW(chain::invalid_http_request, "Invalid transaction id");
    }
 }
 
@@ -47,7 +47,7 @@ template<>
 chain_apis::read_only::get_transaction_id_params
 parse_params<chain_apis::read_only::get_transaction_id_params, http_params_types::params_required>(const std::string& body) {
    if (body.empty()) {
-      EOS_THROW(chain::invalid_http_request, "A Request body is required");
+      CORE_THROW(chain::invalid_http_request, "A Request body is required");
    }
 
    try {
@@ -67,28 +67,28 @@ parse_params<chain_apis::read_only::get_transaction_id_params, http_params_types
                      vo = mvo;
                   } else if( action_vo.contains( "data" ) ) {
                      if( !action_vo["data"].is_string() ) {
-                        EOS_THROW(chain::invalid_http_request, "Request supports only un-exploded 'data' (hex form)");
+                        CORE_THROW(chain::invalid_http_request, "Request supports only un-exploded 'data' (hex form)");
                      }
                   }
                }
                else {
-                  EOS_THROW(chain::invalid_http_request, "Transaction contains invalid or empty action");
+                  CORE_THROW(chain::invalid_http_request, "Transaction contains invalid or empty action");
                }
             } 
          }
          else {
-            EOS_THROW(chain::invalid_http_request, "Transaction actions are missing or invalid");
+            CORE_THROW(chain::invalid_http_request, "Transaction actions are missing or invalid");
          }
       }
       else {
-         EOS_THROW(chain::invalid_http_request, "Transaction object is missing or invalid");
+         CORE_THROW(chain::invalid_http_request, "Transaction object is missing or invalid");
       }
       auto trx = trx_var.as<chain_apis::read_only::get_transaction_id_params>();
       if( trx.id() == transaction().id() ) {
-         EOS_THROW(chain::invalid_http_request, "Invalid transaction object");
+         CORE_THROW(chain::invalid_http_request, "Invalid transaction object");
       }
       return trx;
-   } EOS_RETHROW_EXCEPTIONS(chain::invalid_http_request, "Invalid transaction");
+   } CORE_RETHROW_EXCEPTIONS(chain::invalid_http_request, "Invalid transaction");
 }
 
 #define CALL_WITH_400(api_name, category, api_handle, api_namespace, call_name, http_response_code, params_type) \

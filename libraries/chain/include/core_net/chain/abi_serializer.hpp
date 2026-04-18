@@ -124,17 +124,17 @@ struct abi_serializer {
    static yield_function_t create_yield_function(const fc::microseconds& max_serialization_time) {
       fc::time_point deadline = fc::time_point::now().safe_add(max_serialization_time);
       return [max_serialization_time, deadline](size_t recursion_depth) {
-         EOS_ASSERT( recursion_depth < max_recursion_depth, abi_recursion_depth_exception,
+         CORE_ASSERT( recursion_depth < max_recursion_depth, abi_recursion_depth_exception,
                      "recursive definition, max_recursion_depth ${r} ", ("r", max_recursion_depth) );
 
-         EOS_ASSERT( fc::time_point::now() < deadline, abi_serialization_deadline_exception,
+         CORE_ASSERT( fc::time_point::now() < deadline, abi_serialization_deadline_exception,
                      "serialization time limit ${t}us exceeded", ("t", max_serialization_time) );
       };
    }
 
    static yield_function_t create_depth_yield_function() {
       return [](size_t recursion_depth) {
-         EOS_ASSERT( recursion_depth < max_recursion_depth, abi_recursion_depth_exception,
+         CORE_ASSERT( recursion_depth < max_recursion_depth, abi_recursion_depth_exception,
                      "recursive definition, max_recursion_depth ${r} ", ("r", max_recursion_depth) );
       };
    }
@@ -277,7 +277,7 @@ namespace impl {
             fc::time_point deadline = fc::time_point::now().safe_add(max_action_serialization_time);
             yield = [deadline, y=yield, max=max_action_serialization_time](size_t depth) {
                y(depth); // call provided yield that might include an overall time limit or not
-               EOS_ASSERT( fc::time_point::now() < deadline, abi_serialization_deadline_exception,
+               CORE_ASSERT( fc::time_point::now() < deadline, abi_serialization_deadline_exception,
                            "serialization action data time limit ${t}us exceeded", ("t", max) );
             };
          }
@@ -815,8 +815,8 @@ namespace impl {
       {
          auto h = ctx.enter_scope();
          const variant_object& vo = v.get_object();
-         EOS_ASSERT(vo.contains("account"), packed_transaction_type_exception, "Missing account");
-         EOS_ASSERT(vo.contains("name"), packed_transaction_type_exception, "Missing name");
+         CORE_ASSERT(vo.contains("account"), packed_transaction_type_exception, "Missing account");
+         CORE_ASSERT(vo.contains("name"), packed_transaction_type_exception, "Missing name");
          from_variant(vo["account"], act.account);
          from_variant(vo["name"], act.name);
 
@@ -854,7 +854,7 @@ namespace impl {
             }
          }
 
-         EOS_ASSERT(valid_empty_data || !act.data.empty(), packed_transaction_type_exception,
+         CORE_ASSERT(valid_empty_data || !act.data.empty(), packed_transaction_type_exception,
                     "Failed to deserialize data for ${account}:${name}", ("account", act.account)("name", act.name));
       }
 
@@ -863,8 +863,8 @@ namespace impl {
       {
          auto h = ctx.enter_scope();
          const variant_object& vo = v.get_object();
-         EOS_ASSERT(vo.contains("signatures"), packed_transaction_type_exception, "Missing signatures");
-         EOS_ASSERT(vo.contains("compression"), packed_transaction_type_exception, "Missing compression");
+         CORE_ASSERT(vo.contains("signatures"), packed_transaction_type_exception, "Missing signatures");
+         CORE_ASSERT(vo.contains("compression"), packed_transaction_type_exception, "Missing compression");
          std::vector<signature_type> signatures;
          packed_transaction::compression_type compression;
          from_variant(vo["signatures"], signatures);
@@ -889,7 +889,7 @@ namespace impl {
                ptrx = packed_transaction( std::move( packed_trx ), std::move( signatures ), std::move( cfd ), compression );
             }
          } else {
-            EOS_ASSERT(vo.contains("transaction"), packed_transaction_type_exception, "Missing transaction");
+            CORE_ASSERT(vo.contains("transaction"), packed_transaction_type_exception, "Missing transaction");
             if( use_packed_cfd ) {
                transaction trx;
                extract( vo["transaction"], trx, resolver, ctx );
