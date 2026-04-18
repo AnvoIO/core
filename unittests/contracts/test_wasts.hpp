@@ -725,10 +725,15 @@ static const char apply_wrong_signature_wast[] = R"=====(
 )
 )=====";
 
+// The injected-module name must match the one the runtime imports under, defined
+// in libraries/chain/include/core_net/chain/webassembly/common.hpp. It is duplicated
+// as a literal here to keep test fixtures independent of the public macro surface —
+// if the production name ever changes, this test will fail loudly at load time and
+// the literal needs updating to match.
 static const char import_injected_wast[] =                                            \
 "(module"                                                                             \
 " (export \"apply\" (func $apply))"                                                   \
-" (import \"" CORE_NET_INJECTED_MODULE_NAME "\" \"checktime\" (func $inj (param i32)))"  \
+" (import \"core_net_injection\" \"checktime\" (func $inj (param i32)))"              \
 " (func $apply (param $0 i64) (param $1 i64) (param $2 i64))"                         \
 ")";
 

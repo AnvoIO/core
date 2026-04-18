@@ -224,4 +224,20 @@ BOOST_AUTO_TEST_CASE(array) {
    check_variant_round_trip2(std::array{1, 2, 3});
 }
 
+BOOST_AUTO_TEST_CASE(uint_narrow_from_variant_overflow)
+{
+   // Roundtrip within range.
+   {
+      UInt<8>  u8;  from_variant(variant(uint64_t(255)),        u8);  BOOST_CHECK_EQUAL(uint64_t(u8),  255u);
+      UInt<16> u16; from_variant(variant(uint64_t(65535)),      u16); BOOST_CHECK_EQUAL(uint64_t(u16), 65535u);
+      UInt<32> u32; from_variant(variant(uint64_t(4294967295)), u32); BOOST_CHECK_EQUAL(uint64_t(u32), 4294967295u);
+   }
+   // Values that used to silently truncate now throw.
+   {
+      UInt<8>  u8;  BOOST_CHECK_THROW(from_variant(variant(uint64_t(256)),        u8),  fc::assert_exception);
+      UInt<16> u16; BOOST_CHECK_THROW(from_variant(variant(uint64_t(65536)),      u16), fc::assert_exception);
+      UInt<32> u32; BOOST_CHECK_THROW(from_variant(variant(uint64_t(4294967296)), u32), fc::assert_exception);
+   }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
