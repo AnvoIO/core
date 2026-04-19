@@ -328,12 +328,23 @@ void state_history_plugin_impl::plugin_initialize(const variables_map& options) 
             config.max_retained_files = options.at("max-retained-history-files").as<uint32_t>();
       }
 
+      auto get_block_id_func = [this](chain::block_num_type bn) { return get_block_id(bn); };
+      auto min_reader_func = [this]() -> uint32_t {
+         uint32_t min_block = std::numeric_limits<uint32_t>::max();
+         for(const auto& c : connections) {
+            const auto cursor = c->next_block_num();
+            if(cursor > 0)
+               min_block = std::min(min_block, cursor - 1);
+         }
+         return min_block;
+      };
+
       if(options.at("trace-history").as<bool>())
-         trace_log.emplace(state_history_dir, ship_log_conf, "trace_history", [this](chain::block_num_type bn) {return get_block_id(bn);});
+         trace_log.emplace(state_history_dir, ship_log_conf, "trace_history", get_block_id_func, min_reader_func);
       if(options.at("chain-state-history").as<bool>())
-         chain_state_log.emplace(state_history_dir, ship_log_conf, "chain_state_history", [this](chain::block_num_type bn) {return get_block_id(bn);});
+         chain_state_log.emplace(state_history_dir, ship_log_conf, "chain_state_history", get_block_id_func, min_reader_func);
       if(options.at("finality-data-history").as<bool>())
-         finality_data_log.emplace(state_history_dir, ship_log_conf, "finality_data_history", [this](chain::block_num_type bn) {return get_block_id(bn);});
+         finality_data_log.emplace(state_history_dir, ship_log_conf, "finality_data_history", get_block_id_func, min_reader_func);
    }
    FC_LOG_AND_RETHROW()
 } // state_history_plugin::plugin_initialize

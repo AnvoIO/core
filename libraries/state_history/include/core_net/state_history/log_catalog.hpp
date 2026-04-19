@@ -43,6 +43,7 @@ class log_catalog {
    uint32_t              log_rotation_stride = std::numeric_limits<decltype(log_rotation_stride)>::max();
 
    const state_history_log::non_local_get_block_id_func non_local_get_block_id;
+   const state_history_log::min_reader_block_func min_reader_block;
 
    struct by_mru {};
    typedef multi_index_container<
@@ -63,8 +64,10 @@ public:
    log_catalog& operator=(log_catalog&) = delete;
 
    log_catalog(const std::filesystem::path& log_dir, const state_history::state_history_log_config& config, const std::string& log_name,
-               state_history_log::non_local_get_block_id_func non_local_get_block_id = state_history_log::no_non_local_get_block_id_func) :
-     non_local_get_block_id(non_local_get_block_id), head_log_path_and_basename(log_dir / log_name) {
+               state_history_log::non_local_get_block_id_func non_local_get_block_id = state_history_log::no_non_local_get_block_id_func,
+               state_history_log::min_reader_block_func min_reader_func = {}) :
+     non_local_get_block_id(non_local_get_block_id), min_reader_block(std::move(min_reader_func)),
+     head_log_path_and_basename(log_dir / log_name) {
       std::visit(chain::overloaded {
          [this](const std::monostate&) {
             open_head_log();
@@ -277,7 +280,7 @@ private:
    }
 
    void open_head_log(std::optional<state_history::prune_config> prune_config = std::nullopt) {
-      head_log.emplace(head_log_path_and_basename, non_local_get_block_id, prune_config);
+      head_log.emplace(head_log_path_and_basename, non_local_get_block_id, prune_config, min_reader_block);
    }
 
    void delete_head_log() {
