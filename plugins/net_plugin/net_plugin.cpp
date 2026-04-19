@@ -146,10 +146,24 @@ namespace core_net {
       uint32_t       sync_known_fork_db_root_num GUARDED_BY(sync_mtx) {0};  // highest known fork_db root num from currently connected peers
       uint32_t       sync_last_requested_num     GUARDED_BY(sync_mtx) {0};  // end block number of the last requested range, inclusive
       uint32_t       sync_next_expected_num      GUARDED_BY(sync_mtx) {0};  // the next block number we need from peer
-      connection_ptr sync_source                 GUARDED_BY(sync_mtx);      // connection we are currently syncing from
+      connection_ptr sync_source                 GUARDED_BY(sync_mtx);      // connection we are currently syncing from (single-source mode)
+
+      struct sync_assignment {
+         uint32_t     start_block;
+         uint32_t     end_block;
+         std::chrono::steady_clock::time_point assigned_at;
+         uint32_t     blocks_received{0};
+      };
+      std::map<connection_id_t, sync_assignment> active_assignments GUARDED_BY(sync_mtx);
+      std::set<uint32_t> pending_block_nums GUARDED_BY(sync_mtx);
+      static constexpr uint32_t max_pending_sync_blocks = 100000;
 
       const uint32_t sync_fetch_span {0};
       const uint32_t sync_peer_limit {0};
+
+   public:
+      bool           parallel_sync_enabled{true};
+   private:
 
       alignas(hardware_destructive_interference_sz)
       std::atomic<stages> sync_state{in_sync};
@@ -172,6 +186,11 @@ namespace core_net {
       bool is_sync_required( uint32_t fork_db_head_block_num ) const REQUIRES(sync_mtx);
       bool is_sync_request_ahead_allowed(block_num_type blk_num) const REQUIRES(sync_mtx);
       void request_next_chunk( const connection_ptr& conn = connection_ptr() ) REQUIRES(sync_mtx);
+      void request_next_chunk_parallel() REQUIRES(sync_mtx);
+      uint32_t compute_peer_span(const connection_ptr& peer) const REQUIRES(sync_mtx);
+      void advance_expected_num() REQUIRES(sync_mtx);
+      bool is_active_sync_peer(connection_id_t id) const REQUIRES(sync_mtx);
+      void remove_sync_assignment(connection_id_t id) REQUIRES(sync_mtx);
       connection_ptr find_next_sync_node(); // call with locked mutex
       void start_sync( const connection_ptr& c, uint32_t target ); // locks mutex
       bool sync_recently_active() const;
@@ -2165,11 +2184,19 @@ namespace core_net {
          } );
          set_sync_known_fork_db_root_num(highest_fork_db_root_num);
 
-         // if closing the connection we are currently syncing from then request from a diff peer
-         if( c == sync_source ) {
-            // if starting to sync need to always start from fork_db_root as we might be on our own fork
+         // if closing a connection we are syncing from then request from a diff peer
+         bool was_syncing = (c == sync_source);
+         if (parallel_sync_enabled) {
+            auto it = active_assignments.find(c->connection_id);
+            if (it != active_assignments.end()) {
+               active_assignments.erase(it);
+               was_syncing = true;
+            }
+         }
+         if( was_syncing ) {
             uint32_t fork_db_root_num = my_impl->get_fork_db_root_num();
-            sync_last_requested_num = 0;
+            if (!parallel_sync_enabled || active_assignments.empty())
+               sync_last_requested_num = 0;
             sync_next_expected_num = std::max( fork_db_root_num + 1, sync_next_expected_num );
             sync_source.reset();
             request_next_chunk();
@@ -2235,8 +2262,55 @@ namespace core_net {
       return conns[the_one];
    }
 
+   uint32_t sync_manager::compute_peer_span(const connection_ptr& peer) const REQUIRES(sync_mtx) {
+      uint32_t peer_span = sync_fetch_span;
+      double peer_speed = peer->sync_blocks_per_sec.load();
+      if( peer_speed > 0.0 && peer->sync_speed_calibrated ) {
+         double total_speed = 0.0;
+         uint32_t speed_count = 0;
+         my_impl->connections.for_each_block_connection([&total_speed, &speed_count](const auto& cp) {
+            double s = cp->sync_blocks_per_sec.load();
+            if (s > 0.0 && cp->sync_speed_calibrated) {
+               total_speed += s;
+               ++speed_count;
+            }
+         });
+         if (speed_count > 0) {
+            double avg_speed = total_speed / speed_count;
+            double ratio = peer_speed / avg_speed;
+            peer_span = static_cast<uint32_t>(std::clamp(ratio * sync_fetch_span, 100.0, sync_fetch_span * 3.0));
+         }
+      }
+      return peer_span;
+   }
+
+   bool sync_manager::is_active_sync_peer(connection_id_t id) const REQUIRES(sync_mtx) {
+      return active_assignments.count(id) > 0;
+   }
+
+   void sync_manager::remove_sync_assignment(connection_id_t id) REQUIRES(sync_mtx) {
+      active_assignments.erase(id);
+   }
+
+   void sync_manager::advance_expected_num() REQUIRES(sync_mtx) {
+      while (!pending_block_nums.empty()) {
+         auto it = pending_block_nums.begin();
+         if (*it == sync_next_expected_num) {
+            ++sync_next_expected_num;
+            pending_block_nums.erase(it);
+         } else {
+            break;
+         }
+      }
+   }
+
    // call with g_sync locked, called from conn's connection strand
    void sync_manager::request_next_chunk( const connection_ptr& conn ) REQUIRES(sync_mtx) {
+      if (parallel_sync_enabled) {
+         request_next_chunk_parallel();
+         return;
+      }
+
       auto chain_info = my_impl->get_chain_info();
 
       fc_dlog( p2p_blk_log, "sync_last_requested_num: ${r}, sync_next_expected_num: ${e}, sync_known_fork_db_root_num: ${k}, sync-fetch-span: ${s}, fhead: ${h}, froot: ${fr}",
@@ -2248,11 +2322,6 @@ namespace core_net {
                    ("cc", sync_last_requested_num)("t", sync_known_fork_db_root_num)("n", sync_next_expected_num)("h", chain_info.fork_db_head_num));
       }
 
-      /* ----------
-       * next chunk provider selection criteria
-       * a provider is supplied and able to be used, use it.
-       * otherwise select the next available from the list, round-robin style.
-       */
       connection_ptr new_sync_source = (conn && conn->current()) ? conn : find_next_sync_node();
 
       auto reset_on_failure = [&]() REQUIRES(sync_mtx) {
@@ -2260,12 +2329,10 @@ namespace core_net {
          set_sync_known_fork_db_root_num(chain_info.fork_db_root_num);
          sync_last_requested_num = 0;
          sync_next_expected_num = std::max( sync_known_fork_db_root_num + 1, sync_next_expected_num );
-         // not in sync, but need to be out of lib_catchup for start_sync to work
          set_state( in_sync );
          send_handshakes();
       };
 
-      // verify there is an available source
       if( !new_sync_source ) {
          fc_wlog( p2p_blk_log, "Unable to continue syncing at this time");
          reset_on_failure();
@@ -2275,31 +2342,7 @@ namespace core_net {
       bool request_sent = false;
       if( sync_last_requested_num != sync_known_fork_db_root_num ) {
          uint32_t start = sync_next_expected_num;
-
-         // Compute per-peer range size proportional to measured sync speed.
-         // Before calibration (first range), use the default sync_fetch_span.
-         uint32_t peer_span = sync_fetch_span;
-         double peer_speed = new_sync_source->sync_blocks_per_sec.load();
-         if( peer_speed > 0.0 && new_sync_source->sync_speed_calibrated ) {
-            // Compute average speed across all eligible sync peers
-            double total_speed = 0.0;
-            uint32_t speed_count = 0;
-            my_impl->connections.for_each_block_connection([&total_speed, &speed_count](const auto& cp) {
-               double s = cp->sync_blocks_per_sec.load();
-               if (s > 0.0 && cp->sync_speed_calibrated) {
-                  total_speed += s;
-                  ++speed_count;
-               }
-            });
-            if (speed_count > 0) {
-               double avg_speed = total_speed / speed_count;
-               double ratio = peer_speed / avg_speed;
-               peer_span = static_cast<uint32_t>(std::clamp(ratio * sync_fetch_span, 100.0, sync_fetch_span * 3.0));
-               fc_dlog(p2p_blk_log, "peer ${id} speed ${s} blk/s, avg ${a} blk/s, ratio ${r}, span ${sp}",
-                       ("id", new_sync_source->connection_id)("s", peer_speed)("a", avg_speed)("r", ratio)("sp", peer_span));
-            }
-         }
-
+         uint32_t peer_span = compute_peer_span(new_sync_source);
          uint32_t end = start + peer_span - 1;
          if( end > sync_known_fork_db_root_num )
             end = sync_known_fork_db_root_num;
@@ -2317,6 +2360,86 @@ namespace core_net {
       if( !request_sent ) {
          fc_wlog(p2p_blk_log, "Unable to request range, sending handshakes to everyone");
          reset_on_failure();
+      }
+   }
+
+   void sync_manager::request_next_chunk_parallel() REQUIRES(sync_mtx) {
+      auto chain_info = my_impl->get_chain_info();
+
+      fc_dlog(p2p_blk_log, "parallel sync: last_req ${r}, next_exp ${e}, known_froot ${k}, pending ${p}, assignments ${a}",
+              ("r", sync_last_requested_num)("e", sync_next_expected_num)("k", sync_known_fork_db_root_num)
+              ("p", pending_block_nums.size())("a", active_assignments.size()));
+
+      if (sync_last_requested_num >= sync_known_fork_db_root_num && !active_assignments.empty())
+         return;
+
+      // Check backpressure: don't request too far ahead
+      uint32_t head_num = my_impl->get_chain_head_num();
+      uint32_t total_pending = sync_last_requested_num > head_num ? sync_last_requested_num - head_num : 0;
+      if (total_pending >= max_pending_sync_blocks)
+         return;
+
+      // Collect eligible peers without active assignments
+      std::deque<connection_ptr> available;
+      my_impl->connections.for_each_block_connection([this, &available](const auto& c) {
+         if (c->should_sync_from(sync_next_expected_num, sync_known_fork_db_root_num, sync_fetch_span) &&
+             !is_active_sync_peer(c->connection_id)) {
+            available.push_back(c);
+         }
+      });
+
+      if (available.empty() && active_assignments.empty()) {
+         sync_source.reset();
+         set_sync_known_fork_db_root_num(chain_info.fork_db_root_num);
+         sync_last_requested_num = 0;
+         sync_next_expected_num = std::max(sync_known_fork_db_root_num + 1, sync_next_expected_num);
+         set_state(in_sync);
+         send_handshakes();
+         return;
+      }
+
+      // Sort by measured speed (fastest first), fall back to ping time
+      std::sort(available.begin(), available.end(), [](const connection_ptr& lhs, const connection_ptr& rhs) {
+         bool l_cal = lhs->sync_speed_calibrated;
+         bool r_cal = rhs->sync_speed_calibrated;
+         if (l_cal && r_cal)
+            return lhs->sync_blocks_per_sec.load() > rhs->sync_blocks_per_sec.load();
+         if (l_cal != r_cal)
+            return l_cal;
+         return lhs->get_peer_ping_time_ns() < rhs->get_peer_ping_time_ns();
+      });
+
+      if (available.size() > sync_peer_limit)
+         available.resize(sync_peer_limit);
+
+      auto now = std::chrono::steady_clock::now();
+      uint32_t next_start = sync_last_requested_num + 1;
+      if (next_start <= sync_next_expected_num)
+         next_start = sync_next_expected_num;
+
+      for (auto& peer : available) {
+         if (next_start > sync_known_fork_db_root_num)
+            break;
+
+         uint32_t peer_span = compute_peer_span(peer);
+         uint32_t end = std::min(next_start + peer_span - 1, sync_known_fork_db_root_num);
+
+         active_assignments[peer->connection_id] = {next_start, end, now, 0};
+         sync_last_requested_num = end;
+         sync_source = peer;
+         sync_active_time = now;
+
+         fc_ilog(p2p_blk_log, "parallel sync: assigning range ${s}-${e} (${n} blocks) to peer ${id}",
+                 ("s", next_start)("e", end)("n", end - next_start + 1)("id", peer->connection_id));
+
+         uint32_t s = next_start, e = end;
+         boost::asio::post(peer->strand, [peer, s, e, fh=chain_info.fork_db_head_num, fr=chain_info.fork_db_root_num]() {
+            peer_ilog(p2p_blk_log, peer, "requesting range ${s} to ${e}, fhead ${h}, froot ${r}",
+                      ("s", s)("e", e)("h", fh)("r", fr));
+            peer->request_sync_blocks(s, e);
+         });
+
+         next_start = end + 1;
       }
    }
 
@@ -2455,12 +2578,24 @@ namespace core_net {
    // called from connection strand
    void sync_manager::sync_reassign_fetch(const connection_ptr& c) {
       fc::unique_lock g( sync_mtx );
-      if( c == sync_source ) {
+      bool was_active = (c == sync_source);
+      if (parallel_sync_enabled) {
+         auto it = active_assignments.find(c->connection_id);
+         if (it != active_assignments.end()) {
+            peer_ilog(p2p_blk_log, c, "reassign_fetch (parallel), removing assignment ${s}-${e}",
+                      ("s", it->second.start_block)("e", it->second.end_block));
+            active_assignments.erase(it);
+            was_active = true;
+         }
+      }
+      if( was_active ) {
          peer_ilog(p2p_blk_log, c, "reassign_fetch, our last req is ${cc}, next expected is ${ne}",
                    ("cc", sync_last_requested_num)("ne", sync_next_expected_num));
          c->cancel_sync();
          auto fork_db_root_num = my_impl->get_fork_db_root_num();
-         sync_last_requested_num = 0;
+         if (!parallel_sync_enabled || active_assignments.empty()) {
+            sync_last_requested_num = 0;
+         }
          sync_next_expected_num = std::max(sync_next_expected_num, fork_db_root_num + 1);
          sync_source.reset();
          request_next_chunk();
@@ -2667,9 +2802,11 @@ namespace core_net {
       {
          // reset sync on rejected block
          fc::lock_guard g( sync_mtx );
-         if (sync_last_requested_num != 0 && blk_num <= sync_next_expected_num-1) { // no need to reset if we already reset and are syncing again
+         if (sync_last_requested_num != 0 && blk_num <= sync_next_expected_num-1) {
             sync_last_requested_num = 0;
             sync_next_expected_num = my_impl->get_fork_db_root_num() + 1;
+            pending_block_nums.clear();
+            active_assignments.clear();
          }
       }
       if( mode == closing_mode::immediately || c->block_status_monitor_.max_events_violated()) {
@@ -2762,7 +2899,8 @@ namespace core_net {
                if (blk_num >= c->sync_last_requested_block) {
                   peer_dlog(p2p_blk_log, c, "calling cancel_sync_wait, block ${b}, sync_last_requested_block ${lrb}",
                             ("b", blk_num)("lrb", c->sync_last_requested_block));
-                  sync_source.reset();
+                  if (!parallel_sync_enabled || c == sync_source)
+                     sync_source.reset();
                   c->cancel_sync_wait();
                } else {
                   peer_dlog(p2p_blk_log, c, "calling sync_wait, block ${b}", ("b", blk_num));
@@ -2771,7 +2909,28 @@ namespace core_net {
 
                if (sync_last_requested_num == 0) { // block was rejected
                   sync_next_expected_num = my_impl->get_fork_db_root_num() + 1;
+                  pending_block_nums.clear();
+                  active_assignments.clear();
                   peer_dlog(p2p_blk_log, c, "Reset sync_next_expected_num to ${n}", ("n", sync_next_expected_num));
+               } else if (parallel_sync_enabled) {
+                  // Track in ordering buffer and advance watermark through contiguous blocks
+                  if (blk_num >= sync_next_expected_num) {
+                     if (blk_num == sync_next_expected_num) {
+                        ++sync_next_expected_num;
+                     } else if (pending_block_nums.size() < max_pending_sync_blocks) {
+                        pending_block_nums.insert(blk_num);
+                     }
+                     advance_expected_num();
+                  }
+
+                  // Update peer assignment tracking
+                  auto it = active_assignments.find(c->connection_id);
+                  if (it != active_assignments.end()) {
+                     ++it->second.blocks_received;
+                     if (blk_num >= it->second.end_block) {
+                        active_assignments.erase(it);
+                     }
+                  }
                } else {
                   if (blk_num == sync_next_expected_num) {
                      ++sync_next_expected_num;
@@ -2793,7 +2952,6 @@ namespace core_net {
                      double smoothed = (prev > 0.0) ? (alpha * measured + (1.0 - alpha) * prev) : measured;
                      c->sync_blocks_per_sec = smoothed;
                   }
-                  // Reset window periodically to avoid stale accumulation
                   if (c->sync_speed_range_blocks >= 500) {
                      c->sync_speed_range_blocks = 0;
                      if (!c->sync_speed_calibrated) {
@@ -5075,6 +5233,8 @@ namespace core_net {
            "Number of blocks to retrieve in a chunk from any individual peer during synchronization")
          ( "sync-peer-limit", bpo::value<uint32_t>()->default_value(3),
            "Number of peers to sync from")
+         ( "p2p-parallel-sync", bpo::value<bool>()->default_value(true),
+           "Enable parallel block sync from multiple peers with proportional range assignment")
          ( "use-socket-read-watermark", bpo::value<bool>()->default_value(false), "Enable experimental socket read watermark optimization")
          ( "peer-log-format", bpo::value<string>()->default_value( "[\"${_peer}\" - ${_cid} ${_ip}:${_port}] " ),
            "The string used to format peers when logging messages about them.  Variables are escaped with ${<variable name>}.\n"
@@ -5173,6 +5333,7 @@ namespace core_net {
              options.at( "sync-fetch-span" ).as<uint32_t>(),
              options.at( "sync-peer-limit" ).as<uint32_t>(),
              min_blocks_distance);
+         sync_master->parallel_sync_enabled = options.at( "p2p-parallel-sync" ).as<bool>();
 
          connections.init( std::chrono::milliseconds( options.at("p2p-keepalive-interval-ms").as<int>() * 2 ),
                                fc::milliseconds( options.at("max-cleanup-time-msec").as<uint32_t>() ),
