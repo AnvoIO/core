@@ -924,6 +924,12 @@ namespace core_net {
       // when syncing from a peer, the last block expected of the current range
       uint32_t                sync_last_requested_block{0};
 
+      // Per-peer sync speed tracking for proportional range assignment (#96)
+      std::atomic<double>                      sync_blocks_per_sec{0.0};
+      std::chrono::steady_clock::time_point    sync_speed_range_start{};
+      uint32_t                                 sync_speed_range_blocks{0};
+      bool                                     sync_speed_calibrated{false};
+
       alignas(hardware_destructive_interference_sz)
       std::atomic<uint32_t>   trx_in_progress_size{0};
 
@@ -1573,6 +1579,10 @@ namespace core_net {
       if( !shutdown) my_impl->sync_master->sync_reset_fork_db_root_num( shared_from_this(), true );
       cancel_sync_wait();
       sync_last_requested_block = 0;
+      sync_blocks_per_sec = 0.0;
+      sync_speed_range_start = {};
+      sync_speed_range_blocks = 0;
+      sync_speed_calibrated = false;
       org = std::chrono::nanoseconds{0};
       latest_msg_time = std::chrono::steady_clock::time_point::min();
       latest_blk_time = std::chrono::steady_clock::time_point::min();
@@ -2180,7 +2190,14 @@ namespace core_net {
          }
       });
       if (conns.size() > sync_peer_limit) {
+         // Prefer peers with measured sync speed; fall back to ping time for uncalibrated peers
          std::partial_sort(conns.begin(), conns.begin() + sync_peer_limit, conns.end(), [](const connection_ptr& lhs, const connection_ptr& rhs) {
+            bool l_cal = lhs->sync_speed_calibrated;
+            bool r_cal = rhs->sync_speed_calibrated;
+            if (l_cal && r_cal)
+               return lhs->sync_blocks_per_sec.load() > rhs->sync_blocks_per_sec.load();
+            if (l_cal != r_cal)
+               return l_cal;
             return lhs->get_peer_ping_time_ns() < rhs->get_peer_ping_time_ns();
          });
          conns.resize(sync_peer_limit);
@@ -2258,7 +2275,32 @@ namespace core_net {
       bool request_sent = false;
       if( sync_last_requested_num != sync_known_fork_db_root_num ) {
          uint32_t start = sync_next_expected_num;
-         uint32_t end = start + sync_fetch_span - 1;
+
+         // Compute per-peer range size proportional to measured sync speed.
+         // Before calibration (first range), use the default sync_fetch_span.
+         uint32_t peer_span = sync_fetch_span;
+         double peer_speed = new_sync_source->sync_blocks_per_sec.load();
+         if( peer_speed > 0.0 && new_sync_source->sync_speed_calibrated ) {
+            // Compute average speed across all eligible sync peers
+            double total_speed = 0.0;
+            uint32_t speed_count = 0;
+            my_impl->connections.for_each_block_connection([&total_speed, &speed_count](const auto& cp) {
+               double s = cp->sync_blocks_per_sec.load();
+               if (s > 0.0 && cp->sync_speed_calibrated) {
+                  total_speed += s;
+                  ++speed_count;
+               }
+            });
+            if (speed_count > 0) {
+               double avg_speed = total_speed / speed_count;
+               double ratio = peer_speed / avg_speed;
+               peer_span = static_cast<uint32_t>(std::clamp(ratio * sync_fetch_span, 100.0, sync_fetch_span * 3.0));
+               fc_dlog(p2p_blk_log, "peer ${id} speed ${s} blk/s, avg ${a} blk/s, ratio ${r}, span ${sp}",
+                       ("id", new_sync_source->connection_id)("s", peer_speed)("a", avg_speed)("r", ratio)("sp", peer_span));
+            }
+         }
+
+         uint32_t end = start + peer_span - 1;
          if( end > sync_known_fork_db_root_num )
             end = sync_known_fork_db_root_num;
          if( end > 0 && end >= start ) {
@@ -2733,6 +2775,32 @@ namespace core_net {
                } else {
                   if (blk_num == sync_next_expected_num) {
                      ++sync_next_expected_num;
+                  }
+               }
+
+               // Update per-peer sync speed measurement
+               {
+                  auto now = std::chrono::steady_clock::now();
+                  if (c->sync_speed_range_blocks == 0) {
+                     c->sync_speed_range_start = now;
+                  }
+                  ++c->sync_speed_range_blocks;
+                  auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - c->sync_speed_range_start);
+                  if (elapsed.count() > 0) {
+                     double measured = (double(c->sync_speed_range_blocks) / elapsed.count()) * 1000000.0;
+                     constexpr double alpha = 0.3;
+                     double prev = c->sync_blocks_per_sec.load();
+                     double smoothed = (prev > 0.0) ? (alpha * measured + (1.0 - alpha) * prev) : measured;
+                     c->sync_blocks_per_sec = smoothed;
+                  }
+                  // Reset window periodically to avoid stale accumulation
+                  if (c->sync_speed_range_blocks >= 500) {
+                     c->sync_speed_range_blocks = 0;
+                     if (!c->sync_speed_calibrated) {
+                        c->sync_speed_calibrated = true;
+                        peer_ilog(p2p_blk_log, c, "sync speed calibrated: ${s} blocks/sec",
+                                  ("s", c->sync_blocks_per_sec.load()));
+                     }
                   }
                }
                if (blk_num >= sync_known_fork_db_root_num) {
