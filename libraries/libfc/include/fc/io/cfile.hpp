@@ -91,6 +91,11 @@ public:
       if( fstat(fileno(), &st) == 0 )
          _file_blk_size = st.st_blksize;
 #endif
+      // "ab+" (append-update) leaves the read position implementation-defined:
+      // glibc puts it at EOF, macOS/BSD at 0. Normalize to 0 since writes in
+      // append mode always go to EOF regardless of position.
+      if( mode[0] == 'a' )
+         fseek( _file.get(), 0, SEEK_SET );
       _open = true;
    }
 

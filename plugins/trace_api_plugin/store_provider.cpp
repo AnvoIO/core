@@ -247,9 +247,6 @@ namespace core_net::trace_api {
       }
 
       slice_file.open(fc::cfile::create_or_update_rw_mode);
-      // TODO: this is a temporary fix until fc::cfile handles it internally.  OSX and Linux differ on the read offset
-      // when opening in "ab+" mode
-      slice_file.seek(0);
       return true;
    }
 
