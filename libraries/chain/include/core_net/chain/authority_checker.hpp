@@ -36,7 +36,7 @@ namespace detail {
       private:
          PermissionToAuthorityFunc            permission_to_authority;
          const std::function<void()>&         checktime;
-         vector<public_key_type>              provided_keys; // Making this a flat_set<public_key_type> causes runtime problems with utilities::filter_data_by_marker for some reason. TODO: Figure out why.
+         vector<public_key_type>              provided_keys;
          flat_set<permission_level>           provided_permissions;
          vector<bool>                         _used_keys;
          fc::microseconds                     provided_delay;
