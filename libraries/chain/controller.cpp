@@ -5737,6 +5737,35 @@ std::vector<char> controller::fetch_serialized_block_by_number( uint32_t block_n
    return my->blog.read_serialized_block_by_num(block_num);
 } FC_CAPTURE_AND_RETHROW( (block_num) ) }
 
+std::vector<std::vector<char>> controller::fetch_serialized_blocks_by_range( uint32_t start_block_num, uint32_t count)const  { try {
+   // For blocks in fork_db (recent, not yet irreversible), fall back to per-block reads
+   // since they may not be contiguous in the block log.
+   if (my->fork_db_fetch_block_on_best_branch_by_num(start_block_num)) {
+      std::vector<std::vector<char>> result;
+      for (uint32_t i = 0; i < count; ++i) {
+         auto sb = fetch_serialized_block_by_number(start_block_num + i);
+         if (sb.empty()) break;
+         result.push_back(std::move(sb));
+      }
+      return result;
+   }
+
+   auto result = my->blog.read_serialized_blocks_by_range(start_block_num, count);
+
+   // Batch read may return empty when blocks exist in a different partition
+   // (partitioned block log) or are otherwise not in the current working file.
+   // Fall back to per-block reads which have the retry/catalog path.
+   if (result.empty() && count > 0) {
+      for (uint32_t i = 0; i < count; ++i) {
+         auto sb = fetch_serialized_block_by_number(start_block_num + i);
+         if (sb.empty()) break;
+         result.push_back(std::move(sb));
+      }
+   }
+
+   return result;
+} FC_CAPTURE_AND_RETHROW( (start_block_num)(count) ) }
+
 std::optional<signed_block_header> controller::fetch_block_header_by_number( uint32_t block_num )const  { try {
    auto b = my->fork_db_fetch_block_on_best_branch_by_num(block_num);
    if (b)

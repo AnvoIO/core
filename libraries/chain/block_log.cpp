@@ -499,6 +499,7 @@ namespace core_net { namespace chain {
 
          virtual signed_block_ptr                   read_block_by_num(uint32_t block_num)        = 0;
          virtual std::vector<char>                  read_serialized_block_by_num(uint32_t block_num) = 0;
+         virtual std::vector<std::vector<char>>     read_serialized_blocks_by_range(uint32_t start_block_num, uint32_t count) = 0;
          virtual std::optional<signed_block_header> read_block_header_by_num(uint32_t block_num) = 0;
 
          virtual uint32_t version() const = 0;
@@ -536,6 +537,7 @@ namespace core_net { namespace chain {
 
          signed_block_ptr read_block_by_num(uint32_t block_num) final { return {}; };
          std::vector<char> read_serialized_block_by_num(uint32_t block_num) final { return {}; };
+         std::vector<std::vector<char>> read_serialized_blocks_by_range(uint32_t, uint32_t) final { return {}; };
          std::optional<signed_block_header> read_block_header_by_num(uint32_t block_num) final { return {}; };
 
          uint32_t         version() const final { return 0; }
@@ -651,7 +653,10 @@ namespace core_net { namespace chain {
                // current block is the last block in the file.
 
                block_file.seek_end(0);
-               auto file_size = block_file.tellp();
+               auto file_size = static_cast<uint64_t>(block_file.tellp());
+               // Pruned logs append a 4-byte block count trailer after the last block
+               if (preamble.is_currently_pruned())
+                  file_size -= sizeof(uint32_t);
                CORE_ASSERT(file_size > pos + block_pos_size, block_log_exception,
                           "block log file size ${fs} should be greater than current block position ${p} plus block position field size ${bps}",
                           ("fs", file_size)("p", pos)("bps", block_pos_size));
@@ -683,6 +688,65 @@ namespace core_net { namespace chain {
                   return read_serialized_block(block_file, size);
                }
                return retry_read_serialized_block_by_num(block_num);
+            }
+            FC_LOG_AND_RETHROW()
+         }
+
+         std::vector<std::vector<char>> read_serialized_blocks_by_range(uint32_t start_block_num, uint32_t count) override {
+            try {
+               std::vector<std::vector<char>> result;
+               if (count == 0) return result;
+
+               constexpr uint32_t pos_trailer_size = sizeof(uint64_t);
+
+               uint64_t start_pos = get_block_pos(start_block_num);
+               if (start_pos == block_log::npos) return result;
+
+               assert(head);
+               uint32_t last_block_num = block_header::num_from_id(head->id);
+               uint32_t end_block_num = std::min(start_block_num + count - 1, last_block_num);
+               uint32_t actual_count = end_block_num - start_block_num + 1;
+
+               // Read all index entries in one I/O: positions for start..end+1 (or use file end for last)
+               uint32_t num_positions = actual_count + (end_block_num < last_block_num ? 1 : 0);
+               std::vector<uint64_t> positions(num_positions);
+               index_file.seek(sizeof(uint64_t) * (start_block_num - index_first_block_num()));
+               index_file.read((char*)positions.data(), sizeof(uint64_t) * num_positions);
+
+               // Compute per-block sizes and total data span
+               uint64_t end_pos;
+               if (end_block_num < last_block_num) {
+                  end_pos = positions[actual_count]; // position of block after our range
+               } else {
+                  block_file.seek_end(0);
+                  end_pos = block_file.tellp();
+                  if (preamble.is_currently_pruned())
+                     end_pos -= sizeof(uint32_t);
+               }
+
+               uint64_t total_bytes = end_pos - start_pos;
+               CORE_ASSERT(total_bytes > 0 && total_bytes < 256 * 1024 * 1024, block_log_exception,
+                          "block range read size ${s} out of bounds", ("s", total_bytes));
+
+               // Single contiguous read of all block data
+               std::vector<char> bulk(total_bytes);
+               block_file.seek(start_pos);
+               block_file.read(bulk.data(), total_bytes);
+
+               // Split into individual blocks using index positions
+               result.reserve(actual_count);
+               for (uint32_t i = 0; i < actual_count; ++i) {
+                  uint64_t block_start = positions[i] - start_pos;
+                  uint64_t next_boundary;
+                  if (i + 1 < actual_count) {
+                     next_boundary = positions[i + 1] - start_pos;
+                  } else {
+                     next_boundary = total_bytes;
+                  }
+                  uint64_t block_size = next_boundary - block_start - pos_trailer_size;
+                  result.emplace_back(bulk.data() + block_start, bulk.data() + block_start + block_size);
+               }
+               return result;
             }
             FC_LOG_AND_RETHROW()
          }
@@ -1319,6 +1383,11 @@ namespace core_net { namespace chain {
    std::vector<char> block_log::read_serialized_block_by_num(uint32_t block_num) const {
       std::lock_guard g(my->mtx);
       return my->read_serialized_block_by_num(block_num);
+   }
+
+   std::vector<std::vector<char>> block_log::read_serialized_blocks_by_range(uint32_t start_block_num, uint32_t count) const {
+      std::lock_guard g(my->mtx);
+      return my->read_serialized_blocks_by_range(start_block_num, count);
    }
 
    std::optional<signed_block_header> block_log::read_block_header_by_num(uint32_t block_num) const {

@@ -1901,65 +1901,73 @@ namespace core_net {
       enqueue( ( sync_request_message ) {0,0} );
    }
 
+   static constexpr uint32_t sync_block_batch_size = 64;
+
    // called from connection strand
    bool connection::enqueue_sync_block() {
       if( !peer_requested ) {
          return false;
-      } else {
-         peer_dlog( p2p_blk_log, this, "enqueue sync block ${num}", ("num", peer_requested->last + 1) );
       }
       uint32_t num = peer_requested->last + 1;
+      peer_dlog( p2p_blk_log, this, "enqueue sync block batch starting ${num}", ("num", num) );
+
+      if (block_sync_send_start == 0ns) {
+         block_sync_send_start = get_time();
+         block_sync_frame_bytes_sent = 0;
+      }
 
       controller& cc = my_impl->chain_plug->chain();
-      std::vector<char> sb;
+      uint32_t remaining = peer_requested->end_block - num + 1;
+      uint32_t batch_count = std::min(remaining, sync_block_batch_size);
+
+      std::vector<std::vector<char>> blocks;
       try {
-         sb = cc.fetch_serialized_block_by_number( num ); // thread-safe
+         blocks = cc.fetch_serialized_blocks_by_range( num, batch_count ); // thread-safe
       } FC_LOG_AND_DROP();
-      if( !sb.empty() ) {
-         // Skip transmitting block this loop if threshold exceeded
-         if (block_sync_send_start == 0ns) { // start of enqueue blocks
-            block_sync_send_start = get_time();
-            block_sync_frame_bytes_sent = 0;
-         }
-         if( block_sync_rate_limit > 0 && block_sync_frame_bytes_sent > 0 && peer_syncing_from_us ) {
-            auto now = get_time();
-            auto elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(now - block_sync_send_start);
-            double current_rate_sec = (double(block_sync_frame_bytes_sent) / elapsed_us.count()) * 100000; // convert from bytes/us => bytes/sec
-            peer_dlog(p2p_blk_log, this, "start enqueue block time ${st}, now ${t}, elapsed ${e}, rate ${r}, limit ${l}",
-                      ("st", block_sync_send_start.count())("t", now.count())("e", elapsed_us.count())("r", current_rate_sec)("l", block_sync_rate_limit));
-            if( current_rate_sec >= block_sync_rate_limit ) {
-               block_sync_throttling = true;
-               peer_dlog( p2p_blk_log, this, "throttling block sync to peer ${host}:${port}", ("host", log_remote_endpoint_ip)("port", log_remote_endpoint_port));
-               std::shared_ptr<boost::asio::steady_timer> throttle_timer = std::make_shared<boost::asio::steady_timer>(my_impl->thread_pool.get_executor());
-               throttle_timer->expires_after(std::chrono::milliseconds(100));
-               throttle_timer->async_wait(boost::asio::bind_executor(strand, [c=shared_from_this(), throttle_timer](const boost::system::error_code& ec) {
-                  if (!ec)
-                    c->enqueue_sync_block();
-               }));
-               return false;
+
+      if( !blocks.empty() ) {
+         for( uint32_t i = 0; i < blocks.size(); ++i ) {
+            uint32_t blk_num = num + i;
+
+            if( block_sync_rate_limit > 0 && block_sync_frame_bytes_sent > 0 && peer_syncing_from_us ) {
+               auto now = get_time();
+               auto elapsed_us = std::chrono::duration_cast<std::chrono::microseconds>(now - block_sync_send_start);
+               double current_rate_sec = (double(block_sync_frame_bytes_sent) / elapsed_us.count()) * 100000;
+               if( current_rate_sec >= block_sync_rate_limit ) {
+                  block_sync_throttling = true;
+                  peer_dlog( p2p_blk_log, this, "throttling block sync at block ${b}, rate ${r}, limit ${l}",
+                             ("b", blk_num)("r", current_rate_sec)("l", block_sync_rate_limit));
+                  std::shared_ptr<boost::asio::steady_timer> throttle_timer = std::make_shared<boost::asio::steady_timer>(my_impl->thread_pool.get_executor());
+                  throttle_timer->expires_after(std::chrono::milliseconds(100));
+                  throttle_timer->async_wait(boost::asio::bind_executor(strand, [c=shared_from_this(), throttle_timer](const boost::system::error_code& ec) {
+                     if (!ec)
+                       c->enqueue_sync_block();
+                  }));
+                  return false;
+               }
             }
+
+            block_sync_throttling = false;
+            auto sent = enqueue_block( blocks[i], blk_num, queued_buffer::queue_t::block_sync );
+            block_sync_total_bytes_sent += sent;
+            block_sync_frame_bytes_sent += sent;
+            ++peer_requested->last;
          }
-         block_sync_throttling = false;
-         auto sent = enqueue_block( sb, num, queued_buffer::queue_t::block_sync );
-         block_sync_total_bytes_sent += sent;
-         block_sync_frame_bytes_sent += sent;
-         ++peer_requested->last;
-         if(num == peer_requested->end_block) {
+
+         if( peer_requested->last >= peer_requested->end_block ) {
+            peer_dlog( p2p_blk_log, this, "completing enqueue_sync_block ${num}", ("num", peer_requested->last) );
             peer_requested.reset();
             block_sync_send_start = 0ns;
             block_sync_frame_bytes_sent = 0;
-            peer_dlog( p2p_blk_log, this, "completing enqueue_sync_block ${num}", ("num", num) );
          }
       } else if (peer_requested->sync_type == peer_sync_state::sync_t::peer_catchup || peer_requested->sync_type == peer_sync_state::sync_t::block_nack) {
-         // Do not have the block, likely because in the middle of a fork-switch. A fork-switch will send out
-         // block_notice_message for the new blocks. Ignore, similar to the ignore in blk_send_branch().
          peer_ilog( p2p_blk_log, this, "enqueue block sync, unable to fetch block ${num}, resetting peer request", ("num", num) );
-         peer_requested.reset(); // unable to provide requested blocks
+         peer_requested.reset();
          block_sync_send_start = 0ns;
          block_sync_frame_bytes_sent = 0;
       } else {
          peer_ilog( p2p_blk_log, this, "enqueue peer sync, unable to fetch block ${num}, sending benign_other go away", ("num", num) );
-         peer_requested.reset(); // unable to provide requested blocks
+         peer_requested.reset();
          block_sync_send_start = 0ns;
          block_sync_frame_bytes_sent = 0;
          no_retry = go_away_reason::benign_other;
