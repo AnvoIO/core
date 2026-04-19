@@ -94,6 +94,7 @@ struct ship_log_entry {
 class state_history_log {
 public:
    using non_local_get_block_id_func = std::function<std::optional<chain::block_id_type>(chain::block_num_type)>;
+   using min_reader_block_func = std::function<uint32_t()>;
 
    static std::optional<chain::block_id_type> no_non_local_get_block_id_func(chain::block_num_type) {
       return std::nullopt;
@@ -101,6 +102,7 @@ public:
 private:
    std::optional<state_history::prune_config> prune_config;
    non_local_get_block_id_func                non_local_get_block_id;
+   min_reader_block_func                      get_min_reader_block;
 
    fc::random_access_file       log;
    fc::random_access_file       index;
@@ -120,8 +122,10 @@ private:
 
    state_history_log(const std::filesystem::path& log_dir_and_stem,
                      non_local_get_block_id_func non_local_get_block_id = no_non_local_get_block_id_func,
-                     const std::optional<state_history::prune_config>& prune_conf = std::nullopt) :
+                     const std::optional<state_history::prune_config>& prune_conf = std::nullopt,
+                     min_reader_block_func min_reader_func = {}) :
      prune_config(prune_conf), non_local_get_block_id(non_local_get_block_id),
+     get_min_reader_block(std::move(min_reader_func)),
      log(std::filesystem::path(log_dir_and_stem).replace_extension("log")),
      index(std::filesystem::path(log_dir_and_stem).replace_extension("index")) {
       CORE_ASSERT(!!non_local_get_block_id, chain::plugin_exception, "misuse of get_block_id");
@@ -295,8 +299,20 @@ private:
       if(_end_block - _begin_block <= prune_config->prune_blocks)
          return;
 
-      const uint32_t prune_to_num = _end_block - prune_config->prune_blocks;
-      ///TODO: we should cap this to the lowest position there are any active entries reading from, see https://github.com/AntelopeIO/spring/pull/237
+      uint32_t prune_to_num = _end_block - prune_config->prune_blocks;
+
+      // Cap to the lowest block any active SHiP session still needs.
+      // A session with next_block_cursor=N may still be streaming block N-1,
+      // so the callback returns min(cursor-1) across all sessions.
+      if(get_min_reader_block) {
+         const uint32_t min_reader = get_min_reader_block();
+         if(min_reader < prune_to_num)
+            prune_to_num = min_reader;
+      }
+
+      if(prune_to_num <= _begin_block)
+         return;
+
       uint64_t prune_to_pos = get_pos(prune_to_num);
       log.punch_hole(fc::raw::pack_size(log_header()), prune_to_pos);
 

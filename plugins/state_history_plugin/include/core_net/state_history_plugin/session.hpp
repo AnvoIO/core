@@ -23,6 +23,7 @@ public:
    session_base& operator=(const session_base&) = delete;
 
    virtual void block_applied(const chain::block_num_type applied_block_num) = 0;
+   virtual chain::block_num_type next_block_num() const = 0;
 
    virtual void drain_strand() = 0;
 
@@ -53,6 +54,8 @@ public:
          next_block_cursor = applied_block_num;
       awake_if_idle();
    }
+
+   chain::block_num_type next_block_num() const override { return next_block_cursor; }
 
    // allow main thread to drain the strand before destruction -- some awake_if_idle() post()s may be inflight
    void drain_strand() {
